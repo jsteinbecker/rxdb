@@ -26,6 +26,13 @@
       ? `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`
       : (value ?? null);
   const volume = $derived(item.resolvedVolume);
+  const overrideFields = [
+    ['description', 'Description'],
+    ['brandName', 'Brand name'],
+    ['genericName', 'Generic name'],
+    ['productCode', 'Product NDC'],
+    ['doseForm', 'Dose form']
+  ] as const;
 </script>
 
 <div class="detail">
@@ -79,6 +86,26 @@
         </dd>
       {/if}
     </dl>
+    {#if item.propertyOverrides && Object.keys(item.propertyOverrides).length}
+      <h5>Manual property overrides</h5>
+      <ul class="evidence">
+        {#each Object.entries(item.propertyOverrides) as [key, override] (key)}
+          <li>
+            <b>{overrideFields.find(([field]) => field === key)?.[1] ?? key}:</b>
+            {override.value}
+            <br /><span
+              >Source: {override.sectionTitle},
+              <a
+                href={`https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=${override.splSetId}`}
+                target="_blank"
+                rel="noreferrer">SPL {override.splSetId}</a
+              >
+              — “{override.excerpt}”</span
+            >
+          </li>
+        {/each}
+      </ul>
+    {/if}
   </section>
 
   <section>
@@ -297,7 +324,7 @@
       {/if}
     </dl>
     {#each d?.label?.sections ?? [] as section (section.key)}
-      <details>
+      <details data-spl-section={section.key}>
         <summary>{section.title}</summary>
         {#if section.blocks?.length}
           <LabelBlocks blocks={section.blocks} />

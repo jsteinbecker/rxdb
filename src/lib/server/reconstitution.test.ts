@@ -6,7 +6,11 @@ import {
   parseReconstitutionTable,
   reconstitutionFromLabel
 } from '../reconstitution';
-import { parseReconstitutionProse, dedupeProseReconstitutions } from '../dry-fill-volume';
+import {
+  parseReconstitutionProse,
+  dedupeProseReconstitutions,
+  rowsForVial
+} from '../dry-fill-volume';
 import { parsePackageFacts } from './catalog-facts';
 
 const table = `<table><tr><th>Vial size (mg)</th><th>Diluent added (mL)</th><th>Volume after reconstitution (mL)</th><th>Concentration (mg/mL)</th></tr><tr><td>1000</td><td>9.6</td><td>10</td><td>100</td></tr></table>`;
@@ -102,4 +106,84 @@ test('a sentence ending in a whole number does not consume the next instruction'
   );
   assert.equal(rows.length, 1);
   assert.equal(rows[0].diluentMl, 9.6);
+});
+
+// Hikma vancomycin pharmacy bulk package (NDC 00143-9163-01), whose label
+// covers the 5 g and 10 g vials and adds an oral compounding recipe.
+const vancomycinBulk = [
+  'Reconstitution and Dilution 5 g Pharmacy Bulk Package Vial At the time of use, reconstitute by adding 47 mL of Sterile Water for Injection to the 5 g vial of dry, sterile vancomycin powder following the reconstitution steps below.',
+  'Reconstituted solutions of vancomycin (100 mg/mL) must be further diluted.',
+  '10 g Pharmacy Bulk Package Vial At the time of use, reconstitute by adding 94 mL of Sterile Water for Injection to the 10 g vial of dry, sterile vancomycin powder following the reconstitution steps below.',
+  'Prepare the sweetening agent separately from the reconstituted Vancomycin hydrochloride solution in a plastic-container following one of the preparation options below: Mix sucrose and sterile water for injection in a 1:2 ratio (e.g., 10 g sucrose and 20 mL sterile water for injection) OR Mix agave nectar with an equal volume of sterile water for injection 2.',
+  'Mix the sweetening agent with the reconstituted Vancomycin hydrochloride solution in a 3:1 ratio (e.g., 30 mL sweetening agent with 10 mL vancomycin solution) to obtain a sweetened solution containing 25 mg/mL of vancomycin that is suitable for oral administration.'
+].join(' ');
+
+test('oral sweetening recipes are not reconstitution instructions', () => {
+  const rows = parseReconstitutionProse(vancomycinBulk);
+  assert.ok(rows.every((row) => row.diluentMl !== 20 && row.diluentMl !== 10));
+});
+
+test('per-package-size bulk instructions keep the vial they name', () => {
+  const rows = parseReconstitutionProse(vancomycinBulk);
+  assert.deepEqual(
+    rows.map(({ vialMassMg, diluentMl }) => ({ vialMassMg, diluentMl })),
+    [
+      { vialMassMg: 5000, diluentMl: 47 },
+      { vialMassMg: 10000, diluentMl: 94 }
+    ]
+  );
+});
+
+test('a salt-mass package selects the base-mass vial it is, not its sibling', () => {
+  const rows = parseReconstitutionProse(vancomycinBulk);
+  // 5.13 g vancomycin hydrochloride is the "5 g" vial.
+  assert.deepEqual(
+    rowsForVial(rows, 5130).map((row) => row.diluentMl),
+    [47]
+  );
+  assert.deepEqual(rowsForVial(rows, 7500), []);
+});
+
+test('a salt-mass bulk vial resolves on the moiety mass its label names', () => {
+  const facts = parsePackageFacts(
+    '00143916301',
+    '1 VIAL, PHARMACY BULK PACKAGE in 1 CARTON / 5.13 g in 1 VIAL, PHARMACY BULK PACKAGE',
+    'INJECTION, POWDER, FOR SOLUTION',
+    [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '5.13 g/1' }],
+    { dosage_and_administration: [vancomycinBulk + ' Reconstituted solutions of vancomycin (100 mg/mL) must be further diluted.'] },
+    null,
+    'vancomycin 100 MG/ML Injectable Solution'
+  );
+  assert.deepEqual(
+    facts.reconstitution.map(({ vialMassMg, diluentMl }) => ({ vialMassMg, diluentMl })),
+    [{ vialMassMg: 5000, diluentMl: 47 }]
+  );
+  assert.equal(facts.size?.value, 5);
+  assert.equal(facts.size?.unit, 'g');
+  assert.equal(facts.resolvedVolume?.finalVolumeMl, 50);
+  assert.equal(facts.resolvedVolume?.concentrationMgPerMl, 100);
+});
+
+test('a quantified SCD mass outranks the salt mass for vial matching', () => {
+  const label = {
+    dosage_and_administration: [
+      'Reconstitute the 500 mg vial with 10 mL of Sterile Water for Injection to a concentration of 50 mg/mL. Reconstitute the 1 g vial with 20 mL of Sterile Water for Injection to a concentration of 50 mg/mL.'
+    ]
+  };
+  const facts = parsePackageFacts(
+    '12345678901',
+    '1 VIAL in 1 CARTON',
+    'INJECTION, POWDER, FOR SOLUTION',
+    // Listed as the salt, 8% over the moiety: outside plain matching, and
+    // closer to nothing without the SCD saying which vial this is.
+    [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '540 mg/1' }],
+    label,
+    null,
+    'vancomycin 500 MG Injection'
+  );
+  assert.deepEqual(
+    facts.reconstitution.map((row) => row.vialMassMg),
+    [500]
+  );
+  assert.equal(facts.resolvedVolume?.finalVolumeMl, 10);
 });

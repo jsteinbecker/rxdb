@@ -124,6 +124,23 @@ const VIAL_MASS =
  */
 const TRAILING_VIAL_MASS = /^\s*\(\s*(?:for\s+)?(?:the\s+)?([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)?\b/i;
 
+/**
+ * The vial named as the *destination* of the diluent — "by adding 47 mL of
+ * Sterile Water for Injection to the 5 g vial of dry, sterile vancomycin
+ * powder". Bounded to a few words between the mass and the container noun so
+ * it cannot reach into a later clause.
+ */
+const DESTINATION_VIAL_MASS =
+  /^[^,;]*?\bto\s+(?:the|each|a)\s+([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s+(?:[\w-]+\s+){0,3}?(?:vial|bottle|package)\b/i;
+
+/**
+ * Verbs that can govern a diluent volume. The last one before the first
+ * volume decides whether the sentence is reconstitution; "the reconstituted
+ * solution" is a noun phrase and never governs.
+ */
+const GOVERNING_VERB =
+  /\b(?<!(?:the|this|of|with)\s)(reconstitut\w*|dilut\w*|mix\w*|combin\w*|sweeten\w*|blend\w*)/gi;
+
 /** Where the resulting concentration is announced. */
 const YIELD = /\b(?:to|yield(?:s|ing)?|resulting in|providing|giving)\b[^]*$/i;
 
@@ -178,8 +195,20 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
     // of 0.9% sodium chloride" names reconstitution and a volume, and is an
     // instruction about the bag, not the vial. The verb governing the
     // volume is the one that matters, and it sits before it.
+    //
+    // Only the *nearest* such verb counts. A section heading can open the
+    // sentence — "Reconstitution and Dilution 5 g Pharmacy Bulk Package Vial
+    // ... reconstitute by adding 47 mL" — so a `dilut` anywhere in the head
+    // is no veto; one after the last `reconstitut` is. Compounding verbs
+    // count too: the oral-use recipe "Mix sucrose and sterile water ... (e.g.,
+    // 10 g sucrose and 20 mL sterile water)" sits right after "the
+    // reconstituted Vancomycin hydrochloride solution", and "the
+    // reconstituted" is an adjective naming what gets mixed, not an
+    // instruction to reconstitute.
     const head = sentence.slice(0, diluents[0].index);
-    if (!/\breconstitut/i.test(head) || /\bdilut/i.test(head)) continue;
+    const verbs = [...head.matchAll(GOVERNING_VERB)];
+    const governing = verbs[verbs.length - 1];
+    if (!governing || !/^reconstitut/i.test(governing[1])) continue;
 
     // The shared tail: "to a concentration of 200 mg/mL of piperacillin and
     // 25 mg/mL of tazobactam" is stated once and governs every pair, since
@@ -218,6 +247,10 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
             before
           );
         if (leading) mass = [leading[1], leading[2]];
+      }
+      if (!mass) {
+        const destination = DESTINATION_VIAL_MASS.exec(after);
+        if (destination) mass = [destination[1], destination[2]];
       }
       if (!mass) {
         const trailing = TRAILING_VIAL_MASS.exec(after);
@@ -341,7 +374,26 @@ export const fromReconstitutionRows = (
 export const rowsForVial = <T extends { vialMassMg: number | null }>(
   rows: readonly T[],
   totalMg: number
-): T[] => rows.filter((row) => row.vialMassMg === null || near(row.vialMassMg, totalMg));
+): T[] => {
+  const labeled = rows.flatMap((row) => (row.vialMassMg === null ? [] : [row.vialMassMg]));
+  // The package may state its salt while the label names the vial by its base:
+  // Hikma's vancomycin bulk vial is "5.13 g" of the hydrochloride and "the 5
+  // g vial" in the instructions. When no size matches outright, the closest
+  // one within salt-conversion distance is this vial — never a sibling that
+  // is merely nearer than the rest.
+  const target = labeled.some((mg) => near(mg, totalMg))
+    ? totalMg
+    : labeled
+        .filter((mg) => Math.abs(mg - totalMg) <= SALT_TOLERANCE * Math.max(mg, totalMg))
+        .sort((a, b) => Math.abs(a - totalMg) - Math.abs(b - totalMg))[0];
+  return rows.filter(
+    (row) =>
+      row.vialMassMg === null || (target !== undefined && near(row.vialMassMg, target))
+  );
+};
+
+/** Widest salt-to-base mass ratio treated as the same vial (e.g. HCl salts). */
+const SALT_TOLERANCE = 0.1;
 
 // ── Resolving a package's labeled volume ────────────────────────────────────
 

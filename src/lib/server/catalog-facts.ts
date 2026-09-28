@@ -12,6 +12,7 @@ import {
 } from '../dry-fill-volume';
 import { labelSectionBlocks, type LabelBlock } from '../spl-sections';
 import { reconstitutionFromLabel } from '../reconstitution';
+import { rxNormStrengths } from '../spl-strength-checks';
 
 export type PackageFacts = {
   size: UnitOfUseSize | null;
@@ -27,7 +28,8 @@ export function parsePackageFacts(
   doseForm: string | null,
   ingredients: { name: string; strength: string | null }[],
   label: Record<string, unknown> | null,
-  splXml: string | null = null
+  splXml: string | null = null,
+  rxNormName: string | null = null
 ): PackageFacts {
   const size = description ? parseUnitOfUse(description) : null;
   const sections = [
@@ -63,19 +65,78 @@ export function parsePackageFacts(
       : [];
   // Shared labels tabulate every vial size; keep this package's. Without a
   // complete ingredient mass there is no vial size to match, so keep all.
-  const vialMg = totalIngredientMg(ingredients);
+  //
+  // Vial sizes are matched, and volumes resolved, on the active moiety's
+  // mass: that is what RxNorm quantifies and what labels name their vials by.
+  // The listed strength is often the salt's — Hikma's vancomycin bulk vial is
+  // "5.13 g" of the hydrochloride and "the 5 g vial" everywhere it is used.
+  const quantified = moietyMassesFromRxNorm(rxNormName, ingredients);
+  const vialMg = quantified
+    ? [...quantified.values()].reduce((sum, mg) => sum + mg, 0)
+    : totalIngredientMg(ingredients);
   const reconstitution = vialMg === null ? allRows : rowsForVial(allRows, vialMg);
+  // Without an SCD mass, a single-ingredient vial the label names on its own
+  // (matched within salt distance by `rowsForVial`) takes the label's figure.
+  const labeledMg = [
+    ...new Set(reconstitution.flatMap((row) => (row.vialMassMg === null ? [] : [row.vialMassMg])))
+  ];
+  const moietyMasses =
+    quantified ??
+    (ingredients.length === 1 && labeledMg.length === 1
+      ? new Map([[ingredients[0].name, labeledMg[0]]])
+      : null);
   const isDryFill = isDryFillForm(doseForm ?? '');
+  // A salt's package mass can differ from the labeled active-moiety vial size.
+  const normalizedSize =
+    isDryFill && size?.kind === 'mass' && size.unit === 'g' &&
+    ingredients.length === 1 && moietyMasses &&
+    Math.abs(size.value * 1000 - [...moietyMasses.values()][0]) <= size.value * 100
+      ? { ...size, value: [...moietyMasses.values()][0] / 1000 }
+      : size;
+  // Some labels state the resulting concentration in the next sentence.
+  // Apply it only when it is unambiguous for this single-ingredient vial.
+  const postReconstitution = [...text.matchAll(/\breconstituted solutions? of ([\w\s-]+?)\s*\((\d+(?:\.\d+)?)\s*mg\s*\/\s*mL\)/gi)]
+    .filter((match) => ingredients.length === 1 && ingredients[0].name.toLowerCase().includes(match[1].trim().toLowerCase()))
+    .map((match) => Number(match[2]));
+  const concentration = [...new Set(postReconstitution)];
+  const volumeRows = concentration.length === 1
+    ? reconstitution.map((row) => row.concentrations.length ? row : {
+        ...row, concentrations: [{ name: null, mgPerMl: concentration[0] }]
+      })
+    : reconstitution;
 
   return {
-    size,
+    size: normalizedSize,
     isMultiDose:
       classifyMultiDose(description ?? '', doseForm ?? '') ??
       (text ? multiDoseFromLabel(text, ndc) : null),
     isDryFill,
-    reconstitution,
-    resolvedVolume: resolvePackageVolume(isDryFill, size, ingredients, reconstitution)
+    reconstitution: volumeRows,
+    resolvedVolume: resolvePackageVolume(isDryFill, normalizedSize, ingredients, volumeRows, moietyMasses)
   };
+}
+
+/**
+ * Per-ingredient moiety masses from a quantified RxNorm name — `vancomycin
+ * 5000 MG Injection` — keyed by the package's ingredient names. Null unless
+ * every ingredient gets one: a per-mL SCD ("100 MG/ML Injectable Solution")
+ * says nothing about the vial, and a partial answer cannot give a total.
+ */
+function moietyMassesFromRxNorm(
+  rxNormName: string | null,
+  ingredients: { name: string }[]
+): Map<string, number> | null {
+  const strengths = rxNormStrengths(rxNormName);
+  if (!ingredients.length || strengths.some((entry) => entry.perUnit !== null)) return null;
+  const masses = new Map<string, number>();
+  for (const ingredient of ingredients) {
+    const name = ingredient.name.toLowerCase();
+    const matches = strengths.filter((entry) => name.includes(entry.name.toLowerCase()));
+    const mg = matches.length === 1 ? parseIngredientMassMg(`${matches[0].value} ${matches[0].unit}`) : null;
+    if (mg === null) return null;
+    masses.set(ingredient.name, mg);
+  }
+  return masses;
 }
 
 function totalIngredientMg(ingredients: { strength: string | null }[]): number | null {
@@ -88,10 +149,12 @@ export function resolvePackageVolume(
   isDryFill: boolean,
   size: UnitOfUseSize | null,
   ingredients: { name: string; strength: string | null }[],
-  reconstitution: ProseReconstitution[]
+  reconstitution: ProseReconstitution[],
+  moietyMasses: ReadonlyMap<string, number> | null = null
 ): ResolvedDryFillVolume | null {
   const masses = ingredients.map(
-    (item) => [item.name, parseIngredientMassMg(item.strength ?? '')] as const
+    (item) =>
+      [item.name, moietyMasses?.get(item.name) ?? parseIngredientMassMg(item.strength ?? '')] as const
   );
   // An incomplete ingredient mass list cannot establish a combination vial's total.
   const completeMasses = masses.length > 0 && masses.every(([, mass]) => mass !== null);

@@ -128,6 +128,7 @@ export type PackageDetails = {
   } | null;
 };
 export type ExternalPackage = PackageFacts & {
+  propertyOverrides?: Record<string, { value: string; excerpt: string; sectionKey: string; sectionTitle: string; splSetId: string; createdAt: string }>;
   listed: boolean | null;
   marketingEndDate: string | null;
   splPresent: boolean | null;
@@ -1127,7 +1128,15 @@ export async function enrichPackages(
             : null
       };
       return {
-        ...parsePackageFacts(ndc, packageDescription, doseForm, ingredients, matchedLabel, xml),
+        ...parsePackageFacts(
+          ndc,
+          packageDescription,
+          doseForm,
+          ingredients,
+          matchedLabel,
+          xml,
+          rxNormTitle
+        ),
         listed,
         marketingEndDate: packaging?.marketing_end_date ?? product?.marketing_end_date ?? null,
         splPresent,
