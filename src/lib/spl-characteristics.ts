@@ -1,0 +1,415 @@
+import type { SplCharacteristic, SplProduct } from './spl-ingredients';
+
+// ── What the pill in the bottle looks like ───────────────────────────────────
+// The decoding half of the `<characteristic>` observations $lib/spl-ingredients.ts
+// parses, and the geometry the mockup is drawn from.
+//
+// Appearance is the one fact about a solid oral that a person can check against
+// the thing in their hand. Nothing else in this app can: RxNorm names the drug
+// and its strength, the FDA NDC directory adds the dosage form and the package,
+// and neither has ever carried a colour, a shape or an imprint. The SPL does,
+// in five observations hung off the product — and openFDA's own `/drug/ndc`
+// endpoint does not expose them either, so the label document is the only
+// source, which is why this rides along with the excipient scrape rather than
+// asking anywhere new.
+//
+// Everything here is pure and shared: the server stores what `appearanceOf`
+// decodes, the API returns it unchanged, and `PillMockup.svelte` draws it with
+// `shapeGeometry` and `swatchesFor`. A rendering decision made here is made
+// once.
+
+/** The five observations that describe a pill. Everything else is skipped. */
+const COLOR = 'SPLCOLOR';
+const SHAPE = 'SPLSHAPE';
+const SIZE = 'SPLSIZE';
+const SCORE = 'SPLSCORE';
+const IMPRINT = 'SPLIMPRINT';
+
+/**
+ * A product's appearance as its label states it.
+ *
+ * Every field is independently optional, because labelers state them
+ * independently: a capsule with no imprint, a tablet with a colour and no size,
+ * a scored tablet that never says what shape it is. `null` means the label did
+ * not say — never a default, and never a guess from the dosage form.
+ */
+export interface PillAppearance {
+	/**
+	 * The product element that carried the observations, hyphenated as the
+	 * label writes it. Identity, not decoration: a kit's parts share the kit's
+	 * package NDC and can look nothing like each other.
+	 */
+	productCode: string | null;
+
+	/**
+	 * Coded colours, lowercased, in the order the label lists them.
+	 *
+	 * Plural because a two-tone capsule is two `SPLCOLOR` observations — cap
+	 * first, body second, which is the order the mockup draws them in.
+	 */
+	colors: string[];
+	/** What the labeler wrote before the code flattened it: `pale yellow`. */
+	colorText: string | null;
+
+	/** Coded shape, uppercased as the vocabulary writes it: `ROUND`, `CAPSULE`. */
+	shape: string | null;
+	/** The labeler's own words: `round, biconvex`. */
+	shapeText: string | null;
+
+	/** Longest dimension in millimetres. */
+	sizeMm: number | null;
+
+	/**
+	 * How many pieces the score divides the tablet into — `1` for unscored,
+	 * `2` for a single bisecting line, `4` for a cross. Not a count of lines.
+	 */
+	score: number | null;
+
+	/**
+	 * The debossed or printed text, as the label states it.
+	 *
+	 * Semicolons are SPL's separator between the faces or lines of an imprint
+	 * (`V;10` is `V` on one side and `10` on the other), and are kept as given
+	 * so the renderer can split them rather than having to guess at a joiner.
+	 */
+	imprint: string | null;
+}
+
+/** Whether a decoded appearance says anything at all. */
+export const hasAppearance = (appearance: PillAppearance): boolean =>
+	appearance.colors.length > 0 ||
+	appearance.shape !== null ||
+	appearance.sizeMm !== null ||
+	appearance.imprint !== null ||
+	(appearance.score !== null && appearance.score > 1);
+
+const textOf = (characteristic: SplCharacteristic): string | null => {
+	const value = characteristic.value?.trim();
+	return value ? value : null;
+};
+
+/**
+ * Decode one product's characteristics into an appearance.
+ *
+ * `null` when the label stated none of the five — which is the normal answer
+ * for an injection, a cream or a solution, and must stay distinguishable from
+ * "nobody has looked" (that distinction lives in `ndc_ingredient_check`, whose
+ * row covers this scrape too).
+ */
+export function appearanceOf(product: SplProduct): PillAppearance | null {
+	const of = (code: string) => product.characteristics.filter((entry) => entry.code === code);
+
+	const colors = of(COLOR);
+	const shape = of(SHAPE)[0];
+	const size = of(SIZE)[0];
+	const score = of(SCORE)[0];
+	const imprint = of(IMPRINT)[0];
+
+	const appearance: PillAppearance = {
+		productCode: product.productCode,
+		colors: colors
+			.map(textOf)
+			.filter((color): color is string => !!color)
+			.map((color) => color.toLowerCase()),
+		// The first colour's own words. A two-tone capsule states one per
+		// colour and joining them would invent a phrase no labeler wrote.
+		colorText: colors.map((entry) => entry.originalText).find((text) => !!text) ?? null,
+		shape: shape ? (textOf(shape)?.toUpperCase() ?? null) : null,
+		shapeText: shape?.originalText ?? null,
+		// `mm` is the only unit the vocabulary permits here; a value in
+		// anything else is a label error and is dropped rather than drawn.
+		sizeMm: size && (size.unit === null || size.unit === 'mm') ? size.number : null,
+		score: score?.number ?? null,
+		imprint: imprint ? textOf(imprint) : null
+	};
+
+	return hasAppearance(appearance) ? appearance : null;
+}
+
+/** Every appearance a parsed document states, by the packages it belongs to. */
+export function appearancesByPackage(products: SplProduct[]): Map<string, PillAppearance[]> {
+	const out = new Map<string, PillAppearance[]>();
+
+	for (const product of products) {
+		const appearance = appearanceOf(product);
+		if (!appearance) continue;
+		for (const code of product.packageCodes) {
+			const held = out.get(code) ?? [];
+			// A kit's parts inherit the kit's package codes and are genuinely
+			// several appearances of one NDC; two products claiming the same
+			// package *and* the same product code is a labeler's duplicate.
+			if (held.some((other) => other.productCode === appearance.productCode)) continue;
+			held.push(appearance);
+			out.set(code, held);
+		}
+	}
+
+	return out;
+}
+
+// ── Which dose forms have an appearance worth drawing ────────────────────────
+
+/**
+ * Dosage-form words that mean "a solid unit you can hold".
+ *
+ * Matched as whole words against the form string, so this covers both
+ * vocabularies the app carries them in without a second table: openFDA's
+ * `TABLET, FILM COATED, EXTENDED RELEASE` and RxNorm's `Delayed Release Oral
+ * Tablet` both answer to `TABLET`. Powders, solutions, creams and every
+ * injection form match none of them.
+ */
+const SOLID_WORDS = ['TABLET', 'CAPSULE', 'CAPLET', 'LOZENGE', 'TROCHE', 'PELLET', 'GUM', 'WAFER'];
+
+/**
+ * Whether a dosage form is a solid oral — the forms a pill mockup can describe.
+ *
+ * Deliberately a property of the *form* rather than of the route: SPL states an
+ * appearance for a few solids that are not swallowed (an inhalation capsule,
+ * a vaginal tablet), and for those the mockup is still an accurate picture of
+ * the thing in the blister. What it must never do is draw a vial.
+ */
+export function isSolidDoseForm(form: string | null | undefined): boolean {
+	if (!form) return false;
+	const words = form.toUpperCase().split(/[^A-Z]+/);
+	return SOLID_WORDS.some((word) => words.includes(word));
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────────
+
+/** Hex for each colour in the SPL colour vocabulary, plus a fallback. */
+const PALETTE: Record<string, string> = {
+	white: '#f7f7f4',
+	'off-white': '#f2efe6',
+	black: '#3a3a3a',
+	gray: '#b9bcc0',
+	grey: '#b9bcc0',
+	blue: '#7fa9de',
+	green: '#8dc296',
+	turquoise: '#7fcfc6',
+	yellow: '#f0d97a',
+	orange: '#efab6a',
+	pink: '#f0aeba',
+	red: '#d97a7a',
+	purple: '#b49ad4',
+	brown: '#b08a6a'
+};
+
+/** The swatch a bare colour name renders as; unknown names read as neutral. */
+export const swatchOf = (color: string): string => PALETTE[color.toLowerCase()] ?? '#dcdcd6';
+
+/**
+ * Fill colours for a pill, always at least one.
+ *
+ * A pill whose label stated no colour is drawn in the neutral swatch rather
+ * than not drawn: the shape and the imprint are still worth showing, and an
+ * outline with nothing in it reads as a rendering failure.
+ */
+export const swatchesFor = (appearance: PillAppearance): string[] =>
+	appearance.colors.length ? appearance.colors.map(swatchOf) : [swatchOf('')];
+
+/** An SVG shape, in a 100×100 box the renderer scales. */
+export interface ShapeGeometry {
+	/** `d` for a `<path>`. Every shape is expressed as one, including circles. */
+	path: string;
+	/** Box-relative width and height, so an oblong is drawn wider than tall. */
+	width: number;
+	height: number;
+}
+
+const roundedRect = (w: number, h: number, r: number): string => {
+	const x = 50 - w / 2;
+	const y = 50 - h / 2;
+	const radius = Math.min(r, w / 2, h / 2);
+	return (
+		`M${x + radius},${y}h${w - 2 * radius}a${radius},${radius} 0 0 1 ${radius},${radius}` +
+		`v${h - 2 * radius}a${radius},${radius} 0 0 1 ${-radius},${radius}h${-(w - 2 * radius)}` +
+		`a${radius},${radius} 0 0 1 ${-radius},${-radius}v${-(h - 2 * radius)}a${radius},${radius} 0 0 1 ${radius},${-radius}z`
+	);
+};
+
+/** A regular polygon, first vertex at the top. */
+const polygon = (sides: number, rx = 42, ry = rx): string => {
+	const points = Array.from({ length: sides }, (_, index) => {
+		const angle = (Math.PI * 2 * index) / sides - Math.PI / 2;
+		return `${(50 + rx * Math.cos(angle)).toFixed(2)},${(50 + ry * Math.sin(angle)).toFixed(2)}`;
+	});
+	return `M${points.join('L')}z`;
+};
+
+const ellipse = (w: number, h: number): string => {
+	const rx = w / 2;
+	const ry = h / 2;
+	return `M${50 - rx},50a${rx},${ry} 0 1 0 ${w},0a${rx},${ry} 0 1 0 ${-w},0z`;
+};
+
+/**
+ * The outline for a coded shape.
+ *
+ * These are the named outlines in SPL's dosage-form vocabulary.  In particular,
+ * capsule, oblong and oval are not interchangeable: a capsule has circular
+ * ends, an oblong has shorter rounded corners, and an oval has no straight
+ * edges.  Unrecognised labeler extensions still get a conservative outline
+ * rather than a misleading empty drawing.
+ */
+export function shapeGeometry(shape: string | null): ShapeGeometry {
+	switch ((shape ?? '').toUpperCase().replace(/[^A-Z]/g, '')) {
+		case 'ROUND':
+			return { path: ellipse(84, 84), width: 84, height: 84 };
+		case 'OVAL':
+		case 'ELLIPTICAL':
+			return { path: ellipse(94, 62), width: 94, height: 62 };
+		case 'EGG':
+			return {
+				path: 'M50,8C72,8 91,25 91,48C91,72 72,91 50,91C28,91 13,75 13,53C13,30 27,8 50,8z',
+				width: 78,
+				height: 83
+			};
+		case 'CAPSULE':
+		case 'CAPSULESHAPED':
+			return { path: roundedRect(96, 44, 22), width: 96, height: 44 };
+		case 'OBLONG':
+			return { path: roundedRect(94, 52, 14), width: 94, height: 52 };
+		case 'SQUARE':
+			return { path: roundedRect(74, 74, 3), width: 74, height: 74 };
+		case 'RECTANGLE':
+			return { path: roundedRect(94, 54, 3), width: 94, height: 54 };
+		case 'TRIANGLE':
+			return { path: polygon(3), width: 84, height: 84 };
+		case 'DIAMOND':
+			return { path: polygon(4), width: 84, height: 84 };
+		case 'PENTAGON':
+			return { path: polygon(5), width: 84, height: 84 };
+		case 'HEXAGON':
+			return { path: polygon(6), width: 84, height: 84 };
+		case 'OCTAGON':
+			return { path: polygon(8), width: 84, height: 84 };
+		case 'SEMICIRCLE':
+			return { path: 'M8,72A42,42 0 0 1 92,72z', width: 84, height: 42 };
+		case 'TRAPEZOID':
+			return { path: 'M25,15h50l16,70H9z', width: 82, height: 70 };
+		case 'TEARDROP':
+			return {
+				path: 'M50,7C50,7 84,42 84,64A34,34 0 1 1 16,64C16,42 50,7 50,7z',
+				width: 68,
+				height: 84
+			};
+		case 'HEART':
+			return {
+				path: 'M50,88L14,52C-1,37 8,12 28,12c11,0 18,7 22,15c4-8 11-15 22-15c20,0 29,25 14,40z',
+				width: 72,
+				height: 76
+			};
+		case 'KIDNEY':
+			return {
+				path: 'M68,13c20,4 25,29 13,45C70,74 59,89 38,87C17,85 8,69 14,52c5-15 20-11 22-24c2-12 15-18 32-15z',
+				width: 78,
+				height: 74
+			};
+		case 'CLOVER':
+			return {
+				path: 'M50,50C42,37 18,40 18,25C18,5 45,8 50,27C55,8 82,5 82,25C82,40 58,37 50,50C63,42 60,18 75,18C95,18 92,45 73,50C92,55 95,82 75,82C60,82 63,58 50,50C58,63 82,60 82,75C82,95 55,92 50,73C45,92 18,95 18,75C18,60 42,63 50,50C37,58 40,82 25,82C5,82 8,55 27,50C8,45 5,18 25,18C40,18 37,42 50,50z',
+				width: 90,
+				height: 90
+			};
+		case 'GEAR':
+			return {
+				path: 'M42,8h16l3,10l10-4l8,8l-4,10l10,3v16l-10,3l4,10l-8,8l-10-4l-3,10H42l-3-10l-10,4l-8-8l4-10l-10-3V35l10-3l-4-10l8-8l10,4z M50,34a16,16 0 1 0 0,32a16,16 0 1 0 0-32z',
+				width: 80,
+				height: 80
+			};
+		case 'BOWTIE':
+			return {
+				path: 'M8,20C29,20 40,32 50,50C60,32 71,20 92,20V80C71,80 60,68 50,50C40,68 29,80 8,80z',
+				width: 84,
+				height: 60
+			};
+		case 'BARREL':
+			return {
+				path: 'M18,12C39,18 61,18 82,12C91,35 91,65 82,88C61,82 39,82 18,88C9,65 9,35 18,12z',
+				width: 82,
+				height: 76
+			};
+		case 'DOUBLECIRCLE':
+			return {
+				path: 'M50,8a24,24 0 1 1 0,48a24,24 0 1 1 0-48zM50,44a24,24 0 1 1 0,48a24,24 0 1 1 0-48z',
+				width: 48,
+				height: 84
+			};
+		case 'BULLET':
+			return { path: 'M50,8C72,8 88,25 88,46v30H12V46C12,25 28,8 50,8z', width: 76, height: 68 };
+		case 'FREEFORM':
+			return {
+				path: 'M17,29C23,10 49,8 66,16C84,24 90,45 80,63C72,78 52,91 33,84C14,77 8,49 17,29z',
+				width: 82,
+				height: 76
+			};
+		default:
+			return { path: roundedRect(88, 60, 14), width: 88, height: 60 };
+	}
+}
+
+/**
+ * Where to draw the score lines, as box-relative x fractions of the shape.
+ *
+ * `SPLSCORE` counts the *pieces* the tablet breaks into, so a score of 2 is one
+ * line and a score of 4 is a cross — which is why this returns positions rather
+ * than a count. Anything below 2 is unscored and draws nothing.
+ */
+export function scoreLines(score: number | null): number[] {
+	if (!score || score < 2) return [];
+	// 3 is rare and is a two-line trisection; 4 is drawn as a cross by the
+	// renderer, which adds the horizontal itself.
+	if (score === 3) return [1 / 3, 2 / 3];
+	return [0.5];
+}
+
+/** The faces of an imprint, split on SPL's separator. Empty when there is none. */
+export const imprintFaces = (imprint: string | null): string[] =>
+	(imprint ?? '')
+		.split(';')
+		.map((face) => face.trim())
+		.filter((face) => face.length > 0);
+
+/**
+ * The imprint lines grouped by the two sides of a pill.
+ *
+ * SPL uses semicolons for both lines and faces. Two entries conventionally
+ * identify opposite sides; once there are three or more, the most faithful
+ * readable treatment is to split the ordered sequence into two face groups.
+ * Thus `5;Valium;Roche;Roche` is drawn as `5`/`Valium` on one side and the two
+ * `Roche` lines on the other, rather than silently losing half the imprint.
+ */
+export const imprintViews = (imprint: string | null): string[][] => {
+	const sections = imprintFaces(imprint);
+	if (sections.length < 3) return sections.length ? sections.map((section) => [section]) : [[]];
+	const midpoint = Math.ceil(sections.length / 2);
+	return [sections.slice(0, midpoint), sections.slice(midpoint)];
+};
+
+/**
+ * The appearance as a line of prose — `Pale yellow, round, 6 mm, imprint “V;10”`.
+ *
+ * The mockup is an approximation by construction; this is not, and it is what
+ * the popover shows beside the drawing so the stated facts are always readable
+ * even where the shape had to be approximated. Labeler's own words win over the
+ * coded term wherever the label gave both.
+ */
+export function appearanceText(appearance: PillAppearance): string {
+	const parts: string[] = [];
+
+	const color =
+		appearance.colorText ?? (appearance.colors.length ? appearance.colors.join(' and ') : null);
+	if (color) parts.push(color);
+	const shape = appearance.shapeText ?? appearance.shape?.toLowerCase() ?? null;
+	if (shape) parts.push(shape);
+	if (appearance.sizeMm !== null) parts.push(`${appearance.sizeMm} mm`);
+	if (appearance.score !== null && appearance.score > 1) {
+		parts.push(appearance.score === 2 ? 'scored' : `scored into ${appearance.score}`);
+	}
+
+	const faces = imprintFaces(appearance.imprint);
+	if (faces.length) parts.push(`imprint “${faces.join(' / ')}”`);
+
+	const text = parts.join(', ');
+	return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}

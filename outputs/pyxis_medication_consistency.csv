@@ -1,0 +1,837 @@
+Med ID,Description,ATC Class,Total Net Dispensed,Stocking Units Count,Primary Clinical Unit,Primary Unit Volume %,Cross-Unit Consistency (CV),Early Period Volume,Recent Period Volume,Temporal Trend %,Utilization Stability Tier,Stocking Recommendation
+676008,acetaminophen (TYLENOL (ADULT-UDQ)) 650 mg/20.3 mL (20.3 mL) UD liq,Anilides,324.0,15,CCU2,0.44753086419753085,1.7953346577760148,225.0,99.0,-0.12,Erratic / Unit-Specific,Concentrate in Primary Unit
+676010,acetaminophen (TYLENOL (CHILDREN'S-UDQ)) 160 mg/5 mL (5 mL) UD liq,Anilides,145.0,3,PEDS,1.0,1.7320508075688772,103.0,42.0,-0.18446601941747573,Erratic / Unit-Specific,Concentrate in Primary Unit
+676011,acetaminophen (TYLENOL) 120 mg suppository,Anilides,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676012,acetaminophen (TYLENOL) 325 mg suppository,Anilides,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676013,acetaminophen (TYLENOL) 650 mg suppository,Anilides,3.0,12,3W2,0.6666666666666666,2.486326242032244,1.0,2.0,3.0,Erratic / Unit-Specific,Consolidate Units
+676014,acetaminophen (TYLENOL) 325 mg tab,Anilides,12655.0,19,4NW1,0.1239035954168313,0.7154781088705271,7431.0,5224.0,0.4060018839994617,Moderate Variation,Maintain Par
+676015,acetaminophen ES caplet (TYLENOL ES) 500 mg tab,Anilides,5200.0,17,POSTPARTUM,0.30673076923076925,1.1769122261786127,3118.0,2082.0,0.3354714560615779,Moderate Variation,Maintain Par
+676021,acetaminophen/codeine #3 (300/30 mg) (TYLENOL W/CODeine #3 300/30) tab,Opioids in combination with non-opioid analgesics,17.0,1,4NW2,1.0,0.0,17.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+676024,acetaZOLAMIDE (DIAMOX) 500 mg vial,Carbonic anhydrase inhibitors,20.0,5,4SW3,0.6,1.224744871391589,16.0,4.0,-0.5,Erratic / Unit-Specific,Trending Down - Reduce Par
+676025,acetaZOLAMIDE (DIAMOX) 250 mg tab,Carbonic anhydrase inhibitors,9.0,6,3W1,0.6666666666666666,1.6733200530681511,0.0,9.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676045,acyclovir (ZOVIRAX) 200 mg cap,Antivirals,189.0,13,3NW1,0.3386243386243386,1.4538619678811089,117.0,72.0,0.23076923076923078,Erratic / Unit-Specific,Maintain Par
+676049,acyclovir (ZOVIRAX) 800 mg tab,Antivirals,17.0,3,3W2,0.6470588235294118,0.9719242142269592,17.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+676051,adenosine (pf) (ADENOCARD (PF)) 6 mg/2 mL (2 mL) vial,Other cardiac preparations,2.0,2,CCU1,1.0,1.4142135623730951,2.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+676058,albumin (human) 25% (NORMAL SERUM ALBUMIN 25%) 25 gram/100 mL (100 mL) each,Unclassified,58.0,2,CCU1,0.5,0.0,45.0,13.0,-0.4222222222222222,Uniform Hospital-Wide,Maintain Par
+676061,albumin (human) 5% (NORMAL SERUM ALBUMIN 5%) 12.5 gram/250 mL (250 mL) each,Unclassified,20.0,2,CCU2,0.8,0.8485281374238569,10.0,10.0,1.0,Moderate Variation,Trending Up - Monitor Par
+676065,albuterol UD inh soln (PROVENTIL (UD INH)) 2.5 mg/3 mL (3 mL) neb,Selective beta-2-adrenoreceptor agonists,442.0,17,3W1,0.12895927601809956,0.7431889945746,199.0,243.0,1.4422110552763818,Moderate Variation,Trending Up - Monitor Par
+676084,allopurinol (ZYLOPRIM) 100 mg tab,Preparations inhibiting uric acid production,399.0,13,4W1,0.2706766917293233,1.144098151484767,261.0,138.0,0.05747126436781609,Moderate Variation,Maintain Par
+676085,allopurinol (ZYLOPRIM) 300 mg tab,Preparations inhibiting uric acid production,203.0,13,3W1,0.31527093596059114,1.1337382505809712,62.0,141.0,3.5483870967741935,Moderate Variation,Trending Up - Monitor Par
+676088,ALPRAZolam (XANAX) 0.25 mg tab,Benzodiazepine derivatives,36.0,8,4SW4,0.3888888888888889,1.1331154474650633,17.0,19.0,1.2352941176470589,Moderate Variation,Trending Up - Monitor Par
+676089,ALPRAZolam (XANAX) 0.5 mg tab,Benzodiazepine derivatives,41.0,11,4NW1,0.36585365853658536,1.1451472762725985,21.0,20.0,0.9047619047619048,Moderate Variation,Trending Up - Monitor Par
+676090,ALPRAZolam (XANAX) 1 mg tab,Benzodiazepine derivatives,8.0,3,3W2,0.75,1.0825317547305484,0.0,8.0,1.0,Moderate Variation,Trending Up - Monitor Par
+676115,amantadine (SYMMETREL) 100 mg cap,Adamantane derivatives,4.0,2,3W2,0.5,0.0,2.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+676123,aMILoride (MIDAMOR) 5 mg tab,Other potassium-sparing agents,40.0,9,CCU2,0.275,0.8198704165903292,20.0,20.0,1.0,Moderate Variation,Trending Up - Monitor Par
+676153,amiodarone (CORDARONE/PACERONE) 200 mg tab,"Antiarrhythmics, class III",518.0,13,4SW4,0.21621621621621623,1.0721164904640208,265.0,253.0,0.909433962264151,Moderate Variation,Trending Up - Monitor Par
+676155,amitriptyline (ELAVIL) 10 mg tab,Non-selective monoamine reuptake inhibitors,56.0,10,4NW1,0.4642857142857143,1.4512095197781691,46.0,10.0,-0.5652173913043478,Erratic / Unit-Specific,Maintain Par
+676158,amitriptyline (ELAVIL) 25 mg tab,Non-selective monoamine reuptake inhibitors,27.0,7,4NW2,0.37037037037037035,0.9864189805154655,22.0,5.0,-0.5454545454545454,Moderate Variation,Trending Down - Reduce Par
+676159,amitriptyline (ELAVIL) 50 mg tab,Non-selective monoamine reuptake inhibitors,28.0,10,4NW1,0.42857142857142855,1.3862787264771084,22.0,6.0,-0.45454545454545453,Erratic / Unit-Specific,Maintain Par
+676160,amitriptyline (ELAVIL) 75 mg tab,Non-selective monoamine reuptake inhibitors,9.0,7,4W1,0.8888888888888888,2.3209548198360443,0.0,9.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676170,amoxicillin (AMOXIL) 500 mg cap,Penicillins with extended spectrum,17.0,8,4SW2,0.47058823529411764,1.3413828530578094,4.0,13.0,5.5,Erratic / Unit-Specific,Trending Up - Monitor Par
+676186,amoxicillin-clavulanate (AUGMENTIN) 500 mg tab,Penicillins with extended spectrum,7.0,6,4SW3,1.0,2.4494897427831783,0.0,7.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676193,ampicillin (POLYCILLIN) 1 gram vial,Penicillins with extended spectrum,15.0,3,4NW1,1.0,1.7320508075688774,0.0,15.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676194,ampicillin (POLYCILLIN) 2 gram vial,Penicillins with extended spectrum,93.0,12,POSTPARTUM,0.3333333333333333,1.3985410726094576,45.0,48.0,1.1333333333333333,Erratic / Unit-Specific,Trending Up - Monitor Par
+676196,ampicillin (POLYCILLIN) 500 mg vial,Penicillins with extended spectrum,72.0,2,NICU,1.0,1.414213562373095,27.0,45.0,2.3333333333333335,Erratic / Unit-Specific,Trending Up - Monitor Par
+676209,ampicillin/sulbactam (UNASYN) 1.5 gram vial,"Combinations of penicillins, incl. beta-lactamase inhibitors",20.0,3,4NW1,0.55,0.8789197915623472,11.0,9.0,0.6363636363636364,Moderate Variation,Trending Up - Monitor Par
+676210,ampicillin/sulbactam (UNASYN) 3 gram vial,"Combinations of penicillins, incl. beta-lactamase inhibitors",460.0,16,4NW1,0.1608695652173913,0.8218809784787146,311.0,149.0,-0.04180064308681672,Moderate Variation,Maintain Par
+676224,hydrocortisone (ANUSOL-HC) 25 mg suppository,Corticosteroids for local oral treatment,1.0,4,CCU1,1.0,2.0,0.0,1.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676239,ASPIRIN **EC** (ECOTRIN) 325 mg EC tab,Other agents for local oral treatment,204.0,13,4SW4,0.18627450980392157,0.7862567843095163,135.0,69.0,0.022222222222222223,Moderate Variation,Maintain Par
+676242,aspirin 300 mg suppository,Other agents for local oral treatment,8.0,7,4NW1,0.375,1.1770372409854613,5.0,3.0,0.2,Moderate Variation,Maintain Par
+676246,aspirin 325 mg tab,Other agents for local oral treatment,44.0,12,CCU1,0.38636363636363635,1.5874223893544819,24.0,20.0,0.6666666666666666,Erratic / Unit-Specific,Trending Up - Monitor Par
+676247,ASPIRIN **BABY** (BAYER CHILDRENS ASPIRIN) 81 mg chew tab,Other agents for local oral treatment,441.0,18,3W1,0.21541950113378686,1.1535471572188867,286.0,155.0,0.08391608391608392,Moderate Variation,Maintain Par
+676256,atenolol (TENORMIN) 25 mg tab,"Beta blocking agents, selective",2.0,5,3NW2,0.5,1.3693063937629153,1.0,1.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676257,atenolol (TENORMIN) 50 mg tab,"Beta blocking agents, selective",627.0,7,4W1,0.9792663476874003,2.5818846316927604,621.0,6.0,-0.9806763285024155,Erratic / Unit-Specific,Concentrate in Primary Unit
+676270,atropine 1 mg/10 mL (10 mL) syringe,"Belladonna alkaloids, tertiary amines",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676290,azaTHIOprine (IMURAN) 50 mg tab,Other immunosuppressants,17.0,3,3W1,0.47058823529411764,0.44410790795710287,17.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+676291,azithromycin (ZITHROMAX) 250 mg tab,Macrolides,300.0,16,3W1,0.24666666666666667,1.057650786027782,180.0,120.0,0.3333333333333333,Moderate Variation,Maintain Par
+676299,baclofen (LIORESAL) 10 mg tab,Other centrally acting agents,293.0,14,4W1,0.26621160409556316,1.0364669154804682,147.0,146.0,0.9863945578231292,Moderate Variation,Trending Up - Monitor Par
+676300,baclofen (LIORESAL) 20 mg tab,Other centrally acting agents,6.0,3,4NW1,1.0,1.7320508075688772,6.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+676331,benzonatate (TESSALON PERLES) 100 mg cap,Other cough suppressants,184.0,10,3NW1,0.44565217391304346,1.2889591417019803,121.0,63.0,0.04132231404958678,Erratic / Unit-Specific,Maintain Par
+676345,benztropine (COGENTIN) 1 mg tab,Ethers of tropine or tropine derivatives,1.0,5,3W1,1.0,2.2360679774997902,0.0,1.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676367,bethanechol (URECHOLINE) 25 mg tab,Choline esters,5.0,1,3NW2,1.0,0.0,5.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+676368,bethanechol (URECHOLINE) 5 mg tab,Choline esters,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676383,bisacodyl (Dulcolax Suppository) 10 mg suppository,Contact laxatives,95.0,17,3W1,0.25263157894736843,1.3089771016452425,40.0,55.0,1.75,Erratic / Unit-Specific,Trending Up - Monitor Par
+676384,bisacodyl (DULCOLAX) 5 mg EC tab,Contact laxatives,52.0,14,4W1,0.25,1.2379597645716214,17.0,35.0,3.1176470588235294,Erratic / Unit-Specific,Trending Up - Monitor Par
+676385,LORazepam (concentrate) (Ativan Intensol UD) 1 mg/0.5 mL (0.5 mL) UD liq,Benzodiazepine derivatives,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676388,bismuth subsalicylate (PEPTO-BISMOL) 262 mg chew tab,Unclassified,52.0,6,3NW1,0.46153846153846156,1.2862495363740605,48.0,4.0,-0.8333333333333334,Erratic / Unit-Specific,Trending Down - Reduce Par
+676411,bumetanide (Bumex) 1 mg/4 mL (4 mL) vial,"Sulfonamides, plain",1198.0,15,4SW3,0.17111853088480802,0.8449878814606759,759.0,439.0,0.15678524374176547,Moderate Variation,Maintain Par
+676412,bumetanide (BUMEX) 0.5 mg tab,"Sulfonamides, plain",16.0,7,3W1,0.5625,1.3535254892317323,13.0,3.0,-0.5384615384615384,Erratic / Unit-Specific,Trending Down - Reduce Par
+676413,bumetanide (BUMEX) 1 mg tab,"Sulfonamides, plain",346.0,14,3W2,0.2630057803468208,1.241004043492447,168.0,178.0,1.119047619047619,Erratic / Unit-Specific,Trending Up - Monitor Par
+676426,"BUPivacaine-epinephrine (pf) 0.5%-1:200,000 (MARCAINE 0.5%-EPI) (30 mL) vial",Amides,5.0,1,SOC,1.0,0.0,4.0,1.0,-0.5,Uniform Hospital-Wide,Trending Down - Reduce Par
+676437,busPIRone (BUSPAR) 10 mg tab,Azaspirodecanedione derivatives,336.0,14,4W1,0.25,1.1597781986593254,174.0,162.0,0.8620689655172413,Moderate Variation,Trending Up - Monitor Par
+676438,busPIRone (BUSPAR) 5 mg tab,Azaspirodecanedione derivatives,376.0,15,4SW4,0.24202127659574468,1.062299431179757,223.0,153.0,0.3721973094170404,Moderate Variation,Maintain Par
+676453,caffeine (VIVARIN) 200 mg tab,Other dermatologicals,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676465,calcitriol (ROCALTROL) 0.25 mcg cap,Vitamin D and analogues,107.0,15,3W1,0.14953271028037382,0.8736479105163619,39.0,68.0,2.4871794871794872,Moderate Variation,Trending Up - Monitor Par
+676469,calcium acetate (ELIPHOS) 667 mg tab,Drugs for treatment of hyperkalemia and hyperphosphatemia,41.0,7,4W1,0.975609756097561,2.5712530903993027,0.0,41.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676474,calcium carbonate (TUMS) 500 mg chew tab,Calcium compounds,1852.0,18,4W1,0.19600431965442763,0.970525613227237,1061.0,791.0,0.49104618284637136,Moderate Variation,Maintain Par
+676500,calcium carbonate-vit D (500 mg/200 units) (OS-CAL 500+D) (1 Tab) tab,Unclassified,69.0,9,4NW1,0.4057971014492754,1.256175670712493,17.0,52.0,5.117647058823529,Erratic / Unit-Specific,Trending Up - Monitor Par
+676511,captopril (CAPOTEN) 12.5 mg tab,"ACE inhibitors, plain",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676512,captopril (CAPOTEN) 25 mg tab,"ACE inhibitors, plain",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676526,carBAMazepine (TEGretol) 100 mg chew tab,Carboxamide derivatives,24.0,3,4NW2,0.7916666666666666,1.231107225224513,24.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+676527,carBAMazepine (TEGretol) 200 mg tab,Carboxamide derivatives,21.0,6,3NW2,0.47619047619047616,1.1102490987271685,20.0,1.0,-0.9,Moderate Variation,Trending Down - Reduce Par
+676530,carbidopa/levodopa (10/100 mg) (Sinemet (10/100)) tab,Dopa and dopa derivatives,64.0,4,3W2,0.515625,1.088529206467761,62.0,2.0,-0.9354838709677419,Moderate Variation,Trending Down - Reduce Par
+676531,carbidopa/levodopa (25/100 mg) (Sinemet (25/100)) tab,Dopa and dopa derivatives,491.0,10,3NW1,0.1975560081466395,0.6521871283448039,330.0,161.0,-0.024242424242424242,Moderate Variation,Maintain Par
+676533,carbidopa/levodopa (50/200 mg) (Sinemet CR (50/200)) ER tab,Dopa and dopa derivatives,42.0,2,3W1,0.5238095238095238,0.06734350297014739,37.0,5.0,-0.7297297297297297,Uniform Hospital-Wide,Trending Down - Reduce Par
+676565,cefadroxil (DURICEF) 500 mg cap,First-generation cephalosporins,23.0,9,4W1,0.34782608695652173,1.125826728367309,4.0,19.0,8.5,Moderate Variation,Trending Up - Monitor Par
+676575,ceFAZolin (ANCEF) 1 gram vial,First-generation cephalosporins,98.0,10,4W1,0.32653061224489793,1.0459391071446296,30.0,68.0,3.533333333333333,Moderate Variation,Trending Up - Monitor Par
+676595,cefOXitin (MEFOXIN) 1 gram vial,Second-generation cephalosporins,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676596,cefOXitin (MEFOXIN) 2 gram vial,Second-generation cephalosporins,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676607,cefTRIAXone (ROCEPHIN) 1 gram vial,Third-generation cephalosporins,179.0,14,3W1,0.1787709497206704,0.8971121351908805,81.0,98.0,1.4197530864197532,Moderate Variation,Trending Up - Monitor Par
+676608,cefTRIAXone (ROCEPHIN) 2 gram vial,Third-generation cephalosporins,1156.0,15,3NW2,0.1115916955017301,0.517719548930263,786.0,370.0,-0.058524173027989825,Uniform Hospital-Wide,Maintain Par
+676618,cefuroxime (CEFTIN) 250 mg tab,Second-generation cephalosporins,2.0,1,4W2,1.0,0.0,2.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+676619,cefuroxime (CEFTIN) 500 mg tab,Second-generation cephalosporins,14.0,9,3W1,0.5,1.6424688982238456,9.0,5.0,0.1111111111111111,Erratic / Unit-Specific,Concentrate in Primary Unit
+676630,cephalexin (KEFLEX) 250 mg cap,First-generation cephalosporins,16.0,5,3NW1,0.75,1.6298006013006623,9.0,7.0,0.5555555555555556,Erratic / Unit-Specific,Trending Up - Monitor Par
+676631,cephalexin (KEFLEX) 500 mg cap,First-generation cephalosporins,137.0,11,3W1,0.3357664233576642,1.063596577256524,67.0,70.0,1.0895522388059702,Moderate Variation,Trending Up - Monitor Par
+676695,chlordiazePOXIDE (LIBRIUM) 25 mg cap,Benzodiazepine derivatives,65.0,7,4SW4,0.6307692307692307,1.6435157389635509,22.0,43.0,2.909090909090909,Erratic / Unit-Specific,Trending Up - Monitor Par
+676696,chlordiazePOXIDE (LIBRIUM) 5 mg cap,Benzodiazepine derivatives,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676705,chlorothiazide (DIURIL) 500 mg vial,"Thiazides, plain",1.0,1,4SW3,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+676730,chlorproMAZINE (THORAZINE) 25 mg tab,Phenothiazines with aliphatic side-chain,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676740,chlorthalidone (HYGROTON) 25 mg tab,"Sulfonamides, plain",39.0,13,4W1,0.4358974358974359,1.5275252316519465,20.0,19.0,0.9,Erratic / Unit-Specific,Trending Up - Monitor Par
+676746,cholestyramine/sucrose UD powder (QUESTRAN (UDPD)) 4 gram packet,Unclassified,32.0,9,4W1,0.34375,1.2428506484590174,13.0,19.0,1.9230769230769231,Erratic / Unit-Specific,Trending Up - Monitor Par
+676763,tranexamic acid in NaCl 0.7% RTU (Tranexamic Acid) 1000 mg/100 mL (100 mL) bag,Amino acids,165.0,2,MFBCLD,1.0,1.4142135623730951,119.0,46.0,-0.226890756302521,Erratic / Unit-Specific,Maintain Par
+676779,ciprofloxacin (CIPRO) 250 mg tab,Fluoroquinolones,15.0,5,3W2,0.5333333333333333,1.3743685418725535,0.0,15.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676780,ciprofloxacin (CIPRO) 500 mg tab,Fluoroquinolones,29.0,10,4NW2,0.1724137931034483,0.5500453385749609,10.0,19.0,2.8,Uniform Hospital-Wide,Trending Up - Monitor Par
+676784,sodium citrate-citric acid (BICITRA (UDQ)) (30 mL) UD liq,Unclassified,9.0,2,4W2,1.0,1.414213562373095,0.0,9.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676788,clarithromycin (BIAXIN) 500 mg tab,Macrolides,14.0,3,3W2,0.5714285714285714,0.8921425711997713,0.0,14.0,1.0,Moderate Variation,Trending Up - Monitor Par
+676792,clindamycin (CLEOCIN) 150 mg cap,Antiinfectives for treatment of acne,8.0,2,MFBCLD,0.5,0.0,0.0,8.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+676818,clonazePAM (KlonoPIN) 0.5 mg tab,Benzodiazepine derivatives,168.0,14,4W1,0.49404761904761907,1.7983254318877766,121.0,47.0,-0.2231404958677686,Erratic / Unit-Specific,Concentrate in Primary Unit
+676819,clonazePAM (KlonoPIN) 1 mg tab,Benzodiazepine derivatives,8.0,6,3NW2,0.375,1.1291589790636218,5.0,3.0,0.2,Moderate Variation,Maintain Par
+676821,cloNIDine (CATAPRES) 0.1 mg tab,Imidazoline receptor agonists,145.0,16,4SW3,0.20689655172413793,0.9732628558633325,87.0,58.0,0.3333333333333333,Moderate Variation,Maintain Par
+676822,cloNIDine (CATAPRES) 0.2 mg tab,Imidazoline receptor agonists,20.0,9,4NW1,0.6,1.8109044701474455,7.0,13.0,2.7142857142857144,Erratic / Unit-Specific,Trending Up - Monitor Par
+676823,cloNIDine (CATAPRES) 0.3 mg tab,Imidazoline receptor agonists,3.0,2,4SW3,1.0,1.414213562373095,0.0,3.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+676824,cloNIDine (CATAPRES-TTS-1) 0.1 mg/24 hr patch,Imidazoline receptor agonists,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676825,cloNIDine (CATAPRES-TTS-2) 0.2 mg/24 hr patch,Imidazoline receptor agonists,2.0,1,3W1,1.0,0.0,2.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+676835,clotrimazole (MYCELEX) 10 mg lozenge,Antiinfectives and antiseptics for local oral treatment,44.0,5,4NW1,0.5909090909090909,1.1902019066160145,34.0,10.0,-0.4117647058823529,Moderate Variation,Maintain Par
+676848,cloZAPine (CLOZARIL) 25 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676857,codeine (CODeine) 15 mg tab,Opium alkaloids and derivatives,38.0,2,4SW2,0.9473684210526315,1.2653489768601376,38.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+676865,colchicine (COLCHICINE) 0.6 mg tab,Preparations with no effect on uric acid metabolism,150.0,13,4NW1,0.2,0.8990076834014349,44.0,106.0,3.8181818181818183,Moderate Variation,Trending Up - Monitor Par
+676901,cyanocobalamin (VITAMIN B-12) 1000 mcg/1 mL (1 mL) vial,Unclassified,17.0,5,3W2,0.8235294117647058,1.7597970943119519,14.0,3.0,-0.5714285714285714,Erratic / Unit-Specific,Trending Down - Reduce Par
+676907,cyclobenzaprine (FLEXERIL) 10 mg tab,Other centrally acting agents,940.0,18,4NW2,0.16808510638297872,0.9872070688128087,500.0,440.0,0.76,Moderate Variation,Trending Up - Monitor Par
+676912,cyclopentolate-phenylephrine UD ophthalmic soln (CYCLOMYDRIL (UDOD)) (2 mL) bottle,Anticholinergics,2.0,1,NICU,1.0,0.0,0.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+676925,cyproheptadine (PERIACTIN) 4 mg tab,Other antihistamines for systemic use,3.0,2,4NW1,1.0,1.414213562373095,3.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+676943,dantrolene (DANTRIUM) 25 mg cap,Dantrolene and derivatives,24.0,1,4NW1,1.0,0.0,24.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+676981,desmopressin (DDAVP) 4 mcg/1 mL (1 mL) amp/vial,Vasopressin and analogues,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+676989,dexAMETHasone (DECADRON (SDV)) 10 mg/1 mL (1 mL) vial,Corticosteroids for local oral treatment,62.0,8,CCU1,0.41935483870967744,1.2275030703509966,35.0,27.0,0.5428571428571428,Erratic / Unit-Specific,Trending Up - Monitor Par
+676993,dexAMETHasone (DECADRON (SDV)) 4 mg/1 mL (1 mL) vial,Corticosteroids for local oral treatment,309.0,13,4NW1,0.284789644012945,0.9650662332686625,130.0,179.0,1.7538461538461538,Moderate Variation,Trending Up - Monitor Par
+677000,dexAMETHasone (DECADRON) 0.5 mg tab,Corticosteroids for local oral treatment,14.0,2,3NW1,0.8571428571428571,1.0101525445522108,10.0,4.0,-0.2,Moderate Variation,Maintain Par
+677004,dexAMETHasone (DECADRON) 2 mg tab,Corticosteroids for local oral treatment,27.0,6,4NW2,0.8518518518518519,2.0306296536107853,8.0,19.0,3.75,Erratic / Unit-Specific,Trending Up - Monitor Par
+677005,dexAMETHasone (DECADRON) 4 mg tab,Corticosteroids for local oral treatment,278.0,13,3NW2,0.27697841726618705,1.0538954484050758,171.0,107.0,0.25146198830409355,Moderate Variation,Maintain Par
+677022,dextroamphetamine (DEXEDRINE) 5 mg tab,Centrally acting sympathomimetics,18.0,1,4NW2,1.0,0.0,0.0,18.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+677025,phenylephrine (pf) (Neo-Synephrine) 1000 mcg/10 mL (10 mL) syringe,Adrenergic and dopaminergic agents,38.0,1,MFBCLD,1.0,0.0,19.0,19.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+677059,dextrose 50% 25 gram/50 mL (50 mL) vial,Unclassified,116.0,17,CCU1,0.3793103448275862,1.6263571347420949,64.0,52.0,0.625,Erratic / Unit-Specific,Trending Up - Monitor Par
+677070,diazePAM (VALIUM) 10 mg/2 mL (2 mL) syringe,Benzodiazepine derivatives,73.0,12,3NW1,0.3287671232876712,1.3527448492107854,29.0,44.0,2.0344827586206895,Erratic / Unit-Specific,Trending Up - Monitor Par
+677071,diazePAM (VALIUM) 10 mg tab,Benzodiazepine derivatives,13.0,4,3W1,0.7692307692307693,1.4513817126240929,0.0,13.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677072,diazePAM (VALIUM) 2 mg tab,Benzodiazepine derivatives,180.0,14,4W1,0.3333333333333333,1.5798529749954862,52.0,128.0,3.923076923076923,Erratic / Unit-Specific,Trending Up - Monitor Par
+677074,diazePAM (VALIUM) 5 mg tab,Benzodiazepine derivatives,100.0,13,4SW3,0.2,0.9514375088955308,30.0,70.0,3.6666666666666665,Moderate Variation,Trending Up - Monitor Par
+677090,dicyclomine (BENTYL) 10 mg cap,"Synthetic anticholinergics, esters with tertiary amino group",0.0,4,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677093,dicyclomine (BENTYL) 20 mg tab,"Synthetic anticholinergics, esters with tertiary amino group",11.0,8,CCU1,0.45454545454545453,1.50245764820567,11.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+677120,digoxin (LANOXIN) 0.5 mg/2 mL (2 mL) amp,Digitalis glycosides,21.0,6,4SW2,0.42857142857142855,1.1952286093343936,13.0,8.0,0.23076923076923078,Moderate Variation,Maintain Par
+677122,digoxin (LANOXIN) 0.125 mg tab,Digitalis glycosides,39.0,11,3W2,0.5128205128205128,1.7173362857852525,31.0,8.0,-0.4838709677419355,Erratic / Unit-Specific,Concentrate in Primary Unit
+677130,dilTIAZem (CARDIZEM (SDV)) 25 mg/5 mL (5 mL) vial,Muscle relaxants,3.0,2,3NW2,1.0,1.414213562373095,3.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+677131,dilTIAZem (CARDIZEM) 30 mg tab,Muscle relaxants,146.0,11,4SW4,0.273972602739726,0.9864345419987781,112.0,34.0,-0.39285714285714285,Moderate Variation,Maintain Par
+677132,dilTIAZem (CARDIZEM) 60 mg tab,Muscle relaxants,42.0,7,4SW2,0.5714285714285714,1.417483424685897,29.0,13.0,-0.10344827586206896,Erratic / Unit-Specific,Maintain Par
+677136,dilTIAZem (CARDIZEM CD) 180 mg ER cap,Muscle relaxants,64.0,11,3W1,0.515625,1.7389438694937798,44.0,20.0,-0.09090909090909091,Erratic / Unit-Specific,Concentrate in Primary Unit
+677137,dilTIAZem (CARDIZEM CD) 240 mg ER cap,Muscle relaxants,40.0,10,3W1,0.4,1.3333333333333333,18.0,22.0,1.4444444444444444,Erratic / Unit-Specific,Trending Up - Monitor Par
+677138,dilTIAZem (CARDIZEM CD) 300 mg ER cap,Muscle relaxants,2.0,2,4W1,1.0,1.4142135623730951,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677143,dimenhyDRINATE (DRAMAMINE) 50 mg tab,Aminoalkyl ethers,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677151,diphenhydrAMINE (BENADRYL) 25 mg cap,Antihistamines for topical use,102.0,16,3W1,0.22549019607843138,0.9869064621268955,36.0,66.0,2.6666666666666665,Moderate Variation,Trending Up - Monitor Par
+677152,diphenhydrAMINE (BENADRYL) 50 mg cap,Antihistamines for topical use,16.0,10,3W1,0.3125,1.4790199457749038,6.0,10.0,2.3333333333333335,Erratic / Unit-Specific,Trending Up - Monitor Par
+677154,diphenhydrAMINE (BENADRYL) 50 mg/1 mL (1 mL) amp/vial,Antihistamines for topical use,130.0,16,4NW1,0.25384615384615383,1.2805324336421424,46.0,84.0,2.652173913043478,Erratic / Unit-Specific,Trending Up - Monitor Par
+677155,diphenhydrAMINE (BENADRYL (UDQ)) 12.5 mg/5 mL (5 mL) UD liq,Antihistamines for topical use,0.0,8,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677159,diphenoxylate-atropine 2.5-0.025 mg (Lomotil) tab,Antipropulsives,40.0,5,3W1,0.475,1.0193441518937556,38.0,2.0,-0.8947368421052632,Moderate Variation,Trending Down - Reduce Par
+677184,docusate sodium (COLACE) 100 mg cap,"Softeners, emollients",309.0,18,3W1,0.23948220064724918,1.1405038739582036,197.0,112.0,0.13705583756345177,Moderate Variation,Maintain Par
+677186,docusate sodium (COLACE) 50 mg cap,"Softeners, emollients",19.0,3,4NW1,0.7894736842105263,1.2264400208137942,15.0,4.0,-0.4666666666666667,Erratic / Unit-Specific,Trending Down - Reduce Par
+677187,docusate sodium (COLACE (UDQ)) 100 mg/10 mL (10 mL) UD liq,"Softeners, emollients",169.0,11,CCU2,0.30177514792899407,1.2323186651153681,115.0,54.0,-0.06086956521739131,Erratic / Unit-Specific,Maintain Par
+677221,doxazosin (CARDURA) 1 mg tab,Alpha-adrenoreceptor antagonists,20.0,7,4W1,0.3,0.6204836822995429,3.0,17.0,10.333333333333334,Moderate Variation,Trending Up - Monitor Par
+677222,doxazosin (CARDURA) 2 mg tab,Alpha-adrenoreceptor antagonists,10.0,4,4NW1,0.6,1.2,10.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+677225,doxepin (SINEquan) 10 mg cap,Other antipruritics,12.0,3,3NW2,0.5833333333333334,0.9013878188659973,0.0,12.0,1.0,Moderate Variation,Trending Up - Monitor Par
+677228,doxepin (SINEquan) 25 mg cap,Other antipruritics,6.0,4,4W2,0.5,0.8606629658238704,5.0,1.0,-0.6,Moderate Variation,Trending Down - Reduce Par
+677229,doxepin (SINEquan) 50 mg cap,Other antipruritics,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677239,doxycycline (VIBRAMYCIN) 100 mg vial,Antiinfectives and antiseptics for local oral treatment,59.0,10,4SW2,0.288135593220339,1.0909954147130179,42.0,17.0,-0.19047619047619047,Moderate Variation,Maintain Par
+677244,droNABinol (MARINOL) 2.5 mg cap,Other antiemetics,129.0,6,4W1,0.6821705426356589,1.535799585807458,33.0,96.0,4.818181818181818,Erratic / Unit-Specific,Trending Up - Monitor Par
+677246,droPERidol (INAPSINE) 5 mg/2 mL (2 mL) vial,Butyrophenone derivatives,7.0,2,3W1,1.0,1.4142135623730951,0.0,7.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677279,phytonadione (pf) (Vitamin K) 1 mg/0.5 mL (0.5 mL) inj,Vitamin K,296.0,2,MFBCLD,0.9594594594594594,1.2995475978563575,173.0,123.0,0.42196531791907516,Erratic / Unit-Specific,Maintain Par
+677290,EPINEPHrine (MDV) (ADRENALIN (MDV)) 30 mg/30 mL (30 mL) mdv,Other agents for local oral treatment,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677291,EPINEPHrine (Adrenalin) 1 mg/1 mL (1 mL) amp/vial,Other agents for local oral treatment,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677301,ergocalciferol (vit-D2) (DRISDOL (VITAMIN-D2)) 50000 units cap,Vitamin D and analogues,7.0,5,4NW1,1.0,2.23606797749979,0.0,7.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677314,erythromycin (ERY-TAB) 500 mg DR tab,Antiinfectives for treatment of acne,4.0,1,4NW1,1.0,0.0,4.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+677317,erythromycin (ERY-TAB) 250 mg DR tab,Antiinfectives for treatment of acne,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677330,erythromycin 0.5% UD ophthalmic ointment (ERYthromycin) (1 Gm) tube,Antiinfectives for treatment of acne,257.0,2,MFBCLD,1.0,1.414213562373095,155.0,102.0,0.3161290322580645,Erratic / Unit-Specific,Maintain Par
+677354,estradiol (ESTRACE) 1 mg tab,"Natural and semisynthetic estrogens, plain",18.0,8,4SW2,0.2777777777777778,0.7789107394530348,6.0,12.0,3.0,Moderate Variation,Trending Up - Monitor Par
+677380,ethacrynic acid (EDECRIN) 25 mg tab,Aryloxyacetic acid derivatives,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677410,acetaminophen-aspirin-caffeine (250/250/65 mg) (EXCEDRIN ES) tab,Other agents for local oral treatment,2.0,6,4W1,1.0,2.4494897427831783,2.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+677418,famotidine (PEPCID (SDV)) 20 mg/2 mL (2 mL) vial,H2-receptor antagonists,407.0,15,CCU2,0.28992628992628994,1.5986559428201212,222.0,185.0,0.6666666666666666,Erratic / Unit-Specific,Trending Up - Monitor Par
+677420,famotidine (PEPCID) 20 mg tab,H2-receptor antagonists,1412.0,16,4NW1,0.136685552407932,0.5528769709183698,850.0,562.0,0.32235294117647056,Uniform Hospital-Wide,Maintain Par
+677423,felodipine (PLENDIL) 5 mg ER tab,Dihydropyridine derivatives,9.0,1,4NW1,1.0,0.0,7.0,2.0,-0.42857142857142855,Uniform Hospital-Wide,Trending Down - Reduce Par
+677432,fentaNYL (pf) (Sublimaze (pf)) 100 mcg/2 mL (2 mL) amp/vial,Opioid anesthetics,439.0,8,MFBCLD,0.9521640091116174,2.676794720081339,176.0,263.0,1.9886363636363635,Erratic / Unit-Specific,Trending Up - Monitor Par
+677435,fentaNYL (DURAGESIC) 100 mcg/1 hr patch,Opioid anesthetics,10.0,5,3NW1,0.6,1.4142135623730951,5.0,5.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677436,fentaNYL (DURAGESIC) 25 mcg/1 hr patch,Opioid anesthetics,35.0,11,3W2,0.3142857142857143,1.199387598837381,19.0,16.0,0.6842105263157895,Moderate Variation,Trending Up - Monitor Par
+677437,fentaNYL (DURAGESIC) 50 mcg/1 hr patch,Opioid anesthetics,20.0,9,4NW1,0.4,1.3268854509715602,12.0,8.0,0.3333333333333333,Erratic / Unit-Specific,Maintain Par
+677438,fentaNYL (DURAGESIC) 75 mcg/1 hr patch,Opioid anesthetics,5.0,5,4NW2,0.4,0.7071067811865476,1.0,4.0,7.0,Moderate Variation,Trending Up - Monitor Par
+677453,ferrous sulfate (65 mg Fe) (FERROUS SULFATE) 325 mg tab,"Iron bivalent, oral preparations",660.0,17,4NW2,0.22727272727272727,1.2911662587063184,388.0,272.0,0.4020618556701031,Erratic / Unit-Specific,Maintain Par
+677462,finasteride (PROSCAR) 5 mg tab,Other dermatologicals,306.0,14,3W2,0.21895424836601307,1.0364626412299758,138.0,168.0,1.434782608695652,Moderate Variation,Trending Up - Monitor Par
+677463,butalbital-acetaminophen-caffeine (50/325/40 mg) (FIORICET) tab,Unclassified,128.0,16,4NW1,0.2734375,1.4038637160826308,60.0,68.0,1.2666666666666666,Erratic / Unit-Specific,Trending Up - Monitor Par
+677473,multivitamin (Flintstones) chew tab,Unclassified,23.0,11,4SW4,0.34782608695652173,1.4420107784153913,3.0,20.0,12.333333333333334,Erratic / Unit-Specific,Trending Up - Monitor Par
+677477,fluconazole (DIFLUCAN) 100 mg tab,Imidazole and triazole derivatives,130.0,10,3W1,0.4153846153846154,1.344137684316016,59.0,71.0,1.4067796610169492,Erratic / Unit-Specific,Trending Up - Monitor Par
+677481,fludrocortisone (FLORINEF) 0.1 mg tab,Mineralocorticoids,23.0,6,CCU1,0.782608695652174,1.825465732841057,22.0,1.0,-0.9090909090909091,Erratic / Unit-Specific,Trending Down - Reduce Par
+677482,flumazenil (mdv) (ROMAZICON (MDV)) 0.5 mg/5 mL (5 mL) mdv,Antidotes,0.0,8,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677508,FLUoxetine (PROzac) 20 mg cap,Selective serotonin reuptake inhibitors,381.0,15,4NW1,0.2650918635170604,1.2314718969777856,204.0,177.0,0.7352941176470589,Erratic / Unit-Specific,Trending Up - Monitor Par
+677537,folic acid (FOLIC ACID) 1 mg tab,Folic acid and derivatives,281.0,14,3W2,0.30604982206405695,1.1815070299716435,160.0,121.0,0.5125,Moderate Variation,Trending Up - Monitor Par
+677541,fosinopril (MONOPRIL) 10 mg tab,"ACE inhibitors, plain",17.0,1,4NW2,1.0,0.0,14.0,3.0,-0.5714285714285714,Uniform Hospital-Wide,Trending Down - Reduce Par
+677542,fosinopril (MONOPRIL) 20 mg tab,"ACE inhibitors, plain",8.0,1,3W2,1.0,0.0,0.0,8.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+677546,furosemide (sdv) (LASIX (SDV)) 20 mg/2 mL (2 mL) vial,"Sulfonamides, plain",658.0,15,3NW1,0.1641337386018237,0.9075233676178033,294.0,364.0,1.4761904761904763,Moderate Variation,Trending Up - Monitor Par
+677547,furosemide (sdv) (LASIX (SDV)) 40 mg/4 mL (4 mL) vial,"Sulfonamides, plain",748.0,14,3W1,0.16443850267379678,0.7449723919916281,401.0,347.0,0.7306733167082294,Moderate Variation,Trending Up - Monitor Par
+677549,furosemide (LASIX) 20 mg tab,"Sulfonamides, plain",272.0,15,3W1,0.17279411764705882,0.8945454872554859,171.0,101.0,0.18128654970760233,Moderate Variation,Maintain Par
+677550,furosemide (LASIX) 40 mg tab,"Sulfonamides, plain",266.0,16,4NW1,0.29699248120300753,1.2676135760216751,168.0,98.0,0.16666666666666666,Erratic / Unit-Specific,Maintain Par
+677551,furosemide (LASIX) 80 mg tab,"Sulfonamides, plain",9.0,3,4W1,0.5555555555555556,0.8819171036881969,0.0,9.0,1.0,Moderate Variation,Trending Up - Monitor Par
+677563,gemfibrozil (LOPID) 600 mg tab,Fibrates,4.0,1,4W1,1.0,0.0,4.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+677590,glipiZIDE (GLUCOTROL) 10 mg tab,Sulfonylureas,5.0,3,4W1,0.6,0.916515138991168,2.0,3.0,2.0,Moderate Variation,Trending Up - Monitor Par
+677591,glipiZIDE (GLUCOTROL) 5 mg tab,Sulfonylureas,1.0,1,CCU1,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+677599,glyBURIDE (DIABETA) 2.5 mg tab,Sulfonylureas,4.0,1,3W2,1.0,0.0,0.0,4.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+677600,glyBURIDE (DIABETA) 5 mg tab,Sulfonylureas,2.0,1,4SW3,1.0,0.0,2.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+677603,glycerin (ped) (Glycerin Suppository (Pediatric)) suppository,Enemas,4.0,1,NICU,1.0,0.0,4.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+677605,glycopyrrolate (ROBINUL (SDV)) 0.2 mg/1 mL (1 mL) vial,Antihidrotics,42.0,3,4W2,1.0,1.7320508075688772,42.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+677607,glycopyrrolate (ROBINUL (SDV)) 0.4 mg/2 mL (2 mL) vial,Antihidrotics,173.0,14,3W2,0.23121387283236994,1.0075598961895322,106.0,67.0,0.2641509433962264,Moderate Variation,Maintain Par
+677608,glycopyrrolate (ROBINUL) 1 mg tab,Antihidrotics,147.0,5,CCU2,0.5782312925170068,1.10964663542675,84.0,63.0,0.5,Moderate Variation,Maintain Par
+677627,codeine-guaifenesin 10 mg-100 mg/5 mL syrup (ROBITUSSIN-AC (UDQ)) (5 mL) UD liq,Opium alkaloids and derivatives,23.0,6,3NW2,0.391304347826087,1.0358416210474166,23.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+677636,guanFACINE (TENEX) 1 mg tab,Imidazoline receptor agonists,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677645,haloperidol lactate (HALDOL) 5 mg/1 mL (1 mL) vial,Butyrophenone derivatives,46.0,14,3W1,0.2608695652173913,1.468985260875704,20.0,26.0,1.6,Erratic / Unit-Specific,Trending Up - Monitor Par
+677652,haloperidol (HALDOL) 2 mg tab,Butyrophenone derivatives,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677653,haloperidol (HALDOL) 5 mg tab,Butyrophenone derivatives,1.0,3,4W1,1.0,1.7320508075688776,1.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+677684,heparin (HEPARIN) 5000 units/1 mL (1 mL) vial,Heparin group,2314.0,17,3W2,0.10717372515125324,0.6329899368629552,1380.0,934.0,0.3536231884057971,Moderate Variation,Maintain Par
+677714,hydrALAZINE (APRESOLINE) 20 mg/1 mL (1 mL) vial,Hydrazinophthalazine derivatives,501.0,16,CCU2,0.15169660678642716,0.7752627938997935,323.0,178.0,0.1021671826625387,Moderate Variation,Maintain Par
+677715,hydrALAZINE (APRESOLINE) 10 mg tab,Hydrazinophthalazine derivatives,145.0,14,3NW1,0.2413793103448276,1.0661844545560233,105.0,40.0,-0.23809523809523808,Moderate Variation,Maintain Par
+677716,hydrALAZINE (APRESOLINE) 25 mg tab,Hydrazinophthalazine derivatives,295.0,13,4W1,0.2271186440677966,0.8992394671423702,96.0,199.0,3.1458333333333335,Moderate Variation,Trending Up - Monitor Par
+677717,hydrALAZINE (APRESOLINE) 50 mg tab,Hydrazinophthalazine derivatives,234.0,10,3W1,0.2606837606837607,0.9951546968560974,160.0,74.0,-0.075,Moderate Variation,Maintain Par
+677721,hydroCHLOROthiazide (ORETIC) 25 mg tab,"Thiazides, plain",129.0,14,4NW2,0.24031007751937986,1.0137749464875314,77.0,52.0,0.35064935064935066,Moderate Variation,Maintain Par
+677745,hydrocortisone (CORTEF) 10 mg tab,Corticosteroids for local oral treatment,141.0,9,3W1,0.2198581560283688,0.916129793260042,24.0,117.0,8.75,Moderate Variation,Trending Up - Monitor Par
+677747,hydrocortisone (CORTEF) 5 mg tab,Corticosteroids for local oral treatment,19.0,5,4W2,0.42105263157894735,0.9916549306008827,15.0,4.0,-0.4666666666666667,Moderate Variation,Trending Down - Reduce Par
+677764,HYDROmorphone (DILAUDID) 2 mg tab,Natural opium alkaloids,613.0,16,3NW1,0.23817292006525284,1.0797891833838944,313.0,300.0,0.9169329073482428,Moderate Variation,Trending Up - Monitor Par
+677765,HYDROmorphone (DILAUDID) 4 mg tab,Natural opium alkaloids,399.0,12,3W2,0.3508771929824561,1.3601486567304453,205.0,194.0,0.8926829268292683,Erratic / Unit-Specific,Trending Up - Monitor Par
+677767,hydroxychloroquine (PLAQUENIL) 200 mg tab,Aminoquinolines,63.0,13,4NW2,0.49206349206349204,1.8758609904154393,53.0,10.0,-0.6226415094339622,Erratic / Unit-Specific,Concentrate in Primary Unit
+677769,hydroxyurea (HYDREA) 500 mg cap,Other antineoplastic agents,11.0,5,4SW3,0.7272727272727273,1.587659017870271,0.0,11.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677776,hydrOXYzine hcl (ATARAX) 10 mg tab,Diphenylmethane derivatives,40.0,11,4W1,0.6,1.9260711305660547,31.0,9.0,-0.41935483870967744,Erratic / Unit-Specific,Concentrate in Primary Unit
+677777,hydrOXYzine hcl (ATARAX) 25 mg tab,Diphenylmethane derivatives,221.0,17,3W2,0.1493212669683258,0.6412820000205025,93.0,128.0,1.7526881720430108,Moderate Variation,Trending Up - Monitor Par
+677778,hydrOXYzine hcl (ATARAX) 50 mg tab,Diphenylmethane derivatives,54.0,12,4W1,0.3888888888888889,1.3450662223609942,27.0,27.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677783,hyoscyamine (LEVSIN (SL)) 0.125 mg SL tab,"Belladonna alkaloids, tertiary amines",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+677796,ibuprofen (PEDIA-PROFEN (UDQ)) 100 mg/5 mL (5 mL) UD liq,Other cardiac preparations,239.0,8,PEDS,0.8075313807531381,2.2090918118396923,137.0,102.0,0.48905109489051096,Erratic / Unit-Specific,Concentrate in Primary Unit
+677798,ibuprofen (ADVIL) 200 mg tab,Other cardiac preparations,61.0,8,4SW2,0.7377049180327869,2.0219549737241063,59.0,2.0,-0.9322033898305084,Erratic / Unit-Specific,Trending Down - Reduce Par
+677800,ibuprofen (MOTRIN) 400 mg tab,Other cardiac preparations,48.0,12,3W1,0.3125,1.3568010505999362,11.0,37.0,5.7272727272727275,Erratic / Unit-Specific,Trending Up - Monitor Par
+677801,ibuprofen (MOTRIN) 600 mg tab,Other cardiac preparations,1055.0,17,POSTPARTUM,0.7563981042654029,3.112844590084145,599.0,456.0,0.5225375626043406,Erratic / Unit-Specific,Trending Up - Monitor Par
+677802,ibuprofen (MOTRIN) 800 mg tab,Other cardiac preparations,310.0,9,POSTPARTUM,0.8774193548387097,2.59226165721744,167.0,143.0,0.7125748502994012,Erratic / Unit-Specific,Trending Up - Monitor Par
+677832,indomethacin (INDOCIN) 25 mg cap,Other cardiac preparations,7.0,2,MFBCLD,1.0,1.4142135623730951,7.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+677924,isosorbide dinitrate (ISORDIL) 5 mg tab,Organic nitrates,154.0,13,3NW1,0.19480519480519481,0.7917729982770216,42.0,112.0,4.333333333333333,Moderate Variation,Trending Up - Monitor Par
+677925,isosorbide dinitrate (ISORDIL) 10 mg tab,Organic nitrates,118.0,10,3NW2,0.3389830508474576,1.5206033903527696,85.0,33.0,-0.2235294117647059,Erratic / Unit-Specific,Concentrate in Primary Unit
+677926,isosorbide dinitrate (ISORDIL) 20 mg tab,Organic nitrates,47.0,3,3W2,1.0,1.7320508075688774,44.0,3.0,-0.8636363636363636,Erratic / Unit-Specific,Trending Down - Reduce Par
+677928,isosorbide dinitrate (ISORDIL) 40 mg tab,Organic nitrates,20.0,5,3W1,0.75,1.571225636247067,20.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+677965,ketorolac (sdv) (TORADOL (SDV)) 30 mg/1 mL (1 mL) vial,Acetic acid derivatives and related substances,379.0,13,POSTPARTUM,0.6437994722955145,2.263672336339142,214.0,165.0,0.5420560747663551,Erratic / Unit-Specific,Trending Up - Monitor Par
+677975,labetalol (NORMODYNE) 100 mg tab,Alpha and beta blocking agents,20.0,8,POSTPARTUM,0.55,1.763114128061887,8.0,12.0,2.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+677976,labetalol (NORMODYNE) 200 mg tab,Alpha and beta blocking agents,58.0,2,MFBCLD,0.603448275862069,0.2925959094565024,17.0,41.0,3.823529411764706,Uniform Hospital-Wide,Trending Up - Monitor Par
+677981,lactase enzyme (LACTAID) 3000 units tab,Enzyme preparations,4.0,2,3NW2,1.0,1.4142135623730951,4.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+678014,levothyroxine (SYNTHROID) 25 mcg tab,Thyroid hormones,144.0,14,3W1,0.2847222222222222,1.0741446828151844,96.0,48.0,0.0,Moderate Variation,Maintain Par
+678015,levothyroxine (SYNTHROID) 50 mcg tab,Thyroid hormones,244.0,16,3W1,0.21311475409836064,0.9075119234742167,129.0,115.0,0.7829457364341085,Moderate Variation,Trending Up - Monitor Par
+678016,levothyroxine (SYNTHROID) 75 mcg tab,Thyroid hormones,199.0,16,3W1,0.22613065326633167,1.138180786151936,143.0,56.0,-0.21678321678321677,Moderate Variation,Maintain Par
+678017,levothyroxine (SYNTHROID) 88 mcg tab,Thyroid hormones,111.0,15,4W2,0.17117117117117117,0.8436094640846226,67.0,44.0,0.31343283582089554,Moderate Variation,Maintain Par
+678018,levothyroxine (SYNTHROID) 100 mcg tab,Thyroid hormones,161.0,15,4W2,0.2360248447204969,0.9685259489512431,70.0,91.0,1.6,Moderate Variation,Trending Up - Monitor Par
+678019,levothyroxine (SYNTHROID) 112 mcg tab,Thyroid hormones,65.0,13,4W1,0.26153846153846155,1.2355835328567093,37.0,28.0,0.5135135135135135,Erratic / Unit-Specific,Trending Up - Monitor Par
+678020,levothyroxine (SYNTHROID) 125 mcg tab,Thyroid hormones,209.0,13,3NW2,0.3157894736842105,1.3324807641811167,105.0,104.0,0.9809523809523809,Erratic / Unit-Specific,Trending Up - Monitor Par
+678021,levothyroxine (SYNTHROID) 150 mcg tab,Thyroid hormones,103.0,12,4NW1,0.4174757281553398,1.5467753795140178,56.0,47.0,0.6785714285714286,Erratic / Unit-Specific,Trending Up - Monitor Par
+678022,levothyroxine (SYNTHROID) 175 mcg tab,Thyroid hormones,27.0,10,4W1,0.37037037037037035,1.1587851881735618,21.0,6.0,-0.42857142857142855,Moderate Variation,Maintain Par
+678023,levothyroxine (SYNTHROID) 200 mcg tab,Thyroid hormones,18.0,9,4NW2,0.3888888888888889,1.1726039399558574,9.0,9.0,1.0,Moderate Variation,Trending Up - Monitor Par
+678025,"lidocaine-epinephrine (pf) 1%-1:200,000 (XYLOCAINE-MPF 1% W/EPI) (30 mL) vial","Antiarrhythmics, class Ib",8.0,1,SOC,1.0,0.0,5.0,3.0,0.2,Uniform Hospital-Wide,Maintain Par
+678037,lidocaine (pf) 1% (XYLOCAINE 1%) 20 mg/2 mL (2 mL) vial,"Antiarrhythmics, class Ib",0.0,3,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678039,lidocaine (pf) 1% (XYLOCAINE-MPF 1%) 100 mg/10 mL (10 mL) inj,"Antiarrhythmics, class Ib",48.0,5,CCU1,0.6666666666666666,1.4907119849998596,17.0,31.0,2.6470588235294117,Erratic / Unit-Specific,Trending Up - Monitor Par
+678041,lidocaine (pf) 1% (XYLOCAINE-MPF 1%) 300 mg/30 mL (30 mL) vial,"Antiarrhythmics, class Ib",33.0,1,MFBCLD,1.0,0.0,18.0,15.0,0.6666666666666666,Uniform Hospital-Wide,Trending Up - Monitor Par
+678048,lidocaine 2% uro-jet jelly (XYLOCAINE 2%) 200 mg/10 mL (10 mL) syringe,"Antiarrhythmics, class Ib",3.0,1,MFBCLD,1.0,0.0,0.0,3.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+678059,lidocaine 4% top soln (XYLOCAINE 4%) 2000 mg/50 mL (50 mL) bottle,"Antiarrhythmics, class Ib",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678061,lidocaine 2% viscous (XYLOCAINE 2% (UDQ)) 300 mg/15 mL (15 mL) UD liq,"Antiarrhythmics, class Ib",8.0,9,4NW1,0.875,2.6048332480218384,8.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+678075,liothyronine (CYTOMEL) 5 mcg tab,Thyroid hormones,15.0,3,4W1,0.5333333333333333,0.8717797887081348,7.0,8.0,1.2857142857142858,Moderate Variation,Trending Up - Monitor Par
+678087,lisinopril (PRINIVIL) 5 mg tab,"ACE inhibitors, plain",122.0,14,4SW2,0.1721311475409836,0.8353358336470924,68.0,54.0,0.5882352941176471,Moderate Variation,Trending Up - Monitor Par
+678088,lisinopril (PRINIVIL) 10 mg tab,"ACE inhibitors, plain",176.0,13,4W2,0.2556818181818182,0.9647692695444339,86.0,90.0,1.0930232558139534,Moderate Variation,Trending Up - Monitor Par
+678089,lisinopril (PRINIVIL) 20 mg tab,"ACE inhibitors, plain",272.0,14,4W1,0.25735294117647056,1.0505189029227051,125.0,147.0,1.352,Moderate Variation,Trending Up - Monitor Par
+678097,lithium carbonate (LITHOBID) 300 mg ER tab,Lithium,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678103,loperamide (IMODIUM) 2 mg cap,Antipropulsives,314.0,16,4NW1,0.7101910828025477,2.793848687829466,278.0,36.0,-0.7410071942446043,Erratic / Unit-Specific,Concentrate in Primary Unit
+678105,LORazepam (ATIVAN) 2 mg/1 mL (1 mL) vial,Benzodiazepine derivatives,870.0,16,CCU2,0.19310344827586207,1.084483256075434,389.0,481.0,1.4730077120822622,Moderate Variation,Trending Up - Monitor Par
+678108,LORazepam (ATIVAN) 0.5 mg tab,Benzodiazepine derivatives,255.0,14,3NW2,0.17254901960784313,0.8710569037301623,182.0,73.0,-0.1978021978021978,Moderate Variation,Maintain Par
+678109,LORazepam (ATIVAN) 1 mg tab,Benzodiazepine derivatives,124.0,13,3NW2,0.1935483870967742,0.9422033423828969,52.0,72.0,1.7692307692307692,Moderate Variation,Trending Up - Monitor Par
+678110,LORazepam (ATIVAN) 2 mg tab,Benzodiazepine derivatives,73.0,15,3NW1,0.2465753424657534,1.31998225819292,12.0,61.0,9.166666666666666,Erratic / Unit-Specific,Trending Up - Monitor Par
+678131,magnesium oxide (MAGOX-400) 400 mg tab,Magnesium compounds,975.0,18,4W1,0.12923076923076923,0.747400646985614,560.0,415.0,0.48214285714285715,Moderate Variation,Maintain Par
+678164,meclizine (ANTIVERT) 12.5 mg tab,Piperazine derivatives,7.0,5,3NW1,0.7142857142857143,1.4811743823805514,6.0,1.0,-0.6666666666666666,Erratic / Unit-Specific,Trending Down - Reduce Par
+678165,meclizine (ANTIVERT) 25 mg tab,Piperazine derivatives,11.0,8,4W2,0.5454545454545454,1.69170488186325,10.0,1.0,-0.8,Erratic / Unit-Specific,Trending Down - Reduce Par
+678174,medroxyPROGESTERone (PROVERA) 2.5 mg tab,Progestogens,1.0,1,4SW4,1.0,0.0,1.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+678189,meperidine (DEMEROL (AMP/VIAL)) 25 mg/1 mL (1 mL) vial,Phenylpiperidine derivatives,5.0,2,CCU1,1.0,1.4142135623730951,5.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+678248,methadone (Dolophine) 10 mg tab,Drugs used in opioid dependence,374.0,10,4NW1,0.3449197860962567,1.144171214081804,91.0,283.0,5.21978021978022,Moderate Variation,Trending Up - Monitor Par
+678249,methadone (Dolophine) 5 mg tab,Drugs used in opioid dependence,96.0,8,3NW2,0.3020833333333333,0.8404458378439424,41.0,55.0,1.6829268292682926,Moderate Variation,Trending Up - Monitor Par
+678263,methIMAzole (TAPAZOLE) 10 mg tab,Sulfur-containing imidazole derivatives,18.0,8,3NW1,0.3888888888888889,1.1079319597850887,10.0,8.0,0.6,Moderate Variation,Trending Up - Monitor Par
+678265,methocarbamol (ROBAXIN) 1 gram/10 mL (10 mL) vial,Carbamic acid esters,273.0,16,4W1,0.1575091575091575,0.9295045319780242,155.0,118.0,0.5225806451612903,Moderate Variation,Trending Up - Monitor Par
+678266,methocarbamol (ROBAXIN) 500 mg tab,Carbamic acid esters,1697.0,15,4NW1,0.2498526812021214,1.1305293748606597,1038.0,659.0,0.2697495183044316,Moderate Variation,Maintain Par
+678267,methocarbamol (ROBAXIN) 750 mg tab,Carbamic acid esters,1191.0,15,4NW1,0.31821998320738876,1.3015001121105072,763.0,428.0,0.1218872870249017,Erratic / Unit-Specific,Maintain Par
+678302,methylergonovine (METHERGINE) 0.2 mg/1 mL (1 mL) amp/vial,Ergot alkaloids,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678303,methylergonovine (METHERGINE) 0.2 mg tab,Ergot alkaloids,6.0,2,POSTPARTUM,1.0,1.414213562373095,0.0,6.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678306,methylphenidate (RITALIN) 5 mg tab,Centrally acting sympathomimetics,14.0,3,4NW2,0.8571428571428571,1.377664394427565,2.0,12.0,11.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678312,methylPREDNISolone sod succ (pf) (SOLU-Medrol) 125 mg vial,"Corticosteroids, weak (group I)",62.0,7,4SW3,0.3548387096774194,1.043827969395002,44.0,18.0,-0.18181818181818182,Moderate Variation,Maintain Par
+678313,methylPREDNISolone sodium succinate (pf) (SOLU-Medrol) 40 mg vial,"Corticosteroids, weak (group I)",759.0,14,4SW4,0.17918313570487485,0.8017043481481652,422.0,337.0,0.5971563981042654,Moderate Variation,Trending Up - Monitor Par
+678318,methylPREDNISolone (MEDROL) 4 mg tab,"Corticosteroids, weak (group I)",15.0,3,4W2,1.0,1.7320508075688774,14.0,1.0,-0.8571428571428571,Erratic / Unit-Specific,Trending Down - Reduce Par
+678324,metoclopramide (sdv) (REGLAN (SDV)) 10 mg/2 mL (2 mL) vial,Propulsives,372.0,16,3W1,0.22580645161290322,0.9902441603608488,267.0,105.0,-0.21348314606741572,Moderate Variation,Maintain Par
+678328,metoclopramide (REGLAN) 10 mg tab,Propulsives,76.0,14,3W1,0.3684210526315789,1.6376405618585688,31.0,45.0,1.903225806451613,Erratic / Unit-Specific,Trending Up - Monitor Par
+678329,metoclopramide (REGLAN) 5 mg tab,Propulsives,22.0,7,CCU2,0.36363636363636365,1.1680432649823052,15.0,7.0,-0.06666666666666667,Moderate Variation,Maintain Par
+678333,metOLazone (ZAROXOLYN) 2.5 mg tab,"Sulfonamides, plain",16.0,9,3W2,0.625,1.8395078315951796,13.0,3.0,-0.5384615384615384,Erratic / Unit-Specific,Trending Down - Reduce Par
+678334,metOLazone (ZAROXOLYN) 5 mg tab,"Sulfonamides, plain",4.0,5,3NW2,0.5,1.0458250331675945,0.0,4.0,1.0,Moderate Variation,Trending Up - Monitor Par
+678337,metoprolol (LOPRESSOR) 5 mg/5 mL (5 mL) amp/vial,"Beta blocking agents, selective",128.0,14,CCU2,0.421875,1.5632810547850957,69.0,59.0,0.7101449275362319,Erratic / Unit-Specific,Trending Up - Monitor Par
+678338,metoprolol tartrate (LOPRESSOR) 100 mg tab,"Beta blocking agents, selective",25.0,9,3W1,0.32,1.061508360777248,3.0,22.0,13.666666666666666,Moderate Variation,Trending Up - Monitor Par
+678340,metoprolol tartrate (LOPRESSOR) 50 mg tab,"Beta blocking agents, selective",230.0,15,3NW2,0.2217391304347826,1.1925708460264868,118.0,112.0,0.8983050847457628,Moderate Variation,Trending Up - Monitor Par
+678344,metroNIDAZOLE (FLAGYL) 500 mg tab,Antiinfectives and antiseptics for local oral treatment,770.0,17,3W2,0.16883116883116883,0.9513306142424265,468.0,302.0,0.2905982905982906,Moderate Variation,Maintain Par
+678350,mexiletine (MEXITIL) 150 mg cap,"Antiarrhythmics, class Ib",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678377,magnesium hydroxide (MILK OF MAG (UDQ)) (30 mL) UD liq,Magnesium compounds,94.0,17,POSTPARTUM,0.2553191489361702,1.1278163780984507,24.0,70.0,4.833333333333333,Moderate Variation,Trending Up - Monitor Par
+678388,minocycline (MINOCIN) 50 mg cap,Antiinfectives and antiseptics for local oral treatment,4.0,3,3W1,1.0,1.7320508075688776,4.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+678392,minoxidil (LONITEN) 2.5 mg tab,Pyrimidine derivatives,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678399,miSOPROStol (CYTOTEC) 100 mcg tab,Prostaglandins,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678400,miSOPROStol (CYTOTEC) 200 mcg tab,Prostaglandins,227.0,2,MFBCLD,1.0,1.414213562373095,119.0,108.0,0.8151260504201681,Erratic / Unit-Specific,Trending Up - Monitor Par
+678405,vaccine(measles/mumps/rubella) (M-M-R II) (0.5 mL) vial,Unclassified,13.0,1,POSTPARTUM,1.0,0.0,5.0,8.0,2.2,Uniform Hospital-Wide,Trending Up - Monitor Par
+678427,morphine (MORPHINE (UDQ)) 10 mg/5 mL (5 mL) UD liq,Natural opium alkaloids,196.0,13,3W1,0.19387755102040816,0.8295066937589931,126.0,70.0,0.1111111111111111,Moderate Variation,Maintain Par
+678442,morphine (MORPHINE) 2 mg/1 mL (1 mL) syringe,Natural opium alkaloids,1295.0,18,3W1,0.2494208494208494,1.0894972683313846,934.0,361.0,-0.22698072805139186,Moderate Variation,Maintain Par
+678444,morphine (MORPHINE) 4 mg/1 mL (1 mL) syringe,Natural opium alkaloids,1068.0,17,4NW2,0.21067415730337077,0.9842279360479512,657.0,411.0,0.2511415525114155,Moderate Variation,Maintain Par
+678449,morphine (MS CONTIN) 15 mg ER tab,Natural opium alkaloids,64.0,9,4NW2,0.453125,1.3768409196304237,36.0,28.0,0.5555555555555556,Erratic / Unit-Specific,Trending Up - Monitor Par
+678450,morphine (MS CONTIN) 30 mg ER tab,Natural opium alkaloids,95.0,11,3W1,0.3473684210526316,1.319464341914736,64.0,31.0,-0.03125,Erratic / Unit-Specific,Maintain Par
+678474,nafcillin (UNIPEN) 2 gram vial,Beta-lactamase resistant penicillins,188.0,6,CCU2,0.6436170212765957,1.460805262342039,36.0,152.0,7.444444444444445,Erratic / Unit-Specific,Trending Up - Monitor Par
+678483,nalbuphine (Nubain) 10 mg/1 mL (1 mL) amp/vial,Morphinan derivatives,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678505,naloxone (NARCAN) 0.4 mg/1 mL (1 mL) amp/vial,Peripheral opioid receptor antagonists,4.0,6,4NW1,0.75,1.8165902124584952,1.0,3.0,5.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678507,naltrexone (REVIA) 50 mg tab,Drugs used in alcohol dependence,8.0,5,3W2,0.375,0.5590169943749473,3.0,5.0,2.3333333333333335,Uniform Hospital-Wide,Trending Up - Monitor Par
+678517,naproxen (ANAPROX) 275 mg tab,Antiinflammatory products for vaginal administration,6.0,4,POSTPARTUM,1.0,2.0,6.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+678518,naproxen (ANAPROX DS) 550 mg tab,Antiinflammatory products for vaginal administration,13.0,3,3NW1,0.9230769230769231,1.5365372581106294,12.0,1.0,-0.8333333333333334,Erratic / Unit-Specific,Trending Down - Reduce Par
+678538,neomycin sulfate (NEOMYCIN SULFATE) 500 mg tab,Antiinfectives and antiseptics for local oral treatment,4.0,2,4NW1,1.0,1.4142135623730951,4.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+678564,multivitamin-b-c-fa (nephrocaps) (NEPHROCAPS) cap,Unclassified,8.0,2,3W1,1.0,1.4142135623730951,0.0,8.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678567,potassium phosphate-sodium phosphate 250 mg-280 mg-160 mg powder (PHOS-NAK) packet,Sulfonamides and potassium in combination,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678585,nicotine resin complex (NICORETTE) 2 mg gum,Drugs used in nicotine dependence,101.0,13,3W1,0.3564356435643564,1.3744319422008922,71.0,30.0,-0.15492957746478872,Erratic / Unit-Specific,Maintain Par
+678586,nicotine (NICODERM) 14 mg/1 day patch,Drugs used in nicotine dependence,178.0,16,3W1,0.20224719101123595,0.9607891382666044,114.0,64.0,0.12280701754385964,Moderate Variation,Maintain Par
+678587,nicotine (NICODERM) 21 mg/1 day patch,Drugs used in nicotine dependence,190.0,14,3W2,0.24736842105263157,0.950987240346546,128.0,62.0,-0.03125,Moderate Variation,Maintain Par
+678588,nicotine (NICODERM) 7 mg/1 day patch,Drugs used in nicotine dependence,68.0,15,3NW2,0.22058823529411764,0.9390897297458257,42.0,26.0,0.23809523809523808,Moderate Variation,Maintain Par
+678590,NIFEdipine IR (PROCARDIA IR) 10 mg cap,Dihydropyridine derivatives,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678591,NIFEdipine (Adalat CC) 30 mg ER tab,Dihydropyridine derivatives,91.0,10,POSTPARTUM,0.5384615384615384,1.6741569800978597,37.0,54.0,1.9189189189189189,Erratic / Unit-Specific,Trending Up - Monitor Par
+678592,NIFEdipine (Adalat CC) 60 mg ER tab,Dihydropyridine derivatives,69.0,13,POSTPARTUM,0.5652173913043478,2.0658656495928316,26.0,43.0,2.3076923076923075,Erratic / Unit-Specific,Trending Up - Monitor Par
+678593,NIFEdipine (Adalat CC) 90 mg ER tab,Dihydropyridine derivatives,4.0,6,3NW2,0.5,1.2247448713915892,3.0,1.0,-0.3333333333333333,Erratic / Unit-Specific,Maintain Par
+678596,nitrofurantoin monohydrate (MACROBID) 100 mg cap,Nitrofuran derivatives,44.0,12,4W1,0.3409090909090909,1.3528499011332498,21.0,23.0,1.1904761904761905,Erratic / Unit-Specific,Trending Up - Monitor Par
+678598,nitrofurantoin macrocrystal (MACRODANTIN) 50 mg cap,Nitrofuran derivatives,1.0,2,4W1,1.0,1.4142135623730951,0.0,1.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678609,nitroglycerin SL tab (Nitrostat) 0.4 mg bottle,Organic nitrates,3.0,7,3W2,0.3333333333333333,1.2472191289246473,1.0,2.0,3.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678613,nitroglycerin 2% UD ointment (NITROL (UD OINT)) 1 gram/1 in (1 in) packet,Organic nitrates,1.0,3,4W1,1.0,1.7320508075688776,0.0,1.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678615,nitroglycerin (NITRODUR 2.5 MG (0.1MG/HR)) 0.1 mg/1 hr patch,Organic nitrates,2.0,1,4SW4,1.0,0.0,0.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+678624,nitroglycerin in D5W RTU (NITROGLYCERIN) 50 mg/250 mL (250 mL) vial,Organic nitrates,6.0,2,CCU2,0.6666666666666666,0.47140452079103173,0.0,6.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+678640,norethindrone (AYGESTIN) 5 mg tab,Progestogens,2.0,1,4SW4,1.0,0.0,2.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+678655,nortriptyline (PAMELOR) 10 mg cap,Non-selective monoamine reuptake inhibitors,0.0,3,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678656,nortriptyline (PAMELOR) 25 mg cap,Non-selective monoamine reuptake inhibitors,20.0,3,3NW1,0.8,1.2124355652982142,2.0,18.0,17.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678680,octreotide (SandoSTATIN) 100 mcg/1 mL (1 mL) amp/vial,Somatostatin and analogues,35.0,7,4NW1,0.37142857142857144,1.2110601416389968,30.0,5.0,-0.6666666666666666,Erratic / Unit-Specific,Trending Down - Reduce Par
+678682,antioxidant multivitamin with minerals (OCUVITE) tab,Unclassified,29.0,8,3W2,0.3448275862068966,1.0315228591102552,8.0,21.0,4.25,Moderate Variation,Trending Up - Monitor Par
+678735,oxyBUTYnin (DITROPAN) 5 mg tab,Drugs for urinary frequency and incontinence,87.0,12,4W1,0.2988505747126437,1.0205964542723271,35.0,52.0,1.9714285714285715,Moderate Variation,Trending Up - Monitor Par
+678737,oxyCODONE (ROXICODONE (UDQ)) 5 mg/5 mL (5 mL) UD liq,Natural opium alkaloids,741.0,13,CCU1,0.26180836707152494,1.2257496873714082,678.0,63.0,-0.8141592920353983,Erratic / Unit-Specific,Maintain Par
+678738,oxyCODONE IR (ROXICODONE) 5 mg tab,Natural opium alkaloids,3863.0,19,4W1,0.1431529899042195,0.8179917442889915,2297.0,1566.0,0.36351763169351325,Moderate Variation,Maintain Par
+678741,oxyCODONE/acetaminophen (5/325 mg) (PERCOCET 5/325) tab,Natural opium alkaloids,730.0,14,4W1,0.29726027397260274,1.2665099760281104,263.0,467.0,2.5513307984790874,Erratic / Unit-Specific,Trending Up - Monitor Par
+678757,oxytocin (PITOCIN) 10 units/1 mL (1 mL) amp/vial,Oxytocin and analogues,8.0,3,MFBCLD,1.0,1.7320508075688776,1.0,7.0,13.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678803,penicillin G potassium (PENICILLIN G POTASSIUM) 5 million units vial,Beta-lactamase sensitive penicillins,92.0,1,MFBCLD,1.0,0.0,20.0,72.0,6.2,Uniform Hospital-Wide,Trending Up - Monitor Par
+678818,penicillin V potassium (PEN-VEE-K) 500 mg tab,Beta-lactamase sensitive penicillins,10.0,4,3NW2,1.0,2.0,8.0,2.0,-0.5,Erratic / Unit-Specific,Trending Down - Reduce Par
+678865,phenazopyridine (PYRIDIUM) 100 mg tab,Other urologicals,5.0,7,3NW1,0.6,1.5577761927397231,2.0,3.0,2.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678866,phenazopyridine (PYRIDIUM) 200 mg tab,Other urologicals,14.0,9,3W1,0.2857142857142857,1.2074386788840692,10.0,4.0,-0.2,Erratic / Unit-Specific,Maintain Par
+678869,PHENobarbital (sdv) (PHENobarbital (SDV)) 130 mg/1 mL (1 mL) vial,Barbiturates and derivatives,7.0,2,CCU2,1.0,1.4142135623730951,0.0,7.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+678875,PHENobarbital (sdv) (PHENobarbital (SDV)) 65 mg/1 mL (1 mL) vial,Barbiturates and derivatives,27.0,2,CCU2,0.9629629629629629,1.3094570021973102,22.0,5.0,-0.5454545454545454,Erratic / Unit-Specific,Trending Down - Reduce Par
+678902,phenytoin (DILANTIN) 100 mg ER cap,Hydantoin derivatives,115.0,8,3NW1,0.28695652173913044,0.8543766688665707,72.0,43.0,0.19444444444444445,Moderate Variation,Maintain Par
+678904,phenytoin (DILANTIN) 100 mg/2 mL (2 mL) vial,Hydantoin derivatives,20.0,4,3NW2,0.45,0.8485281374238569,17.0,3.0,-0.6470588235294118,Moderate Variation,Trending Down - Reduce Par
+678909,phenytoin (DILANTIN INFATAB) 50 mg chew tab,Hydantoin derivatives,5.0,3,3W2,1.0,1.7320508075688772,5.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+678925,phytonadione (MEPHYTON) 5 mg tab,Vitamin K,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+678997,potassium chloride UD powder (K-LOR (UDPD)) 20 mEq packet,Potassium,1380.0,16,CCU2,0.1318840579710145,0.6752233897451652,924.0,456.0,-0.012987012987012988,Moderate Variation,Maintain Par
+679001,potassium chloride (K-DUR/KLOR-CON 10) 10 mEq ER tab,Potassium,82.0,12,3NW1,0.1951219512195122,0.7245772340349714,40.0,42.0,1.1,Moderate Variation,Trending Up - Monitor Par
+679002,potassium chloride (K-DUR) 20 mEq ER tab,Potassium,1957.0,17,4SW3,0.1205927439959121,0.6667261011953037,1222.0,735.0,0.20294599018003273,Moderate Variation,Maintain Par
+679012,potassium phosphate-sodium phosphate 250 mg-45 mg-298 mg (K-PHOS NEUTRAL) tab,Sulfonamides and potassium in combination,313.0,14,CCU2,0.2012779552715655,0.9553969034129117,217.0,96.0,-0.1152073732718894,Moderate Variation,Maintain Par
+679029,pravastatin (PRAVACHOL) 10 mg tab,HMG CoA reductase inhibitors,34.0,6,3W1,0.7647058823529411,1.7811003169671116,29.0,5.0,-0.6551724137931034,Erratic / Unit-Specific,Trending Down - Reduce Par
+679030,pravastatin (PRAVACHOL) 20 mg tab,HMG CoA reductase inhibitors,52.0,12,3NW1,0.4807692307692308,1.8019175728136494,13.0,39.0,5.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679033,prazosin (MINIPRESS) 1 mg cap,Alpha-adrenoreceptor antagonists,81.0,13,4W1,0.35802469135802467,1.422211148219347,61.0,20.0,-0.3442622950819672,Erratic / Unit-Specific,Maintain Par
+679035,prazosin (MINIPRESS) 5 mg cap,Alpha-adrenoreceptor antagonists,17.0,9,3NW2,0.8823529411764706,2.6130163932283845,2.0,15.0,14.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679050,predniSONE (predniSONE) 10 mg tab,Corticosteroids acting locally,119.0,12,4SW4,0.3277310924369748,1.177136120822292,47.0,72.0,2.0638297872340425,Moderate Variation,Trending Up - Monitor Par
+679051,predniSONE (predniSONE) 1 mg tab,Corticosteroids acting locally,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679052,predniSONE (predniSONE) 2.5 mg tab,Corticosteroids acting locally,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679053,predniSONE (predniSONE) 20 mg tab,Corticosteroids acting locally,652.0,16,3NW1,0.34355828220858897,1.406558179262921,371.0,281.0,0.5148247978436657,Erratic / Unit-Specific,Trending Up - Monitor Par
+679054,predniSONE (predniSONE) 50 mg tab,Corticosteroids acting locally,18.0,8,3NW2,0.7777777777777778,2.1610631650942866,3.0,15.0,9.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679055,predniSONE (predniSONE) 5 mg tab,Corticosteroids acting locally,213.0,13,4NW2,0.3286384976525822,1.5330345942333827,177.0,36.0,-0.5932203389830508,Erratic / Unit-Specific,Concentrate in Primary Unit
+679061,multivitamin prenatal-fa 1mg (PRENATAL VITAMIN W/FOLIC ACID) tab,Unclassified,1426.0,18,POSTPARTUM,0.35834502103786814,1.4264795275735012,950.0,476.0,0.002105263157894737,Erratic / Unit-Specific,Maintain Par
+679067,primidone (MYSOLINE) 250 mg tab,Barbiturates and derivatives,4.0,1,4W1,1.0,0.0,0.0,4.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+679068,primidone (MYSOLINE) 50 mg tab,Barbiturates and derivatives,8.0,3,4W1,0.625,0.9437293044088438,0.0,8.0,1.0,Moderate Variation,Trending Up - Monitor Par
+679084,prochlorperazine (Compazine inj) 10 mg/2 mL (2 mL) vial,Phenothiazines with piperazine structure,304.0,17,3W1,0.24671052631578946,1.0461651193241828,147.0,157.0,1.1360544217687074,Moderate Variation,Trending Up - Monitor Par
+679089,prochlorperazine (COMPAZINE) 10 mg tab,Phenothiazines with piperazine structure,34.0,16,4SW2,0.6764705882352942,2.655802552380699,2.0,32.0,31.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679091,prochlorperazine (COMPAZINE) 5 mg tab,Phenothiazines with piperazine structure,10.0,7,3W1,0.4,0.9780933834080806,6.0,4.0,0.3333333333333333,Moderate Variation,Maintain Par
+679117,promethazine syrup (PHENERGAN PLAIN (UDQ)) 6.25 mg/5 mL (5 mL) UD liq,Antihistamines for topical use,8.0,7,CCU1,1.0,2.645751311064591,8.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+679118,promethazine (PHENERGAN) 12.5 mg suppository,Antihistamines for topical use,1.0,1,3NW1,1.0,0.0,1.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+679119,promethazine (PHENERGAN) 25 mg suppository,Antihistamines for topical use,2.0,2,4NW1,1.0,1.4142135623730951,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679122,promethazine (PHENERGAN) 25 mg tab,Antihistamines for topical use,8.0,10,4W1,0.875,2.7512623365365294,1.0,7.0,13.0,Erratic / Unit-Specific,Consolidate Units
+679149,propranolol (INDERAL) 10 mg tab,"Beta blocking agents, non-selective",103.0,14,CCU2,0.5242718446601942,1.9866612920297542,75.0,28.0,-0.25333333333333335,Erratic / Unit-Specific,Concentrate in Primary Unit
+679150,propranolol (INDERAL) 20 mg tab,"Beta blocking agents, non-selective",91.0,12,CCU1,0.23076923076923078,0.9126714789964812,62.0,29.0,-0.06451612903225806,Moderate Variation,Maintain Par
+679151,propranolol (INDERAL) 40 mg tab,"Beta blocking agents, non-selective",97.0,11,CCU2,0.2268041237113402,0.8955434589890308,65.0,32.0,-0.015384615384615385,Moderate Variation,Maintain Par
+679152,propranolol (INDERAL) 60 mg tab,"Beta blocking agents, non-selective",5.0,8,4NW1,0.6,1.9003759026646734,0.0,5.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679153,propranolol (INDERAL) 80 mg tab,"Beta blocking agents, non-selective",24.0,5,4W1,0.625,1.2360330811826106,10.0,14.0,1.8,Erratic / Unit-Specific,Trending Up - Monitor Par
+679161,carboprost (HEMABATE) 250 mcg/1 mL (1 mL) amp/vial,Prostaglandins,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679173,pseudoephedrine (SUDAFED) 60 mg tab,Sympathomimetics,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679189,pyridoxine (B-6) (PYRIDOXINE (VIT-B6)) 100 mg/1 mL (1 mL) vial,Other plain vitamin preparations,20.0,5,3NW1,0.5,1.2624381172952597,12.0,8.0,0.3333333333333333,Erratic / Unit-Specific,Maintain Par
+679192,pyridoxine (PYRIDOXINE (VIT-B6)) 50 mg tab,Other plain vitamin preparations,4.0,6,4NW1,0.5,1.549193338482967,2.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679220,ramipril (ALTACE) 2.5 mg cap,"ACE inhibitors, plain",4.0,3,3W1,0.5,0.8660254037844388,0.0,4.0,1.0,Moderate Variation,Trending Up - Monitor Par
+679221,ramipril (ALTACE) 5 mg cap,"ACE inhibitors, plain",14.0,3,4NW1,0.7142857142857143,1.07854777646725,4.0,10.0,4.0,Moderate Variation,Trending Up - Monitor Par
+679241,rifAMPin (RIFADIN) 300 mg cap,Antibiotics,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679291,senna/docusate (SENOKOT-S) tab,Unclassified,6898.0,18,4W1,0.12104957958828647,0.6904103551269007,4339.0,2559.0,0.17953445494353537,Moderate Variation,Maintain Par
+679292,senna (SENOKOT) 8.6 mg tab,Unclassified,512.0,15,3W2,0.21875,1.08261858938387,199.0,313.0,2.1457286432160805,Moderate Variation,Trending Up - Monitor Par
+679294,sertraline (ZOLOFT) 100 mg tab,Selective serotonin reuptake inhibitors,247.0,14,3NW1,0.24696356275303644,0.9328367212911242,136.0,111.0,0.6323529411764706,Moderate Variation,Trending Up - Monitor Par
+679295,sertraline (ZOLOFT) 50 mg tab,Selective serotonin reuptake inhibitors,292.0,16,3NW1,0.2191780821917808,1.0684228989901459,146.0,146.0,1.0,Moderate Variation,Trending Up - Monitor Par
+679309,simethicone (GAS-X/MYLANTA-GAS) 80 mg chew tab,Unclassified,401.0,17,POSTPARTUM,0.4488778054862843,1.8736319461934965,162.0,239.0,1.9506172839506173,Erratic / Unit-Specific,Trending Up - Monitor Par
+679328,sodium bicarbonate 8.4% - (1 mEq/mL) (SODIUM BICARBONATE 8.4% (ADULT)) 50 mEq/50 mL (50 mL) inj,Salt solutions,78.0,2,CCU1,0.7564102564102564,0.7252377242938949,33.0,45.0,1.7272727272727273,Moderate Variation,Trending Up - Monitor Par
+679334,sodium bicarbonate (10 gr) 650 mg tab,Salt solutions,386.0,14,3W2,0.2538860103626943,1.1550909469062005,332.0,54.0,-0.6746987951807228,Moderate Variation,Maintain Par
+679340,sodium chloride (pf) 0.9% (10 mL) vial,Sodium,4620.0,16,3W1,0.11320346320346321,0.5172137171154366,2972.0,1648.0,0.10901749663526245,Uniform Hospital-Wide,Maintain Par
+679343,sodium chloride 1 gram tab,Sodium,276.0,13,4NW1,0.36594202898550726,1.2427932346752575,198.0,78.0,-0.21212121212121213,Erratic / Unit-Specific,Maintain Par
+679345,sodium chloride (pf) 0.9% (20 mL) vial,Sodium,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679387,spironolactone (ALDACTONE) 25 mg tab,Aldosterone antagonists,436.0,14,4SW4,0.15137614678899083,0.6270621938916349,207.0,229.0,1.21256038647343,Moderate Variation,Trending Up - Monitor Par
+679388,spironolactone (ALDACTONE) 50 mg tab,Aldosterone antagonists,118.0,13,4SW3,0.211864406779661,0.8784379662544823,62.0,56.0,0.8064516129032258,Moderate Variation,Trending Up - Monitor Par
+679418,sucralfate (CARAFATE) 1 gram tab,Other drugs for peptic ulcer and gastro-oesophageal reflux disease (GORD),361.0,14,3W1,0.31024930747922436,1.2867812973339767,212.0,149.0,0.4056603773584906,Erratic / Unit-Specific,Maintain Par
+679439,bactrim DS (SEPTRA DS/BACTRIM DS 800/160) tab,"Combinations of sulfonamides and trimethoprim, incl. derivatives",131.0,16,4W1,0.26717557251908397,1.3328981672398308,67.0,64.0,0.9104477611940298,Erratic / Unit-Specific,Trending Up - Monitor Par
+679442,Bactrim UD liq (SEPTRA/BACTRIM (UDQ)) 160 mg/20 mL (20 mL) UD liq,"Combinations of sulfonamides and trimethoprim, incl. derivatives",5.0,2,4SW2,0.6,0.282842712474619,5.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+679446,sulfamethoxazole/trimethoprim (400/80 mg) (SEPTRA/BACTRIM 400/80) tab,"Combinations of sulfonamides and trimethoprim, incl. derivatives",6.0,4,3NW2,0.5,1.1547005383792515,2.0,4.0,3.0,Moderate Variation,Trending Up - Monitor Par
+679475,tamoxifen (NOLVADEX) 10 mg tab,Anti-estrogens,20.0,4,4NW1,0.8,1.4787382008545888,0.0,20.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679489,terazosin (HYTRIN) 1 mg cap,Alpha-adrenoreceptor antagonists,50.0,5,4NW1,0.72,1.4949916387726054,0.0,50.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679491,terazosin (HYTRIN) 5 mg cap,Alpha-adrenoreceptor antagonists,11.0,5,4W2,0.6363636363636364,1.3407164730684205,0.0,11.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679493,terbutaline (BRETHINE) 1 mg/1 mL (1 mL) amp/vial,Selective beta-2-adrenoreceptor agonists,12.0,1,MFBCLD,1.0,0.0,7.0,5.0,0.42857142857142855,Uniform Hospital-Wide,Maintain Par
+679504,testosterone cypionate (DEPO-TESTOSTERONE) 200 mg/1 mL (1 mL) vial,3-oxoandrosten (4) derivatives,1.0,1,4NW2,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+679517,tetracycline 250 mg cap,Antiinfectives and antiseptics for local oral treatment,59.0,3,3W1,0.4406779661016949,0.39495526094003536,39.0,20.0,0.02564102564102564,Uniform Hospital-Wide,Maintain Par
+679569,multivitamin therapeutic (theragran) (THERAGRAN) tab,Unclassified,271.0,14,4NW1,0.19557195571955718,1.068109162052421,163.0,108.0,0.32515337423312884,Moderate Variation,Maintain Par
+679572,thiamine (VITAMIN B-1) 100 mg tab,"Vitamin B1, plain",1151.0,15,4W1,0.1268462206776716,0.5380841848065714,734.0,417.0,0.1362397820163488,Uniform Hospital-Wide,Maintain Par
+679618,thyroid desiccated (1/2 grain) 30 mg tab,Unclassified,6.0,3,4W1,0.5,0.5,5.0,1.0,-0.6,Uniform Hospital-Wide,Trending Down - Reduce Par
+679620,thyroid desiccated (1 grain) 60 mg tab,Unclassified,49.0,6,4W1,0.5714285714285714,1.4620565411248858,20.0,29.0,1.9,Erratic / Unit-Specific,Trending Up - Monitor Par
+679621,thyroid desiccated (1.5 grain) 90 mg tab,Unclassified,2.0,4,4W1,1.0,2.0,2.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+679682,traZODone (DESYREL) 100 mg tab,Other antidepressants,143.0,14,4SW3,0.1888111888111888,0.7467646964968314,68.0,75.0,1.2058823529411764,Moderate Variation,Trending Up - Monitor Par
+679683,traZODone (DESYREL) 150 mg tab,Other antidepressants,34.0,12,3W2,0.23529411764705882,1.0299082072603343,14.0,20.0,1.8571428571428572,Moderate Variation,Trending Up - Monitor Par
+679684,traZODone (DESYREL) 50 mg tab,Other antidepressants,232.0,17,3W2,0.22413793103448276,1.0991199711176354,154.0,78.0,0.012987012987012988,Moderate Variation,Maintain Par
+679698,triamcinolone (sdv) (KENALOG-40 (SDV)) 40 mg/1 mL (1 mL) vial,Corticosteroids for local oral treatment,2.0,1,SOC,1.0,0.0,0.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+679723,triamterene (DYRENIUM) 50 mg cap,Other potassium-sparing agents,7.0,3,4W2,1.0,1.7320508075688772,7.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+679725,triamterene/hydrochlorothiazide (37.5/25 mg) (MAXZIDE-25) tab,Other potassium-sparing agents,9.0,5,3NW1,0.5555555555555556,1.204415743815489,9.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+679758,trimethobenzamide (TIGAN) 200 mg/2 mL (2 mL) amp/vial,Aminoalkyl ethers,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679781,witch hazel wipes (TUCKS (40's)) (1 app) pad,Unclassified,270.0,2,MFBCLD,0.5851851851851851,0.24094008840430509,155.0,115.0,0.4838709677419355,Uniform Hospital-Wide,Maintain Par
+679805,ursodiol (ACTIGALL) 300 mg cap,Bile acids and derivatives,21.0,3,4SW4,0.5714285714285714,0.8921425711997711,21.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+679810,valproic acid (DEPAKENE (UDQ)) 250 mg/5 mL (5 mL) UD liq,Fatty acid derivatives,197.0,6,CCU1,0.5329949238578681,1.2618721681512237,175.0,22.0,-0.7485714285714286,Erratic / Unit-Specific,Maintain Par
+679812,divalproex (DEPAKOTE DR) 500 mg DR tab,Unclassified,42.0,6,4NW1,0.5952380952380952,1.4735767952260146,32.0,10.0,-0.375,Erratic / Unit-Specific,Maintain Par
+679813,vancomycin (VANCOCIN) 125 mg cap,Antibiotics,205.0,11,3W1,0.24878048780487805,1.0408297609670343,119.0,86.0,0.44537815126050423,Moderate Variation,Maintain Par
+679817,vancomycin (VANCOCIN) 500 mg vial,Antibiotics,3.0,3,3NW2,0.6666666666666666,1.0,1.0,2.0,3.0,Moderate Variation,Trending Up - Monitor Par
+679840,verapamil (CALAN SR/ISOPTIN SR) 120 mg ER tab,Phenylalkylamine derivatives,4.0,2,4NW2,0.75,0.7071067811865476,0.0,4.0,1.0,Moderate Variation,Trending Up - Monitor Par
+679841,verapamil (CALAN SR/ISOPTIN SR) 180 mg ER tab,Phenylalkylamine derivatives,2.0,2,4W2,1.0,1.4142135623730951,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679842,verapamil (CALAN SR/ISOPTIN SR) 240 mg ER tab,Phenylalkylamine derivatives,4.0,4,3W2,1.0,2.0,0.0,4.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679872,ascorbic acid (VITAMIN C) 250 mg tab,"Ascorbic acid (vitamin C), plain",17.0,5,3NW2,0.29411764705882354,0.6771096725424316,10.0,7.0,0.4,Moderate Variation,Maintain Par
+679873,ascorbic acid (VITAMIN C) 500 mg tab,"Ascorbic acid (vitamin C), plain",427.0,14,4W1,0.3840749414519906,1.6469809516634766,248.0,179.0,0.4435483870967742,Erratic / Unit-Specific,Concentrate in Primary Unit
+679876,vitamin E (VITAMIN E) 180 mg cap,Other plain vitamin preparations,2.0,1,4NW2,1.0,0.0,0.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+679883,warfarin (COUMADIN) 1 mg tab,Vitamin K antagonists,3.0,6,3W2,0.3333333333333333,1.0954451150103321,2.0,1.0,0.0,Moderate Variation,Maintain Par
+679884,warfarin (COUMADIN) 10 mg tab,Vitamin K antagonists,6.0,4,3W2,0.6666666666666666,1.2765694770084508,6.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+679885,warfarin (COUMADIN) 2 mg tab,Vitamin K antagonists,2.0,6,3W2,0.5,1.549193338482967,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+679886,warfarin (COUMADIN) 2.5 mg tab,Vitamin K antagonists,35.0,14,4NW1,0.2571428571428571,1.1286479317511522,10.0,25.0,4.0,Moderate Variation,Trending Up - Monitor Par
+679887,warfarin (COUMADIN) 5 mg tab,Vitamin K antagonists,99.0,14,4SW3,0.24242424242424243,0.8934596757602361,45.0,54.0,1.4,Moderate Variation,Trending Up - Monitor Par
+679888,warfarin (COUMADIN) 7.5 mg tab,Vitamin K antagonists,25.0,9,3W2,0.24,0.6681317235396027,7.0,18.0,4.142857142857143,Moderate Variation,Trending Up - Monitor Par
+679889,sterile water (pf) (Water - Sterile) (10 mL) vial,Unclassified,1457.0,18,4W1,0.19217570350034316,1.105122807325485,794.0,663.0,0.6700251889168766,Moderate Variation,Trending Up - Monitor Par
+679891,sterile water (pf) (Water - Sterile) (20 mL) vial,Unclassified,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+679918,zinc sulfate 220 mg cap,Zinc,11.0,5,3NW2,0.45454545454545453,1.036523113726489,7.0,4.0,0.14285714285714285,Moderate Variation,Maintain Par
+679983,cloZAPine (CLOZARIL) 100 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",20.0,2,4NW1,0.5,0.0,0.0,20.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+680179,betamethasone (Celestone Soluspan) 30 mg/5 mL (5 mL) mdv,Corticosteroids acting locally,30.0,3,MFBCLD,1.0,1.7320508075688774,20.0,10.0,0.0,Erratic / Unit-Specific,Concentrate in Primary Unit
+680188,amLODIPine (NORVASC) 5 mg tab,Dihydropyridine derivatives,608.0,14,3W1,0.19407894736842105,0.8162403253319827,390.0,218.0,0.11794871794871795,Moderate Variation,Maintain Par
+680191,dilTIAZem (CARDIZEM CD) 120 mg ER cap,Muscle relaxants,47.0,11,3W2,0.2978723404255319,1.137412660375245,15.0,32.0,3.2666666666666666,Moderate Variation,Trending Up - Monitor Par
+680223,amLODIPine (NORVASC) 2.5 mg tab,Dihydropyridine derivatives,35.0,15,4W1,0.2571428571428571,1.197665367438466,26.0,9.0,-0.3076923076923077,Moderate Variation,Maintain Par
+680228,amLODIPine (NORVASC) 10 mg tab,Dihydropyridine derivatives,316.0,15,3NW1,0.1962025316455696,0.8957149767980386,155.0,161.0,1.0774193548387097,Moderate Variation,Trending Up - Monitor Par
+680229,sotalol (BETAPACE) 80 mg tab,"Beta blocking agents, non-selective",19.0,2,4NW1,1.0,1.4142135623730951,8.0,11.0,1.75,Erratic / Unit-Specific,Trending Up - Monitor Par
+680236,divalproex (DEPAKOTE DR) 250 mg DR tab,Unclassified,75.0,8,3NW2,0.29333333333333333,0.922770156596301,40.0,35.0,0.75,Moderate Variation,Trending Up - Monitor Par
+680237,divalproex (DEPAKOTE DR) 125 mg DR tab,Unclassified,6.0,4,3NW2,0.5,0.8606629658238704,6.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+680239,divalproex DR sprinkle (DEPAKOTE SPRINKLE) 125 mg cap,Unclassified,36.0,3,3NW2,0.8055555555555556,1.2610621625351297,36.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+680247,medroxyPROGESTERone inj susp (DEPO-PROVERA) 150 mg/1 mL (1 mL) vial,Progestogens,7.0,1,POSTPARTUM,1.0,0.0,0.0,7.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+680250,metoprolol succinate (topROL XL) 50 mg ER tab,"Beta blocking agents, selective",334.0,14,4W2,0.16766467065868262,0.6902929697876244,207.0,127.0,0.22705314009661837,Moderate Variation,Maintain Par
+680251,metoprolol succinate (topROL XL) 100 mg ER tab,"Beta blocking agents, selective",100.0,13,4W1,0.36,1.310127220285623,55.0,45.0,0.6363636363636364,Erratic / Unit-Specific,Trending Up - Monitor Par
+680290,SUMAtriptan (IMITREX) 6 mg/0.5 mL (0.5 mL) vial,Selective serotonin (5HT1) agonists,1.0,2,3W2,1.0,1.4142135623730951,1.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+680329,PARoxetine (PAXIL) 30 mg tab,Selective serotonin reuptake inhibitors,14.0,6,3W1,0.5,1.0728561917439192,13.0,1.0,-0.8461538461538461,Moderate Variation,Trending Down - Reduce Par
+680330,PARoxetine (PAXIL) 20 mg tab,Selective serotonin reuptake inhibitors,29.0,9,3NW2,0.4827586206896552,1.4538071712988134,6.0,23.0,6.666666666666667,Erratic / Unit-Specific,Trending Up - Monitor Par
+680354,enoxaparin (LOVENOX) 30 mg/0.3 mL (0.3 mL) syringe,Heparin group,256.0,16,4W1,0.19921875,0.8587782018658834,144.0,112.0,0.5555555555555556,Moderate Variation,Trending Up - Monitor Par
+680368,aspirin (HALFPRIN) 81 mg EC tab,Other agents for local oral treatment,1262.0,16,4NW1,0.15134706814580032,0.8094121589945893,744.0,518.0,0.3924731182795699,Moderate Variation,Maintain Par
+680400,zolpidem (AMBIEN) 5 mg tab,Benzodiazepine related drugs,130.0,14,3W2,0.2846153846153846,1.3585582333388515,53.0,77.0,1.9056603773584906,Erratic / Unit-Specific,Trending Up - Monitor Par
+680442,DOBUTamine in D5W RTU (DOBUTREX) 500 mg/250 mL (250 mL) bag,Adrenergic and dopaminergic agents,15.0,2,CCU1,1.0,1.4142135623730951,2.0,13.0,12.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+680443,piperacillin/tazobactam (ZOSYN) 3.375 gram vial,Beta-lactamase inhibitors,1114.0,16,CCU2,0.14093357271095153,0.6840179313217544,738.0,376.0,0.018970189701897018,Moderate Variation,Maintain Par
+680448,mesalamine (PENTASA) 250 mg DR cap,Aminosalicylic acid and similar agents,2.0,1,4W1,1.0,0.0,0.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+680450,isosorbide mononitrate (IMDUR) 60 mg ER tab,Organic nitrates,16.0,8,3W1,0.3125,1.1019463300386794,7.0,9.0,1.5714285714285714,Moderate Variation,Trending Up - Monitor Par
+680462,propofol (Diprivan) 1000 mg/100 mL (100 mL) vial,Other general anesthetics,538.0,2,CCU2,0.5074349442379182,0.021029197953503272,442.0,96.0,-0.5656108597285068,Uniform Hospital-Wide,Maintain Par
+680466,piperacillin/tazobactam (ZOSYN) 4.5 gram vial,Beta-lactamase inhibitors,201.0,14,3W2,0.19402985074626866,0.7409659801787116,102.0,99.0,0.9411764705882353,Moderate Variation,Trending Up - Monitor Par
+680467,piperacillin/tazobactam (ZOSYN) 2.25 gram vial,Beta-lactamase inhibitors,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+680482,sucralfate (CARAFATE (UDQ)) 1 gram/10 mL (10 mL) UD liq,Other drugs for peptic ulcer and gastro-oesophageal reflux disease (GORD),266.0,14,3W1,0.3007518796992481,1.2125489175604807,181.0,85.0,-0.06077348066298342,Erratic / Unit-Specific,Maintain Par
+680483,ondansetron (sdv) (Zofran) 4 mg/2 mL (2 mL) inj,Serotonin (5HT3) antagonists,1843.0,17,3W1,0.17905588714053175,0.7446708453032727,988.0,855.0,0.7307692307692307,Moderate Variation,Trending Up - Monitor Par
+680484,gabapentin (NEURONTIN) 100 mg cap,Gabapentinoids,1540.0,16,3W2,0.19415584415584416,0.9323172713525409,1028.0,512.0,-0.0038910505836575876,Moderate Variation,Maintain Par
+680485,gabapentin (NEURONTIN) 300 mg cap,Gabapentinoids,1978.0,17,4NW1,0.23255813953488372,1.141400291241871,1034.0,944.0,0.8259187620889749,Moderate Variation,Trending Up - Monitor Par
+680486,gabapentin (NEURONTIN) 400 mg cap,Gabapentinoids,199.0,14,4NW1,0.2663316582914573,1.2872578404551607,130.0,69.0,0.06153846153846154,Erratic / Unit-Specific,Maintain Par
+680487,risperiDONE (RisperDAL) 1 mg tab,Other antipsychotics,12.0,6,3NW1,0.5,1.2649110640673518,0.0,12.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+680488,risperiDONE (RisperDAL) 2 mg tab,Other antipsychotics,16.0,5,4SW4,0.5,1.1353688827865593,14.0,2.0,-0.7142857142857143,Moderate Variation,Trending Down - Reduce Par
+680490,risperiDONE (RisperDAL) 3 mg tab,Other antipsychotics,29.0,4,4W1,0.8275862068965517,1.5498072451202918,29.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+680499,IPRAtropium UD inh (ATROVENT (UD INH)) 0.5 mg/2.5 mL (2.5 mL) neb,Other nasal preparations,6.0,7,CCU2,0.8333333333333334,2.1751968833835438,5.0,1.0,-0.6,Erratic / Unit-Specific,Trending Down - Reduce Par
+680509,tacrolimus (PROGRAF) 1 mg cap,"Agents for dermatitis, excluding corticosteroids",123.0,8,3W2,0.4065040650406504,1.2017757839900274,86.0,37.0,-0.13953488372093023,Erratic / Unit-Specific,Maintain Par
+680515,venlafaxine (EFFEXOR) 25 mg tab,Other antidepressants,4.0,2,3NW1,1.0,1.4142135623730951,0.0,4.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+680516,venlafaxine (EFFEXOR) 37.5 mg tab,Other antidepressants,5.0,1,3NW2,1.0,0.0,0.0,5.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+680537,glipiZIDE (GLUCOTROL XL) 5 mg ER tab,Sulfonylureas,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+680561,fluvoxaMINE (LUVOX) 50 mg tab,Selective serotonin reuptake inhibitors,12.0,1,4NW1,1.0,0.0,12.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+680563,lamoTRIgine (LaMICtal) 25 mg tab,Other antiepileptics,112.0,12,4NW2,0.25,1.099628879881475,75.0,37.0,-0.013333333333333334,Moderate Variation,Maintain Par
+680564,lamoTRIgine (LaMICtal) 100 mg tab,Other antiepileptics,251.0,14,4W1,0.2350597609561753,0.9617304661822843,164.0,87.0,0.06097560975609756,Moderate Variation,Maintain Par
+680579,traMADol (ULTRAM) 50 mg tab,Other opioids,781.0,15,3W2,0.13700384122919335,0.741099401584305,540.0,241.0,-0.10740740740740741,Moderate Variation,Maintain Par
+680590,metFORMIN (GLUCOPHAGE) 500 mg tab,Biguanides,107.0,11,4NW1,0.22429906542056074,0.878464902659149,39.0,68.0,2.4871794871794872,Moderate Variation,Trending Up - Monitor Par
+680591,metFORMIN (GLUCOPHAGE) 850 mg tab,Biguanides,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+680604,losartan (COZAAR) 25 mg tab,"Angiotensin II receptor blockers (ARBs), plain",641.0,15,3W1,0.22932917316692666,0.9394771877296583,465.0,176.0,-0.24301075268817204,Moderate Variation,Maintain Par
+680605,losartan (COZAAR) 50 mg tab,"Angiotensin II receptor blockers (ARBs), plain",829.0,15,3W1,0.18335343787696018,0.8951537930657971,468.0,361.0,0.5427350427350427,Moderate Variation,Trending Up - Monitor Par
+680612,cyanocobalamin (VITAMIN B-12) 100 mcg tab,Unclassified,56.0,11,3NW1,0.6964285714285714,2.240413249963552,10.0,46.0,8.2,Erratic / Unit-Specific,Trending Up - Monitor Par
+680647,torsemide (DEMADEX) 20 mg tab,"Sulfonamides, plain",142.0,14,4SW3,0.2323943661971831,0.9971194377705836,66.0,76.0,1.303030303030303,Moderate Variation,Trending Up - Monitor Par
+680664,mycophenolate (CELLCEPT) 250 mg cap,Unclassified,82.0,6,4W2,0.43902439024390244,1.1867802461981791,66.0,16.0,-0.5151515151515151,Moderate Variation,Maintain Par
+680686,oxyCODONE (OxyCONTIN) 10 mg ER tab,Natural opium alkaloids,17.0,5,4W2,0.47058823529411764,0.8724939396583132,6.0,11.0,2.6666666666666665,Moderate Variation,Trending Up - Monitor Par
+680687,oxyCODONE (OxyCONTIN) 20 mg ER tab,Natural opium alkaloids,75.0,11,4W1,0.49333333333333335,1.5956607826644524,16.0,59.0,6.375,Erratic / Unit-Specific,Trending Up - Monitor Par
+680691,SUMAtriptan (IMITREX) 25 mg tab,Selective serotonin (5HT1) agonists,10.0,9,4W1,0.8,2.4000000000000004,0.0,10.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+680692,ketorolac (sdv) (TORADOL (SDV)) 15 mg/1 mL (1 mL) vial,Acetic acid derivatives and related substances,615.0,16,4W1,0.26666666666666666,1.1590127106069785,360.0,255.0,0.4166666666666667,Moderate Variation,Maintain Par
+680724,amoxicillin-clavulanate (AUGMENTIN) 875 mg tab,Penicillins with extended spectrum,92.0,14,4NW2,0.2826086956521739,1.4519095347428552,48.0,44.0,0.8333333333333334,Erratic / Unit-Specific,Trending Up - Monitor Par
+680732,carBAMazepine (TEGretol XR) 100 mg ER tab,Carboxamide derivatives,13.0,1,4SW3,1.0,0.0,13.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+680736,pilocarpine (SALAGEN) 5 mg tab,Other parasympathomimetics,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+680746,PARoxetine (PAXIL) 10 mg tab,Selective serotonin reuptake inhibitors,43.0,6,CCU1,0.627906976744186,1.4512075127276924,16.0,27.0,2.375,Erratic / Unit-Specific,Trending Up - Monitor Par
+680759,OLANZapine (ZyPREXA) 5 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",59.0,10,3NW1,0.288135593220339,1.0057449329647028,33.0,26.0,0.5757575757575758,Moderate Variation,Trending Up - Monitor Par
+680761,OLANZapine (ZyPREXA) 10 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",7.0,5,4NW2,0.7142857142857143,1.5649215928719031,0.0,7.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+680762,isosorbide mononitrate (IMDUR) 30 mg ER tab,Organic nitrates,137.0,13,3W1,0.26277372262773724,1.1573889824744128,74.0,63.0,0.7027027027027027,Moderate Variation,Trending Up - Monitor Par
+680771,lisinopril (PRINIVIL) 40 mg tab,"ACE inhibitors, plain",76.0,13,4NW1,0.23684210526315788,0.8801212090200665,28.0,48.0,2.4285714285714284,Moderate Variation,Trending Up - Monitor Par
+680776,cetirizine (ZyrTEC) 10 mg tab,Piperazine derivatives,340.0,15,4NW1,0.25,1.104536661133723,183.0,157.0,0.7158469945355191,Moderate Variation,Trending Up - Monitor Par
+680786,terbinafine (LamISIL) 250 mg tab,Other antifungals for topical use,1.0,1,4NW1,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+680790,valACYclovir (VALTREX) 500 mg tab,Nucleosides and nucleotides excl. reverse transcriptase inhibitors,83.0,11,4SW2,0.24096385542168675,0.9888623485476078,57.0,26.0,-0.08771929824561403,Moderate Variation,Maintain Par
+680791,mirtazapine (REMERON) 15 mg tab,Other antidepressants,132.0,14,4NW2,0.17424242424242425,0.8451273898942077,70.0,62.0,0.7714285714285715,Moderate Variation,Trending Up - Monitor Par
+680792,mirtazapine (REMERON) 30 mg tab,Other antidepressants,11.0,7,4W2,0.7272727272727273,1.868250017187679,9.0,2.0,-0.5555555555555556,Erratic / Unit-Specific,Trending Down - Reduce Par
+680799,glimepiride (AMARYL) 2 mg tab,Sulfonylureas,27.0,5,4SW3,0.4444444444444444,0.9938079899999065,11.0,16.0,1.9090909090909092,Moderate Variation,Trending Up - Monitor Par
+680806,levoFLOXacin (LEVAQUIN) 250 mg tab,Fluoroquinolones,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+680811,tiZANidine (ZANAFLEX) 4 mg tab,Other centrally acting agents,235.0,14,4NW2,0.4553191489361702,1.7269765566738022,181.0,54.0,-0.40331491712707185,Erratic / Unit-Specific,Concentrate in Primary Unit
+680813,levoFLOXacin (LEVAQUIN) 500 mg tab,Fluoroquinolones,5.0,3,3W2,0.8,1.2489995996796794,5.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+680816,vaccine (diphth-tetanus-apertussis) (ADACEL) (0.5 mL) vial,Unclassified,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+680824,meropenem (MERREM) 500 mg vial,Carbapenems,24.0,4,CCU2,0.75,1.414213562373095,24.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+680825,meropenem (MERREM) 1 gram vial,Carbapenems,48.0,7,4W1,0.6666666666666666,1.6721697343183708,14.0,34.0,3.857142857142857,Erratic / Unit-Specific,Trending Up - Monitor Par
+680827,atorvastatin (LIPITOR) 10 mg tab,HMG CoA reductase inhibitors,269.0,15,3NW1,0.25650557620817843,1.0379767226843772,140.0,129.0,0.8428571428571429,Moderate Variation,Trending Up - Monitor Par
+680828,donepezil (ARICEPT) 5 mg tab,Anticholinesterases,141.0,13,4NW2,0.2978723404255319,0.9806957547777646,77.0,64.0,0.6623376623376623,Moderate Variation,Trending Up - Monitor Par
+680829,anastrozole (ARIMIDEX) 1 mg tab,Aromatase inhibitors,8.0,2,4NW2,0.75,0.7071067811865476,2.0,6.0,5.0,Moderate Variation,Trending Up - Monitor Par
+680848,warfarin (COUMADIN) 3 mg tab,Vitamin K antagonists,34.0,9,3W2,0.2647058823529412,0.943127573224939,23.0,11.0,-0.043478260869565216,Moderate Variation,Maintain Par
+680850,cefepime (MAXIPIME) 1 gram vial,Fourth-generation cephalosporins,56.0,13,CCU1,0.26785714285714285,1.2515084435806823,32.0,24.0,0.5,Erratic / Unit-Specific,Maintain Par
+680917,enoxaparin (LOVENOX) 40 mg/0.4 mL (0.4 mL) syringe,Heparin group,2655.0,18,3W1,0.11487758945386065,0.6472994435446352,1687.0,968.0,0.14759928867812686,Moderate Variation,Maintain Par
+680918,carBAMazepine (TEGretol XR) 400 mg ER tab,Carboxamide derivatives,1.0,4,4SW3,1.0,2.0,0.0,1.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+680923,carvedilol (COREG) 3.125 mg tab,Alpha and beta blocking agents,315.0,13,4NW1,0.2253968253968254,1.150527610189786,222.0,93.0,-0.16216216216216217,Moderate Variation,Maintain Par
+680925,levothyroxine (SYNTHROID/LEVOTHROID) 137 mcg tab,Thyroid hormones,12.0,10,3W1,0.3333333333333333,1.3494397557212354,6.0,6.0,1.0,Erratic / Unit-Specific,Consolidate Units
+680941,heparin in 0.45% NS RTU 25000 units/250 mL (250 mL) bag,Heparin group,101.0,1,CCU1,1.0,0.0,64.0,37.0,0.15625,Uniform Hospital-Wide,Maintain Par
+680944,topiramate (topAMAX) 25 mg tab,Other antiepileptics,164.0,12,3NW2,0.23170731707317074,0.9658603775886699,102.0,62.0,0.21568627450980393,Moderate Variation,Maintain Par
+680947,azithromycin (ZITHROMAX) 500 mg vial,Macrolides,1.0,1,MFBCLD,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+680949,EPINEPHrine racemic UD inh (VAPONEFRIN (UD INH)) (0.5 mL) neb,Other agents for local oral treatment,5.0,4,CCU1,1.0,2.0,1.0,4.0,7.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+680956,midodrine (PROAMATINE) 5 mg tab,Adrenergic and dopaminergic agents,1043.0,14,CCU2,0.20421860019175456,0.7613280899959045,659.0,384.0,0.165402124430956,Moderate Variation,Maintain Par
+680960,tamsulosin (FLOMAX) 0.4 mg cap,Alpha-adrenoreceptor antagonists,1190.0,15,3W1,0.17563025210084032,0.7840015742518561,789.0,401.0,0.016476552598225603,Moderate Variation,Maintain Par
+680962,QUEtiapine (SEROquel) 25 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",146.0,13,4NW1,0.15753424657534246,0.6664750772427472,81.0,65.0,0.6049382716049383,Moderate Variation,Trending Up - Monitor Par
+680963,QUEtiapine (SEROquel) 100 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",117.0,13,CCU2,0.23076923076923078,1.0501812502783574,98.0,19.0,-0.6122448979591837,Moderate Variation,Maintain Par
+680972,chlorhexidine gluconate 0.12% (PERIDEX MOUTHWASH (UDQ)) (15 mL) UD liq,Antiinfectives and antiseptics for local oral treatment,620.0,8,CCU2,0.5338709677419354,1.775294170553821,382.0,238.0,0.24607329842931938,Erratic / Unit-Specific,Concentrate in Primary Unit
+680976,venlafaxine (EFFEXOR-XR) 37.5 mg ER cap,Other antidepressants,43.0,7,4W1,0.6976744186046512,1.739217730073324,38.0,5.0,-0.7368421052631579,Erratic / Unit-Specific,Trending Down - Reduce Par
+680981,venlafaxine (EFFEXOR-XR) 75 mg ER cap,Other antidepressants,234.0,14,4NW1,0.2692307692307692,1.2427326009885875,64.0,170.0,4.3125,Erratic / Unit-Specific,Trending Up - Monitor Par
+680985,cefpodoxime (VANTIN) 200 mg tab,Third-generation cephalosporins,11.0,4,4NW1,0.6363636363636364,1.0858468404344797,2.0,9.0,8.0,Moderate Variation,Trending Up - Monitor Par
+680993,clopidogrel (PLAVIX) 75 mg tab,Platelet aggregation inhibitors excl. heparin,478.0,15,3W1,0.2510460251046025,0.9627636883338699,301.0,177.0,0.1760797342192691,Moderate Variation,Maintain Par
+681005,montelukast (SINGULAIR) 10 mg tab,Leukotriene receptor antagonists,176.0,15,4NW1,0.19886363636363635,0.8259741216919816,110.0,66.0,0.2,Moderate Variation,Maintain Par
+681018,pramipexole (MIRAPEX) 0.125 mg tab,Dopamine agonists,3.0,4,3NW2,1.0,2.0,0.0,3.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681023,rOPINIRole (REQUIP) 1 mg tab,Dopamine agonists,226.0,8,4NW2,0.29646017699115046,0.8361243068097142,114.0,112.0,0.9649122807017544,Moderate Variation,Trending Up - Monitor Par
+681034,enoxaparin (LOVENOX) 100 mg/1 mL (1 mL) syringe,Heparin group,83.0,10,4SW4,0.30120481927710846,0.9158916080974108,48.0,35.0,0.4583333333333333,Moderate Variation,Maintain Par
+681045,topiramate (topAMAX) 100 mg tab,Other antiepileptics,52.0,6,4W1,0.34615384615384615,0.9075619202309309,37.0,15.0,-0.1891891891891892,Moderate Variation,Maintain Par
+681067,enoxaparin (LOVENOX) 60 mg/0.6 mL (0.6 mL) syringe,Heparin group,329.0,14,4W1,0.182370820668693,0.7695406277755085,184.0,145.0,0.5760869565217391,Moderate Variation,Trending Up - Monitor Par
+681068,enoxaparin (LOVENOX) 80 mg/0.8 mL (0.8 mL) syringe,Heparin group,88.0,11,3NW1,0.2727272727272727,0.8551315688243535,47.0,41.0,0.7446808510638298,Moderate Variation,Trending Up - Monitor Par
+681081,glucose 40% gel (GLUTOSE GEL) (15 Gm) tube,Other irrigating solutions,29.0,7,MFBCLD,0.5517241379310345,1.437700855360585,12.0,17.0,1.8333333333333333,Erratic / Unit-Specific,Trending Up - Monitor Par
+681095,pentosan (ELMIRON) 100 mg cap,Unclassified,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681097,citalopram (CeleXA) 20 mg tab,Selective serotonin reuptake inhibitors,36.0,11,4NW2,0.3055555555555556,1.1024663708093012,22.0,14.0,0.2727272727272727,Moderate Variation,Maintain Par
+681112,candesartan (ATACAND) 16 mg tab,"Angiotensin II receptor blockers (ARBs), plain",9.0,5,4NW1,0.6666666666666666,1.3833221775543036,2.0,7.0,6.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681117,lisinopril (PRINIVIL) 2.5 mg tab,"ACE inhibitors, plain",42.0,11,3W2,0.3333333333333333,1.3138025336806398,12.0,30.0,4.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681129,raloxifene (EVISTA) 60 mg tab,Selective estrogen receptor modulators,3.0,5,3NW2,1.0,2.23606797749979,0.0,3.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681145,celecoxib (CeleBREX) 100 mg cap,Other antineoplastic agents,18.0,6,4NW2,0.5555555555555556,1.3662601021279466,15.0,3.0,-0.6,Erratic / Unit-Specific,Trending Down - Reduce Par
+681148,colestipol (COLESTID) 1 gram tab,Bile acid sequestrants,8.0,4,3NW2,1.0,2.0,0.0,8.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681149,oxyBUTYnin (DITROPAN XL) 5 mg ER tab,Drugs for urinary frequency and incontinence,238.0,14,4NW1,0.2184873949579832,0.8480512035003062,132.0,106.0,0.6060606060606061,Moderate Variation,Trending Up - Monitor Par
+681155,pramipexole (MIRAPEX) 1 mg tab,Dopamine agonists,20.0,9,3NW2,0.4,1.3829316685939328,0.0,20.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681167,rizatriptan (MAXALT) 10 mg tab,Selective serotonin (5HT1) agonists,2.0,5,4W1,1.0,2.2360679774997902,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681179,OLANZapine (ZyPREXA) 2.5 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",66.0,11,3NW1,0.25757575757575757,0.9603240193925289,15.0,51.0,5.8,Moderate Variation,Trending Up - Monitor Par
+681182,celecoxib (CeleBREX) 200 mg cap,Other antineoplastic agents,68.0,7,4NW1,0.47058823529411764,1.2673535896139114,22.0,46.0,3.1818181818181817,Erratic / Unit-Specific,Trending Up - Monitor Par
+681184,sertraline (ZOLOFT) 25 mg tab,Selective serotonin reuptake inhibitors,82.0,12,4W2,0.4268292682926829,1.5734672025083747,41.0,41.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681191,cilostazol (PLETAL) 100 mg tab,Platelet aggregation inhibitors excl. heparin,15.0,9,4W1,0.4,1.3076696830622019,10.0,5.0,0.0,Erratic / Unit-Specific,Maintain Par
+681194,cefdinir (OMNICEF) 300 mg cap,Third-generation cephalosporins,24.0,4,4NW2,0.875,1.6722129936991568,7.0,17.0,3.857142857142857,Erratic / Unit-Specific,Trending Up - Monitor Par
+681198,cefepime (MAXIPIME) 2 gram vial,Fourth-generation cephalosporins,827.0,15,4W1,0.12333736396614269,0.5565126533541621,460.0,367.0,0.5956521739130435,Uniform Hospital-Wide,Trending Up - Monitor Par
+681199,amphetamine salts (ADDERALL) 5 mg tab,Centrally acting sympathomimetics,50.0,6,4NW1,0.6,1.411042168044598,42.0,8.0,-0.6190476190476191,Erratic / Unit-Specific,Maintain Par
+681217,pioglitazone (ACTOS) 15 mg tab,Thiazolidinediones,22.0,3,4W1,0.8181818181818182,1.2888588071598024,10.0,12.0,1.4,Erratic / Unit-Specific,Trending Up - Monitor Par
+681231,progesterone (micronized) (PROMETRIUM) 100 mg cap,Pregnen (4) derivatives,12.0,6,4NW1,0.5,1.2649110640673518,6.0,6.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681232,penicillin G potassium RTU (PENICILLIN G POTASSIUM RTU-PB) 3 million units/50 mL (50 mL) bag,Beta-lactamase sensitive penicillins,167.0,1,MFBCLD,1.0,0.0,95.0,72.0,0.5157894736842106,Uniform Hospital-Wide,Trending Up - Monitor Par
+681233,tacrolimus (PROGRAF) 0.5 mg cap,"Agents for dermatitis, excluding corticosteroids",0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681238,atorvastatin (LIPITOR) 20 mg tab,HMG CoA reductase inhibitors,564.0,14,4W1,0.2641843971631206,1.010342028338403,276.0,288.0,1.0869565217391304,Moderate Variation,Trending Up - Monitor Par
+681252,vaccine (hepatitis B Ped) pf (charge) (Recombivax HB Ped/Adol (charge)) 5 mcg/0.5 mL (0.5 mL) inj,Unclassified,266.0,1,MFBCLD,1.0,0.0,161.0,105.0,0.30434782608695654,Uniform Hospital-Wide,Maintain Par
+681257,modafinil (PROVIGIL) 100 mg tab,Centrally acting sympathomimetics,5.0,2,4W2,0.6,0.282842712474619,2.0,3.0,2.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+681258,gabapentin (NEURONTIN) 600 mg tab,Gabapentinoids,363.0,15,3W1,0.2837465564738292,1.2781512476551757,211.0,152.0,0.44075829383886256,Erratic / Unit-Specific,Maintain Par
+681260,enalaprilat (VASOTEC) 1.25 mg/1 mL (1 mL) vial,Unclassified,79.0,5,4SW3,0.4050632911392405,0.956094308900339,67.0,12.0,-0.6417910447761194,Moderate Variation,Maintain Par
+681273,caffeine citrate (pf) (CAFCIT (INJ)) 60 mg/3 mL (3 mL) vial,Other dermatologicals,35.0,1,NICU,1.0,0.0,31.0,4.0,-0.7419354838709677,Uniform Hospital-Wide,Trending Down - Reduce Par
+681279,bumetanide (BUMEX) 2 mg tab,"Sulfonamides, plain",325.0,13,3W1,0.25846153846153846,0.9500877152487903,153.0,172.0,1.2483660130718954,Moderate Variation,Trending Up - Monitor Par
+681296,pramipexole (MIRAPEX) 0.25 mg tab,Dopamine agonists,26.0,5,4SW4,1.0,2.23606797749979,18.0,8.0,-0.1111111111111111,Erratic / Unit-Specific,Concentrate in Primary Unit
+681306,risperiDONE (RisperDAL) 0.5 mg tab,Other antipsychotics,35.0,7,3W1,0.42857142857142855,1.1775681155103794,28.0,7.0,-0.5,Moderate Variation,Maintain Par
+681307,FLUoxetine (PROzac) 10 mg cap,Selective serotonin reuptake inhibitors,19.0,9,4SW2,0.42105263157894735,1.4100450868019803,14.0,5.0,-0.2857142857142857,Erratic / Unit-Specific,Maintain Par
+681325,candesartan (ATACAND) 8 mg tab,"Angiotensin II receptor blockers (ARBs), plain",2.0,4,3NW2,0.5,1.1547005383792515,2.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+681326,letrozole (FEMARA) 2.5 mg tab,Aromatase inhibitors,25.0,5,3NW2,0.52,0.9695359714832659,19.0,6.0,-0.3684210526315789,Moderate Variation,Maintain Par
+681328,OXcarbazepine (TRILEPTAL) 300 mg tab,Carboxamide derivatives,83.0,6,3W2,0.24096385542168675,0.4125340614607386,49.0,34.0,0.3877551020408163,Uniform Hospital-Wide,Maintain Par
+681349,poractant intratracheal susp (CUROSURF) 240 mg/3 mL (3 mL) bottle,Unclassified,4.0,1,NICU,1.0,0.0,2.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+681355,ramipril (ALTACE) 1.25 mg cap,"ACE inhibitors, plain",10.0,5,4NW1,0.7,1.4577379737113252,0.0,10.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681370,zonisamide (ZONEGRAN) 100 mg cap,Other antiepileptics,5.0,4,4SW2,0.6,1.2,2.0,3.0,2.0,Moderate Variation,Trending Up - Monitor Par
+681377,rOPINIRole (REQUIP) 0.25 mg tab,Dopamine agonists,92.0,11,4NW1,0.358695652173913,1.1620271870162242,68.0,24.0,-0.29411764705882354,Moderate Variation,Maintain Par
+681380,OLANZapine (ZyPREXA ZYDIS) 5 mg dissolve tab,"Diazepines, oxazepines, thiazepines and oxepines",26.0,12,4NW1,0.5769230769230769,2.2163750699689775,15.0,11.0,0.4666666666666667,Erratic / Unit-Specific,Concentrate in Primary Unit
+681381,OLANZapine (ZyPREXA ZYDIS) 10 mg dissolve tab,"Diazepines, oxazepines, thiazepines and oxepines",33.0,2,4NW1,1.0,1.4142135623730951,0.0,33.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681383,pantoprazole (PROTONIX) 40 mg EC tab,Proton pump inhibitors,3525.0,17,4W1,0.18014184397163122,0.8780185210539222,2463.0,1062.0,-0.13763702801461633,Moderate Variation,Maintain Par
+681409,ondansetron (ZOFRAN ODT) 4 mg dissolve tab,Serotonin (5HT3) antagonists,187.0,16,3NW2,0.43315508021390375,2.1692202088423254,95.0,92.0,0.9368421052631579,Erratic / Unit-Specific,Trending Up - Monitor Par
+681410,carbidopa/levodopa (25/100 mg) (Sinemet CR (25/100)) ER tab,Dopa and dopa derivatives,35.0,1,4NW1,1.0,0.0,0.0,35.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+681412,methylphenidate (CONCERTA) 18 mg ER tab,Centrally acting sympathomimetics,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681414,levETIRAcetam (KEPPRA) 500 mg tab,Other antiepileptics,506.0,14,3W1,0.2628458498023715,0.9910604524030485,324.0,182.0,0.12345679012345678,Moderate Variation,Maintain Par
+681427,budesonide UD inh soln (PULMICORT (UD INH)) 0.5 mg/2 mL (2 mL) neb,Corticosteroids acting locally,1580.0,17,3W1,0.2,0.8589879911449642,959.0,621.0,0.29509906152241916,Moderate Variation,Maintain Par
+681428,budesonide UD inh soln (PULMICORT (UD INH)) 0.25 mg/2 mL (2 mL) neb,Corticosteroids acting locally,244.0,17,3W1,0.28688524590163933,1.3315265664560274,122.0,122.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681437,midazolam (pf) (VERSED (PF)) 2 mg/2 mL (2 mL) vial,Benzodiazepine derivatives,166.0,7,CCU1,0.5602409638554217,1.520162550231436,129.0,37.0,-0.4263565891472868,Erratic / Unit-Specific,Concentrate in Primary Unit
+681442,linezolid (ZYVOX) 600 mg tab,Other antibacterials,82.0,11,4W1,0.3048780487804878,1.1293236039765189,46.0,36.0,0.5652173913043478,Moderate Variation,Trending Up - Monitor Par
+681446,OXcarbazepine (TRILEPTAL) 150 mg tab,Carboxamide derivatives,2.0,5,3NW2,1.0,2.2360679774997902,2.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+681450,flecainide (TAMBOCOR) 50 mg tab,"Antiarrhythmics, class Ic",0.0,3,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681456,divalproex (DEPAKOTE *ER*) 500 mg ER tab,Unclassified,76.0,11,3NW2,0.2894736842105263,1.0916930103325129,29.0,47.0,2.2413793103448274,Moderate Variation,Trending Up - Monitor Par
+681471,iron sucrose (pf) (VENOFER (PF)) 100 mg/5 mL (5 mL) vial,"Iron trivalent, oral preparations",51.0,3,POSTPARTUM,1.0,1.7320508075688772,41.0,10.0,-0.5121951219512195,Erratic / Unit-Specific,Concentrate in Primary Unit
+681473,glipiZIDE (GLUCOTROL XL) 2.5 mg ER tab,Sulfonylureas,2.0,3,4W1,1.0,1.7320508075688776,2.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+681478,dofetilide (TIKOSYN) 250 mcg cap,"Antiarrhythmics, class III",2.0,1,3NW1,1.0,0.0,2.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+681480,levETIRAcetam (KEPPRA) 250 mg tab,Other antiepileptics,223.0,7,4W2,0.5112107623318386,1.2843678743000442,152.0,71.0,-0.06578947368421052,Erratic / Unit-Specific,Maintain Par
+681482,lactobacillus gg (CULTURELLE DS) cap,Unclassified,97.0,10,4W1,0.29896907216494845,0.9536314662353944,39.0,58.0,1.9743589743589745,Moderate Variation,Trending Up - Monitor Par
+681488,modafinil (PROVIGIL) 200 mg tab,Centrally acting sympathomimetics,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681492,montelukast (SINGULAIR) 4 mg chew tab,Leukotriene receptor antagonists,1.0,1,PEDS,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+681494,ziprasidone (GEODON) 20 mg cap,Indole derivatives,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681495,ziprasidone (GEODON) 40 mg cap,Indole derivatives,14.0,4,4SW2,0.8571428571428571,1.6413036132965797,12.0,2.0,-0.6666666666666666,Erratic / Unit-Specific,Trending Down - Reduce Par
+681497,ziprasidone (GEODON) 80 mg cap,Indole derivatives,2.0,1,4NW1,1.0,0.0,2.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+681515,pantoprazole (PROTONIX) 40 mg vial,Proton pump inhibitors,1342.0,16,CCU2,0.23397913561847988,0.8735637816434499,913.0,429.0,-0.060240963855421686,Moderate Variation,Maintain Par
+681518,atorvastatin (LIPITOR) 40 mg tab,HMG CoA reductase inhibitors,2655.0,15,3W1,0.15819209039548024,0.6070151329475924,1630.0,1025.0,0.25766871165644173,Moderate Variation,Maintain Par
+681529,metFORMIN (GLUCOPHAGE XR) 500 mg ER tab,Biguanides,85.0,8,4NW1,0.36470588235294116,1.1493340933477472,27.0,58.0,3.2962962962962963,Moderate Variation,Trending Up - Monitor Par
+681549,leflunomide (ARAVA) 20 mg tab,Dihydroorotate dehydrogenase (DHODH) inhibitors,14.0,7,4NW2,0.42857142857142855,1.1902380714238083,8.0,6.0,0.5,Moderate Variation,Maintain Par
+681551,candesartan (ATACAND) 4 mg tab,"Angiotensin II receptor blockers (ARBs), plain",2.0,5,3W1,1.0,2.2360679774997902,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681594,meloxicam (MOBIC) 7.5 mg tab,Oxicams,0.0,6,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681605,oxyCODONE (conc) (ROXICODONE INTENSOL (UDQ)) 20 mg/1 mL (1 mL) UD liq,Natural opium alkaloids,105.0,4,3NW1,0.8666666666666667,1.6495355401173857,56.0,49.0,0.75,Erratic / Unit-Specific,Trending Up - Monitor Par
+681638,lidocaine (pf) 2% (Xylocaine 2% (pf)) 100 mg/5 mL (5 mL) vial,"Antiarrhythmics, class Ib",109.0,1,MFBCLD,1.0,0.0,0.0,109.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+681653,potassium chloride in SWFI RTU 10 mEq/100 mL (100 mL) bag,Potassium,640.0,2,CCU2,0.7734375,0.7733980419227864,453.0,187.0,-0.17439293598233996,Moderate Variation,Maintain Par
+681662,cycloSPORINE modified (Neoral/Gengraf) 100 mg cap,Calcineurin inhibitors,4.0,1,3W2,1.0,0.0,3.0,1.0,-0.3333333333333333,Uniform Hospital-Wide,Maintain Par
+681663,cycloSPORINE modified (Neoral/Gengraf) 25 mg cap,Calcineurin inhibitors,4.0,1,3W2,1.0,0.0,3.0,1.0,-0.3333333333333333,Uniform Hospital-Wide,Maintain Par
+681677,potassium chloride in SWFI RTU 20 mEq/50 mL (50 mL) bag,Potassium,310.0,2,CCU2,0.6258064516129033,0.3558343802100045,140.0,170.0,1.4285714285714286,Uniform Hospital-Wide,Trending Up - Monitor Par
+681709,aluminum hydroxide/magnesium hydroxide/simethicone (200 mg-200 mg-20 mg/5 mL) (MYLANTA/MAALOX  (UDQ)) (30 mL) UD liq,Aluminium compounds,33.0,12,3NW2,0.6363636363636364,2.193494924765887,24.0,9.0,-0.25,Erratic / Unit-Specific,Concentrate in Primary Unit
+681724,cetirizine (ZyrTEC) 5 mg tab,Piperazine derivatives,21.0,8,4W2,0.47619047619047616,1.3497531238352007,1.0,20.0,39.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681730,albuterol (8 gm) (PROVENTIL/VENTOLIN-HFA) 90 mcg/1 puff (60 puff) inhaler,Selective beta-2-adrenoreceptor agonists,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681743,nystatin susp (MYCOSTATIN (UDQ)) 500000 units/5 mL (5 mL) UD liq,Antibiotics,100.0,11,3W1,0.47,1.4859811573502537,64.0,36.0,0.125,Erratic / Unit-Specific,Maintain Par
+681771,carvedilol (COREG) 6.25 mg tab,Alpha and beta blocking agents,275.0,14,3W2,0.23636363636363636,0.9660573888625715,155.0,120.0,0.5483870967741935,Moderate Variation,Trending Up - Monitor Par
+681802,sirolimus (RAPAMUNE) 1 mg tab,Mammalian target of rapamycin (mTOR) kinase inhibitors,4.0,2,4NW1,1.0,1.4142135623730951,4.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+681817,polyethylene glycol 3350 UD powder (MIRALAX (UDPD)) 17 gram packet,Unclassified,1664.0,17,4W1,0.12439903846153846,0.6514060632702224,1045.0,619.0,0.184688995215311,Moderate Variation,Maintain Par
+681850,morphine IR (MSIR) 15 mg tab,Natural opium alkaloids,133.0,13,4NW1,0.43609022556390975,1.640996462983368,106.0,27.0,-0.49056603773584906,Erratic / Unit-Specific,Concentrate in Primary Unit
+681856,aluminum/magnesium/simethicone (400-400-40 mg/5 mL) (MAALOX PLUS XS  (UDQ)) (30 mL) UD liq,Aluminium compounds,0.0,7,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+681875,hydrOXYzine hcl (VISTARIL) 50 mg/1 mL (1 mL) vial,Diphenylmethane derivatives,2.0,6,3NW2,1.0,2.4494897427831783,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681889,albuterol-ipratropium (3 mg-0.5 mg/3 mL) UD inh (DUONEB (UD INH) 3 MG-0.5 MG) (3 mL) neb,Other nasal preparations,1961.0,17,3W1,0.15502294747577766,0.8940627437440515,1258.0,703.0,0.11764705882352941,Moderate Variation,Maintain Par
+681907,amphetamine salts (ADDERALL XR) 10 mg ER cap,Centrally acting sympathomimetics,30.0,10,4SW4,0.5666666666666667,1.6996731711975948,15.0,15.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681909,lactulose (CEPHULAC (UDQ)) 20 g/30 mL (30 mL) UD liq,Osmotically acting laxatives,416.0,15,4NW2,0.16105769230769232,0.7625238821904662,264.0,152.0,0.15151515151515152,Moderate Variation,Maintain Par
+681913,potassium citrate (UROCIT-K) 10 mEq ER tab,Sulfonamides and potassium in combination,11.0,2,4SW3,0.8181818181818182,0.899954085146515,9.0,2.0,-0.5555555555555556,Moderate Variation,Trending Down - Reduce Par
+681916,budesonide (ENTOCORT EC) 3 mg DR cap,Corticosteroids acting locally,39.0,4,3NW1,0.5384615384615384,0.9187934803676368,0.0,39.0,1.0,Moderate Variation,Trending Up - Monitor Par
+681920,calcium polycarbophil (FIBERCON) 625 mg tab,Bulk-forming laxatives,30.0,4,4SW2,0.4,0.4554200340426488,30.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+681922,cholecalciferol (vit-D3) (VITAMIN D-3) 10 mcg tab,Vitamin D and analogues,17.0,8,4NW1,0.35294117647058826,0.9220750739055599,7.0,10.0,1.8571428571428572,Moderate Variation,Trending Up - Monitor Par
+681929,fenofibrate (LOFIBRA) 54 mg tab,Fibrates,20.0,12,3NW1,0.4,1.40906158327255,10.0,10.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+681932,enoxaparin (LOVENOX) 150 mg/1 mL (1 mL) syringe,Heparin group,16.0,5,4SW2,0.6875,1.4217891457596656,13.0,3.0,-0.5384615384615384,Erratic / Unit-Specific,Trending Down - Reduce Par
+681933,enoxaparin (LOVENOX) 120 mg/0.8 mL (0.8 mL) syringe,Heparin group,24.0,12,CCU1,0.25,1.044465935734187,9.0,15.0,2.3333333333333335,Moderate Variation,Trending Up - Monitor Par
+681955,metoprolol succinate (topROL XL) 25 mg ER tab,"Beta blocking agents, selective",596.0,14,4NW2,0.1593959731543624,0.7665902679966371,330.0,266.0,0.6121212121212121,Moderate Variation,Trending Up - Monitor Par
+681958,methadone (conc) (Methadone Intensol) 10 mg/1 mL (1 mL) UD liq,Drugs used in opioid dependence,26.0,1,3NW1,1.0,0.0,0.0,26.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+681984,multivitamin with minerals (Thera-M) tab,Unclassified,50.0,11,4NW1,0.4,1.5189996708360405,17.0,33.0,2.8823529411764706,Erratic / Unit-Specific,Trending Up - Monitor Par
+681989,ertapenem (INVanz) 1 gram vial,Carbapenems,15.0,13,3W1,0.4,1.6537275515679164,9.0,6.0,0.3333333333333333,Erratic / Unit-Specific,Consolidate Units
+682017,fenofibrate (LOFIBRA) 160 mg tab,Fibrates,43.0,12,4NW1,0.32558139534883723,1.2103589464256808,23.0,20.0,0.7391304347826086,Erratic / Unit-Specific,Trending Up - Monitor Par
+682022,QUEtiapine (SEROquel) 300 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",56.0,10,3NW2,0.32142857142857145,1.0073426572050563,14.0,42.0,5.0,Moderate Variation,Trending Up - Monitor Par
+682028,labetalol (TRANDATE/NORMODYNE (SYR)) 20 mg/4 mL (4 mL) syringe,Alpha and beta blocking agents,251.0,16,CCU2,0.20318725099601595,0.9975552514184859,158.0,93.0,0.17721518987341772,Moderate Variation,Maintain Par
+682041,insulin isophane (NPH) (NovoLIN N/HumuLIN N *UNIT*) 1 units/0.01 mL (0.01 mL) unit,Unclassified,61.0,2,4W2,0.8688524590163934,1.0432723001112996,53.0,8.0,-0.6981132075471698,Moderate Variation,Maintain Par
+682057,fondaparinux (ARIXTRA (SYR)) 2.5 mg/0.5 mL (0.5 mL) syringe,Other antithrombotic agents,0.0,3,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+682060,morphine (conc) (MORPHINE (UDQ)) 20 mg/1 mL (1 mL) UD liq,Natural opium alkaloids,13.0,6,3NW2,0.38461538461538464,1.146128032750103,5.0,8.0,2.2,Moderate Variation,Trending Up - Monitor Par
+682067,fentanyl-ropivacaine 2 mcg/mL-0.2% NS (SUBLIMAZE 2 MCG/ML-NAROPIN 0.2% EPID) (100 mL) drip,Amides,270.0,1,MFBCLD,1.0,0.0,155.0,115.0,0.4838709677419355,Uniform Hospital-Wide,Maintain Par
+682076,citalopram (CeleXA) 40 mg tab,Selective serotonin reuptake inhibitors,8.0,8,4SW4,0.75,2.0701966780270626,2.0,6.0,5.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+682090,QUEtiapine (SEROquel) 200 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",24.0,9,3NW1,0.4166666666666667,1.3390178303517846,19.0,5.0,-0.47368421052631576,Erratic / Unit-Specific,Trending Down - Reduce Par
+682129,thiamine (mdv) (VITAMIN B-1 (MDV)) 200 mg/2 mL (2 mL) mdv,"Vitamin B1, plain",163.0,14,3W1,0.18404907975460122,0.8235531692495465,82.0,81.0,0.975609756097561,Moderate Variation,Trending Up - Monitor Par
+682148,methylphenidate (CONCERTA) 27 mg ER tab,Centrally acting sympathomimetics,1.0,2,4W1,1.0,1.4142135623730951,1.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+682172,escitalopram (LEXAPRO) 10 mg tab,Selective serotonin reuptake inhibitors,374.0,17,3NW2,0.21390374331550802,0.975421078812497,232.0,142.0,0.22413793103448276,Moderate Variation,Maintain Par
+682196,cyanocobalamin (VITAMIN B-12) 1000 mcg tab,Unclassified,144.0,13,4NW1,0.3680555555555556,1.3609014625011833,80.0,64.0,0.6,Erratic / Unit-Specific,Trending Up - Monitor Par
+682229,acetylcysteine 20% inh (MUCOMYST 20% (inh use only)) 0.8 gram/4 mL (4 mL) vial,Mucolytics,39.0,6,CCU2,0.5128205128205128,1.3888823142513684,3.0,36.0,23.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+682234,ondansetron (ZOFRAN ODT) 8 mg dissolve tab,Serotonin (5HT3) antagonists,2.0,7,3NW2,1.0,2.645751311064591,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+682235,ezetimibe (ZETIA) 10 mg tab,Other lipid modifying agents,113.0,15,3NW1,0.25663716814159293,1.0402331278263235,80.0,33.0,-0.175,Moderate Variation,Maintain Par
+682238,ARIPiprazole (ABILIFY) 15 mg tab,Other antipsychotics,20.0,6,4W1,0.5,1.1009087155618307,17.0,3.0,-0.6470588235294118,Moderate Variation,Trending Down - Reduce Par
+682246,lanolin 100% topical cream (LANSINOH) (7 Gm) tube,Unclassified,47.0,3,POSTPARTUM,1.0,1.7320508075688774,16.0,31.0,2.875,Erratic / Unit-Specific,Trending Up - Monitor Par
+682255,ARIPiprazole (ABILIFY) 10 mg tab,Other antipsychotics,81.0,9,4SW4,0.41975308641975306,1.1941214033447043,54.0,27.0,0.0,Moderate Variation,Maintain Par
+682256,oxyCODONE/acetaminophen (10/325 mg) (PERCOCET 10/325) tab,Natural opium alkaloids,3.0,5,4SW2,1.0,2.23606797749979,3.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+682261,divalproex (DEPAKOTE *ER*) 250 mg ER tab,Unclassified,19.0,5,4W1,0.8421052631578947,1.8270057850220822,11.0,8.0,0.45454545454545453,Erratic / Unit-Specific,Concentrate in Primary Unit
+682303,albuterol UD inh soln (ALBUTEROL (UD INH)) 2.5 mg/0.5 mL (0.5 mL) neb,Selective beta-2-adrenoreceptor agonists,2.0,3,CCU1,1.0,1.7320508075688776,2.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+682306,pravastatin (PRAVACHOL) 40 mg tab,HMG CoA reductase inhibitors,128.0,13,3W1,0.3515625,1.3612445238258384,100.0,28.0,-0.44,Erratic / Unit-Specific,Maintain Par
+682326,buprenorphine/naloxone (2/0.5 mg) (SUBOXONE 2MG/0.5MG) SL tab,Oripavine derivatives,106.0,12,3W2,0.4339622641509434,1.5573442804357926,39.0,67.0,2.4358974358974357,Erratic / Unit-Specific,Trending Up - Monitor Par
+682338,phenytoin susp (DILANTIN (UDQ)) 100 mg/4 mL (4 mL) UD liq,Hydantoin derivatives,9.0,2,4NW2,0.6666666666666666,0.4714045207910316,0.0,9.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+682354,pantoprazole (PROTONIX) 20 mg EC tab,Proton pump inhibitors,43.0,11,4NW1,0.4883720930232558,1.5870964266874619,26.0,17.0,0.3076923076923077,Erratic / Unit-Specific,Concentrate in Primary Unit
+682412,buPROPion (XL) (WELLBUTRIN XL) 150 mg ER tab,Other antidepressants,188.0,14,4NW1,0.32978723404255317,1.3627438220949188,75.0,113.0,2.013333333333333,Erratic / Unit-Specific,Trending Up - Monitor Par
+682441,oxyCODONE/acetaminophen (7.5/325 mg) (PERCOCET 7.5/325) tab,Natural opium alkaloids,46.0,3,4NW1,1.0,1.732050807568877,34.0,12.0,-0.29411764705882354,Erratic / Unit-Specific,Concentrate in Primary Unit
+682449,guaiFENesin (MUCINEX) 600 mg ER tab,Expectorants,437.0,14,3W1,0.21052631578947367,0.8579942400928607,194.0,243.0,1.5051546391752577,Moderate Variation,Trending Up - Monitor Par
+682454,buPROPion (XL) (WELLBUTRIN XL) 300 mg ER tab,Other antidepressants,139.0,14,4SW4,0.22302158273381295,0.9864210862422665,92.0,47.0,0.021739130434782608,Moderate Variation,Maintain Par
+682463,melatonin (MELATONIN) 3 mg tab,Melatonin receptor agonists,551.0,16,4SW4,0.11252268602540835,0.5455218611838861,390.0,161.0,-0.17435897435897435,Uniform Hospital-Wide,Maintain Par
+682468,memantine (NAMENDA) 5 mg tab,Other anti-dementia drugs,36.0,8,4SW2,0.3055555555555556,1.0008814457418695,26.0,10.0,-0.23076923076923078,Moderate Variation,Maintain Par
+682469,HYDROcodone/acetaminophen (10/325 mg) (NORCO 10/325) tab,Opium alkaloids and derivatives,118.0,13,4W1,0.1694915254237288,0.7060903845404474,38.0,80.0,3.210526315789474,Moderate Variation,Trending Up - Monitor Par
+682476,hydrocortisone (pf) (Solu-CORTEF (PF)) 100 mg vial,Corticosteroids for local oral treatment,212.0,13,CCU1,0.5660377358490566,2.023334747259089,134.0,78.0,0.16417910447761194,Erratic / Unit-Specific,Concentrate in Primary Unit
+682499,zonisamide (ZONEGRAN) 25 mg cap,Other antiepileptics,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+682530,OLANZapine (ZyPREXA) 10 mg vial,"Diazepines, oxazepines, thiazepines and oxepines",14.0,11,4NW1,0.21428571428571427,0.8672028691872108,10.0,4.0,-0.2,Moderate Variation,Consolidate Units
+682564,cinacalcet (SENSIPAR) 30 mg tab,Other anti-parathyroid agents,3.0,4,3W1,0.6666666666666666,1.2765694770084508,3.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+682568,carvedilol (COREG) 12.5 mg tab,Alpha and beta blocking agents,515.0,14,3W1,0.3320388349514563,1.1918400706975043,284.0,231.0,0.6267605633802817,Moderate Variation,Trending Up - Monitor Par
+682583,lansoprazole (PREVACID SOLUTAB) 30 mg dissolve tab,Proton pump inhibitors,65.0,10,3W2,0.4461538461538462,1.4653571345876462,37.0,28.0,0.5135135135135135,Erratic / Unit-Specific,Trending Up - Monitor Par
+682592,morphine in NS (Morphine in NS) 100 mg/100 mL (100 mL) drip,Natural opium alkaloids,2.0,1,3NW2,1.0,0.0,0.0,2.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+682598,DULoxetine (CYMBALTA) 30 mg DR cap,Other antidepressants,866.0,15,3W1,0.20785219399538107,0.9498729635024847,574.0,292.0,0.017421602787456445,Moderate Variation,Maintain Par
+682615,DULoxetine (CYMBALTA) 20 mg DR cap,Other antidepressants,93.0,11,3NW1,0.3225806451612903,1.1749200163181566,47.0,46.0,0.9574468085106383,Moderate Variation,Trending Up - Monitor Par
+682639,metoprolol tartrate (LOPRESSOR) 25 mg tab,"Beta blocking agents, selective",1279.0,15,3W1,0.20875684128225175,0.8724885246410874,771.0,508.0,0.31776913099870296,Moderate Variation,Maintain Par
+682649,atovaquone (MEPRON (UDQ)) 750 mg/5 mL (5 mL) UD liq,Other agents against amoebiasis and other protozoal diseases,5.0,4,3W1,0.6,1.2,5.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+682671,amiodarone in D5W RTU (Cordarone/Nexterone RTU) 150 mg/100 mL (100 mL) bag,"Antiarrhythmics, class III",35.0,2,CCU2,0.5142857142857142,0.040406101782088436,24.0,11.0,-0.08333333333333333,Uniform Hospital-Wide,Maintain Par
+682709,acamprosate (CAMPRAL) 333 mg DR tab,Drugs used in alcohol dependence,20.0,2,3W1,1.0,1.4142135623730951,20.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+682718,HYDROmorphone in NS (Dilaudid in NS) 20 mg/100 mL (100 mL) drip,Natural opium alkaloids,10.0,2,CCU2,0.6,0.282842712474619,9.0,1.0,-0.7777777777777778,Uniform Hospital-Wide,Trending Down - Reduce Par
+682735,HYDROmorphone (DILAUDID (SYR)) 1 mg/1 mL (1 mL) syringe,Natural opium alkaloids,1940.0,15,3NW1,0.16082474226804125,0.6951374739417081,998.0,942.0,0.8877755511022044,Moderate Variation,Trending Up - Monitor Par
+682744,buprenorphine (SUBUTEX) 8 mg SL tab,Oripavine derivatives,38.0,10,3NW2,0.4473684210526316,1.8599801095717292,36.0,2.0,-0.8888888888888888,Erratic / Unit-Specific,Trending Down - Reduce Par
+682745,buprenorphine (SUBUTEX) 2 mg SL tab,Oripavine derivatives,87.0,6,3W1,0.3218390804597701,0.7589341045372295,70.0,17.0,-0.5142857142857142,Moderate Variation,Maintain Par
+682809,morphine enteral (MORPHINE (SYQ)) 0.4 mg/1 mL (1 mL) syringe,Natural opium alkaloids,1.0,1,NICU,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+682819,"lidocaine-epinephrine (pf) 2%-1:200,000 (Xylocaine 2% w/epi (pf)) (20 mL) vial","Antiarrhythmics, class Ib",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+682847,sildenafil (REVATIO) 20 mg tab,Drugs used in erectile dysfunction,308.0,11,3W2,0.36363636363636365,1.0942801193441452,177.0,131.0,0.480225988700565,Moderate Variation,Maintain Par
+682868,levoFLOXacin (LEVAQUIN) 750 mg tab,Fluoroquinolones,38.0,13,3NW2,0.21052631578947367,1.1213326394399277,8.0,30.0,6.5,Moderate Variation,Trending Up - Monitor Par
+682873,ramelteon (ROZEREM) 8 mg tab,Melatonin receptor agonists,202.0,14,4W2,0.1782178217821782,0.685949722820586,105.0,97.0,0.8476190476190476,Moderate Variation,Trending Up - Monitor Par
+682893,guaiFENesin/dextromethorphan (ROBITUSSIN-DM (UDQ)) (10 mL) UD liq,Expectorants,21.0,8,4W1,0.5714285714285714,1.715041405622522,11.0,10.0,0.8181818181818182,Erratic / Unit-Specific,Trending Up - Monitor Par
+682905,memantine (NAMENDA) 10 mg tab,Other anti-dementia drugs,74.0,9,3W2,0.36486486486486486,1.16620134029534,47.0,27.0,0.14893617021276595,Moderate Variation,Maintain Par
+682932,pregabalin (LYRICA) 25 mg cap,Gabapentinoids,247.0,14,4W1,0.2793522267206478,0.9913999704098017,142.0,105.0,0.4788732394366197,Moderate Variation,Maintain Par
+682964,pregabalin (LYRICA) 100 mg cap,Gabapentinoids,451.0,14,3W1,0.21507760532150777,0.9253693718688488,199.0,252.0,1.5326633165829147,Moderate Variation,Trending Up - Monitor Par
+682966,pregabalin (LYRICA) 75 mg cap,Gabapentinoids,395.0,12,4NW1,0.3569620253164557,1.3275420591808447,303.0,92.0,-0.3927392739273927,Erratic / Unit-Specific,Maintain Par
+683017,HYDROcodone/acetaminophen (7.5/325 mg) (NORCO 7.5/325) tab,Opium alkaloids and derivatives,38.0,6,4W1,0.5263157894736842,1.137134465331065,35.0,3.0,-0.8285714285714286,Moderate Variation,Trending Down - Reduce Par
+683048,oxyCODONE (ROXICODONE) 15 mg tab,Natural opium alkaloids,193.0,9,4NW1,0.44041450777202074,1.3543624201207385,111.0,82.0,0.4774774774774775,Erratic / Unit-Specific,Maintain Par
+683052,fentaNYL (DURAGESIC) 12 mcg/1 hr patch,Opioid anesthetics,25.0,9,3NW2,0.36,1.2044915939930838,19.0,6.0,-0.3684210526315789,Erratic / Unit-Specific,Maintain Par
+683053,ARIPiprazole (ABILIFY) 2 mg tab,Other antipsychotics,9.0,6,3W2,0.6666666666666666,1.5634719199411433,4.0,5.0,1.5,Erratic / Unit-Specific,Trending Up - Monitor Par
+683054,ARIPiprazole (ABILIFY) 5 mg tab,Other antipsychotics,60.0,14,4NW1,0.26666666666666666,1.3771641865010855,49.0,11.0,-0.5510204081632653,Erratic / Unit-Specific,Maintain Par
+683057,mycophenolate (MYFORTIC) 180 mg DR tab,Unclassified,3.0,3,3NW1,0.6666666666666666,1.0,3.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+683059,QUEtiapine (SEROquel) 50 mg tab,"Diazepines, oxazepines, thiazepines and oxepines",233.0,14,CCU2,0.18454935622317598,0.9289365285579204,190.0,43.0,-0.5473684210526316,Moderate Variation,Maintain Par
+683089,poractant intratracheal susp (CUROSURF) 120 mg/1.5 mL (1.5 mL) bottle,Unclassified,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+683132,warfarin (COUMADIN) 4 mg tab,Vitamin K antagonists,6.0,5,3W2,0.5,1.0865337342004415,0.0,6.0,1.0,Moderate Variation,Trending Up - Monitor Par
+683138,ranolazine (RANEXA) 500 mg ER tab,Other cardiac preparations,53.0,12,4SW4,0.3018867924528302,1.1523063661576407,32.0,21.0,0.3125,Moderate Variation,Maintain Par
+683148,omega 3 acid ethylesters (OMACOR/LOVAZA) 1 gram cap,Unclassified,41.0,11,CCU2,0.43902439024390244,1.3789873773148091,26.0,15.0,0.15384615384615385,Erratic / Unit-Specific,Maintain Par
+683151,benzonatate (TESSALON PERLES) 200 mg cap,Other cough suppressants,14.0,10,4NW2,0.6428571428571429,1.9977311393717172,14.0,0.0,-1.0,Erratic / Unit-Specific,Consolidate Units
+683168,mycophenolate (MYFORTIC) 360 mg DR tab,Unclassified,26.0,3,3W2,0.5,0.6760921473556517,26.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+683190,lubiprostone (AMITIZA) 24 mcg cap,Other drugs for constipation,22.0,5,3W1,0.4090909090909091,0.7970762689431901,11.0,11.0,1.0,Moderate Variation,Trending Up - Monitor Par
+683198,fondaparinux (ARIXTRA (SYR)) 7.5 mg/0.6 mL (0.6 mL) syringe,Other antithrombotic agents,10.0,5,4SW4,0.4,0.9354143466934853,6.0,4.0,0.3333333333333333,Moderate Variation,Maintain Par
+683209,hydroCHLOROthiazide (MICROZIDE) 12.5 mg cap,"Thiazides, plain",39.0,10,3NW2,0.1794871794871795,0.7396990264416685,22.0,17.0,0.5454545454545454,Moderate Variation,Trending Up - Monitor Par
+683229,amoxicillin (AMOXIL) 875 mg tab,Penicillins with extended spectrum,21.0,4,3NW2,0.9523809523809523,1.8751669111901408,20.0,1.0,-0.9,Erratic / Unit-Specific,Trending Down - Reduce Par
+683255,heparin (flush) (Hep-Lock Flush) 50 units/5 mL (5 mL) syringe,Heparin group,18.0,5,3NW1,0.4444444444444444,1.1385500851066221,11.0,7.0,0.2727272727272727,Moderate Variation,Maintain Par
+683263,levETIRAcetam (KEPPRA (SDV)) 500 mg/5 mL (5 mL) vial,Other antiepileptics,530.0,13,CCU2,0.36981132075471695,1.4172093209559045,316.0,214.0,0.35443037974683544,Erratic / Unit-Specific,Maintain Par
+683322,rizatriptan mLt (MAXALT MLT) 5 mg dissolve tab,Selective serotonin (5HT1) agonists,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+683333,SITagliptin (JANUVIA) 25 mg tab,Dipeptidyl peptidase 4 (DPP-4) inhibitors,6.0,4,4NW1,1.0,2.0,0.0,6.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+683334,SITagliptin (JANUVIA) 100 mg tab,Dipeptidyl peptidase 4 (DPP-4) inhibitors,11.0,5,4W1,0.45454545454545453,0.8131156281817417,4.0,7.0,2.5,Moderate Variation,Trending Up - Monitor Par
+683391,famotidine (PEPCID AC) 10 mg tab,H2-receptor antagonists,2.0,11,3W1,0.5,2.2248595461286986,2.0,0.0,-1.0,Erratic / Unit-Specific,Consolidate Units
+683394,meloxicam (MOBIC) 15 mg tab,Oxicams,43.0,12,4SW3,0.3488372093023256,1.3539307487434278,39.0,4.0,-0.7948717948717948,Erratic / Unit-Specific,Trending Down - Reduce Par
+683431,HYDROcodone/acetaminophen (5/325 mg) (NORCO 5/325) tab,Opium alkaloids and derivatives,444.0,15,4NW2,0.18693693693693694,0.8571270955801531,252.0,192.0,0.5238095238095238,Moderate Variation,Trending Up - Monitor Par
+683442,rho(D) immune globulin (Rhophylac) (RHOPHYLAC) 300 mcg/2 mL (2 mL) syringe,Specific immunoglobulins,14.0,2,POSTPARTUM,1.0,1.4142135623730951,8.0,6.0,0.5,Erratic / Unit-Specific,Maintain Par
+683483,midazolam in NS (VERSED PB) 100 mg/100 mL (100 mL) bag,Benzodiazepine derivatives,31.0,4,CCU1,1.0,2.0,4.0,27.0,12.5,Erratic / Unit-Specific,Trending Up - Monitor Par
+683532,arformoterol UD inh soln (BROVANA (UD INH)) 15 mcg/2 mL (2 mL) neb,Unclassified,1872.0,17,3W1,0.18482905982905984,0.8050308052606109,1274.0,598.0,-0.061224489795918366,Moderate Variation,Maintain Par
+683533,oxytocin in NS (PITOCIN 30 UNITS IN NS) 30 units/500 mL (500 mL) bag,Oxytocin and analogues,484.0,2,MFBCLD,0.9896694214876033,1.384994273894312,288.0,196.0,0.3611111111111111,Erratic / Unit-Specific,Maintain Par
+683570,calcium carbonate (-) 1250 mg/5 mL (5 mL) UD liq,Calcium compounds,95.0,6,4SW3,0.30526315789473685,0.7760115371675697,92.0,3.0,-0.9347826086956522,Moderate Variation,Trending Down - Reduce Par
+683571,furosemide (LASIX (UDQ)) 40 mg/5 mL (5 mL) UD liq,"Sulfonamides, plain",20.0,3,CCU2,0.5,0.5267826876426369,0.0,20.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+683608,morphine (MORPHINE (SD-VIAL)) 10 mg/1 mL (1 mL) vial,Natural opium alkaloids,8.0,1,3NW2,1.0,0.0,8.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+683871,fentaNYL in NS (Sublimaze in NS) 1000 mcg/100 mL (100 mL) drip,Opioid anesthetics,355.0,3,CCU1,0.5154929577464789,0.8672717484488975,209.0,146.0,0.39712918660287083,Moderate Variation,Maintain Par
+683872,lithium carbonate (LITHIUM CARBONATE) 150 mg cap,Lithium,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+683903,l-methylfolate (DEPLIN) 7.5 mg tab,Unclassified,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+683928,nebivolol (BYSTOLIC) 5 mg tab,"Beta blocking agents, selective",0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+683929,nebivolol (BYSTOLIC) 10 mg tab,"Beta blocking agents, selective",3.0,2,3NW2,0.6666666666666666,0.47140452079103173,2.0,1.0,0.0,Uniform Hospital-Wide,Maintain Par
+683975,oxyCODONE (OxyCONTIN) 15 mg ER tab,Natural opium alkaloids,59.0,9,3NW1,0.4576271186440678,1.414848211319647,1.0,58.0,115.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+683990,lubiprostone (AMITIZA) 8 mcg cap,Other drugs for constipation,31.0,4,4W1,0.4838709677419355,0.635410180761039,21.0,10.0,-0.047619047619047616,Moderate Variation,Maintain Par
+684082,magnesium sulfate RTU 2 gram/50 mL (50 mL) bag,Osmotically acting laxatives,302.0,5,CCU2,0.3079470198675497,0.4800753562765413,168.0,134.0,0.5952380952380952,Uniform Hospital-Wide,Trending Up - Monitor Par
+684085,doxylamine (UNISOM) 25 mg tab,Aminoalkyl ethers,23.0,8,4NW1,0.43478260869565216,1.2111641980160104,10.0,13.0,1.6,Erratic / Unit-Specific,Trending Up - Monitor Par
+684097,guaiFENesin (ROBITUSSIN (UDQ)) 300 mg/15 mL (15 mL) UD liq,Expectorants,273.0,15,3NW2,0.2857142857142857,1.1195470275737085,152.0,121.0,0.5921052631578947,Moderate Variation,Trending Up - Monitor Par
+684109,desvenlafaxine (PRISTIQ) 50 mg ER tab,Other antidepressants,51.0,8,4W1,0.29411764705882354,0.9371998155465298,35.0,16.0,-0.08571428571428572,Moderate Variation,Maintain Par
+684159,multivitamin/iron oral (Poly-vi-sol w/iron) (POLY-VI-SOL W/IRON (SYQ)) (1 mL) syringe,Unclassified,44.0,1,NICU,1.0,0.0,3.0,41.0,26.333333333333332,Uniform Hospital-Wide,Trending Up - Monitor Par
+684204,niCARdipine in NS RTU (CARDENE RTU-IV) 40 mg/200 mL (200 mL) bag,Dihydropyridine derivatives,100.0,2,CCU2,0.79,0.8202438661763951,36.0,64.0,2.5555555555555554,Moderate Variation,Trending Up - Monitor Par
+684206,levETIRAcetam (KEPPRA XR) 500 mg ER tab,Other antiepileptics,20.0,7,3W1,0.4,1.1328430311977618,6.0,14.0,3.6666666666666665,Moderate Variation,Trending Up - Monitor Par
+684243,EPINEPHrine (sulfite free) (ADRENALIN (SULFITE FREE)) 1 mg/1 mL (1 mL) amp/vial,Other agents for local oral treatment,2.0,2,CCU1,1.0,1.4142135623730951,0.0,2.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+684244,alvimopan (ENTEREG) 12 mg cap,Peripheral opioid receptor antagonists,51.0,9,4SW2,0.39215686274509803,1.2816916805588778,25.0,26.0,1.08,Erratic / Unit-Specific,Trending Up - Monitor Par
+684245,cholecalciferol (vit-D3) (VITAMIN D-3) 25 mcg tab,Vitamin D and analogues,176.0,17,3NW1,0.16477272727272727,0.9573842561347184,94.0,82.0,0.7446808510638298,Moderate Variation,Trending Up - Monitor Par
+684253,sodium chloride 3% UD inh soln (SODIUM CHLORIDE 3%) (15 mL) neb,Sodium,25.0,8,4W1,0.36,1.2267494796062828,24.0,1.0,-0.9166666666666666,Erratic / Unit-Specific,Trending Down - Reduce Par
+684339,sevelamer carbonate (RENVELA) 800 mg tab,Drugs for treatment of hyperkalemia and hyperphosphatemia,510.0,14,3NW1,0.2019607843137255,1.0899703532716611,238.0,272.0,1.2857142857142858,Moderate Variation,Trending Up - Monitor Par
+684356,HYDROmorphone (DILAUDID) 1 mg/1 mL (1 mL) amp/vial,Natural opium alkaloids,0.0,3,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+684357,amantadine syrup (SYMMETREL (UDQ)) 100 mg/10 mL (10 mL) UD liq,Adamantane derivatives,18.0,2,CCU1,1.0,1.414213562373095,18.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+684359,diatrizoate meglumine-diatrizoate sodium 66-10% (MD-GASTROVIEW) (30 mL) bottle,Unclassified,16.0,12,4W1,0.4375,1.8738632918021625,5.0,11.0,3.4,Erratic / Unit-Specific,Trending Up - Monitor Par
+684406,lacosamide (VIMPAT (SDV)) 200 mg/20 mL (20 mL) vial,Other antiepileptics,25.0,7,4SW2,0.28,0.8220300075625787,15.0,10.0,0.3333333333333333,Moderate Variation,Maintain Par
+684408,lacosamide (VIMPAT) 50 mg tab,Other antiepileptics,113.0,8,3NW2,0.3008849557522124,1.00009509186175,59.0,54.0,0.8305084745762712,Moderate Variation,Trending Up - Monitor Par
+684409,lacosamide (VIMPAT) 100 mg tab,Other antiepileptics,9.0,7,3W1,0.4444444444444444,1.469861839480328,5.0,4.0,0.6,Erratic / Unit-Specific,Trending Up - Monitor Par
+684507,dronedarone (MULTAQ) 400 mg tab,"Antiarrhythmics, class III",3.0,1,4SW3,1.0,0.0,3.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+684510,rocuronium (ZEMURON SYR) 50 mg/5 mL (5 mL) syringe,Other quaternary ammonium compounds,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+684552,norepinephrine in NS (LEVOPHED) 8 mg/250 mL (250 mL) bag,Adrenergic and dopaminergic agents,264.0,2,CCU2,0.5454545454545454,0.12856486930664499,167.0,97.0,0.16167664670658682,Uniform Hospital-Wide,Maintain Par
+684623,dexAMETHasone (pf) (DECADRON (PF)) 10 mg/1 mL (1 mL) syringe/vial,Corticosteroids for local oral treatment,42.0,9,3NW1,0.35714285714285715,1.1687905837109693,19.0,23.0,1.4210526315789473,Moderate Variation,Trending Up - Monitor Par
+684697,febuxostat (ULORIC) 40 mg tab,Preparations inhibiting uric acid production,10.0,3,3NW2,0.7,1.0535653752852738,3.0,7.0,3.6666666666666665,Moderate Variation,Trending Up - Monitor Par
+684710,levETIRAcetam (KEPPRA (UDQ)) 500 mg/5 mL (5 mL) UD liq,Other antiepileptics,284.0,10,4SW2,0.352112676056338,1.0623459820844596,266.0,18.0,-0.8646616541353384,Moderate Variation,Maintain Par
+684752,HYDROmorphone (DILAUDID (SYQ)) 2 mg/2 mL (2 mL) oral syringe/cup,Natural opium alkaloids,47.0,2,4NW2,0.6808510638297872,0.5115240544753747,30.0,17.0,0.13333333333333333,Uniform Hospital-Wide,Maintain Par
+684798,rifAXIMin (XIFAXAN) 550 mg tab,Antibiotics,133.0,14,CCU2,0.21804511278195488,0.8958078847948852,79.0,54.0,0.3670886075949367,Moderate Variation,Maintain Par
+684803,esmolol in NS RTU (BREVIBLOC-DS 2 GRAM IN NS) 2000 mg/100 mL (100 mL) bag,"Beta blocking agents, selective",5.0,1,CCU2,1.0,0.0,5.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+684823,oxyCODONE (ROXICODONE) 10 mg tab,Natural opium alkaloids,4938.0,16,4W1,0.19501822600243013,0.8907806216080556,2940.0,1998.0,0.35918367346938773,Moderate Variation,Maintain Par
+684868,"pancrelipase (Zenpep) 20,000-63,000-84,000 units (Zenpep - 20) cap",Enzyme preparations,145.0,6,3W2,0.593103448275862,1.2923114816162706,54.0,91.0,2.3703703703703702,Erratic / Unit-Specific,Trending Up - Monitor Par
+684878,"pancrelipase (Zenpep) 5,000-17,000-24,000 units (Zenpep - 5) cap",Enzyme preparations,4.0,1,4NW1,1.0,0.0,4.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+684886,dabigatran (PRADAXA) 150 mg cap,Unclassified,44.0,12,4SW2,0.3181818181818182,1.4725129932879895,18.0,26.0,1.8888888888888888,Erratic / Unit-Specific,Trending Up - Monitor Par
+684892,"pancrelipase (Zenpep) 10,000-32,000-42,000 units (Zenpep - 10) cap",Enzyme preparations,22.0,4,3W1,0.5,0.7925270806437589,10.0,12.0,1.4,Moderate Variation,Trending Up - Monitor Par
+684893,"pancrelipase (Zenpep) 15,000-47,000-63,000 units (Zenpep - 15) cap",Enzyme preparations,32.0,2,3W1,1.0,1.4142135623730951,32.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+684907,calcium acetate (PHOSLO) 667 mg cap,Drugs for treatment of hyperkalemia and hyperphosphatemia,80.0,7,3NW1,0.5375,1.3572912669480095,66.0,14.0,-0.5757575757575758,Erratic / Unit-Specific,Maintain Par
+684939,vitamin B12-iron-folic acid (forte) (FERREX-150 (FORTE)) cap,Unclassified,5.0,2,4W1,1.0,1.4142135623730951,0.0,5.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+684961,micafungin (MYCAMINE) 100 mg vial,Other antimycotics for systemic use,74.0,12,CCU2,0.3108108108108108,1.3116527603280554,27.0,47.0,2.4814814814814814,Erratic / Unit-Specific,Trending Up - Monitor Par
+684978,EPINEPHrine (IM) (kit) 1 mg/1 mL (1 mL) inj kit,Other agents for local oral treatment,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+685083,vitamin D (D-Vi-Sol) 400 units/1 mL (1 mL) oral syringe/cup,Vitamin D and analogues,102.0,1,NICU,1.0,0.0,49.0,53.0,1.163265306122449,Uniform Hospital-Wide,Trending Up - Monitor Par
+685107,sevelamer carbonate UD powder (RENVELA (UDPD)) 0.8 gram packet,Drugs for treatment of hyperkalemia and hyperphosphatemia,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+685208,ketamine (KETALAR (SYR)) 50 mg/5 mL (5 mL) syringe,Other general anesthetics,3.0,1,CCU1,1.0,0.0,1.0,2.0,3.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+685217,lurasidone (LATUDA) 40 mg tab,Indole derivatives,46.0,7,3W1,0.5652173913043478,1.4053301181646949,26.0,20.0,0.5384615384615384,Erratic / Unit-Specific,Trending Up - Monitor Par
+685247,fidaxomicin (DIFICID) 200 mg tab,Antibiotics,3.0,2,3W2,0.6666666666666666,0.47140452079103173,1.0,2.0,3.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+685254,rivaroxaban (XARELTO) 10 mg tab,Direct factor Xa inhibitors,21.0,9,3NW1,0.3333333333333333,1.2121830534626528,7.0,14.0,3.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+685286,levothyroxine (SYNTHROID) 100 mcg vial,Thyroid hormones,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+685290,ticagrelor (BRILINTA) 90 mg tab,Platelet aggregation inhibitors excl. heparin,8.0,4,CCU1,0.625,1.0801234497346435,5.0,3.0,0.2,Moderate Variation,Maintain Par
+685291,rivaroxaban (XARELTO) 15 mg tab,Direct factor Xa inhibitors,26.0,10,4SW3,0.4230769230769231,1.6438277358794469,6.0,20.0,5.666666666666667,Erratic / Unit-Specific,Trending Up - Monitor Par
+685292,rivaroxaban (XARELTO) 20 mg tab,Direct factor Xa inhibitors,50.0,13,3W2,0.24,1.0920317455703075,26.0,24.0,0.8461538461538461,Moderate Variation,Trending Up - Monitor Par
+685328,tadalafil (ADCIRCA) 20 mg tab,Drugs used in erectile dysfunction,18.0,9,3W1,0.3333333333333333,1.0897247358851685,12.0,6.0,0.0,Moderate Variation,Maintain Par
+685340,sodium chloride 7% UD inh soln (SODIUM CHLORIDE 7% (UD INH)) (4 mL) neb,Sodium,10.0,6,3NW1,0.7,1.6395121225535356,1.0,9.0,17.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+685535,tranexamic acid (LYSTEDA) 650 mg tab,Amino acids,0.0,2,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+685538,mesalamine (DELZICOL DR) 400 mg DR cap,Aminosalicylic acid and similar agents,44.0,3,3NW2,0.5,0.4383477618633161,22.0,22.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+685544,apixaban (ELIQUIS) 2.5 mg tab,Direct factor Xa inhibitors,646.0,14,4W1,0.32507739938080493,1.29974981997113,418.0,228.0,0.09090909090909091,Erratic / Unit-Specific,Maintain Par
+685545,apixaban (ELIQUIS) 5 mg tab,Direct factor Xa inhibitors,1414.0,14,3W1,0.1379066478076379,0.6324960687815561,803.0,611.0,0.5217932752179327,Moderate Variation,Trending Up - Monitor Par
+685607,senna (SENEXON (UDQ)) 8.8 mg/5 mL (5 mL) UD liq,Unclassified,281.0,13,CCU1,0.27402135231316727,1.2281645277441635,154.0,127.0,0.6493506493506493,Erratic / Unit-Specific,Trending Up - Monitor Par
+685608,cloBAZam (ONFI) 10 mg tab,Benzodiazepine derivatives,130.0,8,CCU1,0.6307692307692307,1.7618095669302047,130.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+685611,HYDROcodone/acetaminophen (7.5-325 mg/15 mL) (HYCET 7.5MG/325MG (UDQ)) 7.5 mg/15 mL (15 mL) UD liq,Opium alkaloids and derivatives,14.0,7,3W2,0.35714285714285715,1.118033988749895,12.0,2.0,-0.6666666666666666,Moderate Variation,Trending Down - Reduce Par
+685612,lidocaine 1% buffered (LIDOCAINE BUFFERED) (10 mL) syringe,"Antiarrhythmics, class Ib",42.0,2,POSTPARTUM,1.0,1.414213562373095,22.0,20.0,0.8181818181818182,Erratic / Unit-Specific,Trending Up - Monitor Par
+685631,cholecalciferol (vit-D3) (VITAMIN D-3) 125 mcg cap,Vitamin D and analogues,561.0,13,4W1,0.42780748663101603,1.547181114836061,292.0,269.0,0.8424657534246576,Erratic / Unit-Specific,Trending Up - Monitor Par
+685686,"pancrelipase (Zenpep) 25,000-79,000-105,000 units (Zenpep - 25) cap",Enzyme preparations,84.0,10,3W2,0.40476190476190477,1.2450456111918542,42.0,42.0,1.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+685698,cycloPHOSphamide (CYTOXAN) 25 mg cap,Nitrogen mustard analogues,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+685721,doxycycline monohydrate (doxyCYCLINE MONOHYDRATE) 100 mg cap,Antiinfectives and antiseptics for local oral treatment,219.0,13,3NW1,0.2420091324200913,0.9747477079994544,94.0,125.0,1.6595744680851063,Moderate Variation,Trending Up - Monitor Par
+685734,"pancrelipase (Zenpep) 3,000-10,000-14,000 units (Zenpep - 3) cap",Enzyme preparations,96.0,6,4SW3,0.40625,0.965822188604093,96.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+685806,ceftazidime/avibactam (AVYCAZ) 2.5 gram vial,Third-generation cephalosporins,12.0,3,3W2,0.9166666666666666,1.5206906325745548,11.0,1.0,-0.8181818181818182,Erratic / Unit-Specific,Trending Down - Reduce Par
+685833,dexmedeTOMIDine in NS (PRECEDEX) 400 mcg/100 mL (100 mL) drip,Other hypnotics and sedatives,356.0,2,CCU2,0.5702247191011236,0.19862550033329987,208.0,148.0,0.4230769230769231,Uniform Hospital-Wide,Maintain Par
+685836,sacubitril/valsartan (24/26 mg) (ENTRESTO (24/26)) tab,"Angiotensin II receptor blockers (ARBs), other combinations",72.0,11,4SW4,0.4166666666666667,1.627443556890437,64.0,8.0,-0.75,Erratic / Unit-Specific,Concentrate in Primary Unit
+685837,sacubitril/valsartan (49/51 mg) (ENTRESTO (49/51)) tab,"Angiotensin II receptor blockers (ARBs), other combinations",16.0,7,4SW4,0.5,1.3055370861577749,12.0,4.0,-0.3333333333333333,Erratic / Unit-Specific,Maintain Par
+685882,urea UD powder (URE-NA) 15 gram packet,Solutions producing osmotic diuresis,83.0,12,4W1,0.24096385542168675,0.9090961875828227,54.0,29.0,0.07407407407407407,Moderate Variation,Maintain Par
+685883,naloxegol (MOVANTIK) 12.5 mg tab,Peripheral opioid receptor antagonists,39.0,8,4W1,0.5128205128205128,1.3625979749319408,12.0,27.0,3.5,Erratic / Unit-Specific,Trending Up - Monitor Par
+685884,naloxegol (MOVANTIK) 25 mg tab,Peripheral opioid receptor antagonists,65.0,8,4NW2,0.2923076923076923,0.9337116328695252,31.0,34.0,1.1935483870967742,Moderate Variation,Trending Up - Monitor Par
+685897,ivabradine (CORLANOR) 5 mg tab,Other cardiac preparations,11.0,6,3W1,0.7272727272727273,1.7046363612122508,2.0,9.0,8.0,Erratic / Unit-Specific,Trending Up - Monitor Par
+685920,tetracaine 0.5% UD ophthalmic soln (ALTACAINE) (4 mL) bottle,Local anesthetics,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+685975,miSOPROStol (CYTOTEC) 25 mcg tab,Prostaglandins,156.0,2,MFBCLD,1.0,1.414213562373095,86.0,70.0,0.627906976744186,Erratic / Unit-Specific,Trending Up - Monitor Par
+686157,rivaroxaban (XARELTO) 2.5 mg tab,Direct factor Xa inhibitors,52.0,9,4W1,0.2692307692307692,0.9351672160065765,26.0,26.0,1.0,Moderate Variation,Trending Up - Monitor Par
+686174,lidocaine 4% topical (ASPERCREME) (1 patch) patch,"Antiarrhythmics, class Ib",928.0,17,4W1,0.1206896551724138,0.5656326881937865,601.0,327.0,0.08818635607321132,Uniform Hospital-Wide,Maintain Par
+686176,loperamide (IMODIUM) 1 mg/7.5 mL (7.5 mL) UD liq,Antipropulsives,2.0,6,CCU2,1.0,2.4494897427831783,2.0,0.0,-1.0,Erratic / Unit-Specific,Trending Down - Reduce Par
+686214,sodium zirconium cyclosilicate oral powder (Lokelma) 10 gram packet,Drugs for treatment of hyperkalemia and hyperphosphatemia,44.0,8,3W2,0.5681818181818182,1.570086364644926,16.0,28.0,2.5,Erratic / Unit-Specific,Trending Up - Monitor Par
+686215,sodium zirconium cyclosilicate oral powder (Lokelma) 5 gram packet,Drugs for treatment of hyperkalemia and hyperphosphatemia,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+686275,calcium gluconate in NS (calcium gluconate) 1000 mg/50 mL (50 mL) bag,Calcium,1.0,1,MFBCLD,1.0,0.0,0.0,1.0,1.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+686370,fentaNYL (pf) in NS (Sublimaze (pf)) 10 mcg/1 mL syringe,Opioid anesthetics,4.0,1,NICU,1.0,0.0,4.0,0.0,-1.0,Uniform Hospital-Wide,Trending Down - Reduce Par
+686429,magnesium sulfate in SW RTU 20 gram/500 mL (500 mL) bag,Osmotically acting laxatives,156.0,1,MFBCLD,1.0,0.0,90.0,66.0,0.4666666666666667,Uniform Hospital-Wide,Maintain Par
+686450,macitentan (Opsumit) 10 mg tab,Antihypertensives for pulmonary arterial hypertension,30.0,6,3NW1,0.26666666666666666,0.593295878967653,6.0,24.0,7.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+686596,carboxymethylcellulose 0.5% UD (pf) oph soln (Refresh Plus (pf)) (0.4 mL) tube,Unclassified,1180.0,15,CCU2,0.6423728813559322,2.712140573105188,650.0,530.0,0.6307692307692307,Erratic / Unit-Specific,Trending Up - Monitor Par
+686602,dapagliflozin (Farxiga) 5 mg tab,Sodium-glucose co-transporter 2 (SGLT2) inhibitors,148.0,13,4W2,0.17567567567567569,0.8134201631514187,38.0,110.0,4.7894736842105265,Moderate Variation,Trending Up - Monitor Par
+686711,insulin glargine - yfgn (Semglee *UNIT*) 1 unit(s)/0.01 mL (0.01 mL) unit,"Insulins and analogues for injection, long-acting",32872.0,12,3NW1,0.265210513506936,0.9595741222503454,9534.0,23338.0,3.895741556534508,Moderate Variation,Trending Up - Monitor Par
+686856,etonogestrel (Nexplanon) 68 mg implant,Progestogens,36.0,1,POSTPARTUM,1.0,0.0,20.0,16.0,0.6,Uniform Hospital-Wide,Trending Up - Monitor Par
+686876,revefenacin (Yupelri) 175 mcg/3 mL neb,Anticholinergics,317.0,14,3W1,0.20504731861198738,0.8815136412109061,205.0,112.0,0.09268292682926829,Moderate Variation,Maintain Par
+686888,fentaNYL (pf) (Sublimaze (pf)) 50 mcg/1 mL (1 mL) syringe/vial,Opioid anesthetics,1027.0,16,MFBCLD,0.2619279454722493,1.4698110871708086,567.0,460.0,0.6225749559082893,Erratic / Unit-Specific,Trending Up - Monitor Par
+687277,ceFAZolin (Ancef) 2 gram vial,First-generation cephalosporins,1411.0,18,4NW2,0.16371367824238128,0.9867222260600929,898.0,513.0,0.14253897550111358,Moderate Variation,Maintain Par
+687280,benzocaine 20% mucous membrane UD (Hurricaine One) (0.5 mL) spray,Local anesthetics,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+687855,"lidocaine-epinephrine (pf) 1% 1:100,000 (Xylocaine 1% w/epi (pf)) (10 mL) vial","Antiarrhythmics, class Ib",41.0,1,POSTPARTUM,1.0,0.0,20.0,21.0,1.1,Uniform Hospital-Wide,Trending Up - Monitor Par
+687856,ePHEDrine (Akovaz) 25 mg/5 mL (5 mL) inj syringe,Adrenergic and dopaminergic agents,12.0,1,MFBCLD,1.0,0.0,4.0,8.0,3.0,Uniform Hospital-Wide,Trending Up - Monitor Par
+687862,empagliflozin (Jardiance) 10 mg tab,Sodium-glucose co-transporter 2 (SGLT2) inhibitors,104.0,13,4SW4,0.19230769230769232,0.7971302695712079,47.0,57.0,1.425531914893617,Moderate Variation,Trending Up - Monitor Par
+687863,empagliflozin (Jardiance) 25 mg tab,Sodium-glucose co-transporter 2 (SGLT2) inhibitors,56.0,13,3NW2,0.19642857142857142,0.9911920775984226,28.0,28.0,1.0,Moderate Variation,Trending Up - Monitor Par
+687865,insulin lispro (Admelog *UNIT*) 1 units/0.01 mL (0.01 mL) unit,"Insulins and analogues for injection, fast-acting",25499.0,17,3W1,0.10627867759519981,0.5072315758526554,15092.0,10407.0,0.37914126689636896,Uniform Hospital-Wide,Maintain Par
+687916,glucagon (Fresenius Kabi) (Glucagon Emergency Kit (Fresenius)) 1 mg kit,Glycogenolytic hormones,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+687977,ceFAZolin (Ancef) 3 gram vial,First-generation cephalosporins,26.0,7,MFBCLD,0.38461538461538464,0.8753697443646955,7.0,19.0,4.428571428571429,Moderate Variation,Trending Up - Monitor Par
+687999,albuterol inhalation (Ventolin) 25 mg/5 mL (5 mL) neb,Selective beta-2-adrenoreceptor agonists,0.0,1,Multiple / Zero Use,0.0,0.0,0.0,0.0,0.0,Dormant / Zero Use,De-stock Candidate
+688555,insulin glargine (Lantus *UNIT*) 1 unit(s)/0.01 mL (0.01 mL) unit,"Insulins and analogues for injection, long-acting",18243.0,12,4W1,0.18851066162363647,0.7777200547562747,18243.0,0.0,-1.0,Moderate Variation,Trending Down - Reduce Par
+6763241,benzocaine 20% topical (Americaine) (57 g) spray,Local anesthetics,244.0,2,MFBCLD,0.7172131147540983,0.6143714656210986,140.0,104.0,0.4857142857142857,Moderate Variation,Maintain Par
+6777631,HYDROmorphone (DILAUDID (SYR)) 0.5 mg/0.5 mL (0.5 mL) syringe,Natural opium alkaloids,2323.0,18,3W1,0.113646147223418,0.7352095950930634,1446.0,877.0,0.21300138312586445,Moderate Variation,Maintain Par
+6786361,non-formulary controlled substance n/a,Unclassified,71.0,8,4NW1,0.704225352112676,1.8839273920335649,15.0,56.0,6.466666666666667,Erratic / Unit-Specific,Trending Up - Monitor Par
+6841812,HYDROmorphone (Dilaudid) 10 mg/50 mL (50 mL) syringe,Natural opium alkaloids,94.0,16,4SW2,0.23404255319148937,1.1046358272523822,52.0,42.0,0.6153846153846154,Moderate Variation,Trending Up - Monitor Par
+6841822,morphine (Morphine) 50 mg/50 mL (50 mL) syringe,Natural opium alkaloids,27.0,6,4NW2,0.37037037037037035,0.7665861471404596,8.0,19.0,3.75,Moderate Variation,Trending Up - Monitor Par
+6879342,fentaNYL (Sublimaze) 1500 mcg/30 mL (30 mL) syringe,Opioid anesthetics,14.0,7,3NW2,0.35714285714285715,0.7637626158259734,10.0,4.0,-0.2,Moderate Variation,Maintain Par
+68032382,Sodium Chloride 0.9% Mini-bag Plus (MINI-BAG PLUS 0.9% NS) (50 mL) bag,Sodium,233.0,16,4NW1,0.19742489270386265,0.9564455760868398,161.0,72.0,-0.10559006211180125,Moderate Variation,Maintain Par
+68032383,Sodium Chloride 0.9% Mini-bag Plus (MINI-BAG PLUS 0.9% NS) (100 mL) bag,Sodium,3395.0,17,CCU2,0.1293078055964654,0.6104050496046426,2151.0,1244.0,0.15667131566713158,Moderate Variation,Maintain Par
+,pph (kit) kit,Unclassified,821952.0,14,CCU2,0.5740882679280542,2.5742429907130258,563946.0,258006.0,-0.08499749976061538,Erratic / Unit-Specific,Concentrate in Primary Unit

@@ -1,0 +1,1 @@
+ALTER TABLE "scope" ADD COLUMN "settings" JSONB NOT NULL DEFAULT '{}';
