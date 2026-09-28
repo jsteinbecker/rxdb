@@ -1,17 +1,7 @@
 import type { PrismaClient } from '../../generated/client';
 import type { FormularyRow } from '../formulary-hierarchy';
-import type { PackageSnapshot } from './catalog-cache';
 import { loadPackageSnapshots } from './catalog-store';
-import { packageDisplayTitle } from '../package-title';
-
-function ingredientsFromSpl(item: PackageSnapshot['item']) {
-  return (item.details?.spl?.ingredients ?? [])
-    .filter((ingredient) => ingredient.kind === 'active')
-    .map((ingredient) => ({
-      name: ingredient.moieties.find((moiety) => moiety.name)?.name ?? ingredient.name,
-      strength: ingredient.strength
-    }));
-}
+import { correctedIngredients, packageDisplayTitle } from '../package-title';
 
 /**
  * Every package currently linked into a formulary scope, flattened with the
@@ -83,19 +73,16 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
         formularyItem: link.formularyItem.displayName,
         description: item?.description ?? link.package.description,
         displayTitle: packageDisplayTitle({
-          rxNormName: item?.details?.rxnav?.conceptName,
-          packageDescription: item?.description ?? link.package.description,
-          splTitle: item?.splTitle,
+          ...item,
+          description: item?.description ?? link.package.description,
+          doseForm: item?.doseForm ?? product?.doseForm ?? null,
+          brandName: item?.brandName ?? product?.proprietaryName ?? null,
           isMultiDose: item?.isMultiDose ?? (doseType ? doseType === 'multi-dose' : null),
-          labeler
+          labelerName: labeler
         }),
         routes: metadataRoutes,
         doseForm: item?.doseForm ?? item?.details?.spl?.doseForm ?? product?.doseForm ?? null,
-        ingredients: item?.ingredients?.length
-          ? item.ingredients
-          : item
-            ? ingredientsFromSpl(item)
-            : [],
+        ingredients: item ? correctedIngredients(item) : [],
         brandName: item?.brandName ?? product?.proprietaryName ?? null,
         genericName: item?.genericName ?? null,
         labeler,

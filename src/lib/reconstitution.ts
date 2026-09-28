@@ -21,6 +21,13 @@
 // Everything here is pure and offline. Fetching is the caller's job.
 
 import { isVialForm } from './ingredient-content.js';
+import {
+  diluentList,
+  diluentsIn,
+  routeList,
+  routesIn,
+  type ReconstitutionRoute
+} from './reconstitution-terms.js';
 
 /** One reconstitution instruction: a vial size and what to add to it. */
 export interface ReconstitutionRow {
@@ -43,6 +50,10 @@ export interface ReconstitutionRow {
    * yields 4 mL, and the two sit side by side in the same row.
    */
   finalVolumeMl: number | null;
+  /** Routes the table assigns this row (section row, column header or stub), when it does. */
+  routes?: ReconstitutionRoute[];
+  /** Diluents the table names for this row (`reconstitution-terms.ts` codes). */
+  diluents?: string[];
 }
 
 const MASS_TO_MG: Record<string, number> = { mcg: 0.001, ug: 0.001, mg: 1, g: 1000, gm: 1000 };
@@ -175,7 +186,10 @@ type ColumnRole = 'diluent' | 'final' | 'concentration' | 'unknown';
  * Added | Withdrawal Volume" table otherwise reads as two diluent amounts per
  * vial; several unlabeled volume columns are ambiguous and yield nothing.
  */
-export function parseReconstitutionTable(tableMarkup: string): ReconstitutionRow[] {
+export function parseReconstitutionTable(
+  tableMarkup: string,
+  contextRoutes: readonly ReconstitutionRoute[] = []
+): ReconstitutionRow[] {
   const grid = toGrid(tableMarkup);
   // Units in column headers apply to bare numeric body cells only.
   const units: (string | undefined)[] = [];
@@ -198,7 +212,20 @@ export function parseReconstitutionTable(tableMarkup: string): ReconstitutionRow
   const firstBody = grid.findIndex((row) => row.some((cell) => parseMassMg(cell) !== null));
   if (firstBody < 1) return [];
 
-  const headers = grid.slice(0, firstBody);
+  // A full-width "Intramuscular" row is a section divider, not a header: it
+  // says which route the rows beneath it are for. Read as a header it would
+  // stamp its route onto every column of the table.
+  const sectionRoutes = (row: string[]): ReconstitutionRoute[] | null => {
+    const cells = new Set(row.filter((cell) => cell.trim()));
+    if (cells.size !== 1) return null;
+    const routes = routesIn([...cells][0]);
+    return routes.length ? routes : null;
+  };
+  const leading = grid.slice(0, firstBody);
+  const headers = leading.filter((row) => !sectionRoutes(row));
+  // Failing a divider, the route the document states above the table.
+  let section: readonly ReconstitutionRoute[] =
+    leading.map(sectionRoutes).filter(Boolean).pop() ?? contextRoutes;
   const columnConcentration = (column: number): number | null => {
     // Nearest header upward wins: the "250 mg/mL" subheader is more
     // specific than the "Amount of Diluent" banner spanning it.
@@ -247,10 +274,28 @@ export function parseReconstitutionTable(tableMarkup: string): ReconstitutionRow
     roles[roles.findIndex((role, c) => role === 'unknown' && volumeColumn(c))] = 'diluent';
   }
 
+  // A stub or "Diluent" column can name route and diluent in the row itself;
+  // only text cells are read, never quantities.
+  const textCells = (row: string[]) =>
+    row
+      .filter(
+        (cell) =>
+          parseMassMg(cell) === null &&
+          parseVolumeMl(cell) === null &&
+          parseConcentrationMgPerMl(cell) === null
+      )
+      .join(' ');
+
   const rows: ReconstitutionRow[] = [];
   for (const row of body) {
+    const divider = sectionRoutes(row);
+    if (divider) {
+      section = divider;
+      continue;
+    }
     const massIndex = row.findIndex((cell) => parseMassMg(cell) !== null);
     if (massIndex < 0) continue;
+    const rowText = textCells(row);
     const vialMassMg = parseMassMg(row[massIndex])!;
 
     let finalVolumeMl: number | null = null;
@@ -267,12 +312,22 @@ export function parseReconstitutionTable(tableMarkup: string): ReconstitutionRow
       if (roles[column] !== 'diluent') continue;
       const diluentMl = parseVolumeMl(row[column]);
       if (diluentMl === null) continue; // an em-dash "not applicable" cell
+      // Most specific first: the column ("Diluent for IM Use"), the row's
+      // own stub, then the section divider above it.
+      const columnRoutes = routesIn(headerText(column));
+      const stubRoutes = routesIn(rowText);
+      const routes = routeList(
+        columnRoutes.length ? columnRoutes : stubRoutes.length ? stubRoutes : section
+      );
+      const diluents = diluentList([...diluentsIn(headerText(column)), ...diluentsIn(rowText)]);
       rows.push({
         vialMassMg,
         diluentMl,
         concentrationMgPerMl:
           columnConcentration(column) ?? bodyConcentration ?? rowConcentration(row),
-        finalVolumeMl
+        finalVolumeMl,
+        ...(routes ? { routes } : {}),
+        ...(diluents ? { diluents } : {})
       });
     }
   }
@@ -286,6 +341,38 @@ export const TABLE_SECTIONS = [
   'spl_unclassified_section_table'
 ] as const;
 
+/**
+ * An administration heading — "Intramuscular Administration:", "For IV Use" —
+ * the way labels introduce each route's instructions. Deliberately narrower
+ * than `routesIn`: "As with all intramuscular preparations" mentions a route
+ * without introducing one.
+ */
+const ROUTE_HEADING =
+  /\b(?:intramuscular|intravenous|subcutaneous)(?:ly)?\s+(?:administration|injection|use|reconstitution)\b|\bfor\s+(?:IM|IV|SC)\s+(?:use|administration|injection)\b/gi;
+
+/** How far above a table to look for the heading that introduces it. */
+const HEADING_WINDOW = 2500;
+
+/**
+ * The route a table sits under in document order, from the nearest
+ * administration heading above it. Ceftriaxone's label writes "Intramuscular
+ * Administration: Reconstitute ... with the appropriate diluent" and then the
+ * 250/350 mg/mL table, then "Intravenous Administration:" and the 100 mg/mL
+ * table; nothing in either table says which it is. Only a document keeps this
+ * — openFDA's `_table` arrays have lost their surroundings — so it is read
+ * from the SPL XML, and table text in the window is dropped so a previous
+ * table's "Diluent for IM Use" column cannot pose as a heading.
+ */
+function routesAbove(markup: string, tableStart: number): ReconstitutionRoute[] {
+  const window = markup
+    .slice(Math.max(0, tableStart - HEADING_WINDOW), tableStart)
+    .replace(/^(?:(?!<(?:[\w.-]+:)?table\b)[\s\S])*?<\/(?:[\w.-]+:)?table>/i, ' ')
+    .replace(/<(?:[\w.-]+:)?table\b[\s\S]*?<\/(?:[\w.-]+:)?table>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ');
+  const headings = [...window.matchAll(ROUTE_HEADING)];
+  return headings.length ? routesIn(headings[headings.length - 1][0]) : [];
+}
+
 /** Every reconstitution row across a label's tables, de-duplicated. */
 export function reconstitutionFromLabel(label: Record<string, unknown>): ReconstitutionRow[] {
   const rows: ReconstitutionRow[] = [];
@@ -298,10 +385,12 @@ export function reconstitutionFromLabel(label: Record<string, unknown>): Reconst
     if (!Array.isArray(tables)) continue;
     for (const table of tables) {
       if (typeof table !== 'string') continue;
-      for (const row of (
-        table.match(/<(?:[\w.-]+:)?table\b[^>]*>[\s\S]*?<\/(?:[\w.-]+:)?table>/gi) ?? [table]
-      ).flatMap(parseReconstitutionTable)) {
-        rows.push(row);
+      const found = [
+        ...table.matchAll(/<(?:[\w.-]+:)?table\b[^>]*>[\s\S]*?<\/(?:[\w.-]+:)?table>/gi)
+      ];
+      if (!found.length) rows.push(...parseReconstitutionTable(table));
+      for (const match of found) {
+        rows.push(...parseReconstitutionTable(match[0], routesAbove(table, match.index)));
       }
     }
   }
@@ -312,7 +401,7 @@ export function reconstitutionFromLabel(label: Record<string, unknown>): Reconst
 export function dedupeReconstitutionRows(rows: readonly ReconstitutionRow[]): ReconstitutionRow[] {
   const byInstruction = new Map<string, ReconstitutionRow>();
   for (const row of rows) {
-    const key = `${row.vialMassMg}|${row.diluentMl}|${row.concentrationMgPerMl}|${row.finalVolumeMl}`;
+    const key = `${row.vialMassMg}|${row.diluentMl}|${row.concentrationMgPerMl}|${row.finalVolumeMl}|${row.routes}|${row.diluents}`;
     byInstruction.set(key, row);
   }
   return [...byInstruction.values()];

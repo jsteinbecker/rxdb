@@ -27,6 +27,7 @@ export function packageFixture(overrides: Partial<ExternalPackage> = {}): Extern
 		isVeterinary: false,
 		complete: true,
 		size: null,
+		unitOfUseCorrection: null,
 		isMultiDose: null,
 		isDryFill: true,
 		reconstitution: [],

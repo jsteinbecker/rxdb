@@ -2,9 +2,23 @@
   import type { StagedPackage } from '$lib/server/catalog-sync';
   import { appearanceText } from '$lib/spl-characteristics';
   import { resolve } from '$app/paths';
-  import LabelBlocks from './LabelBlocks.svelte';
+  import SplLabelSections from './SplLabelSections.svelte';
+  import OverrideCitation from './OverrideCitation.svelte';
+  import { overrideTargets } from '$lib/property-override-fields';
 
-  let { item }: { item: StagedPackage } = $props();
+  let {
+    item,
+    editing = false,
+    editKeys = [],
+    onedit
+  }: {
+    item: StagedPackage;
+    /** Show a pencil beside each overridable property. */
+    editing?: boolean;
+    /** Keys open in the override panel, to mark their pencil. */
+    editKeys?: string[];
+    onedit?: (keys: string[]) => void;
+  } = $props();
 
   const d = $derived(item.details);
   const active = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'active') ?? []);
@@ -26,14 +40,79 @@
       ? `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`
       : (value ?? null);
   const volume = $derived(item.resolvedVolume);
-  const overrideFields = [
-    ['description', 'Description'],
-    ['brandName', 'Brand name'],
-    ['genericName', 'Generic name'],
-    ['productCode', 'Product NDC'],
-    ['doseForm', 'Dose form']
-  ] as const;
+  // Fills an unstated final volume or concentration from the row's other stated
+  // values (mass ÷ concentration, mass ÷ volume). Only with a single stated
+  // concentration: a combination vial's mass can't be split between ingredients.
+  const round = (value: number) => Math.round(value * 100) / 100;
+  const calculated = (step: StagedPackage['reconstitution'][number]) => {
+    const mass = step.vialMassMg;
+    const stated = step.concentrations.length === 1 ? step.concentrations[0].mgPerMl : null;
+    return {
+      finalVolumeMl:
+        step.finalVolumeMl == null && mass != null && stated ? round(mass / stated) : null,
+      mgPerMl:
+        !step.concentrations.length && mass != null && step.finalVolumeMl
+          ? round(mass / step.finalVolumeMl)
+          : null
+    };
+  };
+  const overrideFields = $derived(overrideTargets(item));
 </script>
+
+{#snippet edit(keys: string[], label: string)}
+  {@const available = keys.filter((key) => overrideFields.some((field) => field.key === key))}
+  {#if editing && available.length}
+    <button
+      class="edit"
+      class:active={available.every((key) => editKeys.includes(key))}
+      type="button"
+      title={`Override ${label}`}
+      aria-label={`Override ${label}`}
+      onclick={() => onedit?.(available)}
+      ><svg viewBox="0 0 16 16" aria-hidden="true"
+        ><path
+          d="M11.2 2.3a1.4 1.4 0 0 1 2 0l.5.5a1.4 1.4 0 0 1 0 2L6 12.5l-3 .8.8-3z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linejoin="round"
+        /><path d="M10 3.5 12.5 6" stroke="currentColor" stroke-width="1.3" /></svg
+      ></button
+    >
+  {/if}
+{/snippet}
+
+{#snippet calcChip(value: string, formula: string)}
+  <span class="calc-chip" title={`Not stated on the label. ${formula}`}
+    ><svg viewBox="0 0 16 16" aria-hidden="true"
+      ><rect
+        x="3"
+        y="1.5"
+        width="10"
+        height="13"
+        rx="1.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.3"
+      /><rect x="5" y="3.5" width="6" height="2.5" rx="0.4" fill="currentColor" /><circle
+        cx="5.75"
+        cy="8.5"
+        r="0.8"
+        fill="currentColor"
+      /><circle cx="8" cy="8.5" r="0.8" fill="currentColor" /><circle
+        cx="10.25"
+        cy="8.5"
+        r="0.8"
+        fill="currentColor"
+      /><circle cx="5.75" cy="11.5" r="0.8" fill="currentColor" /><circle
+        cx="8"
+        cy="11.5"
+        r="0.8"
+        fill="currentColor"
+      /><circle cx="10.25" cy="11.5" r="0.8" fill="currentColor" /></svg
+    ><span class="sr-only">Calculated:</span>{value}</span
+  >
+{/snippet}
 
 <div class="detail">
   <section>
@@ -42,16 +121,37 @@
       <dt>NDC</dt>
       <dd class="mono">{item.ndc}</dd>
       <dt>Product NDC</dt>
-      <dd class="mono">{item.productCode ?? '—'}</dd>
+      <dd>
+        <span class="mono">{item.productCode ?? '—'}</span>{@render edit(
+          ['productCode'],
+          'product NDC'
+        )}
+      </dd>
       <dt>Description</dt>
-      <dd>{item.description ?? '—'}</dd>
+      <dd>
+        {item.description ?? '—'}{@render edit(['description'], 'description')}
+        {#if item.unitOfUseCorrection}
+          <span class="corrected">corrected from {item.unitOfUseCorrection.from}</span>
+        {/if}
+      </dd>
       <dt>Brand / generic</dt>
-      <dd>{[item.brandName, item.genericName].filter(Boolean).join(' / ') || '—'}</dd>
+      <dd>
+        {[item.brandName, item.genericName].filter(Boolean).join(' / ') || '—'}{@render edit(
+          ['brandName', 'genericName'],
+          'brand / generic'
+        )}
+      </dd>
       <dt>Labeler</dt>
-      <dd>{item.labelerName ?? '—'} <span class="mono">({item.labelerCode ?? '?'})</span></dd>
+      <dd>
+        {item.labelerName ?? '—'}
+        <span class="mono">({item.labelerCode ?? '?'})</span>{@render edit(
+          ['labelerName', 'labelerCode'],
+          'labeler'
+        )}
+      </dd>
       <dt>Dose form</dt>
       <dd>
-        {item.doseForm ?? '—'}
+        {item.doseForm ?? '—'}{@render edit(['doseForm'], 'dose form')}
         {#if item.doseFormCorrection}
           <span class="corrected">corrected from {item.doseFormCorrection.from}</span>
           <ul class="evidence">
@@ -68,13 +168,29 @@
         <dd>
           {item.size.packQty > 1 ? `${item.size.packQty} × ` : ''}{item.size.value}
           {item.size.unit ?? ''}
-          {item.size.container.toLowerCase()}
+          {item.size.container.toLowerCase()}{@render edit(
+            ['size.value', 'size.packQty', 'size.container', 'size.unit'],
+            'unit of use'
+          )}
+          {#if item.unitOfUseCorrection}
+            <span class="corrected">{item.unitOfUseCorrection.note}</span>
+          {/if}
         </dd>
       {/if}
       <dt>Multi-dose</dt>
-      <dd>{flag(item.isMultiDose, 'Multi-dose', 'Single-dose')}</dd>
+      <dd>
+        {flag(item.isMultiDose, 'Multi-dose', 'Single-dose')}{@render edit(
+          ['isMultiDose'],
+          'multi-dose'
+        )}
+      </dd>
       <dt>Dry fill</dt>
-      <dd>{item.isDryFill ? 'Yes — reconstitute before use' : 'No'}</dd>
+      <dd>
+        {item.isDryFill ? 'Yes — reconstitute before use' : 'No'}{@render edit(
+          ['isDryFill'],
+          'dry fill'
+        )}
+      </dd>
       {#if d?.packaging?.siblings.length}
         <dt>Sibling packages</dt>
         <dd>
@@ -91,17 +207,9 @@
       <ul class="evidence">
         {#each Object.entries(item.propertyOverrides) as [key, override] (key)}
           <li>
-            <b>{overrideFields.find(([field]) => field === key)?.[1] ?? key}:</b>
-            {override.value}
-            <br /><span
-              >Source: {override.sectionTitle},
-              <a
-                href={`https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=${override.splSetId}`}
-                target="_blank"
-                rel="noreferrer">SPL {override.splSetId}</a
-              >
-              — “{override.excerpt}”</span
-            >
+            <b>{overrideFields.find((field) => field.key === key)?.label ?? key}:</b>
+            {override.value}{@render edit([key], 'this property')}
+            <br /><span><OverrideCitation {override} /></span>
           </li>
         {/each}
       </ul>
@@ -117,30 +225,57 @@
           ? 'Exact NDC found'
           : item.listed === false
             ? 'No exact NDC entry found'
-            : 'Unknown'}
+            : 'Unknown'}{@render edit(['listed'], 'FDA NDC directory')}
       </dd>
       <dt>DailyMed SPL</dt>
-      <dd>{flag(item.splPresent, 'Found', 'Not found')}</dd>
+      <dd>
+        {flag(item.splPresent, 'Found', 'Not found')}{@render edit(['splPresent'], 'DailyMed SPL')}
+      </dd>
       <dt>Catalog eligibility</dt>
       <dd class:bad={item.exclusionReason}>{item.exclusionReason ?? 'Eligible'}</dd>
       <dt>RxNav NDC status</dt>
-      <dd>{item.rxcuiStatus ?? '—'}</dd>
+      <dd>{item.rxcuiStatus ?? '—'}{@render edit(['rxcuiStatus'], 'RxNav NDC status')}</dd>
       <dt>RxNav marketing status</dt>
       <dd>{rxnavMarketingStatus ?? '—'}</dd>
       <dt>Species</dt>
-      <dd>{flag(item.isVeterinary, 'Veterinary', 'Human')}</dd>
+      <dd>
+        {flag(item.isVeterinary, 'Veterinary', 'Human')}{@render edit(['isVeterinary'], 'species')}
+      </dd>
       <dt>Product type</dt>
-      <dd>{d?.product?.productType ?? '—'}</dd>
+      <dd>
+        {d?.product?.productType ?? '—'}{@render edit(
+          ['details.product.productType'],
+          'product type'
+        )}
+      </dd>
       <dt>Marketing category</dt>
-      <dd>{d?.product?.marketingCategory ?? '—'}</dd>
+      <dd>
+        {d?.product?.marketingCategory ?? '—'}{@render edit(
+          ['details.product.marketingCategory'],
+          'marketing category'
+        )}
+      </dd>
       <dt>Application</dt>
-      <dd class="mono">{d?.product?.applicationNumber ?? '—'}</dd>
+      <dd>
+        <span class="mono">{d?.product?.applicationNumber ?? '—'}</span>{@render edit(
+          ['details.product.applicationNumber'],
+          'application'
+        )}
+      </dd>
       <dt>DEA schedule</dt>
-      <dd>{d?.product?.deaSchedule ?? 'None'}</dd>
+      <dd>
+        {d?.product?.deaSchedule ?? 'None'}{@render edit(
+          ['details.product.deaSchedule'],
+          'DEA schedule'
+        )}
+      </dd>
       <dt>Marketing</dt>
       <dd>
         {date(d?.packaging?.marketingStartDate ?? d?.product?.marketingStartDate) ?? '?'} →
-        {date(item.marketingEndDate) ?? 'present'}
+        {date(item.marketingEndDate) ?? 'present'}{@render edit(
+          ['marketingEndDate'],
+          'marketing end date'
+        )}
       </dd>
       <dt>Listing expires</dt>
       <dd>{date(d?.product?.listingExpirationDate) ?? '—'}</dd>
@@ -179,36 +314,104 @@
       {#if volume}
         <p class="resolved-summary">
           <strong>Resolved volume:</strong>
-          {volume.finalVolumeMl === null ? 'Unresolved' : `${volume.finalVolumeMl} mL final`}
-          {#if volume.concentrationMgPerMl !== null}
-            · <strong>Resolved concentration:</strong> {volume.concentrationMgPerMl} mg/mL{/if}
-          {#if volume.diluentMl !== null}
-            · <strong>Diluent added:</strong> {volume.diluentMl} mL{/if}
+          {volume.finalVolumeMl === null
+            ? 'Unresolved'
+            : `${volume.finalVolumeMl} mL final`}{@render edit(
+            ['resolvedVolume.finalVolumeMl'],
+            'resolved volume'
+          )}
+          {#if volume.concentrationMgPerMl !== null || editing}
+            · <strong>Resolved concentration:</strong>
+            {volume.concentrationMgPerMl ?? '—'} mg/mL{@render edit(
+              ['resolvedVolume.concentrationMgPerMl'],
+              'resolved concentration'
+            )}{/if}
+          {#if volume.diluentMl !== null || editing}
+            · <strong>Diluent added:</strong>
+            {volume.diluentMl ?? '—'} mL{@render edit(
+              ['resolvedVolume.diluentMl'],
+              'diluent added'
+            )}{/if}
+          {#if volume.powderDisplacementMl != null || (volume.finalVolumeMl != null && volume.diluentMl != null) || editing}
+            · <strong>Powder displacement:</strong>
+            {volume.powderDisplacementMl ??
+              (volume.finalVolumeMl != null && volume.diluentMl != null
+                ? Math.max(0, volume.finalVolumeMl - volume.diluentMl)
+                : '—')} mL{@render edit(
+              ['resolvedVolume.powderDisplacementMl'],
+              'powder displacement'
+            )}{/if}
         </p>
-        <p class="muted">Package volume meaning: {volume.meaning}.</p>
+        <p class="muted">
+          Package volume meaning: {volume.meaning}.{@render edit(
+            ['resolvedVolume.meaning'],
+            'package volume meaning'
+          )}
+        </p>
       {/if}
       {#if item.reconstitution.length}
         <div class="table-wrap">
           <table class="data-table">
             <thead
               ><tr
-                ><th>Vial content</th><th>Diluent to add</th><th>Stated final volume</th><th
-                  >Stated concentration</th
-                ></tr
+                ><th>Route</th><th>Vial content</th><th>Diluent to add</th><th>Diluent</th><th
+                  >Stated final volume</th
+                ><th>Stated concentration</th></tr
               ></thead
             >
             <tbody>
               {#each item.reconstitution as step, i (i)}
+                {@const calc = calculated(step)}
+                {@const rowKey = `reconstitution.${step.id ?? i}`}
                 <tr>
-                  <td>{step.vialMassMg === null ? 'Not stated' : `${step.vialMassMg} mg`}</td>
-                  <td>{step.diluentMl} mL</td>
-                  <td>{step.finalVolumeMl == null ? 'Not stated' : `${step.finalVolumeMl} mL`}</td>
+                  <td
+                    >{step.routes?.join(', ') ?? 'Not stated'}{@render edit(
+                      [`${rowKey}.routes`],
+                      'routes'
+                    )}{#if step.id && step.id === volume?.rowId}
+                      <span class="muted">(default)</span>{/if}</td
+                  >
+                  <td
+                    >{step.vialMassMg === null
+                      ? 'Not stated'
+                      : `${step.vialMassMg} mg`}{@render edit(
+                      [`${rowKey}.vialMassMg`],
+                      'vial content'
+                    )}</td
+                  >
+                  <td
+                    >{step.diluentMl} mL{@render edit(
+                      [`${rowKey}.diluentMl`],
+                      'diluent to add'
+                    )}</td
+                  >
+                  <td
+                    >{step.diluents?.join(' or ') ?? 'Not stated'}{@render edit(
+                      [`${rowKey}.diluents`],
+                      'diluent'
+                    )}</td
+                  >
+                  <td
+                    >{#if step.finalVolumeMl != null}{step.finalVolumeMl} mL{:else if calc.finalVolumeMl != null}{@render calcChip(
+                        `${calc.finalVolumeMl} mL`,
+                        `Calculated: ${step.vialMassMg} mg ÷ ${step.concentrations[0].mgPerMl} mg/mL`
+                      )}{:else}Not stated{/if}{@render edit(
+                      [`${rowKey}.finalVolumeMl`],
+                      'final volume'
+                    )}</td
+                  >
                   <td
                     >{#each step.concentrations as concentration, c (c)}<div>
                         {concentration.mgPerMl} mg/mL{concentration.name
                           ? ` ${concentration.name.toLowerCase()}`
-                          : ''}
-                      </div>{:else}Not stated{/each}</td
+                          : ''}{@render edit(
+                          [`${rowKey}.concentrations.${c}.mgPerMl`],
+                          'concentration'
+                        )}
+                      </div>{:else}{#if calc.mgPerMl != null}{@render calcChip(
+                          `${calc.mgPerMl} mg/mL`,
+                          `Calculated: ${step.vialMassMg} mg ÷ ${step.finalVolumeMl} mL`
+                        )}{:else}Not stated{/if}{/each}</td
                   >
                 </tr>
               {/each}
@@ -323,16 +526,7 @@
         <dd>{d.spl.otherLabels.map((l) => l.title ?? l.setId).join('; ')}</dd>
       {/if}
     </dl>
-    {#each d?.label?.sections ?? [] as section (section.key)}
-      <details data-spl-section={section.key}>
-        <summary>{section.title}</summary>
-        {#if section.blocks?.length}
-          <LabelBlocks blocks={section.blocks} />
-        {:else}
-          <p class="prose">{section.text}</p>
-        {/if}
-      </details>
-    {/each}
+    <SplLabelSections sections={d?.label?.sections ?? []} />
   </section>
 
   {#if d?.rxnav}
@@ -505,6 +699,57 @@
   tbody tr:hover {
     background: #eef5ff;
   }
+  .calc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.1em 0.5em;
+    border: 1px solid #e6b89c;
+    border-radius: 999px;
+    background: #fbede4;
+    color: #a4461a;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: help;
+  }
+  .calc-chip svg {
+    width: 0.95em;
+    height: 0.95em;
+    flex: 0 0 auto;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin-left: 0.3rem;
+    padding: 0;
+    border: 1px solid #c9d6e8;
+    border-radius: 5px;
+    background: #fff;
+    color: #3464a5;
+    vertical-align: -0.3em;
+    cursor: pointer;
+  }
+  .edit:hover,
+  .edit.active {
+    border-color: #3464a5;
+    background: #3464a5;
+    color: #fff;
+  }
+  .edit svg {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
   .corrected {
     margin-left: 0.4em;
     font-size: 0.85em;
@@ -515,18 +760,5 @@
     padding-left: 1.1em;
     font-size: 0.8em;
     opacity: 0.8;
-  }
-  details {
-    margin-top: 0.4rem;
-    font-size: 0.875rem;
-  }
-  summary {
-    cursor: pointer;
-    font-weight: 650;
-  }
-  .prose {
-    white-space: pre-wrap;
-    color: #3c4757;
-    line-height: 1.5;
   }
 </style>

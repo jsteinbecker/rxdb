@@ -5,6 +5,8 @@
 // (a combination product's ingredients) repeats under each, and a row with
 // none lands in a "Not specified" bucket rather than disappearing.
 
+import { ingredientGroup } from './ingredient-group';
+
 export type FormularyRow = {
 	packageId: string;
 	ndc: string;
@@ -66,6 +68,9 @@ const titleCase = (value: string) =>
 	value.toLowerCase().replace(/(^|[\s,/(-])([a-z])/g, (_, lead, char) => lead + char.toUpperCase());
 
 const clean = (value: string | null | undefined) => value?.trim() || null;
+
+/** An ingredient as the hierarchy names it: `Cefepime`, never `Cefepime Hydrochloride`. */
+export const ingredientLabel = (name: string) => titleCase(ingredientGroup(name));
 
 const ROUTE_CLASSES: [RegExp, string][] = [
 	// Word boundaries matter: PARENTERAL contains ENTERAL.
@@ -129,7 +134,9 @@ const routeForm = (doseForm: string) => (route: string) => titleCase(`${route} $
 
 /** The combination a row belongs to, e.g. "Amoxicillin / Clavulanate"; null for single agents. */
 export function comboKey(row: FormularyRow): string | null {
-	const names = [...new Set(row.ingredients.map((item) => titleCase(item.name)))].sort(compare);
+	const names = [...new Set(row.ingredients.map((item) => ingredientLabel(item.name)))].sort(
+		compare
+	);
 	return names.length > 1 ? names.join(' / ') : null;
 }
 
@@ -172,17 +179,38 @@ export function summedStrength(strengths: string[]): string | null {
 	return `${Number(total.toPrecision(6))}${first.unit}${first.perLabel}`.replace(/\s+/g, '');
 }
 
+/**
+ * One spelling per strength, so equal amounts share a hierarchy node: `1 g/1`,
+ * `1000 mg/1` and `1 g` all read `1g`. A mass takes the largest of g, mg and
+ * mcg that keeps it at or above one (below 1 mg it keeps its own unit, since
+ * `0.5 mg/mL` is how that concentration is written); denominators are kept.
+ */
+export function normalizeStrength(strength: string): string {
+	const parsed = parseStrength(strength);
+	if (!parsed) return strength.replace(/\s+/g, '');
+	const unit =
+		parsed.family !== 'mass'
+			? parsed.unit
+			: parsed.base >= 1000
+				? 'g'
+				: parsed.base >= 1
+					? 'mg'
+					: parsed.unit;
+	const value = parsed.family === 'mass' ? parsed.base / MASS[unit] : parsed.base;
+	return `${Number(value.toPrecision(6))}${unit}${parsed.perLabel}`;
+}
+
 export function strengthOf(row: FormularyRow): string {
 	const each = row.ingredients.filter((item) => item.strength);
 	const display = row.doseDisplay;
 	if (display?.mode === 'single') {
-		const pick = each.find((item) => titleCase(item.name) === display.ingredient);
-		if (pick) return pick.strength!.replace(/\s+/g, '');
+		const pick = each.find((item) => ingredientLabel(item.name) === display.ingredient);
+		if (pick) return normalizeStrength(pick.strength!);
 	} else if (display?.mode === 'sum' && each.length > 1) {
 		const total = summedStrength(each.map((item) => item.strength!));
-		if (total) return `${total} total`;
+		if (total) return `${normalizeStrength(total)} total`;
 	}
-	return each.map((item) => item.strength!.replace(/\s+/g, '')).join(' / ');
+	return each.map((item) => normalizeStrength(item.strength!)).join(' / ');
 }
 
 export const DIMENSIONS: Dimension[] = [
@@ -232,7 +260,7 @@ export const DIMENSIONS: Dimension[] = [
 		values: (row) =>
 			row.ingredients.flatMap((item) => {
 				const name = clean(item.name);
-				return name ? [titleCase(name)] : [];
+				return name ? [ingredientLabel(name)] : [];
 			})
 	},
 	{
@@ -242,7 +270,7 @@ export const DIMENSIONS: Dimension[] = [
 		variant: { key: 'ingredient', mode: 'Combinations', hidden: true },
 		values: (row) =>
 			row.ingredients.some((item) => clean(item.name))
-				? [comboKey(row) ?? titleCase(row.ingredients.find((item) => clean(item.name))!.name)]
+				? [comboKey(row) ?? ingredientLabel(row.ingredients.find((item) => clean(item.name))!.name)]
 				: []
 	},
 	{

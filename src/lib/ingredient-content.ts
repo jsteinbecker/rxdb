@@ -46,3 +46,12 @@ const INJECTABLE_FORM =
 
 /** Whether a dose form is dispensed in a vial whose content can be asserted. */
 export const isVialForm = (doseForm: string): boolean => INJECTABLE_FORM.test(doseForm ?? '');
+
+/** A dry-fill has no liquid volume before reconstitution. Preserve the label's
+ * numerator as the per-vial amount; a per-volume denominator here is not the
+ * package's physical capacity. The unmodified source remains in evidence. */
+export function absoluteFillStrength(strength: string | null): string | null {
+	if (!strength) return strength;
+	const match = strength.match(/^(.+?)\s*\/\s*(?:\d+(?:\.\d+)?\s*)?(?:mL|L|uL|µL)\s*$/i);
+	return match?.[1]?.trim() ?? strength;
+}

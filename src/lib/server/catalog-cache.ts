@@ -1,7 +1,8 @@
 import { resolvePackageVolume } from './catalog-facts';
 import type { ExternalPackage } from './catalog-providers';
+import { applyPropertyOverrides } from './apply-property-overrides';
 
-export const CATALOG_VERSION = 'catalog-sync-v21';
+export const CATALOG_VERSION = 'catalog-sync-v24';
 export const CACHE_SOURCE = 'catalog-enrichment';
 const HOUR = 60 * 60 * 1000;
 export type PackageSnapshot = {
@@ -43,13 +44,7 @@ export function mergePackage(
 ): ExternalPackage {
 	if (!previous) return current;
 	const merged = { ...current };
-	if (previous.propertyOverrides) {
-		merged.propertyOverrides = previous.propertyOverrides;
-		for (const [key, override] of Object.entries(previous.propertyOverrides)) {
-			if (['description', 'brandName', 'genericName', 'productCode', 'doseForm'].includes(key))
-				Object.assign(merged, { [key]: override.value });
-		}
-	}
+	if (previous.propertyOverrides) merged.propertyOverrides = previous.propertyOverrides;
 	const nullable = [
 		'description',
 		'doseForm',
@@ -81,7 +76,10 @@ export function mergePackage(
 		merged.details = details;
 	}
 	if (!current.ingredients.length) merged.ingredients = previous.ingredients;
-	if (current.description === null) merged.size = previous.size;
+	if (current.description === null) {
+		merged.size = previous.size;
+		merged.unitOfUseCorrection = previous.unitOfUseCorrection;
+	}
 	if (current.doseForm === null) {
 		merged.isDryFill = previous.isDryFill;
 		merged.doseFormCorrection = previous.doseFormCorrection;
@@ -102,5 +100,5 @@ export function mergePackage(
 					merged.ingredients,
 					merged.reconstitution
 				);
-	return merged;
+	return applyPropertyOverrides(merged);
 }

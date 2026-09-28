@@ -30,7 +30,9 @@ const mass = (mg: number | null) =>
 const describeRecon = (row: unknown) => {
 	const r = row as Recon;
 	const conc = r.concentrations.map((c) => `${c.mgPerMl} mg/mL`).join(', ');
-	return `${mass(r.vialMassMg)} vial + ${r.diluentMl} mL` +
+	return (r.routes?.length ? `${r.routes.join('/')}: ` : '') +
+		`${mass(r.vialMassMg)} vial + ${r.diluentMl} mL` +
+		(r.diluents?.length ? ` ${r.diluents.join(' or ')}` : '') +
 		(r.finalVolumeMl != null ? ` → ${r.finalVolumeMl} mL` : '') + (conc ? ` (${conc})` : '');
 };
 
@@ -101,7 +103,7 @@ export const REVIEW_FIELDS: ReviewField[] = [
 	{ key: 'spl', label: 'SPL presence / inactivation', group: 'Status', keys: ['splPresent', 'splInactivated'] },
 	{ key: 'isVeterinary', label: 'Veterinary', group: 'Status', keys: ['isVeterinary'] },
 	{ key: 'rxcuiStatus', label: 'RxCUI status', group: 'Status', keys: ['rxcuiStatus'] },
-	{ key: 'size', label: 'Unit of use', group: 'Packaging', keys: ['size'] },
+	{ key: 'size', label: 'Unit of use', group: 'Packaging', keys: ['size', 'unitOfUseCorrection'] },
 	{ key: 'isMultiDose', label: 'Multi-dose', group: 'Packaging', keys: ['isMultiDose'] },
 	{ key: 'reconstitution', label: 'Reconstitution', group: 'Packaging', keys: ['reconstitution'] },
 	{ key: 'packaging', label: 'Packaging & siblings', group: 'Packaging', detail: 'packaging' },

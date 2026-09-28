@@ -173,6 +173,27 @@ export function innerPackages(description: string): InnerPackage[] {
 }
 
 /**
+ * Restate the unit of use's quantity in a description — `1025 mg in 1 VIAL`
+ * becomes `1000 mg in 1 VIAL` — leaving every other level as written. Returns
+ * null when no level states `size` as its own quantity and unit.
+ */
+export function restateUnitOfUse(
+	description: string,
+	size: Pick<UnitOfUseSize, 'value' | 'unit'>,
+	value: number
+): string | null {
+	const levels = splitLevels(description);
+	for (let i = levels.length - 1; i >= 0; i--) {
+		const level = parseLevel(levels[i]);
+		if (!level || level.qty !== size.value) continue;
+		if (MEASURED[level.unit.toLowerCase()]?.unit !== size.unit) continue;
+		const restated = levels[i].replace(/^(\s*)[\d.,]+/, `$1${value}`);
+		return description.replace(levels[i], restated);
+	}
+	return null;
+}
+
+/**
  * Parse a packaging description into its unit of use. Returns null when the
  * description doesn't match the expected shape at all, so callers can
  * distinguish "no size" from "not parseable" rather than inventing a number.

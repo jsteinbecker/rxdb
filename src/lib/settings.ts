@@ -2,7 +2,12 @@
 // Preferences stored on the formulary scope. Anything missing or malformed
 // falls back to the default, so older rows and hand edits never break a page.
 
-import { DEFAULT_LEVELS, DIMENSION_BY_KEY, type ComboDoseDisplay } from './formulary-hierarchy';
+import {
+	DEFAULT_LEVELS,
+	DIMENSION_BY_KEY,
+	ingredientLabel,
+	type ComboDoseDisplay
+} from './formulary-hierarchy';
 
 export type ExpandDepth = 'none' | 'first' | 'all';
 
@@ -29,8 +34,15 @@ export function parseComboDoseDisplay(value: unknown): ComboDoseDisplay | null {
 	const raw = value as Record<string, unknown>;
 	if (raw.mode === 'sum') return { mode: 'sum' };
 	if (raw.mode === 'single' && typeof raw.ingredient === 'string' && raw.ingredient)
-		return { mode: 'single', ingredient: raw.ingredient };
+		return { mode: 'single', ingredient: ingredientLabel(raw.ingredient) };
 	return null;
+}
+
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+/** Keys saved before salts were grouped (`Piperacillin Sodium / …`) read as `comboKey` now makes them. */
+function canonicalComboKey(key: string): string {
+	return [...new Set(key.split(' / ').map(ingredientLabel))].sort(collator.compare).join(' / ');
 }
 
 const EXPAND_DEPTHS: ExpandDepth[] = ['none', 'first', 'all'];
@@ -58,7 +70,7 @@ export function parseSettings(value: unknown): FormularySettings {
 				raw.comboDoseDisplay && typeof raw.comboDoseDisplay === 'object' ? raw.comboDoseDisplay : {}
 			).flatMap(([key, display]) => {
 				const parsed = parseComboDoseDisplay(display);
-				return parsed ? [[key, parsed]] : [];
+				return parsed ? [[canonicalComboKey(key), parsed]] : [];
 			})
 		)
 	};

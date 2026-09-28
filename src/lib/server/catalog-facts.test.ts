@@ -94,7 +94,7 @@ test('withdrawal volume columns are yields, not diluent, and sibling vial sizes 
     ],
     { dosage_and_administration_table: [ampicillinSulbactamTable] }
   );
-  assert.deepEqual(facts.reconstitution, [
+  assert.deepEqual(facts.reconstitution.map(({ id: _id, ...row }) => row), [
     { vialMassMg: 1500, diluentMl: 3.2, concentrations: [], finalVolumeMl: 4 }
   ]);
   assert.equal(facts.resolvedVolume?.diluentMl, 3.2);
@@ -119,7 +119,7 @@ test('reconstitution captures concentrations beside volumes and removes less inf
       '<table><tr><th>Vial</th><th>Volume of diluent to be added</th><th>Approximate concentration</th></tr><tr><td>100 mg</td><td>20 mL</td><td>5 mg/mL paclitaxel</td></tr></table>'
     ]
   });
-  assert.deepEqual(facts.reconstitution, [
+  assert.deepEqual(facts.reconstitution.map(({ id: _id, ...row }) => row), [
     {
       vialMassMg: 100,
       diluentMl: 20,

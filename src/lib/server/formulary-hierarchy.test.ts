@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
 	buildTree,
 	comboKey,
+	normalizeStrength,
 	strengthOf,
 	summedStrength,
 	parseLevels,
@@ -205,14 +206,38 @@ test('combination dose display: each, sum in one unit, or a single ingredient', 
 		]
 	});
 	assert.equal(comboKey(combo), 'Amoxicillin / Clavulanate');
-	assert.equal(strengthOf(combo), '875mg / 0.125g');
-	assert.equal(strengthOf({ ...combo, doseDisplay: { mode: 'sum' } }), '1000mg total');
+	assert.equal(strengthOf(combo), '875mg / 125mg');
+	assert.equal(strengthOf({ ...combo, doseDisplay: { mode: 'sum' } }), '1g total');
 	assert.equal(
 		strengthOf({ ...combo, doseDisplay: { mode: 'single', ingredient: 'Clavulanate' } }),
-		'0.125g'
+		'125mg'
 	);
 	assert.equal(summedStrength(['5 mg/5 mL', '1 mg/mL']), null);
 	assert.equal(summedStrength(['250 mcg/mL', '0.25 mg/mL']), '500mcg/mL');
 	assert.equal(summedStrength(['10 mg', '5 [iU]']), null);
 	assert.equal(summedStrength(['2 g/1', '.25 g/1']), '2.25g');
+});
+
+test('equal strengths share one node however they are written', () => {
+	assert.equal(normalizeStrength('1 g/1'), '1g');
+	assert.equal(normalizeStrength('1000 mg/1'), '1g');
+	assert.equal(normalizeStrength('1 g'), '1g');
+	assert.equal(normalizeStrength('1.13 g/1'), '1.13g');
+	assert.equal(normalizeStrength('500 mg/1'), '500mg');
+	assert.equal(normalizeStrength('0.5 g'), '500mg');
+	assert.equal(normalizeStrength('1000 mg/10 mL'), '1g/10mL');
+	assert.equal(normalizeStrength('0.5 mg/mL'), '0.5mg/mL');
+	assert.equal(normalizeStrength('250 mcg/mL'), '250mcg/mL');
+	assert.equal(normalizeStrength('1000 mcg'), '1mg');
+	assert.equal(normalizeStrength('5 [iU]/mL'), '5[iu]/mL');
+	const cefepime = (strength: string, ndc: string) =>
+		row({ ndc, ingredients: [{ name: 'CEFEPIME HYDROCHLORIDE', strength }] });
+	const tree = buildTree(
+		[cefepime('1 g/1', '1'), cefepime('1000 mg/1', '2'), cefepime('1 g', '3'), cefepime('2 g/1', '4')],
+		['ingredient', 'strength']
+	);
+	assert.deepEqual(
+		tree[0].children.map((node) => [node.label, node.count]),
+		[['1g', 3], ['2g', 1]]
+	);
 });

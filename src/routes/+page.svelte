@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import PackageDetail from '$lib/components/PackageDetail.svelte';
+	import { packageDisplayTitle } from '$lib/package-title';
 	import type { StagedConcept, StagedPackage } from '$lib/server/catalog-sync';
 
 	type Result = {
@@ -216,7 +217,11 @@
 		hideExcluded ? items.filter((item) => !item.exclusionReason) : items;
 
 	const packageTitle = (item: StagedPackage) =>
-		item.description ?? item.genericName ?? item.brandName ?? `NDC ${item.ndc}`;
+		packageDisplayTitle(item) ??
+		item.description ??
+		item.genericName ??
+		item.brandName ??
+		`NDC ${item.ndc}`;
 
 	onDestroy(() => {
 		clearTimeout(timer);

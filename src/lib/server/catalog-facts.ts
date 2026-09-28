@@ -1,10 +1,16 @@
-import { parseUnitOfUse, classifyMultiDose, type UnitOfUseSize } from '../ndc-packaging';
+import {
+  parseUnitOfUse,
+  classifyMultiDose,
+  restateUnitOfUse,
+  type UnitOfUseSize
+} from '../ndc-packaging';
 import { multiDoseFromLabel } from '../label-multidose';
 import { isDryFillForm, parseIngredientMassMg } from '../ingredient-content';
 import {
   parseReconstitutionProse,
   dedupeProseReconstitutions,
   fromReconstitutionRows,
+  withRowIds,
   resolveDryFillVolume,
   rowsForVial,
   type ResolvedDryFillVolume,
@@ -14,8 +20,21 @@ import { labelSectionBlocks, type LabelBlock } from '../spl-sections';
 import { reconstitutionFromLabel } from '../reconstitution';
 import { rxNormStrengths } from '../spl-strength-checks';
 
+/**
+ * A unit of use the directory states as the salt's mass, restated as the
+ * active moiety's. `description` and `size` carry the corrected values;
+ * `from` keeps the description as imported.
+ */
+export type UnitOfUseCorrection = {
+  from: string;
+  description: string;
+  note: string;
+};
+
 export type PackageFacts = {
   size: UnitOfUseSize | null;
+  /** Set when `size` was restated from salt to moiety mass. */
+  unitOfUseCorrection: UnitOfUseCorrection | null;
   isMultiDose: boolean | null;
   isDryFill: boolean;
   reconstitution: ProseReconstitution[];
@@ -86,12 +105,25 @@ export function parsePackageFacts(
       ? new Map([[ingredients[0].name, labeledMg[0]]])
       : null);
   const isDryFill = isDryFillForm(doseForm ?? '');
-  // A salt's package mass can differ from the labeled active-moiety vial size.
+  // A salt's package mass can differ from the labeled active-moiety vial
+  // size: "1025 mg in 1 VIAL" of vancomycin hydrochloride is the 1 g vial.
+  // The same correction the ingredient strength gets is carried into the
+  // unit of use and the description that states it.
+  const unitOfUseCorrection =
+    isDryFill && ingredients.length === 1 && moietyMasses && description
+      ? saltUnitOfUse(
+          description,
+          size,
+          ingredients[0].name,
+          rxNormStrengths(rxNormName).find((entry) =>
+            ingredients[0].name.toLowerCase().includes(entry.name.toLowerCase())
+          )?.name ?? null,
+          [...moietyMasses.values()][0]
+        )
+      : null;
   const normalizedSize =
-    isDryFill && size?.kind === 'mass' && size.unit === 'g' &&
-    ingredients.length === 1 && moietyMasses &&
-    Math.abs(size.value * 1000 - [...moietyMasses.values()][0]) <= size.value * 100
-      ? { ...size, value: [...moietyMasses.values()][0] / 1000 }
+    unitOfUseCorrection && size
+      ? { ...size, value: massInUnit([...moietyMasses!.values()][0], size.unit!) }
       : size;
   // Some labels state the resulting concentration in the next sentence.
   // Apply it only when it is unambiguous for this single-ingredient vial.
@@ -99,20 +131,57 @@ export function parsePackageFacts(
     .filter((match) => ingredients.length === 1 && ingredients[0].name.toLowerCase().includes(match[1].trim().toLowerCase()))
     .map((match) => Number(match[2]));
   const concentration = [...new Set(postReconstitution)];
-  const volumeRows = concentration.length === 1
+  const volumeRows = withRowIds(concentration.length === 1
     ? reconstitution.map((row) => row.concentrations.length ? row : {
         ...row, concentrations: [{ name: null, mgPerMl: concentration[0] }]
       })
-    : reconstitution;
+    : reconstitution);
 
   return {
     size: normalizedSize,
+    unitOfUseCorrection,
     isMultiDose:
       classifyMultiDose(description ?? '', doseForm ?? '') ??
       (text ? multiDoseFromLabel(text, ndc) : null),
     isDryFill,
     reconstitution: volumeRows,
     resolvedVolume: resolvePackageVolume(isDryFill, normalizedSize, ingredients, volumeRows, moietyMasses)
+  };
+}
+
+const MASS_MG: Record<string, number> = { kg: 1e6, g: 1e3, mg: 1, mcg: 1e-3 };
+
+const massInUnit = (mg: number, unit: string) => Number((mg / MASS_MG[unit]).toPrecision(12));
+
+/**
+ * The correction for a unit of use stated as a salt's mass: within 10% of
+ * the moiety's (the tolerance vial matching uses) but not equal to it.
+ */
+function saltUnitOfUse(
+  description: string,
+  size: UnitOfUseSize | null,
+  ingredient: string,
+  moiety: string | null,
+  moietyMg: number
+): UnitOfUseCorrection | null {
+  if (size?.kind !== 'mass' || !size.unit || !(size.unit in MASS_MG)) return null;
+  const statedMg = size.value * MASS_MG[size.unit];
+  if (statedMg === moietyMg || Math.abs(statedMg - moietyMg) > statedMg * 0.1) return null;
+  const value = massInUnit(moietyMg, size.unit);
+  const corrected = restateUnitOfUse(description, size, value);
+  if (!corrected) return null;
+  const counterion = moiety
+    ? ingredient.toLowerCase().replace(moiety.toLowerCase(), '').replace(/\s+/g, ' ').trim()
+    : '';
+  return {
+    from: description,
+    description: corrected,
+    note:
+      `Unit of use corrected from stated value of ${size.value} ${size.unit}, equivalent to ` +
+      (moiety
+        ? `${value} ${size.unit} ${moiety.toLowerCase()}` +
+          (counterion ? ` as the ${counterion} salt` : ' as its salt')
+        : `${value} ${size.unit} of the active moiety in ${ingredient.toLowerCase()}`)
   };
 }
 

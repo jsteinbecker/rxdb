@@ -2,7 +2,8 @@ import { error, fail } from '@sveltejs/kit';
 import { toNdc11 } from '$lib/ndc';
 import { stagedTree, syncExternalPackages } from '$lib/server/catalog-sync';
 import { applyReinterpret, previewReinterpret } from '$lib/server/reinterpret';
-import { savePropertyOverride } from '$lib/server/property-override';
+import { findEquivalentPackages, savePropertyOverride } from '$lib/server/property-override';
+import { readCitationInput } from '$lib/server/override-citation';
 import type { ReviewRequest } from '$lib/reinterpret';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -11,8 +12,11 @@ export const load: PageServerLoad = async ({ params }) => {
   if (!ndc) error(400, 'Use an 11-digit NDC or a labeled, hyphenated NDC.');
   const [item] = await syncExternalPackages([ndc]);
   if (!item) error(404, 'No package data available.');
-  const { packages } = await stagedTree({ concepts: [], packages: [item] });
-  return { item: packages[0] };
+  const [{ packages }, equivalents] = await Promise.all([
+    stagedTree({ concepts: [], packages: [item] }),
+    findEquivalentPackages(item)
+  ]);
+  return { item: packages[0], equivalents };
 };
 
 function parseReview(raw: FormDataEntryValue | null): ReviewRequest | null {
@@ -36,13 +40,14 @@ export const actions: Actions = {
     const ndc = toNdc11(params.ndc);
     if (!ndc) return fail(400, { message: 'Invalid NDC.' });
     const form = await request.formData();
+    const citation = readCitationInput(form);
+    if (!citation) return fail(400, { message: 'Choose what the override cites.' });
     try {
       await savePropertyOverride(
         ndc,
         String(form.get('key') ?? ''),
         String(form.get('value') ?? ''),
-        String(form.get('sectionKey') ?? ''),
-        String(form.get('excerpt') ?? '')
+        citation
       );
       return { overridden: true };
     } catch (cause) {

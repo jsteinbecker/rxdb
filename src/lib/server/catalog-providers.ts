@@ -1,4 +1,5 @@
 import { parsePackageFacts, type PackageFacts } from './catalog-facts';
+import type { PropertyOverride } from '../property-override-fields';
 import { toNdc11, hyphenCandidates, labelerCandidates } from '../ndc';
 import { parseSplIngredients, strengthText, type SplIngredient } from '../spl-ingredients';
 import { checkProductStrengths, type CheckedStrength } from '../spl-strength-checks';
@@ -6,7 +7,7 @@ import { appearancesByPackage, type PillAppearance } from '../spl-characteristic
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
 import { labelSectionBlocks, type LabelBlock } from '../spl-sections';
-import { isDryFillForm } from '../ingredient-content';
+import { absoluteFillStrength, isDryFillForm } from '../ingredient-content';
 import { parseUnitOfUse } from '../ndc-packaging';
 
 const RXNAV = 'https://rxnav.nlm.nih.gov/REST';
@@ -128,7 +129,7 @@ export type PackageDetails = {
   } | null;
 };
 export type ExternalPackage = PackageFacts & {
-  propertyOverrides?: Record<string, { value: string; excerpt: string; sectionKey: string; sectionTitle: string; splSetId: string; createdAt: string }>;
+  propertyOverrides?: Record<string, PropertyOverride>;
   listed: boolean | null;
   marketingEndDate: string | null;
   splPresent: boolean | null;
@@ -346,15 +347,6 @@ function labelIngredientOf(
       ? { strengthNotes: checked.corrections.map((correction) => correction.note) }
       : {})
   };
-}
-
-/** A dry-fill has no liquid volume before reconstitution. Preserve the label's
- * numerator as the per-vial amount; a per-volume denominator here is not the
- * package's physical capacity. The unmodified source remains in evidence. */
-function absoluteFillStrength(strength: string | null): string | null {
-  if (!strength) return strength;
-  const match = strength.match(/^(.+?)\s*\/\s*(?:\d+(?:\.\d+)?\s*)?(?:mL|L|uL|µL)\s*$/i);
-  return match?.[1]?.trim() ?? strength;
 }
 
 /** Extract a label-stated total sodium amount for the exact package NDC. */
@@ -1127,16 +1119,17 @@ export async function enrichPackages(
               }
             : null
       };
+      const facts = parsePackageFacts(
+        ndc,
+        packageDescription,
+        doseForm,
+        ingredients,
+        matchedLabel,
+        xml,
+        rxNormTitle
+      );
       return {
-        ...parsePackageFacts(
-          ndc,
-          packageDescription,
-          doseForm,
-          ingredients,
-          matchedLabel,
-          xml,
-          rxNormTitle
-        ),
+        ...facts,
         listed,
         marketingEndDate: packaging?.marketing_end_date ?? product?.marketing_end_date ?? null,
         splPresent,
@@ -1158,7 +1151,8 @@ export async function enrichPackages(
             Boolean(ownProducts.length) ||
             Boolean(labelProducts.length)),
         ndc,
-        description: packageDescription,
+        // Stated as the salt's mass, restated as the moiety's; see `unitOfUseCorrection`.
+        description: facts.unitOfUseCorrection?.description ?? packageDescription,
         doseForm,
         doseFormCorrection,
         brandName: product?.brand_name ?? null,

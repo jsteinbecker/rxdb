@@ -40,6 +40,14 @@
 //
 // Everything in this module is pure. Fetching is the caller's job.
 
+import {
+  diluentList,
+  diluentsIn,
+  routeList,
+  routesIn,
+  type ReconstitutionRoute
+} from './reconstitution-terms.js';
+
 /** What a labeled volume on a dry-fill package turns out to denote. */
 export type VolumeMeaning =
   /** The volume the reconstituted vial yields — a real, comparable size. */
@@ -68,6 +76,18 @@ export interface ProseReconstitution {
   concentrations: StatedConcentration[];
   /** Volume the label states the vial yields ("Withdrawal Volume"), when it does. */
   finalVolumeMl?: number | null;
+  /**
+   * Routes this instruction is for, when the label says. Absent means
+   * unstated, not "any": a label with one instruction often never names it.
+   */
+  routes?: ReconstitutionRoute[];
+  /** Diluents the label allows for this instruction (`reconstitution-terms.ts` codes). */
+  diluents?: string[];
+  /**
+   * Stable handle for this row within its package, derived from its content
+   * (`reconstitutionRowId`). Assigned per package, so bare parser output has none.
+   */
+  id?: string;
 }
 
 const MASS_TO_MG: Record<string, number> = {
@@ -152,6 +172,30 @@ const YIELD = /\b(?:to|yield(?:s|ing)?|resulting in|providing|giving)\b[^]*$/i;
 const CONCENTRATION =
   /([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s*(?:\/|\s+per\s+)\s*mL\b(?:\s+of\s+([A-Za-z][A-Za-z' -]*?))?(?=\s*(?:and\b|[,.;:(]|$))/gi;
 
+/**
+ * Where a diluent clause ends and the sentence moves on — to the yield ("to
+ * yield 2 mL", "to a concentration of") or to a next step ("then further
+ * dilute in 100 mL of 0.9% Sodium Chloride").
+ */
+const DILUENT_CLAUSE_END =
+  /\b(?:then|further|yield\w*|resulting|giving|providing|to\s+(?:a|an|yield|make|give|provide|obtain|prepare)\b)/i;
+
+const HEADING_SMALL_WORD = /^(?:and|or|of|for|the|to|in|by|with|a|an|use)$/;
+
+/**
+ * A heading line — "Intramuscular Injection", "For Intravenous Use",
+ * "Storage" — rather than a sentence: a few capitalized words and no volume.
+ * Headings set the route context for what follows; one naming no route clears it.
+ */
+const isHeading = (sentence: string): boolean => {
+  const words = sentence.replace(/[:.]$/, '').split(' ');
+  return (
+    words.length <= 6 &&
+    !/\d/.test(sentence) &&
+    words.every((word) => /^[A-Z(]/.test(word) || HEADING_SMALL_WORD.test(word))
+  );
+};
+
 const finite = (value: number): number | null =>
   Number.isFinite(value) && value > 0 ? value : null;
 
@@ -178,8 +222,15 @@ const normalizeName = (name: string): string => name.trim().toUpperCase().replac
 export function parseReconstitutionProse(text: string): ProseReconstitution[] {
   const rows: ProseReconstitution[] = [];
   const seen = new Set<string>();
+  // Route named by the nearest heading above ("Intramuscular Injection"),
+  // until the next heading replaces or clears it.
+  let headingRoutes: ReconstitutionRoute[] = [];
 
   for (const sentence of sentences(text)) {
+    if (isHeading(sentence)) {
+      headingRoutes = routesIn(sentence);
+      continue;
+    }
     // One sentence can carry several instructions. Sandoz's bulk label
     // writes "the pharmacy bulk bottle of 13.5 grams with exactly 51 mL and
     // 40.5 grams with exactly 152 mL of a compatible reconstitution
@@ -226,14 +277,35 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
     // Collected before they are converted, because a trailing parenthetical
     // may omit its unit and borrow the one a sibling in the same sentence
     // wrote: "(for 13.5 g bottle) and 152 mL (for 40.5 bottle)".
-    const pairs: { diluentMl: number; mass: [string, string | undefined] | null }[] = [];
+    const pairs: {
+      diluentMl: number;
+      mass: [string, string | undefined] | null;
+      routes: ReconstitutionRoute[];
+      diluents: string[];
+    }[] = [];
     let from = 0;
-    for (const match of diluents) {
+    for (const [index, match] of diluents.entries()) {
       const diluentMl = finite(Number(match[1]));
       const before = sentence.slice(from, match.index);
       const after = sentence.slice(match.index + match[0].length);
       from = match.index + match[0].length;
       if (diluentMl === null) continue;
+
+      // This pair's own stretch runs to the next volume. The diluent is named
+      // in it ("with 10 mL of Sterile Water for Injection or 0.9% Sodium
+      // Chloride"), but only up to where the sentence moves on to what the
+      // solution becomes or where it goes next: "then further dilute in
+      // 100 mL of 0.9% Sodium Chloride" names the bag's diluent, not the vial's.
+      const next = diluents[index + 1];
+      const own = next ? sentence.slice(from, next.index) : after;
+      const diluentClause = own.split(DILUENT_CLAUSE_END)[0];
+
+      // A route stated before this volume and after the previous one is this
+      // pair's; failing that, the last pair of a sentence may state it after
+      // ("with 10 mL ... for intravenous use"). Anything still unset inherits
+      // from its sibling or the heading, below.
+      const routes = routesIn(before);
+      if (!routes.length && !next) routes.push(...routesIn(own));
 
       // The mass belonging to this pair is the last one stated before its
       // "with" clause and after the previous pair's — anchored on `of` or
@@ -256,15 +328,23 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
         const trailing = TRAILING_VIAL_MASS.exec(after);
         if (trailing) mass = [trailing[1], trailing[2]];
       }
-      pairs.push({ diluentMl, mass });
+      pairs.push({ diluentMl, mass, routes, diluents: diluentsIn(diluentClause) });
     }
 
     const statedUnit = pairs.find((pair) => pair.mass?.[1])?.mass?.[1];
-    for (const { diluentMl, mass } of pairs) {
+    // Like the concentration tail, a diluent named once after the last volume
+    // serves every pair: "the 500 mg vial with 2 mL and the 1 g vial with
+    // 4 mL of Sterile Water for Injection".
+    const sharedDiluents = pairs[pairs.length - 1]?.diluents ?? [];
+    let inheritedRoutes = headingRoutes;
+    for (const { diluentMl, mass, ...pair } of pairs) {
       const unit = mass?.[1] ?? statedUnit;
       const vialMassMg = mass && unit ? toMg(mass[0], unit) : null;
+      if (pair.routes.length) inheritedRoutes = pair.routes;
+      const routes = routeList(inheritedRoutes);
+      const diluents = diluentList(pair.diluents.length ? pair.diluents : sharedDiluents);
 
-      const key = `${vialMassMg}|${diluentMl}|${concentrations.map((c) => `${c.name}:${c.mgPerMl}`).join('+')}`;
+      const key = `${vialMassMg}|${diluentMl}|${concentrations.map((c) => `${c.name}:${c.mgPerMl}`).join('+')}|${routes}|${diluents}`;
       if (seen.has(key)) continue;
       seen.add(key);
       const finalVolume =
@@ -277,13 +357,29 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
         vialMassMg,
         diluentMl,
         concentrations,
-        ...(finalVolume ? { finalVolumeMl: finite(Number(finalVolume[1] ?? finalVolume[2])) } : {})
+        ...(finalVolume ? { finalVolumeMl: finite(Number(finalVolume[1] ?? finalVolume[2])) } : {}),
+        ...(routes ? { routes } : {}),
+        ...(diluents ? { diluents } : {})
       });
     }
   }
 
   return dedupeProseReconstitutions(rows);
 }
+
+/**
+ * Whether two rows could be the same instruction as far as route goes. A row
+ * that names no route is compatible with any — the table and the prose often
+ * state one instruction, and only one of them says what it is for — but IM
+ * and IV rows with the same volume are two instructions, never one.
+ */
+const sameRoutes = (a: Pick<ProseReconstitution, 'routes'>, b: Pick<ProseReconstitution, 'routes'>) =>
+  !a.routes?.length || !b.routes?.length || `${a.routes}` === `${b.routes}`;
+
+const optionFields = (routes: ReconstitutionRoute[] | undefined, diluents: string[] | undefined) => ({
+  ...(routes?.length ? { routes } : {}),
+  ...(diluents?.length ? { diluents } : {})
+});
 
 /** Collapse exact instructions and keep the version with the most evidence. */
 export function dedupeProseReconstitutions(
@@ -299,6 +395,7 @@ export function dedupeProseReconstitutions(
       (previous.finalVolumeMl == null ||
         row.finalVolumeMl == null ||
         previous.finalVolumeMl === row.finalVolumeMl) &&
+      sameRoutes(previous, row) &&
       !previous.concentrations.some((a) =>
         concentrations.some((b) => a.name === b.name && a.mgPerMl !== b.mgPerMl)
       );
@@ -319,7 +416,11 @@ export function dedupeProseReconstitutions(
       vialMassMg: row.vialMassMg ?? previous.vialMassMg,
       diluentMl: row.diluentMl,
       concentrations: [...merged.values()],
-      finalVolumeMl: previous.finalVolumeMl ?? row.finalVolumeMl
+      finalVolumeMl: previous.finalVolumeMl ?? row.finalVolumeMl,
+      ...optionFields(
+        previous.routes ?? row.routes,
+        diluentList([...(previous.diluents ?? []), ...(row.diluents ?? [])])
+      )
     });
   }
   const deduped = [...byInstruction.values()];
@@ -330,6 +431,7 @@ export function dedupeProseReconstitutions(
         specific !== row &&
         specific.vialMassMg !== null &&
         specific.diluentMl === row.diluentMl &&
+        sameRoutes(specific, row) &&
         (row.concentrations.length === 0 ||
           specific.concentrations.some((candidate) =>
             row.concentrations.some(
@@ -355,6 +457,8 @@ export const fromReconstitutionRows = (
     diluentMl: number;
     concentrationMgPerMl: number | null;
     finalVolumeMl: number | null;
+    routes?: ReconstitutionRoute[];
+    diluents?: string[];
   }[]
 ): ProseReconstitution[] =>
   rows.map((row) => ({
@@ -362,8 +466,44 @@ export const fromReconstitutionRows = (
     diluentMl: row.diluentMl,
     concentrations:
       row.concentrationMgPerMl === null ? [] : [{ name: null, mgPerMl: row.concentrationMgPerMl }],
-    finalVolumeMl: row.finalVolumeMl
+    finalVolumeMl: row.finalVolumeMl,
+    ...optionFields(row.routes, row.diluents)
   }));
+
+/**
+ * A row's id: a hash of what it instructs, so it survives the reparse that
+ * reorders rows (a positional key would then point an override at the wrong
+ * instruction) and changes only when the instruction itself does — at which
+ * point an override written against the old one should stop applying.
+ */
+export function reconstitutionRowId(row: ProseReconstitution): string {
+  const content = [
+    row.vialMassMg,
+    row.diluentMl,
+    row.finalVolumeMl ?? null,
+    row.concentrations.map((c) => `${c.name ?? ''}:${c.mgPerMl}`).sort().join('+'),
+    [...(row.routes ?? [])].sort().join('+'),
+    [...(row.diluents ?? [])].sort().join('+')
+  ].join('|');
+  // FNV-1a, 32-bit: short, dependency-free, and plenty for a dozen rows.
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < content.length; i++) {
+    hash ^= content.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `r${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+/** The rows with ids assigned, suffixed on the off chance two rows hash alike. */
+export function withRowIds(rows: readonly ProseReconstitution[]): ProseReconstitution[] {
+  const used = new Map<string, number>();
+  return rows.map((row) => {
+    const base = reconstitutionRowId(row);
+    const count = (used.get(base) ?? 0) + 1;
+    used.set(base, count);
+    return { ...row, id: count === 1 ? base : `${base}-${count}` };
+  });
+}
 
 /**
  * The rows that apply to a vial of `totalMg`: those naming that mass, and
@@ -399,6 +539,8 @@ const SALT_TOLERANCE = 0.1;
 
 /** What the label settled about one dry-fill package. */
 export interface ResolvedDryFillVolume {
+  /** Difference between resulting volume and added diluent, when both are known. */
+  powderDisplacementMl?: number | null;
   /** What the packaging description's volume turned out to denote. */
   meaning: VolumeMeaning;
   /** Volume the reconstituted vial yields, in mL; null when unresolved. */
@@ -407,6 +549,12 @@ export interface ResolvedDryFillVolume {
   diluentMl: number | null;
   /** Concentration used to derive `finalVolumeMl`, in mg/mL. */
   concentrationMgPerMl: number | null;
+  /**
+   * Id of the reconstitution row this was resolved from — the package's
+   * default instruction among possibly several (IM, IV, ...). Absent when the
+   * rows carry no ids or nothing resolved.
+   */
+  rowId?: string;
 }
 
 /**
@@ -531,7 +679,8 @@ export function resolveDryFillVolume(
       meaning: 'unknown',
       finalVolumeMl: yielded.volumeMl,
       diluentMl: row.diluentMl,
-      concentrationMgPerMl: yielded.concentrationMgPerMl
+      concentrationMgPerMl: yielded.concentrationMgPerMl,
+      ...(row.id ? { rowId: row.id } : {})
     };
     // A row whose diluent or yield matches the labeled number explains that
     // number, and is preferred over one that merely yields a volume — a

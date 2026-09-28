@@ -97,10 +97,14 @@ export async function previewReinterpret(ndc: string, request: ReviewRequest) {
     } else if (mark === 'refresh') warning = 'Still missing after scrape.';
 
     const after = fieldValue(merged, field);
-    if (source !== 'kept' && merged.propertyOverrides?.[field.key]) {
-      const { [field.key]: _removed, ...remaining } = merged.propertyOverrides;
-      void _removed;
-      merged.propertyOverrides = remaining;
+    if (source !== 'kept' && merged.propertyOverrides) {
+      merged.propertyOverrides = Object.fromEntries(
+        Object.entries(merged.propertyOverrides).filter(
+          ([key]) =>
+            key !== field.key &&
+            !(field.key === 'reconstitution' && key.startsWith('reconstitution.'))
+        )
+      );
     }
     return {
       key: field.key,

@@ -160,8 +160,48 @@ test('a salt-mass bulk vial resolves on the moiety mass its label names', () => 
   );
   assert.equal(facts.size?.value, 5);
   assert.equal(facts.size?.unit, 'g');
+  assert.equal(
+    facts.unitOfUseCorrection?.description,
+    '1 VIAL, PHARMACY BULK PACKAGE in 1 CARTON / 5 g in 1 VIAL, PHARMACY BULK PACKAGE'
+  );
   assert.equal(facts.resolvedVolume?.finalVolumeMl, 50);
   assert.equal(facts.resolvedVolume?.concentrationMgPerMl, 100);
+});
+
+test('a salt-mass unit of use is restated as the moiety in size and description', () => {
+  // 0143-9162-01: the directory lists 1025 mg of vancomycin hydrochloride;
+  // RxNorm, the SPL-corrected strength and the label call it the 1 g vial.
+  const facts = parsePackageFacts(
+    '00143916201',
+    '1025 mg in 1 VIAL (0143-9162-01)',
+    'INJECTION, POWDER, FOR SOLUTION',
+    [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '1025 mg/mg' }],
+    null,
+    null,
+    'vancomycin 1000 MG Injection'
+  );
+  assert.equal(facts.size?.value, 1000);
+  assert.equal(facts.size?.unit, 'mg');
+  assert.equal(facts.unitOfUseCorrection?.from, '1025 mg in 1 VIAL (0143-9162-01)');
+  assert.equal(facts.unitOfUseCorrection?.description, '1000 mg in 1 VIAL (0143-9162-01)');
+  assert.equal(
+    facts.unitOfUseCorrection?.note,
+    'Unit of use corrected from stated value of 1025 mg, equivalent to 1000 mg vancomycin as the hydrochloride salt'
+  );
+});
+
+test('a unit of use already stated as the moiety is left alone', () => {
+  const facts = parsePackageFacts(
+    '12345678901',
+    '10 VIAL in 1 CARTON / 1 g in 1 VIAL',
+    'INJECTION, POWDER, FOR SOLUTION',
+    [{ name: 'CEFAZOLIN SODIUM', strength: '1 g/1' }],
+    null,
+    null,
+    'cefazolin 1000 MG Injection'
+  );
+  assert.equal(facts.size?.value, 1);
+  assert.equal(facts.unitOfUseCorrection, null);
 });
 
 test('a quantified SCD mass outranks the salt mass for vial matching', () => {

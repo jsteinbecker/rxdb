@@ -1,37 +1,67 @@
 import { prisma } from './prisma';
 import { loadPackageSnapshots, stageCollection } from './catalog-store';
-import { REVIEW_FIELDS } from '$lib/reinterpret';
+import { equivalentValues, type EquivalentPackage } from '$lib/property-override-fields';
+import { CACHE_SOURCE, readSnapshot } from './catalog-cache';
+import type { ExternalPackage } from './catalog-providers';
+import { applyPropertyOverrides } from './apply-property-overrides';
+import { citeOverride, type OverrideCitationInput } from './override-citation';
+
+type Package = Omit<ExternalPackage, 'splXml' | 'evidence'>;
+
+/**
+ * Cached packages that may stand in for `item`: other packages of the same
+ * product, then packages sharing its RxNorm concept (same ingredient,
+ * strength and dose form). Only values each one actually has are listed.
+ */
+export async function findEquivalentPackages(item: Package): Promise<EquivalentPackage[]> {
+  const siblings = item.details?.packaging?.siblings.map((sibling) => sibling.ndc) ?? [];
+  const rxcui = item.details?.rxnav?.rxcui;
+  const records = await prisma.sourceRecord.findMany({
+    where: {
+      ingestionRun: { source: CACHE_SOURCE, status: 'completed' },
+      sourceNativeId: { not: item.ndc },
+      OR: [
+        { sourceNativeId: { in: siblings } },
+        ...(rxcui
+          ? [{ payload: { path: ['item', 'details', 'rxnav', 'rxcui'], equals: rxcui } }]
+          : [])
+      ]
+    },
+    orderBy: [{ sourceNativeId: 'asc' }, { observedAt: 'desc' }],
+    distinct: ['sourceNativeId'],
+    select: { sourceNativeId: true, payload: true },
+    take: 60
+  });
+  return records
+    .flatMap((record) => {
+      const source = readSnapshot(record.payload)?.item;
+      if (!source || source.ndc !== record.sourceNativeId) return [];
+      const values = equivalentValues(item, source);
+      return Object.keys(values).length
+        ? [
+            {
+              ndc: source.ndc,
+              relation: siblings.includes(source.ndc) ? ('sibling' as const) : ('concept' as const),
+              description: source.description,
+              labelerName: source.labelerName,
+              values
+            }
+          ]
+        : [];
+    })
+    .sort((a, b) => (a.relation === b.relation ? 0 : a.relation === 'sibling' ? -1 : 1));
+}
 
 export async function savePropertyOverride(
   ndc: string,
   key: string,
   value: string,
-  sectionKey: string,
-  excerpt: string
+  citation: OverrideCitationInput
 ) {
-  const field = REVIEW_FIELDS.find((candidate) => candidate.key === key && candidate.editable);
-  if (!field || !field.keys || field.keys.length !== 1)
-    throw new Error('Choose an editable property.');
   const current = (await loadPackageSnapshots(prisma, [ndc])).get(ndc)?.item;
   if (!current) throw new Error('No staged data for this NDC.');
-  const section = current.details?.label?.sections.find(
-    (candidate) => candidate.key === sectionKey
-  );
-  if (!current.splSetId || !section) throw new Error('Choose a section from this SPL.');
-  const quote = excerpt.trim();
-  const normalized = (text: string) => text.replace(/\s+/g, ' ').trim();
-  if (!quote || quote.length > 1000 || !normalized(section.text).includes(normalized(quote)))
-    throw new Error('Select an exact excerpt from the displayed SPL section.');
-  const corrected = value.trim();
-  if (!corrected || corrected.length > 500) throw new Error('Enter a value under 500 characters.');
-  const override = {
-    value: corrected,
-    excerpt: quote,
-    sectionKey,
-    sectionTitle: section.title,
-    splSetId: current.splSetId,
-    createdAt: new Date().toISOString()
-  };
+  const equivalents = citation.source === 'ndc' ? await findEquivalentPackages(current) : [];
+  const override = citeOverride(current, key, value, citation, equivalents);
   const item = {
     ...current,
     propertyOverrides: { ...current.propertyOverrides, [key]: override },
@@ -44,6 +74,5 @@ export async function savePropertyOverride(
       }
     ]
   };
-  Object.assign(item, { [field.keys[0]]: corrected });
-  await stageCollection(prisma, [], [item]);
+  await stageCollection(prisma, [], [applyPropertyOverrides(item)]);
 }

@@ -1,9 +1,8 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { deserialize } from '$app/forms';
-  import { invalidateAll } from '$app/navigation';
   import PackageDetail from '$lib/components/PackageDetail.svelte';
   import ReinterpretDialog from '$lib/components/ReinterpretDialog.svelte';
+  import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
   import { packageDisplayTitle } from '$lib/package-title';
 
   let { data } = $props();
@@ -12,56 +11,10 @@
   // (levels, open nodes, filter, scroll). A direct visit falls back to the link.
   let fromFormulary = $state(false);
   let reinterpret: ReinterpretDialog;
-  let overrideDialog: HTMLDialogElement;
-  let overrideKey = $state('');
-  let overrideValue = $state('');
-  let sectionKey = $state('');
-  let excerpt = $state('');
-  let overrideMessage = $state('');
-  let savingOverride = $state(false);
-  const overrideFields = [
-    { key: 'description', label: 'Package description' },
-    { key: 'brandName', label: 'Brand name' },
-    { key: 'genericName', label: 'Generic name' },
-    { key: 'productCode', label: 'Product NDC' },
-    { key: 'doseForm', label: 'Dose form' }
-  ];
-  function captureExcerpt() {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
-    const text = selection.toString().trim();
-    const anchor = selection.anchorNode?.parentElement?.closest('[data-spl-section]');
-    const focus = selection.focusNode?.parentElement?.closest('[data-spl-section]');
-    if (anchor && anchor === focus && text) {
-      sectionKey = anchor.getAttribute('data-spl-section') ?? '';
-      excerpt = text;
-    }
-  }
-  async function saveOverride() {
-    savingOverride = true;
-    overrideMessage = '';
-    const form = new FormData();
-    form.set('key', overrideKey);
-    form.set('value', overrideValue);
-    form.set('sectionKey', sectionKey);
-    form.set('excerpt', excerpt);
-    try {
-      const response = await fetch('?/override', { method: 'POST', body: form });
-      const result = deserialize(await response.text());
-      if (result.type === 'success') {
-        overrideDialog.close();
-        await invalidateAll();
-      } else
-        overrideMessage =
-          result.type === 'failure'
-            ? String(result.data?.message ?? 'Could not save override.')
-            : 'Could not save override.';
-    } catch {
-      overrideMessage = 'Could not save override.';
-    } finally {
-      savingOverride = false;
-    }
-  }
+  // Edit mode puts a pencil beside every overridable property; the pencil
+  // opens the override panel for that property's keys.
+  let editing = $state(false);
+  let editKeys = $state<string[]>([]);
   afterNavigate(({ from }) => (fromFormulary = from?.url.pathname === '/formulary'));
 
   function back(event: MouseEvent) {
@@ -72,15 +25,7 @@
 
   const item = $derived(data.item);
   const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
-  const displayTitle = $derived(
-    packageDisplayTitle({
-      rxNormName: item.details?.rxnav?.conceptName,
-      packageDescription: item.description,
-      splTitle: item.splTitle,
-      isMultiDose: item.isMultiDose,
-      labeler: item.labelerName
-    })
-  );
+  const displayTitle = $derived(packageDisplayTitle(item));
 </script>
 
 <svelte:head>
@@ -101,57 +46,36 @@
     <button
       class="override-action"
       type="button"
-      disabled={!item.splSetId || !item.details?.label?.sections.length}
+      aria-pressed={editing}
       onclick={() => {
-        overrideKey = '';
-        overrideValue = '';
-        overrideMessage = '';
-        overrideDialog.showModal();
-      }}>Override property</button
+        editing = !editing;
+        editKeys = [];
+      }}>{editing ? 'Done overriding' : 'Override properties'}</button
     >
   </header>
-  <div onmouseup={captureExcerpt} role="presentation"><PackageDetail {item} /></div>
+  <div class="body" class:with-panel={editKeys.length}>
+    <PackageDetail {item} {editing} {editKeys} onedit={(keys) => (editKeys = keys)} />
+    {#if editKeys.length}
+      {#key editKeys}
+        <div class="panel-slot">
+          <PropertyOverridePanel
+            {item}
+            keys={editKeys}
+            equivalents={data.equivalents}
+            onclose={() => (editKeys = [])}
+          />
+        </div>
+      {/key}
+    {/if}
+  </div>
   <ReinterpretDialog bind:this={reinterpret} {item} />
-  <dialog bind:this={overrideDialog} aria-labelledby="override-title">
-    <h2 id="override-title">Override a property</h2>
-    <p>
-      Use this only when reinterpreting the sources cannot resolve the value. Highlight text in an
-      expanded SPL label section before opening this dialog.
-    </p>
-    <label
-      >Property
-      <select bind:value={overrideKey}
-        ><option value="">Choose a property</option>{#each overrideFields as field}<option
-            value={field.key}>{field.label}</option
-          >{/each}</select
-      >
-    </label>
-    <label>Correct value <input bind:value={overrideValue} maxlength="500" /></label>
-    <label
-      >SPL excerpt <textarea
-        value={excerpt}
-        readonly
-        rows="4"
-        placeholder="Highlight text in an expanded label section"></textarea></label
-    >
-    {#if sectionKey}<p class="source-note">
-        From {item.details?.label?.sections.find((section) => section.key === sectionKey)?.title} · SPL
-        {item.splSetId}
-      </p>{/if}
-    {#if overrideMessage}<p class="error">{overrideMessage}</p>{/if}
-    <div class="dialog-actions">
-      <button type="button" onclick={() => overrideDialog.close()}>Cancel</button><button
-        type="button"
-        disabled={savingOverride ||
-          !overrideKey ||
-          !overrideValue.trim() ||
-          !excerpt ||
-          !sectionKey}
-        onclick={saveOverride}>{savingOverride ? 'Saving…' : 'Save override'}</button
-      >
-    </div>
-  </dialog>
 </main>
+
+<svelte:window
+  onkeydown={(event) => {
+    if (event.key === 'Escape' && editKeys.length) editKeys = [];
+  }}
+/>
 
 <style>
   :global(body) {
@@ -217,52 +141,33 @@
     color: #8993a0;
     cursor: default;
   }
-  dialog {
-    width: min(500px, calc(100vw - 2rem));
-    border: 1px solid #d8dee8;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 20px 60px #18212f40;
+  .override-action[aria-pressed='true'] {
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: #eef3fa;
   }
-  dialog::backdrop {
-    background: #18212f55;
+  main:has(.with-panel) {
+    max-width: 1440px;
   }
-  dialog h2 {
-    margin: 0;
-    font-size: 1.2rem;
-  }
-  dialog p {
-    color: #5c6777;
-    font-size: 0.9rem;
-  }
-  dialog label {
+  .with-panel {
     display: grid;
-    gap: 0.3rem;
-    margin: 1rem 0;
-    font-weight: 600;
-    font-size: 0.9rem;
+    grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem);
+    gap: 1.5rem;
+    align-items: start;
   }
-  dialog input,
-  dialog select,
-  dialog textarea {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 0.55rem;
-    border: 1px solid #bfc9d6;
-    border-radius: 6px;
-    font: inherit;
+  .panel-slot {
+    position: sticky;
+    top: 1rem;
+    margin-top: 0.75rem;
   }
-  .dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-  }
-  .dialog-actions button {
-    padding: 0.5rem 0.9rem;
-    cursor: pointer;
-  }
-  .error {
-    color: #a32b2b;
+  @media (max-width: 900px) {
+    .with-panel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .panel-slot {
+      position: static;
+      order: -1;
+    }
   }
 
   @media (max-width: 640px) {
