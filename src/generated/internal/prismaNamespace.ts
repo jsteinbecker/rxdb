@@ -405,6 +405,7 @@ export const ModelName = {
   ClinicalDrug: 'ClinicalDrug',
   Package: 'Package',
   FormularyItem: 'FormularyItem',
+  FormularyItemBrand: 'FormularyItemBrand',
   FormularyItemPackage: 'FormularyItemPackage',
   IdentifierNamespace: 'IdentifierNamespace',
   ExternalIdentifier: 'ExternalIdentifier',
@@ -451,7 +452,8 @@ export const ModelName = {
   BuildPlan: 'BuildPlan',
   BuildPlanLine: 'BuildPlanLine',
   BuildPlanFinding: 'BuildPlanFinding',
-  OpenComponent: 'OpenComponent'
+  OpenComponent: 'OpenComponent',
+  ScdDosingMeasure: 'ScdDosingMeasure'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -467,7 +469,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "package" | "formularyItem" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1060,6 +1062,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.FormularyItemCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.FormularyItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    FormularyItemBrand: {
+      payload: Prisma.$FormularyItemBrandPayload<ExtArgs>
+      fields: Prisma.FormularyItemBrandFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormularyItemBrandFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormularyItemBrandFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>
+        }
+        findFirst: {
+          args: Prisma.FormularyItemBrandFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormularyItemBrandFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>
+        }
+        findMany: {
+          args: Prisma.FormularyItemBrandFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>[]
+        }
+        create: {
+          args: Prisma.FormularyItemBrandCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>
+        }
+        createMany: {
+          args: Prisma.FormularyItemBrandCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormularyItemBrandCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>[]
+        }
+        delete: {
+          args: Prisma.FormularyItemBrandDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>
+        }
+        update: {
+          args: Prisma.FormularyItemBrandUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormularyItemBrandDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormularyItemBrandUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormularyItemBrandUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormularyItemBrandUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormularyItemBrandPayload>
+        }
+        aggregate: {
+          args: Prisma.FormularyItemBrandAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormularyItemBrand>
+        }
+        groupBy: {
+          args: Prisma.FormularyItemBrandGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormularyItemBrandGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormularyItemBrandCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormularyItemBrandCountAggregateOutputType> | number
         }
       }
     }
@@ -4541,6 +4617,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ScdDosingMeasure: {
+      payload: Prisma.$ScdDosingMeasurePayload<ExtArgs>
+      fields: Prisma.ScdDosingMeasureFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ScdDosingMeasureFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ScdDosingMeasureFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>
+        }
+        findFirst: {
+          args: Prisma.ScdDosingMeasureFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ScdDosingMeasureFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>
+        }
+        findMany: {
+          args: Prisma.ScdDosingMeasureFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>[]
+        }
+        create: {
+          args: Prisma.ScdDosingMeasureCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>
+        }
+        createMany: {
+          args: Prisma.ScdDosingMeasureCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ScdDosingMeasureCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>[]
+        }
+        delete: {
+          args: Prisma.ScdDosingMeasureDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>
+        }
+        update: {
+          args: Prisma.ScdDosingMeasureUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>
+        }
+        deleteMany: {
+          args: Prisma.ScdDosingMeasureDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ScdDosingMeasureUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ScdDosingMeasureUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>[]
+        }
+        upsert: {
+          args: Prisma.ScdDosingMeasureUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScdDosingMeasurePayload>
+        }
+        aggregate: {
+          args: Prisma.ScdDosingMeasureAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateScdDosingMeasure>
+        }
+        groupBy: {
+          args: Prisma.ScdDosingMeasureGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ScdDosingMeasureGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ScdDosingMeasureCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ScdDosingMeasureCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -4669,6 +4819,20 @@ export const FormularyItemScalarFieldEnum = {
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
+
+
+export const FormularyItemBrandScalarFieldEnum = {
+  id: 'id',
+  formularyItemId: 'formularyItemId',
+  name: 'name',
+  nameKey: 'nameKey',
+  rxcui: 'rxcui',
+  source: 'source',
+  suppressed: 'suppressed',
+  createdAt: 'createdAt'
+} as const
+
+export type FormularyItemBrandScalarFieldEnum = (typeof FormularyItemBrandScalarFieldEnum)[keyof typeof FormularyItemBrandScalarFieldEnum]
 
 
 export const FormularyItemPackageScalarFieldEnum = {
@@ -5271,7 +5435,11 @@ export const CompoundFormulaScalarFieldEnum = {
   version: 'version',
   status: 'status',
   approvedBy: 'approvedBy',
-  approvedAt: 'approvedAt'
+  approvedAt: 'approvedAt',
+  totalVolumeWhole: 'totalVolumeWhole',
+  totalVolumeNum: 'totalVolumeNum',
+  totalVolumeDen: 'totalVolumeDen',
+  totalVolumeUom: 'totalVolumeUom'
 } as const
 
 export type CompoundFormulaScalarFieldEnum = (typeof CompoundFormulaScalarFieldEnum)[keyof typeof CompoundFormulaScalarFieldEnum]
@@ -5288,6 +5456,10 @@ export const FormulaSlotScalarFieldEnum = {
   targetAmountUom: 'targetAmountUom',
   targetConcMag: 'targetConcMag',
   targetConcUom: 'targetConcUom',
+  volumeWhole: 'volumeWhole',
+  volumeNum: 'volumeNum',
+  volumeDen: 'volumeDen',
+  volumeUom: 'volumeUom',
   tolerancePct: 'tolerancePct',
   allowMultiComponent: 'allowMultiComponent',
   ordinal: 'ordinal'
@@ -5434,6 +5606,16 @@ export const OpenComponentScalarFieldEnum = {
 } as const
 
 export type OpenComponentScalarFieldEnum = (typeof OpenComponentScalarFieldEnum)[keyof typeof OpenComponentScalarFieldEnum]
+
+
+export const ScdDosingMeasureScalarFieldEnum = {
+  conceptKey: 'conceptKey',
+  mode: 'mode',
+  ingredient: 'ingredient',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ScdDosingMeasureScalarFieldEnum = (typeof ScdDosingMeasureScalarFieldEnum)[keyof typeof ScdDosingMeasureScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -5949,6 +6131,7 @@ export type GlobalOmitConfig = {
   clinicalDrug?: Prisma.ClinicalDrugOmit
   package?: Prisma.PackageOmit
   formularyItem?: Prisma.FormularyItemOmit
+  formularyItemBrand?: Prisma.FormularyItemBrandOmit
   formularyItemPackage?: Prisma.FormularyItemPackageOmit
   identifierNamespace?: Prisma.IdentifierNamespaceOmit
   externalIdentifier?: Prisma.ExternalIdentifierOmit
@@ -5996,6 +6179,7 @@ export type GlobalOmitConfig = {
   buildPlanLine?: Prisma.BuildPlanLineOmit
   buildPlanFinding?: Prisma.BuildPlanFindingOmit
   openComponent?: Prisma.OpenComponentOmit
+  scdDosingMeasure?: Prisma.ScdDosingMeasureOmit
 }
 
 /* Types for Logging */

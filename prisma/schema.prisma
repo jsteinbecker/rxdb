@@ -316,9 +316,29 @@ model FormularyItem {
   scope                 Scope                  @relation(fields: [scopeId], references: [id])
   formularyItemPackages FormularyItemPackage[]
   compoundFormulas      CompoundFormula[]
+  brands                FormularyItemBrand[]
 
   @@unique([id, type])
   @@map("formulary_item")
+}
+
+/// A brand-name tag on a formulary item. RxNorm rows are seeded from SBD → BN on load;
+/// a dismissed RxNorm brand stays as a suppressed row so reloads never resurrect it.
+model FormularyItemBrand {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  formularyItemId String   @map("formulary_item_id") @db.Uuid
+  name            String
+  /// Lower-cased, whitespace-collapsed name; unique per item.
+  nameKey         String   @map("name_key")
+  rxcui           String?
+  source          String
+  suppressed      Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  formularyItem FormularyItem @relation(fields: [formularyItemId], references: [id])
+
+  @@unique([formularyItemId, nameKey])
+  @@map("formulary_item_brand")
 }
 
 model FormularyItemPackage {
@@ -1196,6 +1216,11 @@ model CompoundFormula {
   status          String           @default("draft")
   approvedBy      String?          @map("approved_by") @db.Uuid
   approvedAt      DateTime?        @map("approved_at") @db.Timestamptz(6)
+  /// explicit total volume, mixed number in `totalVolumeUom` (mL); null = sum of component volumes
+  totalVolumeWhole BigInt? @map("total_volume_whole")
+  totalVolumeNum   BigInt? @map("total_volume_num")
+  totalVolumeDen   BigInt? @map("total_volume_den")
+  totalVolumeUom   String? @map("total_volume_uom")
 
   scope         Scope          @relation(fields: [scopeId], references: [id])
   formularyItem FormularyItem? @relation(fields: [formularyItemId], references: [id])
@@ -1222,6 +1247,11 @@ model FormulaSlot {
   targetConcUom       String?                          @map("target_conc_uom")
   /// @generated
   targetConc          Unsupported("measure")?          @default(dbgenerated()) @map("target_conc")
+  /// component volume, mixed number in `volumeUom` (mL)
+  volumeWhole         BigInt?                          @map("volume_whole")
+  volumeNum           BigInt?                          @map("volume_num")
+  volumeDen           BigInt?                          @map("volume_den")
+  volumeUom           String?                          @map("volume_uom")
   tolerancePct        Decimal                          @default(0) @map("tolerance_pct") @db.Decimal
   allowMultiComponent Boolean                          @default(true) @map("allow_multi_component")
   ordinal             Int                              @default(1)
@@ -1420,4 +1450,15 @@ model OpenComponent {
   openedByPlan BuildPlan? @relation(fields: [openedByPlanId], references: [id])
 
   @@map("open_component")
+}
+
+/// Dosing measure chosen for a combination SCD concept (`rxcui:…` or `pscd:…`).
+/// Keyed by concept so every NDC under it shares one selection.
+model ScdDosingMeasure {
+  conceptKey String   @id @map("concept_key")
+  mode       String
+  ingredient String?
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("scd_dosing_measure")
 }

@@ -82,6 +82,12 @@ export type Package = Prisma.PackageModel
  */
 export type FormularyItem = Prisma.FormularyItemModel
 /**
+ * Model FormularyItemBrand
+ * A brand-name tag on a formulary item. RxNorm rows are seeded from SBD → BN on load;
+ * a dismissed RxNorm brand stays as a suppressed row so reloads never resurrect it.
+ */
+export type FormularyItemBrand = Prisma.FormularyItemBrandModel
+/**
  * Model FormularyItemPackage
  * 
  */
@@ -316,3 +322,9 @@ export type BuildPlanFinding = Prisma.BuildPlanFindingModel
  * 
  */
 export type OpenComponent = Prisma.OpenComponentModel
+/**
+ * Model ScdDosingMeasure
+ * Dosing measure chosen for a combination SCD concept (`rxcui:…` or `pscd:…`).
+ * Keyed by concept so every NDC under it shares one selection.
+ */
+export type ScdDosingMeasure = Prisma.ScdDosingMeasureModel

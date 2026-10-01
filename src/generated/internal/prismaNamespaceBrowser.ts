@@ -59,6 +59,7 @@ export const ModelName = {
   ClinicalDrug: 'ClinicalDrug',
   Package: 'Package',
   FormularyItem: 'FormularyItem',
+  FormularyItemBrand: 'FormularyItemBrand',
   FormularyItemPackage: 'FormularyItemPackage',
   IdentifierNamespace: 'IdentifierNamespace',
   ExternalIdentifier: 'ExternalIdentifier',
@@ -105,7 +106,8 @@ export const ModelName = {
   BuildPlan: 'BuildPlan',
   BuildPlanLine: 'BuildPlanLine',
   BuildPlanFinding: 'BuildPlanFinding',
-  OpenComponent: 'OpenComponent'
+  OpenComponent: 'OpenComponent',
+  ScdDosingMeasure: 'ScdDosingMeasure'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -209,6 +211,20 @@ export const FormularyItemScalarFieldEnum = {
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
+
+
+export const FormularyItemBrandScalarFieldEnum = {
+  id: 'id',
+  formularyItemId: 'formularyItemId',
+  name: 'name',
+  nameKey: 'nameKey',
+  rxcui: 'rxcui',
+  source: 'source',
+  suppressed: 'suppressed',
+  createdAt: 'createdAt'
+} as const
+
+export type FormularyItemBrandScalarFieldEnum = (typeof FormularyItemBrandScalarFieldEnum)[keyof typeof FormularyItemBrandScalarFieldEnum]
 
 
 export const FormularyItemPackageScalarFieldEnum = {
@@ -811,7 +827,11 @@ export const CompoundFormulaScalarFieldEnum = {
   version: 'version',
   status: 'status',
   approvedBy: 'approvedBy',
-  approvedAt: 'approvedAt'
+  approvedAt: 'approvedAt',
+  totalVolumeWhole: 'totalVolumeWhole',
+  totalVolumeNum: 'totalVolumeNum',
+  totalVolumeDen: 'totalVolumeDen',
+  totalVolumeUom: 'totalVolumeUom'
 } as const
 
 export type CompoundFormulaScalarFieldEnum = (typeof CompoundFormulaScalarFieldEnum)[keyof typeof CompoundFormulaScalarFieldEnum]
@@ -828,6 +848,10 @@ export const FormulaSlotScalarFieldEnum = {
   targetAmountUom: 'targetAmountUom',
   targetConcMag: 'targetConcMag',
   targetConcUom: 'targetConcUom',
+  volumeWhole: 'volumeWhole',
+  volumeNum: 'volumeNum',
+  volumeDen: 'volumeDen',
+  volumeUom: 'volumeUom',
   tolerancePct: 'tolerancePct',
   allowMultiComponent: 'allowMultiComponent',
   ordinal: 'ordinal'
@@ -974,6 +998,16 @@ export const OpenComponentScalarFieldEnum = {
 } as const
 
 export type OpenComponentScalarFieldEnum = (typeof OpenComponentScalarFieldEnum)[keyof typeof OpenComponentScalarFieldEnum]
+
+
+export const ScdDosingMeasureScalarFieldEnum = {
+  conceptKey: 'conceptKey',
+  mode: 'mode',
+  ingredient: 'ingredient',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ScdDosingMeasureScalarFieldEnum = (typeof ScdDosingMeasureScalarFieldEnum)[keyof typeof ScdDosingMeasureScalarFieldEnum]
 
 
 export const SortOrder = {

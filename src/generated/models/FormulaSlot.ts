@@ -31,6 +31,9 @@ export type FormulaSlotAvgAggregateOutputType = {
   targetAmountNum: number | null
   targetAmountDen: number | null
   targetConcMag: runtime.Decimal | null
+  volumeWhole: number | null
+  volumeNum: number | null
+  volumeDen: number | null
   tolerancePct: runtime.Decimal | null
   ordinal: number | null
 }
@@ -40,6 +43,9 @@ export type FormulaSlotSumAggregateOutputType = {
   targetAmountNum: bigint | null
   targetAmountDen: bigint | null
   targetConcMag: runtime.Decimal | null
+  volumeWhole: bigint | null
+  volumeNum: bigint | null
+  volumeDen: bigint | null
   tolerancePct: runtime.Decimal | null
   ordinal: number | null
 }
@@ -55,6 +61,10 @@ export type FormulaSlotMinAggregateOutputType = {
   targetAmountUom: string | null
   targetConcMag: runtime.Decimal | null
   targetConcUom: string | null
+  volumeWhole: bigint | null
+  volumeNum: bigint | null
+  volumeDen: bigint | null
+  volumeUom: string | null
   tolerancePct: runtime.Decimal | null
   allowMultiComponent: boolean | null
   ordinal: number | null
@@ -71,6 +81,10 @@ export type FormulaSlotMaxAggregateOutputType = {
   targetAmountUom: string | null
   targetConcMag: runtime.Decimal | null
   targetConcUom: string | null
+  volumeWhole: bigint | null
+  volumeNum: bigint | null
+  volumeDen: bigint | null
+  volumeUom: string | null
   tolerancePct: runtime.Decimal | null
   allowMultiComponent: boolean | null
   ordinal: number | null
@@ -87,6 +101,10 @@ export type FormulaSlotCountAggregateOutputType = {
   targetAmountUom: number
   targetConcMag: number
   targetConcUom: number
+  volumeWhole: number
+  volumeNum: number
+  volumeDen: number
+  volumeUom: number
   tolerancePct: number
   allowMultiComponent: number
   ordinal: number
@@ -99,6 +117,9 @@ export type FormulaSlotAvgAggregateInputType = {
   targetAmountNum?: true
   targetAmountDen?: true
   targetConcMag?: true
+  volumeWhole?: true
+  volumeNum?: true
+  volumeDen?: true
   tolerancePct?: true
   ordinal?: true
 }
@@ -108,6 +129,9 @@ export type FormulaSlotSumAggregateInputType = {
   targetAmountNum?: true
   targetAmountDen?: true
   targetConcMag?: true
+  volumeWhole?: true
+  volumeNum?: true
+  volumeDen?: true
   tolerancePct?: true
   ordinal?: true
 }
@@ -123,6 +147,10 @@ export type FormulaSlotMinAggregateInputType = {
   targetAmountUom?: true
   targetConcMag?: true
   targetConcUom?: true
+  volumeWhole?: true
+  volumeNum?: true
+  volumeDen?: true
+  volumeUom?: true
   tolerancePct?: true
   allowMultiComponent?: true
   ordinal?: true
@@ -139,6 +167,10 @@ export type FormulaSlotMaxAggregateInputType = {
   targetAmountUom?: true
   targetConcMag?: true
   targetConcUom?: true
+  volumeWhole?: true
+  volumeNum?: true
+  volumeDen?: true
+  volumeUom?: true
   tolerancePct?: true
   allowMultiComponent?: true
   ordinal?: true
@@ -155,6 +187,10 @@ export type FormulaSlotCountAggregateInputType = {
   targetAmountUom?: true
   targetConcMag?: true
   targetConcUom?: true
+  volumeWhole?: true
+  volumeNum?: true
+  volumeDen?: true
+  volumeUom?: true
   tolerancePct?: true
   allowMultiComponent?: true
   ordinal?: true
@@ -258,6 +294,10 @@ export type FormulaSlotGroupByOutputType = {
   targetAmountUom: string | null
   targetConcMag: runtime.Decimal | null
   targetConcUom: string | null
+  volumeWhole: bigint | null
+  volumeNum: bigint | null
+  volumeDen: bigint | null
+  volumeUom: string | null
   tolerancePct: runtime.Decimal
   allowMultiComponent: boolean
   ordinal: number
@@ -297,6 +337,10 @@ export type FormulaSlotWhereInput = {
   targetAmountUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
   targetConcMag?: Prisma.DecimalNullableFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
+  volumeWhole?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeNum?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeDen?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
   tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
@@ -317,6 +361,10 @@ export type FormulaSlotOrderByWithRelationInput = {
   targetAmountUom?: Prisma.SortOrderInput | Prisma.SortOrder
   targetConcMag?: Prisma.SortOrderInput | Prisma.SortOrder
   targetConcUom?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeWhole?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeNum?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeDen?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeUom?: Prisma.SortOrderInput | Prisma.SortOrder
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
@@ -340,6 +388,10 @@ export type FormulaSlotWhereUniqueInput = Prisma.AtLeast<{
   targetAmountUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
   targetConcMag?: Prisma.DecimalNullableFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
+  volumeWhole?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeNum?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeDen?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
   tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
@@ -360,6 +412,10 @@ export type FormulaSlotOrderByWithAggregationInput = {
   targetAmountUom?: Prisma.SortOrderInput | Prisma.SortOrder
   targetConcMag?: Prisma.SortOrderInput | Prisma.SortOrder
   targetConcUom?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeWhole?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeNum?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeDen?: Prisma.SortOrderInput | Prisma.SortOrder
+  volumeUom?: Prisma.SortOrderInput | Prisma.SortOrder
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
@@ -384,6 +440,10 @@ export type FormulaSlotScalarWhereWithAggregatesInput = {
   targetAmountUom?: Prisma.StringNullableWithAggregatesFilter<"FormulaSlot"> | string | null
   targetConcMag?: Prisma.DecimalNullableWithAggregatesFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.StringNullableWithAggregatesFilter<"FormulaSlot"> | string | null
+  volumeWhole?: Prisma.BigIntNullableWithAggregatesFilter<"FormulaSlot"> | bigint | number | null
+  volumeNum?: Prisma.BigIntNullableWithAggregatesFilter<"FormulaSlot"> | bigint | number | null
+  volumeDen?: Prisma.BigIntNullableWithAggregatesFilter<"FormulaSlot"> | bigint | number | null
+  volumeUom?: Prisma.StringNullableWithAggregatesFilter<"FormulaSlot"> | string | null
   tolerancePct?: Prisma.DecimalWithAggregatesFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolWithAggregatesFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntWithAggregatesFilter<"FormulaSlot"> | number
@@ -398,6 +458,10 @@ export type FormulaSlotCreateInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -418,6 +482,10 @@ export type FormulaSlotUncheckedCreateInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -434,6 +502,10 @@ export type FormulaSlotUpdateInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -454,6 +526,10 @@ export type FormulaSlotUncheckedUpdateInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -472,6 +548,10 @@ export type FormulaSlotCreateManyInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -486,6 +566,10 @@ export type FormulaSlotUpdateManyMutationInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -502,6 +586,10 @@ export type FormulaSlotUncheckedUpdateManyInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -528,6 +616,10 @@ export type FormulaSlotCountOrderByAggregateInput = {
   targetAmountUom?: Prisma.SortOrder
   targetConcMag?: Prisma.SortOrder
   targetConcUom?: Prisma.SortOrder
+  volumeWhole?: Prisma.SortOrder
+  volumeNum?: Prisma.SortOrder
+  volumeDen?: Prisma.SortOrder
+  volumeUom?: Prisma.SortOrder
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
@@ -538,6 +630,9 @@ export type FormulaSlotAvgOrderByAggregateInput = {
   targetAmountNum?: Prisma.SortOrder
   targetAmountDen?: Prisma.SortOrder
   targetConcMag?: Prisma.SortOrder
+  volumeWhole?: Prisma.SortOrder
+  volumeNum?: Prisma.SortOrder
+  volumeDen?: Prisma.SortOrder
   tolerancePct?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
 }
@@ -553,6 +648,10 @@ export type FormulaSlotMaxOrderByAggregateInput = {
   targetAmountUom?: Prisma.SortOrder
   targetConcMag?: Prisma.SortOrder
   targetConcUom?: Prisma.SortOrder
+  volumeWhole?: Prisma.SortOrder
+  volumeNum?: Prisma.SortOrder
+  volumeDen?: Prisma.SortOrder
+  volumeUom?: Prisma.SortOrder
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
@@ -569,6 +668,10 @@ export type FormulaSlotMinOrderByAggregateInput = {
   targetAmountUom?: Prisma.SortOrder
   targetConcMag?: Prisma.SortOrder
   targetConcUom?: Prisma.SortOrder
+  volumeWhole?: Prisma.SortOrder
+  volumeNum?: Prisma.SortOrder
+  volumeDen?: Prisma.SortOrder
+  volumeUom?: Prisma.SortOrder
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
@@ -579,6 +682,9 @@ export type FormulaSlotSumOrderByAggregateInput = {
   targetAmountNum?: Prisma.SortOrder
   targetAmountDen?: Prisma.SortOrder
   targetConcMag?: Prisma.SortOrder
+  volumeWhole?: Prisma.SortOrder
+  volumeNum?: Prisma.SortOrder
+  volumeDen?: Prisma.SortOrder
   tolerancePct?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
 }
@@ -709,6 +815,10 @@ export type FormulaSlotCreateWithoutIngredientTermInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -727,6 +837,10 @@ export type FormulaSlotUncheckedCreateWithoutIngredientTermInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -774,6 +888,10 @@ export type FormulaSlotScalarWhereInput = {
   targetAmountUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
   targetConcMag?: Prisma.DecimalNullableFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
+  volumeWhole?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeNum?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeDen?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
   tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
@@ -788,6 +906,10 @@ export type FormulaSlotCreateWithoutFormulaInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -806,6 +928,10 @@ export type FormulaSlotUncheckedCreateWithoutFormulaInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -848,6 +974,10 @@ export type FormulaSlotCreateWithoutSlotCandidatesInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -867,6 +997,10 @@ export type FormulaSlotUncheckedCreateWithoutSlotCandidatesInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -898,6 +1032,10 @@ export type FormulaSlotUpdateWithoutSlotCandidatesInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -917,6 +1055,10 @@ export type FormulaSlotUncheckedUpdateWithoutSlotCandidatesInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -932,6 +1074,10 @@ export type FormulaSlotCreateWithoutBuildPlanLinesInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -951,6 +1097,10 @@ export type FormulaSlotUncheckedCreateWithoutBuildPlanLinesInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -982,6 +1132,10 @@ export type FormulaSlotUpdateWithoutBuildPlanLinesInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1001,6 +1155,10 @@ export type FormulaSlotUncheckedUpdateWithoutBuildPlanLinesInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1017,6 +1175,10 @@ export type FormulaSlotCreateManyIngredientTermInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -1031,6 +1193,10 @@ export type FormulaSlotUpdateWithoutIngredientTermInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1049,6 +1215,10 @@ export type FormulaSlotUncheckedUpdateWithoutIngredientTermInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1066,6 +1236,10 @@ export type FormulaSlotUncheckedUpdateManyWithoutIngredientTermInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1081,6 +1255,10 @@ export type FormulaSlotCreateManyFormulaInput = {
   targetAmountUom?: string | null
   targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
@@ -1095,6 +1273,10 @@ export type FormulaSlotUpdateWithoutFormulaInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1113,6 +1295,10 @@ export type FormulaSlotUncheckedUpdateWithoutFormulaInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1130,6 +1316,10 @@ export type FormulaSlotUncheckedUpdateManyWithoutFormulaInput = {
   targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1186,6 +1376,10 @@ export type FormulaSlotSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   targetAmountUom?: boolean
   targetConcMag?: boolean
   targetConcUom?: boolean
+  volumeWhole?: boolean
+  volumeNum?: boolean
+  volumeDen?: boolean
+  volumeUom?: boolean
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
@@ -1207,6 +1401,10 @@ export type FormulaSlotSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   targetAmountUom?: boolean
   targetConcMag?: boolean
   targetConcUom?: boolean
+  volumeWhole?: boolean
+  volumeNum?: boolean
+  volumeDen?: boolean
+  volumeUom?: boolean
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
@@ -1225,6 +1423,10 @@ export type FormulaSlotSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   targetAmountUom?: boolean
   targetConcMag?: boolean
   targetConcUom?: boolean
+  volumeWhole?: boolean
+  volumeNum?: boolean
+  volumeDen?: boolean
+  volumeUom?: boolean
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
@@ -1243,12 +1445,16 @@ export type FormulaSlotSelectScalar = {
   targetAmountUom?: boolean
   targetConcMag?: boolean
   targetConcUom?: boolean
+  volumeWhole?: boolean
+  volumeNum?: boolean
+  volumeDen?: boolean
+  volumeUom?: boolean
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
 }
 
-export type FormulaSlotOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formulaId" | "role" | "ingredientTermId" | "targetAmountWhole" | "targetAmountNum" | "targetAmountDen" | "targetAmountUom" | "targetConcMag" | "targetConcUom" | "tolerancePct" | "allowMultiComponent" | "ordinal", ExtArgs["result"]["formulaSlot"]>
+export type FormulaSlotOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formulaId" | "role" | "ingredientTermId" | "targetAmountWhole" | "targetAmountNum" | "targetAmountDen" | "targetAmountUom" | "targetConcMag" | "targetConcUom" | "volumeWhole" | "volumeNum" | "volumeDen" | "volumeUom" | "tolerancePct" | "allowMultiComponent" | "ordinal", ExtArgs["result"]["formulaSlot"]>
 export type FormulaSlotInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
@@ -1287,6 +1493,13 @@ export type $FormulaSlotPayload<ExtArgs extends runtime.Types.Extensions.Interna
     targetAmountUom: string | null
     targetConcMag: runtime.Decimal | null
     targetConcUom: string | null
+    /**
+     * component volume, mixed number in `volumeUom` (mL)
+     */
+    volumeWhole: bigint | null
+    volumeNum: bigint | null
+    volumeDen: bigint | null
+    volumeUom: string | null
     tolerancePct: runtime.Decimal
     allowMultiComponent: boolean
     ordinal: number
@@ -1727,6 +1940,10 @@ export interface FormulaSlotFieldRefs {
   readonly targetAmountUom: Prisma.FieldRef<"FormulaSlot", 'String'>
   readonly targetConcMag: Prisma.FieldRef<"FormulaSlot", 'Decimal'>
   readonly targetConcUom: Prisma.FieldRef<"FormulaSlot", 'String'>
+  readonly volumeWhole: Prisma.FieldRef<"FormulaSlot", 'BigInt'>
+  readonly volumeNum: Prisma.FieldRef<"FormulaSlot", 'BigInt'>
+  readonly volumeDen: Prisma.FieldRef<"FormulaSlot", 'BigInt'>
+  readonly volumeUom: Prisma.FieldRef<"FormulaSlot", 'String'>
   readonly tolerancePct: Prisma.FieldRef<"FormulaSlot", 'Decimal'>
   readonly allowMultiComponent: Prisma.FieldRef<"FormulaSlot", 'Boolean'>
   readonly ordinal: Prisma.FieldRef<"FormulaSlot", 'Int'>
