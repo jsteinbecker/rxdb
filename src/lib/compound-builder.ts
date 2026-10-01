@@ -109,7 +109,9 @@ export function fromMixed(mixed: {
 }): Rational | null {
   if (mixed.whole == null && mixed.num == null) return null;
   const den = Number(mixed.den ?? 1);
-  return rational(Number(mixed.whole ?? 0) * den + Number(mixed.num ?? 0), den);
+  const value = rational(Number(mixed.whole ?? 0) * den + Number(mixed.num ?? 0), den);
+  // The slot columns default to 0/1 when unset; stored values are always positive.
+  return positive(value) ? value : null;
 }
 
 /** The decimal text a `Decimal` column takes: exact when it terminates, else full precision. */

@@ -100,6 +100,9 @@ test('mixed-number storage round-trips and rejects non-positive values', () => {
   assert.deepEqual(toMixed(r(-1)), { whole: null, num: null, den: null });
   assert.equal(fromMixed({ whole: null, num: null, den: null }), null);
   assert.deepEqual(fromMixed({ whole: 3n, num: null, den: null }), r(3));
+  // the slot columns default to 0/1 when unset, which is "no value", not zero
+  assert.equal(fromMixed({ whole: null, num: 0n, den: 1n }), null);
+  assert.equal(fromMixed({ whole: 0n, num: 0n, den: 1n }), null);
 });
 
 test('decimalOf is exact when it can be', () => {
