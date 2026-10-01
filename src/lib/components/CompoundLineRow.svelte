@@ -15,8 +15,8 @@
     line: Line;
     locked?: boolean;
     menuOpen?: boolean;
-    /** A field was committed; `value` is null when it was cleared. */
-    oncommit: (field: Field, value: Rational | null) => void;
+    /** A field was committed; false means it was refused and the box should show the old value. */
+    oncommit: (field: Field, value: Rational | null) => boolean;
     ontoggleMenu: () => void;
     onremove: () => void;
   } = $props();
@@ -50,7 +50,7 @@
     restore: () => void
   ) {
     if (!quantity && text.trim()) return restore();
-    oncommit(field, quantity?.rational ?? null);
+    if (!oncommit(field, quantity?.rational ?? null)) restore();
   }
 
   const concUnit = $derived(`${line.doseUnit}/${VOLUME_UNIT}`);

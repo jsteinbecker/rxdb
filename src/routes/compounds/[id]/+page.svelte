@@ -1,14 +1,16 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
   import { resolve } from '$app/paths';
   import AddComponentPanel from '$lib/components/AddComponentPanel.svelte';
   import CompoundLineRow from '$lib/components/CompoundLineRow.svelte';
   import FinalConcentrations from '$lib/components/FinalConcentrations.svelte';
   import QuantityField from '$lib/components/QuantityField.svelte';
   import {
+    applyEdit,
     effectiveTotalVolume,
     finalConcentrations,
-    solveLine,
+    isSafeRational,
     VOLUME_UNIT,
     type Field,
     type Line
@@ -36,7 +38,17 @@
   const rows = $derived(finalConcentrations(lines, total));
   const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
+  // Saves go one at a time: a commit made while one is in flight is sent, as
+  // the latest snapshot, when that one lands — so the server always ends on the
+  // newest state, whatever order the requests would have arrived in.
+  let saving = false;
+  let dirty = false;
+
   function save() {
+    if (saving) {
+      dirty = true;
+      return;
+    }
     if (!saveForm || !payloadInput) return;
     const text = (value: Rational | null) => (value ? serializeRational(value) : null);
     payloadInput.value = JSON.stringify({
@@ -48,21 +60,27 @@
         volume: text(line.volume)
       }))
     });
+    saving = true;
+    dirty = false;
     saveForm.requestSubmit();
   }
 
-  function commit(slotId: string, field: Field, value: Rational | null) {
+  /** Whether the edit was taken; false when it cannot be held exactly, so the box restores. */
+  function commit(slotId: string, field: Field, value: Rational | null): boolean {
     const at = lines.findIndex((line) => line.slotId === slotId);
-    if (at < 0 || locked) return;
-    const next = { ...lines[at], [field]: value };
-    lines = lines.map((line, index) => (index === at ? solveLine(next, field) : line));
+    if (at < 0 || locked) return false;
+    const next = applyEdit(lines[at], field, value);
+    if (!next) return false;
+    lines = lines.map((line, index) => (index === at ? next : line));
     save();
+    return true;
   }
 
-  function commitTotal(value: Rational | null) {
-    if (locked) return;
+  function commitTotal(value: Rational | null): boolean {
+    if (locked || (value && !isSafeRational(value))) return false;
     total = value;
     save();
+    return true;
   }
 
   function remove(slotId: string) {
@@ -95,7 +113,13 @@
         <h1>{compound.name}</h1>
       {:else}
         <form method="POST" action="?/rename" use:enhance={() => async ({ update }) => update({ reset: false })}>
-          <input class="name" name="name" value={compound.name} aria-label="Compound name" />
+          <input
+            class="name"
+            name="name"
+            value={compound.name}
+            aria-label="Compound name"
+            onchange={(event) => event.currentTarget.form?.requestSubmit()}
+          />
         </form>
       {/if}
       <span class="count">{plural(compound.lines.length, 'component')}</span>
@@ -153,7 +177,14 @@
     bind:this={saveForm}
     method="POST"
     action="?/saveLines"
-    use:enhance={() => async ({ update }) => update({ reset: false, invalidateAll: false })}
+    use:enhance={() =>
+      async ({ result, update }) => {
+        await update({ reset: false, invalidateAll: false });
+        saving = false;
+        // A refused save (locked or deleted elsewhere) means the page is stale: reload it.
+        if (result.type !== 'success') await invalidateAll();
+        else if (dirty) save();
+      }}
     hidden
   >
     <input bind:this={payloadInput} type="hidden" name="payload" />
@@ -197,7 +228,8 @@
           oncommit={(quantity) =>
             !quantity && totalText.trim()
               ? (totalText = total ? formatRational(total) : '')
-              : commitTotal(quantity?.rational ?? null)}
+              : commitTotal(quantity?.rational ?? null) ||
+                (totalText = total ? formatRational(total) : '')}
         />
         <span class="unit">{VOLUME_UNIT}</span>
       {/if}

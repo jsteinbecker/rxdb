@@ -228,6 +228,10 @@ export async function saveLines(
 ) {
   await draftIn(db, scopeId, id);
   await db.$transaction(async (tx) => {
+    // Checked again inside the transaction: a save racing this one must not land on a locked compound.
+    const current = await tx.compoundFormula.findFirst({ where: { id, scopeId }, select: { status: true } });
+    if (current?.status !== 'draft')
+      throw new CompoundError('This compound is saved. Edit it to unlock it first.', 409);
     const slots = await tx.formulaSlot.findMany({
       where: { formulaId: id },
       select: {

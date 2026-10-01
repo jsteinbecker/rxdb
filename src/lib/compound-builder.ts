@@ -1,4 +1,4 @@
-import { divide, multiply, parseRational, rational, toNumber, type Rational } from './rational';
+import { parseRational, rational, toNumber, type Rational } from './rational';
 import { convertQuantity, exactDecimal, parseQuantity } from './quantity';
 
 /** Volumes in the builder are always millilitres; the field converts "1 L" on entry. */
@@ -19,45 +19,94 @@ export interface Line {
 }
 
 const positive = (value: Rational | null): value is Rational => !!value && value.n > 0;
-const safe = (value: Rational | null): Rational | null =>
-  value && Number.isSafeInteger(value.n) && Number.isSafeInteger(value.d) ? value : null;
+
+/** Whether both parts are integers a double holds exactly (and so a database integer can too). */
+export const isSafeRational = (value: Rational): boolean =>
+  Number.isSafeInteger(value.n) && Number.isSafeInteger(value.d);
+
+// Exact arithmetic: the products are formed as BigInts, reduced, and handed
+// back only when the result still fits — never a float-rounded near miss.
+const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
+const gcd = (a: bigint, b: bigint): bigint => {
+  while (b) [a, b] = [b, a % b];
+  return a || 1n;
+};
+function fromBig(n: bigint, d: bigint): Rational | null {
+  if (d === 0n) return null;
+  if (d < 0n) [n, d] = [-n, -d];
+  const g = gcd(n < 0n ? -n : n, d);
+  [n, d] = [n / g, d / g];
+  return (n < 0n ? -n : n) > MAX_SAFE || d > MAX_SAFE ? null : { n: Number(n), d: Number(d) };
+}
+const big = (value: Rational) => [BigInt(value.n), BigInt(value.d)] as const;
+function exact(
+  a: Rational,
+  b: Rational,
+  op: (x: readonly [bigint, bigint], y: readonly [bigint, bigint]) => [bigint, bigint]
+): Rational | null {
+  if (!isSafeRational(a) || !isSafeRational(b)) return null;
+  return fromBig(...op(big(a), big(b)));
+}
+const mul = (a: Rational, b: Rational) => exact(a, b, ([an, ad], [bn, bd]) => [an * bn, ad * bd]);
+const div = (a: Rational, b: Rational) =>
+  b.n === 0 ? null : exact(a, b, ([an, ad], [bn, bd]) => [an * bd, ad * bn]);
+const add = (a: Rational, b: Rational) =>
+  exact(a, b, ([an, ad], [bn, bd]) => [an * bd + bn * ad, ad * bd]);
+
+/** `undefined`: nothing to compute; `null`: it cannot be computed exactly. */
+type Computed = Rational | null | undefined;
+
+function solve(line: Line, edited: Field): { line: Line; refused: boolean } {
+  const unchanged = { line, refused: false };
+  if (line.role === 'diluent') return unchanged;
+  const { conc, dose, volume } = line;
+  if (!positive(conc)) return unchanged;
+
+  const volumeFromDose = (): Computed => (positive(dose) ? div(dose, conc) : undefined);
+  const doseFromVolume = (): Computed => (positive(volume) ? mul(volume, conc) : undefined);
+  const outcome = (key: 'volume' | 'dose', value: Computed) =>
+    value === undefined
+      ? unchanged
+      : value === null
+        ? { line, refused: true }
+        : { line: { ...line, [key]: value }, refused: false };
+
+  if (edited === 'dose') return outcome('volume', volumeFromDose());
+  if (edited === 'volume') return outcome('dose', doseFromVolume());
+  // Editing the concentration keeps the dose and moves the volume — or, with
+  // no dose yet, keeps the volume and moves the dose.
+  const volumeNow = volumeFromDose();
+  return volumeNow !== undefined ? outcome('volume', volumeNow) : outcome('dose', doseFromVolume());
+}
 
 /**
  * The line after `edited` changed: dose = conc × volume, volume = dose ÷ conc.
- * Editing the concentration recomputes the volume from the dose (the dose is
- * what the prescriber ordered), or the dose from the volume when there is none.
  * Anything that cannot be computed exactly leaves the line as it was.
  */
-export function solveLine(line: Line, edited: Field): Line {
-  if (line.role === 'diluent') return line;
-  const { conc, dose, volume } = line;
-  if (!positive(conc)) return line;
+export const solveLine = (line: Line, edited: Field): Line => solve(line, edited).line;
 
-  const volumeFromDose = () => (positive(dose) ? safe(divide(dose, conc)) : null);
-  const doseFromVolume = () => (positive(volume) ? safe(multiply(volume, conc)) : null);
-
-  if (edited === 'dose') {
-    const next = volumeFromDose();
-    return next ? { ...line, volume: next } : line;
-  }
-  if (edited === 'volume') {
-    const next = doseFromVolume();
-    return next ? { ...line, dose: next } : line;
-  }
-  const nextVolume = volumeFromDose();
-  if (nextVolume) return { ...line, volume: nextVolume };
-  const nextDose = doseFromVolume();
-  return nextDose ? { ...line, dose: nextDose } : line;
+/**
+ * `value` stored into `field` and the dependent field solved — or null when
+ * the edit cannot be honoured (not a safe fraction, or the solve is not
+ * exact), so the caller keeps what was there rather than saving a number that
+ * no longer agrees with its neighbours.
+ */
+export function applyEdit(line: Line, field: Field, value: Rational | null): Line | null {
+  if (value && !isSafeRational(value)) return null;
+  const { line: solved, refused } = solve({ ...line, [field]: value }, field);
+  return refused ? null : solved;
 }
-
-const add = (a: Rational, b: Rational): Rational | null =>
-  safe(rational(a.n * b.d + b.n * a.d, a.d * b.d));
 
 /** The explicit total when there is a positive one, else the sum of the volumes, else null. */
 export function effectiveTotalVolume(lines: Line[], total: Rational | null): Rational | null {
   if (positive(total)) return total;
   let sum: Rational = { n: 0, d: 1 };
-  for (const line of lines) if (line.volume) sum = add(sum, line.volume) ?? sum;
+  for (const line of lines) {
+    if (!line.volume) continue;
+    const next = add(sum, line.volume);
+    if (!next) return null;
+    sum = next;
+  }
   return positive(sum) ? sum : null;
 }
 
@@ -79,7 +128,7 @@ export function finalConcentrations(lines: Line[], total: Rational | null): Fina
           slotId: line.slotId,
           label: line.label,
           role: line.role,
-          amount: volume && line.dose ? safe(divide(line.dose, volume)) : null,
+          amount: volume && line.dose ? div(line.dose, volume) : null,
           unit: `${line.doseUnit}/${VOLUME_UNIT}`
         }
   );
@@ -153,8 +202,9 @@ const BAD = Symbol('bad');
 /** Blank is "no value"; anything present must be a positive rational. */
 function amount(input: unknown): Rational | null | typeof BAD {
   if (input == null || input === '') return null;
+  if (typeof input !== 'string') return BAD;
   const parsed = parseRational(input);
-  return parsed && parsed.n > 0 ? parsed : BAD;
+  return parsed && parsed.n > 0 && isSafeRational(parsed) ? parsed : BAD;
 }
 
 /** The builder's save payload: `{ total, lines: [{ slotId, conc, dose, volume }] }`, fractions as "n/d". */

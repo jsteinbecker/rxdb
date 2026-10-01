@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  applyEdit,
   decimalOf,
   effectiveTotalVolume,
   finalConcentrations,
@@ -160,4 +161,37 @@ test('compound names are trimmed and bounded', () => {
   assert.ok('error' in (parseCompoundName('   ') as object));
   assert.ok('error' in (parseCompoundName(null) as object));
   assert.ok('error' in (parseCompoundName('x'.repeat(121)) as object));
+});
+
+test('applyEdit stores the edit and solves the dependent field', () => {
+  const out = applyEdit(line({ conc: r(100) }), 'dose', r(1500));
+  assert.deepEqual(out?.dose, r(1500));
+  assert.deepEqual(out?.volume, r(15));
+});
+
+test('applyEdit refuses an edit whose solve cannot be exact', () => {
+  // 123456790 ÷ (6000/46419753090) is 19102779030279937/20: past 2^53, so no honest fraction.
+  assert.equal(applyEdit(line({ conc: r(6000, 46419753090) }), 'dose', r(123456790)), null);
+});
+
+test('applyEdit refuses a value that is not a safe fraction', () => {
+  assert.equal(applyEdit(line({ conc: r(100) }), 'dose', { n: 1e21, d: 1 }), null);
+});
+
+test('a total that cannot be summed exactly is unknown, not partial', () => {
+  const lines = [
+    line({ volume: r(1e15) }),
+    line({ slotId: 's2', volume: r(1, 97) }),
+    line({ slotId: 's3', volume: r(1, 89) })
+  ];
+  assert.equal(effectiveTotalVolume(lines, null), null);
+});
+
+test('lines payload rejects numbers past int8 and non-string values', () => {
+  for (const bad of [
+    JSON.stringify({ lines: [{ slotId: 'a', dose: '100000000000000000000/1' }] }),
+    JSON.stringify({ lines: [{ slotId: 'a', dose: { n: 5, d: 1e300 } }] }),
+    JSON.stringify({ lines: [], total: '100000000000000000000/1' })
+  ])
+    assert.ok('error' in (parseLinesPayload(bad) as object), bad);
 });
