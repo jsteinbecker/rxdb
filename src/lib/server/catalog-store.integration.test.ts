@@ -1,15 +1,11 @@
 import assert from 'node:assert/strict';
-import { randomInt, randomUUID } from 'node:crypto';
-import { test } from 'node:test';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, type Prisma } from '../../generated/client';
-import {
-  persistCollection,
-  loadPackageSnapshots,
-  refreshPackageEligibility
-} from './catalog-store';
-import { packageFixture } from './catalog-test-fixtures';
-import { mergePackage, CACHE_SOURCE } from './catalog-cache';
+import {randomInt, randomUUID} from 'node:crypto';
+import {test} from 'node:test';
+import {PrismaPg} from '@prisma/adapter-pg';
+import {type Prisma, PrismaClient} from '../../generated/client';
+import {loadPackageSnapshots, persistCollection, refreshPackageEligibility} from './catalog-store';
+import {packageFixture} from './catalog-test-fixtures';
+import {CACHE_SOURCE, mergePackage} from './catalog-cache';
 
 /** Opt-in: all fixture writes are rolled back, even if an assertion fails. */
 test(
@@ -140,6 +136,18 @@ test(
             ingredients: [{ name: fixtureName, strength: '10 mg/mL' }]
           };
           await persistCollection(nested, [], [updated]);
+          // A refresh that finds nothing new updates the snapshot in place.
+          const cacheRecords = () =>
+            tx.sourceRecord.count({
+              where: { sourceNativeId: ndc, ingestionRun: { source: CACHE_SOURCE } }
+            });
+          const before = await cacheRecords();
+          await persistCollection(nested, [], [updated]);
+          assert.equal(await cacheRecords(), before);
+          assert.equal(
+            (await loadPackageSnapshots(nested, [ndc])).get(ndc)?.item.description,
+            'Updated description'
+          );
           assert.equal(
             await tx.externalIdentifier.count({
               where: { namespace: 'ndc11', normalizedValue: ndc }

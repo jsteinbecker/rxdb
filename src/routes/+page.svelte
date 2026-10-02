@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
-	import { SvelteSet } from 'svelte/reactivity';
-	import PackageDetail from '$lib/components/PackageDetail.svelte';
-	import { packageDisplayTitle } from '$lib/package-title';
-	import type { StagedConcept, StagedPackage } from '$lib/server/catalog-sync';
+      import {resolve} from '$app/paths';
+      import {onDestroy} from 'svelte';
+      import {SvelteMap, SvelteSet} from 'svelte/reactivity';
+      import PackageDetail from '$lib/components/PackageDetail.svelte';
+      import {packageDisplayTitle} from '$lib/package-title';
+      import type {StagedConcept, StagedPackage} from '$lib/server/catalog-sync';
 
-	type Result = {
+      type Result = {
 		id: string;
 		kind: string;
 		name: string;
@@ -79,7 +80,16 @@
 				signal: request.signal
 			});
 			const payload = await response.json();
-			if (!response.ok) throw new Error(payload.message ?? 'Search could not be completed.');
+			if (!response.ok) {
+				const msg = payload.message ?? 'Search could not be completed.';
+				if (controller === request) {
+					results = [];
+					staged = null;
+					sync = null;
+					message = msg;
+				}
+				return;
+			}
 			if (controller !== request) return;
 			results = payload.results;
 			staged = null;
@@ -90,8 +100,16 @@
 				signal: request.signal
 			});
 			const externalPayload = await externalResponse.json();
-			if (!externalResponse.ok)
-				throw new Error(externalPayload.message ?? 'Live search could not be completed.');
+			if (!externalResponse.ok) {
+				const msg = externalPayload.message ?? 'Live search could not be completed.';
+				if (controller === request) {
+					results = [];
+					staged = null;
+					sync = null;
+					message = msg;
+				}
+				return;
+			}
 			if (controller !== request) return;
 			staged = externalPayload.staged;
 			sync = externalPayload.sync;
@@ -131,7 +149,15 @@
 				`/api/v1/search?q=${encodeURIComponent(term)}&offset=${nextOffset}`
 			);
 			const payload = await response.json();
-			if (!response.ok) throw new Error(payload.message ?? 'More results could not be loaded.');
+			if (!response.ok) {
+				const msg = payload.message ?? 'More results could not be loaded.';
+				if (sync)
+					sync = {
+						...sync,
+						warning: msg
+					};
+				return;
+			}
 			// A newer search replaced the list while this page was in flight.
 			if (controller !== request || !staged || !sync) return;
 			const seen = new Set(staged.concepts.map((concept) => concept.rxcui));
@@ -177,7 +203,13 @@
 				body: JSON.stringify(body)
 			});
 			const payload = await response.json();
-			if (!response.ok) throw new Error(payload.message ?? 'The node could not be loaded.');
+			if (!response.ok) {
+				notices[key] = {
+					ok: false,
+					text: payload.message ?? 'The node could not be loaded.'
+				};
+				return;
+			}
 			const skipped = payload.packagesSkipped.length
 				? ` · ${payload.packagesSkipped.length} ineligible skipped`
 				: '';
@@ -185,7 +217,7 @@
 				ok: true,
 				text: `${payload.created ? 'Added to' : 'Updated in'} ${payload.scope.name} · ${payload.packagesLinked} package${payload.packagesLinked === 1 ? '' : 's'} linked${skipped}`
 			};
-			markLoaded(body);
+			markLoaded(body, payload.formularyItemId);
 		} catch (error) {
 			notices[key] = {
 				ok: false,
@@ -196,19 +228,28 @@
 		}
 	}
 
-	function markLoaded(body: { rxcui: string } | { ndc: string }) {
+	function markLoaded(body: { rxcui: string } | { ndc: string }, formularyItemId: string) {
 		if (!staged) return;
 		for (const concept of staged.concepts) {
-			if ('rxcui' in body && concept.rxcui === body.rxcui) concept.loaded = true;
+			if ('rxcui' in body && concept.rxcui === body.rxcui) {
+				concept.loaded = true;
+				concept.formularyItemId = formularyItemId;
+			}
 			for (const item of concept.packages)
-				if ('ndc' in body && item.ndc === body.ndc) item.loaded = true;
+				if ('ndc' in body && item.ndc === body.ndc) {
+					item.loaded = true;
+					item.formularyItemId = formularyItemId;
+				}
 		}
 		for (const item of staged.packages)
-			if ('ndc' in body && item.ndc === body.ndc) item.loaded = true;
+			if ('ndc' in body && item.ndc === body.ndc) {
+					item.loaded = true;
+					item.formularyItemId = formularyItemId;
+				}
 	}
 
 	const grouped = (props: { name: string; value: string }[]) => {
-		const out = new Map<string, string[]>();
+		const out = new SvelteMap<string, string[]>();
 		for (const prop of props) out.set(prop.name, [...(out.get(prop.name) ?? []), prop.value]);
 		return [...out];
 	};
@@ -239,7 +280,9 @@
 
 <main>
 	<header>
-		<p class="eyebrow">RxDB · <a href="/formulary">View formulary →</a> · <a href="/settings">Settings</a></p>
+		<p class="eyebrow">
+			RxDB · <a href={resolve('/formulary')}>View formulary →</a> · <a href={resolve('/settings')}>Settings</a>
+		</p>
 		<h1>Search and import medications</h1>
 		<p>
 			Search RxNav, openFDA, and DailyMed. Fetched concepts and packages are staged for review; load
@@ -319,7 +362,7 @@
 							</p>
 						</div>
 						{#if concept.loaded}
-							<span class="badge">On formulary</span>
+							{@render onFormulary(concept.formularyItemId)}
 						{/if}
 						<button
 							class="load"
@@ -427,6 +470,14 @@
 	{/if}
 </main>
 
+{#snippet onFormulary(formularyItemId: string | null)}
+	{#if formularyItemId}
+		<a class="badge" href={resolve('/formulary/items/[id]', { id: formularyItemId })}>On formulary</a>
+	{:else}
+		<span class="badge">On formulary</span>
+	{/if}
+{/snippet}
+
 {#snippet packageNode(item: StagedPackage)}
 	{@const key = `p:${item.ndc}`}
 	<li class="node package">
@@ -452,7 +503,7 @@
 					{#if item.exclusionReason}<span class="warning-text">· {item.exclusionReason}</span>{/if}
 				</p>
 			</div>
-			{#if item.loaded}<span class="badge">On formulary</span>{/if}
+			{#if item.loaded}{@render onFormulary(item.formularyItemId)}{/if}
 			<button
 				class="load"
 				disabled={pending.has(key) || !!item.exclusionReason}
@@ -728,6 +779,14 @@
 		padding: 0.3rem 0.6rem;
 		font-size: 0.75rem;
 		font-weight: 700;
+	}
+
+	a.badge {
+		text-decoration: none;
+	}
+
+	a.badge:hover {
+		text-decoration: underline;
 	}
 
 	.notice {

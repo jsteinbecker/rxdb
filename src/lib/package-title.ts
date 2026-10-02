@@ -1,7 +1,9 @@
 import type { UnitOfUseSize } from './ndc-packaging';
 import { hierarchyDoseForm } from './formulary-hierarchy';
+import { withBiosimilarSuffix } from './biosimilar';
 import { ingredientGroup } from './ingredient-group';
-import { absoluteFillStrength } from './ingredient-content';
+import { absoluteFillStrength, pharmacyBulkFillMl } from './ingredient-content';
+import { mgPer } from './units';
 
 type Ingredient = { name: string; strength: string | null };
 
@@ -31,21 +33,38 @@ export type PackageTitleSource = {
  * ingredient, else the directory's, read per vial for a dry fill.
  */
 export function correctedIngredients(item: PackageTitleSource): Ingredient[] {
+  // A biosimilar is its own ingredient: `ADALIMUMAB` on a product whose generic
+  // name is `adalimumab-adaz` reads `ADALIMUMAB-ADAZ`, never the reference's.
+  const texts = [
+    item.genericName,
+    item.splTitle,
+    item.details?.rxnav?.conceptName,
+    ...(item.details?.spl?.ingredients ?? []).map((ingredient) => ingredient.name)
+  ];
+  const named = (ingredient: Ingredient): Ingredient => ({
+    ...ingredient,
+    name: withBiosimilarSuffix(ingredient.name, texts)
+  });
   const spl = (item.details?.spl?.ingredients ?? [])
     .filter((ingredient) => ingredient.kind === 'active')
     // The substance name, as the FDA directory gives it; the hierarchy groups
     // salts itself, and a moiety name reads `POTASSIUM CATION` for an electrolyte.
-    .map((ingredient) => ({ name: ingredient.name, strength: ingredient.strength }));
+    .map((ingredient) => named({ name: ingredient.name, strength: ingredient.strength }));
   if (!item.ingredients?.length) return spl;
+  const size = item.size;
+  const fillVolumeMl = size?.kind === 'volume' ? size.value * (size.unit === 'L' ? 1000 : 1) : null;
+  const bulkFillMl = pharmacyBulkFillMl(item.description ?? size?.container, fillVolumeMl);
   const key = (name: string) => ingredientGroup(name).toLowerCase();
   const labeled = new Map(
     spl.flatMap((entry) => (entry.strength ? [[key(entry.name), entry.strength] as const] : []))
   );
-  return item.ingredients.map((ingredient) => ({
+  return item.ingredients.map(named).map((ingredient) => ({
     name: ingredient.name,
     strength:
       labeled.get(key(ingredient.name)) ??
-      (item.isDryFill ? absoluteFillStrength(ingredient.strength) : ingredient.strength)
+      (item.isDryFill
+        ? absoluteFillStrength(ingredient.strength, bulkFillMl, fillVolumeMl)
+        : ingredient.strength)
   }));
 }
 
@@ -62,8 +81,26 @@ const UNITS: Record<string, string> = {
   meq: 'mEq',
   mmol: 'mmol'
 };
-const MASS: Record<string, number> = { g: 1000, mg: 1, mcg: 0.001 };
 const MEASURE = /^(?:m?g|mcg|k?g|ml|l|oz|cm2?|actuat|\[?iu\]?)$/i;
+
+/** RxNorm leads a time-release name with its period: "24 HR metoprolol …". */
+const LEADING_PERIOD = /^(\d+(?:\.\d+)?\s*(?:HR|HOURS?|DAYS?|WEEKS?|MONTHS?))\s+/i;
+
+/**
+ * Moves RxNorm's leading release period behind the release modifier of the
+ * dose form: "24 HR metoprolol succinate 100 MG Extended Release Oral Tablet"
+ * → "metoprolol succinate 100 MG Extended Release (24 HR) Oral Tablet".
+ */
+export function timeReleaseAfterRelease(name: string): string {
+  const period = name.match(LEADING_PERIOD)?.[1];
+  if (!period) return name;
+  const rest = name.replace(LEADING_PERIOD, '');
+  const placed = rest.replace(
+    /\b(Extended|Delayed|Controlled|Sustained)([- ]Release)\b/i,
+    `$1$2 (${period.toUpperCase()})`
+  );
+  return placed === rest ? `${rest} (${period.toUpperCase()})` : placed;
+}
 
 const unitText = (unit: string) => UNITS[unit.toLowerCase()] ?? unit.toLowerCase();
 const number = (value: number) => String(Number(value.toPrecision(6)));
@@ -81,8 +118,10 @@ function strengthText(strength: string, volume: { value: number; unit: string } 
   let value = Number(match[1].replace(/,/g, ''));
   let unit = unitText(match[2]);
   if (!Number.isFinite(value)) return strength.trim();
-  if (MASS[unit] && value * MASS[unit] >= 1000) {
-    value = (value * MASS[unit]) / 1000;
+  // A sub-gram mass of a gram or more reads in grams; kg stays as written.
+  const mg = mgPer(unit);
+  if (mg !== null && mg < 1000 && value * mg >= 1000) {
+    value = (value * mg) / 1000;
     unit = 'g';
   }
   const perUnit = match[4]?.trim();
@@ -118,7 +157,17 @@ function generatedName(item: PackageTitleSource): string | null {
   // until it is reconstituted, and a per-unit figure ("1.13 g/1") takes the
   // label's moiety correction.
   const stated = new Map(
-    (item.isDryFill ? [] : (item.ingredients ?? [])).flatMap((ingredient) =>
+    (item.isDryFill
+      ? []
+      : (item.ingredients ?? []).map((ingredient) => ({
+          ...ingredient,
+          name: withBiosimilarSuffix(ingredient.name, [
+            item.genericName,
+            item.splTitle,
+            item.details?.rxnav?.conceptName
+          ])
+        }))
+    ).flatMap((ingredient) =>
       isConcentration(ingredient.strength)
         ? [[ingredientGroup(ingredient.name).toLowerCase(), ingredient.strength!] as const]
         : []
@@ -149,7 +198,11 @@ function generatedName(item: PackageTitleSource): string | null {
     )
     .join(' / ');
 
-  const doseForm = item.doseForm?.trim() ? hierarchyDoseForm(item.doseForm).toLowerCase() : null;
+  let doseForm = item.doseForm?.trim() ? hierarchyDoseForm(item.doseForm).toLowerCase() : null;
+  const period = item.details?.rxnav?.conceptName?.trim().match(LEADING_PERIOD)?.[1];
+  if (doseForm && period && !doseForm.includes('(')) {
+    doseForm = timeReleaseAfterRelease(`${period} ${doseForm}`);
+  }
 
   const brand = item.brandName?.trim();
   const generic = [item.genericName, ...ingredients.map((ingredient) => ingredient.name)]
@@ -172,7 +225,9 @@ export function packageDisplayTitle(item: PackageTitleSource): string | null {
   const rxNormName = item.details?.rxnav?.conceptName?.trim();
   const name =
     generatedName(item) ??
-    (rxNormName ? rxNormName.charAt(0).toLocaleUpperCase() + rxNormName.slice(1) : null);
+    (rxNormName
+      ? timeReleaseAfterRelease(rxNormName).replace(/^./, (char) => char.toLocaleUpperCase())
+      : null);
   if (!name) return null;
 
   const context: string[] = [];

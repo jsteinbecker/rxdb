@@ -1,5 +1,6 @@
 import type { SplIngredient, SplProduct, StatedStrength } from './spl-ingredients';
 import { strengthText } from './spl-ingredients';
+import { mgPer, toMg } from './units';
 
 // ── Label strengths that cannot be true as coded ─────────────────────────────
 // SPL states every strength as a numerator/denominator ratio whose denominator
@@ -21,31 +22,18 @@ import { strengthText } from './spl-ingredients';
 export type StrengthCorrectionKind = 'presentation-unit' | 'salt-equivalent';
 
 export interface StrengthCorrection {
-	kind: StrengthCorrectionKind;
-	note: string;
+  kind: StrengthCorrectionKind;
+  note: string;
 }
 
 export interface CheckedStrength extends StatedStrength {
-	corrections: StrengthCorrection[];
+  corrections: StrengthCorrection[];
 }
 
-const MASS_MG: Record<string, number> = {
-	kg: 1e6,
-	g: 1e3,
-	mg: 1,
-	ug: 1e-3,
-	mcg: 1e-3,
-	'µg': 1e-3,
-	ng: 1e-6
-};
+const massMg = (value: number | null, unit: string | null): number | null =>
+  value === null ? null : toMg(value, unit);
 
-const massMg = (value: number | null, unit: string | null): number | null => {
-	const factor = unit ? MASS_MG[unit.toLowerCase()] : undefined;
-	return value === null || factor === undefined ? null : value * factor;
-};
-
-const isMass = (unit: string | null): boolean =>
-	unit !== null && MASS_MG[unit.toLowerCase()] !== undefined;
+const isMass = (unit: string | null): boolean => mgPer(unit) !== null;
 
 const VOLUME = /^(?:mL|L|uL|µL)$/i;
 
@@ -63,10 +51,10 @@ const MIN_SALT_RATIO = 1.005;
 
 /** One `name value UNIT[/UNIT]` component of an RxNorm clinical drug name. */
 interface RxStrength {
-	name: string;
-	value: number;
-	unit: string;
-	perUnit: string | null;
+  name: string;
+  value: number;
+  unit: string;
+  perUnit: string | null;
 }
 
 /**
@@ -74,28 +62,24 @@ interface RxStrength {
  * `amoxicillin 250 MG / clavulanate 62.5 MG Oral Tablet`.
  */
 export function rxNormStrengths(name: string | null | undefined): RxStrength[] {
-	if (!name) return [];
-	const out: RxStrength[] = [];
-	for (const part of name.replace(/\[[^\]]*\]/g, '').split(/\s+\/\s+/)) {
-		const match = part.match(/^\s*(.+?)\s+([\d.]+)\s*([A-Za-z]+)(?:\/([A-Za-z]+))?\b/);
-		if (!match) continue;
-		const value = Number(match[2]);
-		if (!Number.isFinite(value)) continue;
-		out.push({ name: match[1].trim(), value, unit: match[3], perUnit: match[4] ?? null });
-	}
-	return out;
+  if (!name) return [];
+  const out: RxStrength[] = [];
+  for (const part of name.replace(/\[[^\]]*\]/g, '').split(/\s+\/\s+/)) {
+    const match = part.match(/^\s*(.+?)\s+([\d.]+)\s*([A-Za-z]+)(?:\/([A-Za-z]+))?\b/);
+    if (!match) continue;
+    const value = Number(match[2]);
+    if (!Number.isFinite(value)) continue;
+    out.push({ name: match[1].trim(), value, unit: match[3], perUnit: match[4] ?? null });
+  }
+  return out;
 }
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** `VANCOMYCIN HYDROCHLORIDE` less `VANCOMYCIN` → `hydrochloride`. */
 function counterionOf(salt: string, moiety: string): string | null {
-	const rest = salt
-		.toLowerCase()
-		.replace(moiety.toLowerCase(), '')
-		.replace(/\s+/g, ' ')
-		.trim();
-	return rest || null;
+  const rest = salt.toLowerCase().replace(moiety.toLowerCase(), '').replace(/\s+/g, ' ').trim();
+  return rest || null;
 }
 
 /**
@@ -103,103 +87,103 @@ function counterionOf(salt: string, moiety: string): string | null {
  * strength. Returned in the same order as `product.ingredients`.
  */
 export function checkProductStrengths(
-	product: Pick<SplProduct, 'ingredients' | 'presentation'>,
-	options: { rxNormName?: string | null } = {}
+  product: Pick<SplProduct, 'ingredients' | 'presentation'>,
+  options: { rxNormName?: string | null } = {}
 ): CheckedStrength[] {
-	const checked: CheckedStrength[] = product.ingredients.map((ingredient) => ({
-		strength: ingredient.strength,
-		strengthUnit: ingredient.strengthUnit,
-		per: ingredient.per,
-		perUnit: ingredient.perUnit,
-		corrections: []
-	}));
+  const checked: CheckedStrength[] = product.ingredients.map((ingredient) => ({
+    strength: ingredient.strength,
+    strengthUnit: ingredient.strengthUnit,
+    per: ingredient.per,
+    perUnit: ingredient.perUnit,
+    corrections: []
+  }));
 
-	correctMassDenominators(product, checked);
-	correctSaltAsMoiety(product.ingredients, checked, options.rxNormName ?? null);
-	return checked;
+  correctMassDenominators(product, checked);
+  correctSaltAsMoiety(product.ingredients, checked, options.rxNormName ?? null);
+  return checked;
 }
 
 /** Rule 1 — `X mg in 1 mg`. */
 function correctMassDenominators(
-	product: Pick<SplProduct, 'ingredients' | 'presentation'>,
-	checked: CheckedStrength[]
+  product: Pick<SplProduct, 'ingredients' | 'presentation'>,
+  checked: CheckedStrength[]
 ): void {
-	const massDenominated = checked.filter(
-		(row) => row.per !== null && row.per > 0 && isMass(row.perUnit) && isMass(row.strengthUnit)
-	);
-	if (!massDenominated.length) return;
+  const massDenominated = checked.filter(
+    (row) => row.per !== null && row.per > 0 && isMass(row.perUnit) && isMass(row.strengthUnit)
+  );
+  if (!massDenominated.length) return;
 
-	// Impossible when any one ingredient outweighs the product it is "in", or
-	// when the ingredients together do. The second catches the excipients of a
-	// product whose active alone was the tell — 0.05 mg in 1 mg is possible in
-	// isolation, but not beside 513 mg in the same 1 mg.
-	const denominatorMg = (row: CheckedStrength) => massMg(row.per, row.perUnit)!;
-	const total = massDenominated.reduce(
-		(sum, row) => sum + massMg(row.strength, row.strengthUnit)! / denominatorMg(row),
-		0
-	);
-	const impossible =
-		total > 1 ||
-		massDenominated.some((row) => massMg(row.strength, row.strengthUnit)! > denominatorMg(row));
-	if (!impossible) return;
+  // Impossible when any one ingredient outweighs the product it is "in", or
+  // when the ingredients together do. The second catches the excipients of a
+  // product whose active alone was the tell — 0.05 mg in 1 mg is possible in
+  // isolation, but not beside 513 mg in the same 1 mg.
+  const denominatorMg = (row: CheckedStrength) => massMg(row.per, row.perUnit)!;
+  const total = massDenominated.reduce(
+    (sum, row) => sum + massMg(row.strength, row.strengthUnit)! / denominatorMg(row),
+    0
+  );
+  const impossible =
+    total > 1 ||
+    massDenominated.some((row) => massMg(row.strength, row.strengthUnit)! > denominatorMg(row));
+  if (!impossible) return;
 
-	const form = product.presentation?.form ?? null;
-	const per = product.presentation?.per ?? 1;
-	const presentationUnit = form ?? 'unit';
-	for (const row of massDenominated) {
-		const stated = `${row.per} ${row.perUnit}`;
-		row.per = per;
-		row.perUnit = presentationUnit;
-		row.corrections.push({
-			kind: 'presentation-unit',
-			note: `Corrected unit of presentation to ${per} ${presentationUnit} from improper coding as ${stated}`
-		});
-	}
+  const form = product.presentation?.form ?? null;
+  const per = product.presentation?.per ?? 1;
+  const presentationUnit = form ?? 'unit';
+  for (const row of massDenominated) {
+    const stated = `${row.per} ${row.perUnit}`;
+    row.per = per;
+    row.perUnit = presentationUnit;
+    row.corrections.push({
+      kind: 'presentation-unit',
+      note: `Corrected unit of presentation to ${per} ${presentationUnit} from improper coding as ${stated}`
+    });
+  }
 }
 
 /** Rule 2 — a salt's mass stated as moiety strength. */
 function correctSaltAsMoiety(
-	ingredients: SplIngredient[],
-	checked: CheckedStrength[],
-	rxNormName: string | null
+  ingredients: SplIngredient[],
+  checked: CheckedStrength[],
+  rxNormName: string | null
 ): void {
-	const rx = rxNormStrengths(rxNormName);
-	if (!rx.length) return;
+  const rx = rxNormStrengths(rxNormName);
+  if (!rx.length) return;
 
-	ingredients.forEach((ingredient, index) => {
-		const row = checked[index];
-		if (ingredient.kind !== 'active' || ingredient.basis !== 'moiety') return;
-		if (ingredient.moieties.length !== 1 || row.strength === null) return;
-		const moiety = ingredient.moieties[0];
-		if (sameName(ingredient.name, moiety.name)) return;
-		if (!ingredient.name.toLowerCase().includes(moiety.name.toLowerCase())) return;
+  ingredients.forEach((ingredient, index) => {
+    const row = checked[index];
+    if (ingredient.kind !== 'active' || ingredient.basis !== 'moiety') return;
+    if (ingredient.moieties.length !== 1 || row.strength === null) return;
+    const moiety = ingredient.moieties[0];
+    if (sameName(ingredient.name, moiety.name)) return;
+    if (!ingredient.name.toLowerCase().includes(moiety.name.toLowerCase())) return;
 
-		const reference = rx.find((entry) => sameName(entry.name, moiety.name));
-		if (!reference) return;
+    const reference = rx.find((entry) => sameName(entry.name, moiety.name));
+    if (!reference) return;
 
-		// Only compare like with like: RxNorm's per-mL against a per-mL label
-		// strength, its per-unit against a per-unit (or per-container) one.
-		const labelPerVolume = VOLUME.test(row.perUnit ?? '');
-		if (reference.perUnit) {
-			if (!labelPerVolume || row.per !== 1 || !sameName(reference.perUnit, row.perUnit!)) return;
-		} else if (labelPerVolume || isMass(row.perUnit)) return;
+    // Only compare like with like: RxNorm's per-mL against a per-mL label
+    // strength, its per-unit against a per-unit (or per-container) one.
+    const labelPerVolume = VOLUME.test(row.perUnit ?? '');
+    if (reference.perUnit) {
+      if (!labelPerVolume || row.per !== 1 || !sameName(reference.perUnit, row.perUnit!)) return;
+    } else if (labelPerVolume || isMass(row.perUnit)) return;
 
-		const labelMg = massMg(row.strength, row.strengthUnit);
-		const rxMg = massMg(reference.value, reference.unit);
-		if (labelMg === null || rxMg === null || rxMg <= 0) return;
-		const ratio = labelMg / rxMg;
-		if (ratio <= MIN_SALT_RATIO || ratio > MAX_SALT_RATIO) return;
+    const labelMg = massMg(row.strength, row.strengthUnit);
+    const rxMg = massMg(reference.value, reference.unit);
+    if (labelMg === null || rxMg === null || rxMg <= 0) return;
+    const ratio = labelMg / rxMg;
+    if (ratio <= MIN_SALT_RATIO || ratio > MAX_SALT_RATIO) return;
 
-		const stated = strengthText({ ...row, per: null, perUnit: null })!;
-		const corrected = round(rxMg / (MASS_MG[row.strengthUnit!.toLowerCase()] ?? 1));
-		row.strength = corrected;
-		const counterion = counterionOf(ingredient.name, moiety.name);
-		row.corrections.push({
-			kind: 'salt-equivalent',
-			note:
-				`Strength corrected from stated value of ${stated}, equivalent to ` +
-				`${corrected} ${row.strengthUnit} ${moiety.name.toLowerCase()}` +
-				(counterion ? ` as the ${counterion} salt` : ' as its salt')
-		});
-	});
+    const stated = strengthText({ ...row, per: null, perUnit: null })!;
+    const corrected = round(rxMg / (mgPer(row.strengthUnit) ?? 1));
+    row.strength = corrected;
+    const counterion = counterionOf(ingredient.name, moiety.name);
+    row.corrections.push({
+      kind: 'salt-equivalent',
+      note:
+        `Strength corrected from stated value of ${stated}, equivalent to ` +
+        `${corrected} ${row.strengthUnit} ${moiety.name.toLowerCase()}` +
+        (counterion ? ` as the ${counterion} salt` : ' as its salt')
+    });
+  });
 }

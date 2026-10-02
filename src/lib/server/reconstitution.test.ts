@@ -1,15 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseMassMg,
+  parseBottleTable,
+  parseCombinedConcentration,
   parseConcentrationMgPerMl,
+  parseMassCell,
+  parseMassMg,
   parseReconstitutionTable,
   reconstitutionFromLabel
 } from '../reconstitution';
 import {
-  parseReconstitutionProse,
   dedupeProseReconstitutions,
-  rowsForVial
+  parseBottleProse,
+  parseReconstitutionProse,
+  rowsForVial,
+  statedReconstitutedConcentrations,
+  withLabelConcentrations
 } from '../dry-fill-volume';
 import { parsePackageFacts } from './catalog-facts';
 
@@ -150,7 +156,12 @@ test('a salt-mass bulk vial resolves on the moiety mass its label names', () => 
     '1 VIAL, PHARMACY BULK PACKAGE in 1 CARTON / 5.13 g in 1 VIAL, PHARMACY BULK PACKAGE',
     'INJECTION, POWDER, FOR SOLUTION',
     [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '5.13 g/1' }],
-    { dosage_and_administration: [vancomycinBulk + ' Reconstituted solutions of vancomycin (100 mg/mL) must be further diluted.'] },
+    {
+      dosage_and_administration: [
+        vancomycinBulk +
+          ' Reconstituted solutions of vancomycin (100 mg/mL) must be further diluted.'
+      ]
+    },
     null,
     'vancomycin 100 MG/ML Injectable Solution'
   );
@@ -226,4 +237,193 @@ test('a quantified SCD mass outranks the salt mass for vial matching', () => {
     [500]
   );
   assert.equal(facts.resolvedVolume?.finalVolumeMl, 10);
+});
+
+// ── Stub cells naming their route: cefepime ─────────────────────────────────
+
+const cefepimeTable = `<table><thead><tr><th>Single-Dose Vials for Intravenous (IV)/Intramuscular (IM) Administration</th><th>Amount of Diluent to be added (mL)</th><th>Approximate Cefepime Concentration (mg/mL)</th><th>Amount of Reconstituted Volume to be Withdrawn (mL)</th></tr></thead><tbody><tr><td>Cefepime vial content</td><td/><td/><td/></tr><tr><td>1 g (IV)</td><td>10</td><td>100</td><td>10.5</td></tr><tr><td>1 g (IM)</td><td>2.4</td><td>280</td><td>3.6</td></tr><tr><td>2 g (IV)</td><td>10</td><td>160</td><td>12.5</td></tr></tbody></table>`;
+
+test('a vial cell naming its route in parentheses is a vial of that route', () => {
+  assert.deepEqual(parseMassCell('1 g (IV)'), { mg: 1000, routes: ['IV'] });
+  assert.deepEqual(parseMassCell('500 mg (I.M.)'), { mg: 500, routes: ['IM'] });
+  assert.equal(parseMassCell('1 g (as the sodium salt)'), null);
+  assert.deepEqual(parseReconstitutionTable(cefepimeTable), [
+    {
+      vialMassMg: 1000,
+      diluentMl: 10,
+      concentrationMgPerMl: 100,
+      finalVolumeMl: 10.5,
+      routes: ['IV']
+    },
+    {
+      vialMassMg: 1000,
+      diluentMl: 2.4,
+      concentrationMgPerMl: 280,
+      finalVolumeMl: 3.6,
+      routes: ['IM']
+    },
+    {
+      vialMassMg: 2000,
+      diluentMl: 10,
+      concentrationMgPerMl: 160,
+      finalVolumeMl: 12.5,
+      routes: ['IV']
+    }
+  ]);
+});
+
+// ── Concentrations stated apart from the instruction: vancomycin ───────────
+
+const vancomycinDescription =
+  'When reconstituted with Sterile Water for Injection to a concentration of 50 mg/mL, the pH of the solution is between 2.5 and 4.5.';
+
+test('a reconstituted concentration is read wherever the label states it, and a dilution limit is not', () => {
+  assert.deepEqual(
+    statedReconstitutedConcentrations(
+      vancomycinDescription +
+        ' Reconstituted solutions of vancomycin (500 mg/10 mL) must be further diluted in at least 100 mL. ' +
+        'Further dilute the reconstituted solution to a concentration of no more than 5 mg/mL.'
+    ),
+    [{ mgPerMl: 50, vialMassMg: null }]
+  );
+  assert.deepEqual(
+    statedReconstitutedConcentrations(
+      'When reconstituted with Sterile Water for Injection to a concentration of 50 mg per mL for the 5 gram Pharmacy Bulk Package bottle and 100 mg per mL for the 10 gram Pharmacy Bulk Package bottle, the pH is between 2.5 and 4.5.'
+    ),
+    [
+      { mgPerMl: 50, vialMassMg: 5000 },
+      { mgPerMl: 100, vialMassMg: 10000 }
+    ]
+  );
+  assert.deepEqual(
+    statedReconstitutedConcentrations(
+      'When reconstituted, each 5 mL contains approximately 250 mg of vancomycin.'
+    ),
+    [{ mgPerMl: 50, vialMassMg: null }]
+  );
+});
+
+test('a label concentration fills a row only when it alone fits that vial and diluent', () => {
+  const row = { vialMassMg: 500, diluentMl: 10, concentrations: [] };
+  const bulk = { vialMassMg: null, diluentMl: 95, concentrations: [] };
+  const stated = [
+    { mgPerMl: 50, vialMassMg: null },
+    { mgPerMl: 100, vialMassMg: null }
+  ];
+  // 500 mg at 50 mg/mL is 10 mL from 10 mL of diluent; at 100 mg/mL it
+  // would be 5 mL, less than was added.
+  assert.deepEqual(withLabelConcentrations([row], stated, 500)[0].concentrations, [
+    { name: null, mgPerMl: 50 }
+  ]);
+  // The 10 g bulk bottle with 95 mL: only 100 mg/mL (100 mL) fits.
+  assert.deepEqual(withLabelConcentrations([bulk], stated, 10000)[0].concentrations, [
+    { name: null, mgPerMl: 100 }
+  ]);
+  // Attributed to the other vial, it does not apply to this one.
+  assert.deepEqual(
+    withLabelConcentrations([row], [{ mgPerMl: 50, vialMassMg: 10000 }], 500)[0].concentrations,
+    []
+  );
+  // Two that both fit is ambiguity, and ambiguity resolves nothing.
+  assert.deepEqual(
+    withLabelConcentrations(
+      [row],
+      [
+        { mgPerMl: 50, vialMassMg: null },
+        { mgPerMl: 48, vialMassMg: null }
+      ],
+      500
+    )[0].concentrations,
+    []
+  );
+});
+
+test('a vial whose yield is stated in another section resolves', () => {
+  const facts = parsePackageFacts(
+    '00143935601',
+    '1  in 1 VIAL',
+    'INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION',
+    [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '500 mg/1' }],
+    {
+      description: [vancomycinDescription],
+      dosage_and_administration: [
+        'At the time of use, reconstitute the 500 mg vial by adding 10 mL of Sterile Water for Injection.'
+      ]
+    },
+    null,
+    'vancomycin 500 MG Injection'
+  );
+  assert.equal(facts.resolvedVolume?.finalVolumeMl, 10);
+  assert.equal(facts.resolvedVolume?.concentrationMgPerMl, 50);
+});
+
+// ── Oral constitution bottles ───────────────────────────────────────────────
+
+const amoxicillinTable = `<table><caption>Table 2. Amount of Water for Mixing Oral Suspension</caption><thead><tr><th>Strength</th><th>Bottle Size</th><th>Amount of Water  Required for  Reconstitution </th></tr></thead><tbody><tr><td>Oral Suspension 200 mg/5 mL</td><td>50 mL</td><td>35 mL</td></tr><tr><td/><td>100 mL</td><td>69 mL</td></tr><tr><td>Oral Suspension 400 mg/5 mL</td><td>50 mL</td><td>35 mL</td></tr><tr><td/><td>100 mL</td><td>69 mL</td></tr></tbody></table>`;
+
+const amoxClavTable = `<table><tbody><tr><td><paragraph> Strength of Amoxicillin and Clavulanate Potassium for Oral Suspension</paragraph></td><td><paragraph> Bottle Size</paragraph></td><td><paragraph> Amount of Water for Reconstitution</paragraph></td><td><paragraph> Contents of Each Teaspoonful (5 mL)</paragraph></td></tr><tr><td> 250 mg/62.5 mg per 5 mL </td><td> 75 mL 100 mL 150 mL </td><td> 68 mL 86 mL 128 mL </td><td> 250 mg amoxicillin and 62.5 mg of clavulanic acid </td></tr></tbody></table>`;
+
+test('bottle tables pair each bottle with its water at the strength above it', () => {
+  assert.equal(parseCombinedConcentration('250 mg/62.5 mg per 5 mL'), 62.5);
+  assert.equal(parseCombinedConcentration('Oral Suspension 200 mg/5 mL'), 40);
+  assert.deepEqual(parseBottleTable(amoxicillinTable), [
+    { bottleMl: 50, waterMl: 35, concentrationMgPerMl: 40 },
+    { bottleMl: 100, waterMl: 69, concentrationMgPerMl: 40 },
+    { bottleMl: 50, waterMl: 35, concentrationMgPerMl: 80 },
+    { bottleMl: 100, waterMl: 69, concentrationMgPerMl: 80 }
+  ]);
+  assert.deepEqual(parseBottleTable(amoxClavTable), [
+    { bottleMl: 75, waterMl: 68, concentrationMgPerMl: 62.5 },
+    { bottleMl: 100, waterMl: 86, concentrationMgPerMl: 62.5 },
+    { bottleMl: 150, waterMl: 128, concentrationMgPerMl: 62.5 }
+  ]);
+  // A reconstitution table is not a bottle table.
+  assert.deepEqual(parseBottleTable(cefepimeTable), []);
+});
+
+test('bottle instructions in prose need the water they add', () => {
+  assert.deepEqual(
+    parseBottleProse(
+      'Directions for mixing: 80 mL – Slowly add 80 mL water and shake vigorously. 150 mL – Slowly add 150 mL water and shake vigorously. The dose may be diluted in 1 oz of water.'
+    ),
+    [
+      { bottleMl: 80, waterMl: 80, concentrationMgPerMl: null },
+      { bottleMl: 150, waterMl: 150, concentrationMgPerMl: null }
+    ]
+  );
+});
+
+test('an oral powder bottle resolves as its finished volume, never as a vial', () => {
+  const label = { dosage_and_administration_table: [amoxicillinTable] };
+  const facts = parsePackageFacts(
+    '61919040132',
+    '100 mL in 1 BOTTLE (61919-401-32)',
+    'POWDER, FOR SUSPENSION',
+    [{ name: 'AMOXICILLIN', strength: '400 mg/5mL' }],
+    label,
+    null,
+    'amoxicillin 80 MG/ML Oral Suspension'
+  );
+  assert.deepEqual(
+    { ...facts.resolvedVolume, rowId: undefined },
+    {
+      meaning: 'final',
+      finalVolumeMl: 100,
+      diluentMl: 69,
+      concentrationMgPerMl: 80,
+      rowId: undefined
+    }
+  );
+  // A bottle size the label never lists stays unresolved, rather than being
+  // read as 400 mg of content at the 200 mg/5 mL row's concentration.
+  const unlisted = parsePackageFacts(
+    '61919040199',
+    '150 mL in 1 BOTTLE',
+    'POWDER, FOR SUSPENSION',
+    [{ name: 'AMOXICILLIN', strength: '400 mg/5mL' }],
+    label,
+    null,
+    'amoxicillin 80 MG/ML Oral Suspension'
+  );
+  assert.equal(unlisted.resolvedVolume?.finalVolumeMl ?? null, null);
 });

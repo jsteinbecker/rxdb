@@ -1,12 +1,5 @@
 // Collection-only mass and dosage-form parsers ported from MedPool.
-const UNIT_TO_MG: Record<string, number> = {
-	mcg: 0.001,
-	ug: 0.001,
-	mg: 1,
-	g: 1000,
-	gm: 1000,
-	kg: 1_000_000
-};
+import { mgPer } from './units';
 
 // `<value><unit>` immediately before the `/`, e.g. "12 g" in "12 g/60mL", or the
 // whole string when there is no denominator at all ("12 G").
@@ -22,8 +15,8 @@ export function parseIngredientMassMg(strength: string): number | null {
 	const match = NUMERATOR.exec(strength);
 	if (!match) return null;
 	const value = Number(match[1]);
-	const scale = UNIT_TO_MG[match[2].toLowerCase()];
-	if (!Number.isFinite(value) || value <= 0 || scale === undefined) return null;
+	const scale = mgPer(match[2]);
+	if (!Number.isFinite(value) || value <= 0 || scale === null) return null;
 	return value * scale;
 }
 
@@ -49,9 +42,45 @@ export const isVialForm = (doseForm: string): boolean => INJECTABLE_FORM.test(do
 
 /** A dry-fill has no liquid volume before reconstitution. Preserve the label's
  * numerator as the per-vial amount; a per-volume denominator here is not the
- * package's physical capacity. The unmodified source remains in evidence. */
-export function absoluteFillStrength(strength: string | null): string | null {
+ * package's physical capacity. The unmodified source remains in evidence.
+ *
+ * Exception: a pharmacy bulk package whose volume is well beyond the
+ * denominator codes the *reconstituted concentration*, not the fill — Hospira
+ * vancomycin 0409-5017 is `500 mg/5 mL` in a 100 mL bulk vial (10 g). Stripping
+ * the denominator there would claim 500 mg per vial, so the concentration is
+ * kept. Pass `bulkFillMl` only for pharmacy bulk packages: a single-dose vial's
+ * volume can be headspace larger than the reconstitution volume.
+ *
+ * A per-millilitre denominator (`12 mg/mL`, `12 mg/1 mL`) is never a fill: it
+ * is the reconstituted concentration. Anavip 66621-0790 lists `12 mg/mL` in a
+ * `10 mL in 1 VIAL` — 120 mg per vial, not 12. With the package volume
+ * (`fillVolumeMl`) known it is multiplied out; without it the concentration
+ * is kept rather than asserting a per-vial amount the label doesn't give. */
+export function absoluteFillStrength(
+	strength: string | null,
+	bulkFillMl: number | null = null,
+	fillVolumeMl: number | null = null
+): string | null {
 	if (!strength) return strength;
-	const match = strength.match(/^(.+?)\s*\/\s*(?:\d+(?:\.\d+)?\s*)?(?:mL|L|uL|µL)\s*$/i);
-	return match?.[1]?.trim() ?? strength;
+	const match = strength.match(/^(.+?)\s*\/\s*(\d+(?:\.\d+)?)?\s*(mL|L|uL|µL)\s*$/i);
+	if (!match) return strength;
+	if (match[3].toLowerCase() === 'ml' && Number(match[2] ?? 1) === 1) {
+		const amount = match[1].trim().match(/^(\d+(?:\.\d+)?)\s*(.+)$/);
+		if (fillVolumeMl === null || fillVolumeMl <= 0 || !amount) return strength;
+		return `${Number((Number(amount[1]) * fillVolumeMl).toPrecision(12))} ${amount[2]}`;
+	}
+	if (bulkFillMl !== null) {
+		const unit = match[3].toLowerCase();
+		const perMl = Number(match[2] ?? 1) * (unit === 'l' ? 1000 : unit === 'ml' ? 1 : 0.001);
+		if (perMl > 0 && bulkFillMl >= 2 * perMl) return strength;
+	}
+	return match[1].trim();
+}
+
+/** The package volume in mL when the package is a pharmacy bulk package. */
+export function pharmacyBulkFillMl(
+	description: string | null | undefined,
+	fillVolumeMl: number | null
+): number | null {
+	return fillVolumeMl !== null && /PHARMACY BULK/i.test(description ?? '') ? fillVolumeMl : null;
 }

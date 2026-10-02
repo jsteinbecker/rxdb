@@ -1,5 +1,6 @@
-import type { ExternalPackage } from '$lib/server/catalog-providers';
-import { RECONSTITUTION_ROUTES, type ReconstitutionRoute } from './reconstitution-terms';
+import type {ExternalPackage} from '$lib/server/catalog-providers';
+import type {AmbiguityTag} from './labeler-ambiguity';
+import {RECONSTITUTION_ROUTES, type ReconstitutionRoute} from './reconstitution-terms';
 
 /** How an equivalent NDC relates to the one being corrected. */
 export type EquivalentRelation = 'sibling' | 'concept';
@@ -9,7 +10,12 @@ export type EquivalentRelation = 'sibling' | 'concept';
  * (overrides saved before `source` existed are all SPL citations), a quoted
  * outside source, or the same field of an equivalent NDC.
  */
-export type PropertyOverride = { value: string; createdAt: string } & (
+export type PropertyOverride = {
+  value: string;
+  createdAt: string;
+  /** Why the labeler's value was wrong, when the correction names a known pattern. */
+  ambiguity?: AmbiguityTag;
+} & (
   | {
       source?: 'spl';
       excerpt: string;
@@ -45,7 +51,6 @@ const textFields = [
   ['labelerName', 'Labeler'],
   ['labelerCode', 'Labeler code'],
   ['productCode', 'Product NDC'],
-  ['doseForm', 'Dose form'],
   ['rxcuiStatus', 'RxNav NDC status'],
   ['marketingEndDate', 'Marketing end date'],
   ['details.product.productType', 'Product type'],
@@ -53,6 +58,63 @@ const textFields = [
   ['details.product.applicationNumber', 'Application number'],
   ['details.product.deaSchedule', 'DEA schedule']
 ] as const;
+
+/** Dose forms offered when correcting one; a package's own forms are offered too. */
+export const DOSE_FORM_CHOICES = [
+  'INJECTION',
+  'INJECTION, EMULSION',
+  'INJECTION, POWDER, FOR SOLUTION',
+  'INJECTION, POWDER, FOR SUSPENSION',
+  'INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION',
+  'INJECTION, SOLUTION',
+  'INJECTION, SOLUTION, CONCENTRATE',
+  'INJECTION, SUSPENSION',
+  'TABLET',
+  'TABLET, COATED',
+  'TABLET, FILM COATED',
+  'TABLET, EXTENDED RELEASE',
+  'TABLET, CHEWABLE',
+  'CAPSULE',
+  'CAPSULE, EXTENDED RELEASE',
+  'SOLUTION',
+  'SUSPENSION',
+  'POWDER, FOR SOLUTION',
+  'POWDER, FOR SUSPENSION',
+  'SYRUP',
+  'CREAM',
+  'OINTMENT',
+  'GEL',
+  'PATCH',
+  'SPRAY',
+  'AEROSOL, METERED',
+  'SUPPOSITORY'
+] as const;
+/** Joins several dose forms into the one string a package stores; the forms hold commas. */
+export const DOSE_FORM_SEPARATOR = '; ';
+
+/** Routes of administration a package may list. */
+export const ROUTE_CHOICES = [
+  'INTRAVENOUS',
+  'INTRAMUSCULAR',
+  'SUBCUTANEOUS',
+  'INTRADERMAL',
+  'INTRATHECAL',
+  'INTRA-ARTICULAR',
+  'INTRAPERITONEAL',
+  'INTRAOCULAR',
+  'ORAL',
+  'TOPICAL',
+  'NASAL',
+  'RESPIRATORY (INHALATION)',
+  'OPHTHALMIC',
+  'OTIC',
+  'RECTAL',
+  'VAGINAL',
+  'BUCCAL',
+  'SUBLINGUAL',
+  'URETHRAL'
+] as const;
+
 const booleanFields = [
   ['isMultiDose', 'Multi-dose (true or false)'],
   ['isDryFill', 'Dry fill (true or false)'],
@@ -70,10 +132,25 @@ const volumeFields = [
 /**
  * `reconstitution.<row>.<field>`. The row is its content id (`r1a2b3c4d`), or
  * — for rows saved before rows had ids, and overrides written against them —
- * its position.
+ * its position. A row the user added has an `a<n>` id: its `diluentMl`
+ * override creates it. `removed` set to "true" drops the row.
  */
 export const RECONSTITUTION_OVERRIDE_KEY =
-  /^reconstitution\.(r[0-9a-f]{8}(?:-\d+)?|\d+)\.(vialMassMg|diluentMl|finalVolumeMl|concentrations\.(\d+)\.mgPerMl|routes|diluents)$/;
+  /^reconstitution\.(r[0-9a-f]{8}(?:-\d+)?|a\d+|\d+)\.(vialMassMg|diluentMl|finalVolumeMl|concentrations\.(\d+)\.mgPerMl|routes|diluents|removed)$/;
+
+/** `details.spl.ingredients.<index>.strength`: an ingredient's labeled amount. */
+export const INGREDIENT_STRENGTH_KEY = /^details\.spl\.ingredients\.(\d+)\.strength$/;
+
+/** The id the next user-added reconstitution row takes. */
+export function nextAddedRowId(
+  item: Pick<ExternalPackage, 'reconstitution' | 'propertyOverrides'>
+): string {
+  const used = [
+    ...item.reconstitution.map((row) => row.id ?? ''),
+    ...Object.keys(item.propertyOverrides ?? {}).map((key) => key.split('.')[1] ?? '')
+  ].flatMap((id) => (/^a\d+$/.test(id) ? [Number(id.slice(1))] : []));
+  return `a${used.length ? Math.max(...used) + 1 : 0}`;
+}
 
 /** Route codes from an override value like "IM, IV", or null if any is unknown. */
 export function parseRouteList(value: string): ReconstitutionRoute[] | null {
@@ -108,17 +185,22 @@ const describeRow = (row: ReconRow, index: number) =>
     .join(' · ')})`;
 
 export function overrideTargets(
-  item: Pick<ExternalPackage, 'reconstitution' | 'size' | 'details'>
+  item: Pick<ExternalPackage, 'reconstitution' | 'size' | 'details'> &
+    Partial<Pick<ExternalPackage, 'propertyOverrides'>>
 ): { key: string; label: string }[] {
   return [
     ...textFields
       .filter(([key]) => !key.startsWith('details.product.') || item.details?.product)
       .map(([key, label]) => ({ key, label })),
+    { key: 'doseForm', label: 'Dose form (choose any)' },
+    ...(item.details?.product
+      ? [{ key: 'details.product.routes', label: 'Routes (choose any)' }]
+      : []),
     ...booleanFields.map(([key, label]) => ({ key, label })),
     ...(item.size
       ? [
           { key: 'size.value', label: 'Unit-of-use quantity' },
-          { key: 'size.packQty', label: 'Containers per package' },
+          { key: 'size.packQty', label: 'Unit-of-sale quantity' },
           { key: 'size.container', label: 'Unit-of-use container' },
           { key: 'size.unit', label: 'Unit-of-use unit' }
         ]
@@ -139,18 +221,30 @@ export function overrideTargets(
           key: `${key}.concentrations.${concentration}.mgPerMl`,
           label: `${name}: concentration ${concentration + 1} (mg/mL)`
         })),
+        {
+          key: `${key}.concentrations.${row.concentrations.length}.mgPerMl`,
+          label: `${name}: add a concentration (mg/mL)`
+        },
         { key: `${key}.routes`, label: `${name}: routes (${RECONSTITUTION_ROUTES.join(', ')})` },
-        { key: `${key}.diluents`, label: `${name}: diluents (e.g. SWFI, NS, lidocaine 1%)` }
+        { key: `${key}.diluents`, label: `${name}: diluents (e.g. SWFI, NS, lidocaine 1%)` },
+        { key: `${key}.removed`, label: `${name}: remove row (true or false)` }
       ];
-    })
+    }),
+    {
+      key: `reconstitution.${nextAddedRowId({ propertyOverrides: {}, ...item })}.diluentMl`,
+      label: 'New reconstitution row: diluent to add (mL)'
+    },
+    ...(item.details?.spl?.ingredients ?? []).flatMap((ingredient, index) =>
+      ingredient.kind === 'ionic'
+        ? []
+        : [
+            {
+              key: `details.spl.ingredients.${index}.strength`,
+              label: `${ingredient.name} (${ingredient.kind}): strength`
+            }
+          ]
+    )
   ];
-}
-
-/** Fixed choices for a field, or null when it takes free text or a number. */
-export function overrideChoices(key: string): string[] | null {
-  if (booleanFields.some(([field]) => field === key)) return ['true', 'false'];
-  if (key === 'resolvedVolume.meaning') return ['final', 'diluent', 'capacity', 'unknown'];
-  return null;
 }
 
 /** How a numeric field is typed: the unit it is stored in and its bounds. */
@@ -161,78 +255,308 @@ export type OverrideQuantity = {
   exclusiveMin: boolean;
 };
 
-/** The quantity a numeric override takes, or null for a text or choice field. */
-export function overrideQuantity(
-  key: string,
-  item: Pick<ExternalPackage, 'size'>
-): OverrideQuantity | null {
-  const positive = (unit: string | null, integer = false): OverrideQuantity => ({
-    unit,
-    integer,
-    min: 0,
-    exclusiveMin: true
+type Pkg = Omit<ExternalPackage, 'splXml' | 'evidence'>;
+
+/** Everything one override key means: how its value is read, checked and applied. */
+export type OverrideField = {
+  /** Fixed choices, or null when it takes free text or a number. */
+  choices: readonly string[] | null;
+  /** Set when several of the choices may be picked; the value joins them with this. */
+  separator?: string;
+  /** The quantity a numeric field takes, or null for a text or choice field. */
+  quantity: (item: Pick<ExternalPackage, 'size'>) => OverrideQuantity | null;
+  valid: (value: string) => boolean;
+  /** The value the page currently shows, as override text. */
+  get: (item: Pkg) => string | null;
+  /** Write the value onto a copy being corrected; a removed row goes in `removed`. */
+  set: (item: Pkg, value: string, removed: Set<ReconRow>) => void;
+  /** Invalidates the resolved volume, which is then worked out again. */
+  affectsVolume?: boolean;
+  /** Replaces what a salt-to-moiety unit-of-use correction restated. */
+  replacesCorrection?: boolean;
+  /** Corrects the resolved volume itself, so it applies after that is worked out. */
+  correctsVolume?: boolean;
+};
+
+const BOOLEAN = ['true', 'false'] as const;
+const VOLUME_MEANINGS = ['final', 'diluent', 'capacity', 'unknown'] as const;
+
+const text = (value: unknown) => (value == null ? null : String(value));
+const isText = (max: number) => (value: string) => !!value.trim() && value.length <= max;
+const isBoolean = (value: string) => value === 'true' || value === 'false';
+const positive = (unit: string | null, integer = false): OverrideQuantity => ({
+  unit,
+  integer,
+  min: 0,
+  exclusiveMin: true
+});
+
+const field = (
+  spec: Pick<OverrideField, 'valid' | 'get' | 'set'> & Partial<OverrideField>
+): OverrideField => ({ choices: null, quantity: () => null, ...spec });
+
+/** A numeric field, valid within the bounds its quantity states. */
+const numberField = (
+  quantity: OverrideQuantity | ((item: Pick<ExternalPackage, 'size'>) => OverrideQuantity),
+  spec: Pick<OverrideField, 'get' | 'set'> & Partial<OverrideField>
+): OverrideField => {
+  const quantityOf = typeof quantity === 'function' ? quantity : () => quantity;
+  const { min, exclusiveMin } = quantityOf({ size: null });
+  return field({
+    quantity: quantityOf,
+    valid: (value) =>
+      value.trim() !== '' &&
+      Number.isFinite(Number(value)) &&
+      (exclusiveMin ? Number(value) > min : Number(value) >= min),
+    ...spec
   });
-  if (key === 'size.packQty') return positive(null, true);
-  if (key === 'size.value') return positive(item.size?.unit ?? null);
-  if (key === 'resolvedVolume.powderDisplacementMl')
-    return { ...positive('mL'), exclusiveMin: false };
-  if (key === 'resolvedVolume.concentrationMgPerMl') return positive('mg/mL');
-  if (volumeFields.some(([field]) => field === key)) return positive('mL');
-  const reconField = RECONSTITUTION_OVERRIDE_KEY.exec(key)?.[2];
-  if (reconField === 'vialMassMg') return positive('mg');
-  if (reconField === 'diluentMl' || reconField === 'finalVolumeMl') return positive('mL');
-  if (reconField?.startsWith('concentrations.')) return positive('mg/mL');
+};
+
+const TEXT_KEYS = new Set<string>(textFields.map(([key]) => key));
+const BOOLEAN_KEYS = new Set<string>(booleanFields.map(([key]) => key));
+const PRODUCT_PREFIX = 'details.product.';
+
+/** A value that joins several entries with `separator`. */
+export const splitMulti = (value: string, separator: string): string[] =>
+  value
+    .split(separator.trim())
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+function resolveField(key: string): OverrideField | null {
+  if (key === 'doseForm')
+    return field({
+      choices: DOSE_FORM_CHOICES,
+      separator: DOSE_FORM_SEPARATOR,
+      valid: (value) => isText(500)(value) && splitMulti(value, DOSE_FORM_SEPARATOR).length > 0,
+      get: (item) => text(item.doseForm),
+      set: (item, value) => {
+        item.doseForm = splitMulti(value, DOSE_FORM_SEPARATOR).join(DOSE_FORM_SEPARATOR);
+      }
+    });
+  if (key === 'details.product.routes')
+    return field({
+      choices: ROUTE_CHOICES,
+      separator: ', ',
+      valid: (value) => isText(500)(value) && splitMulti(value, ',').length > 0,
+      get: (item) => item.details?.product?.routes?.join(', ') ?? null,
+      set: (item, value) => {
+        if (item.details?.product) item.details.product.routes = splitMulti(value, ',');
+      }
+    });
+  if (TEXT_KEYS.has(key)) {
+    if (key.startsWith(PRODUCT_PREFIX)) {
+      const name = key.slice(PRODUCT_PREFIX.length) as keyof NonNullable<
+        NonNullable<ExternalPackage['details']>['product']
+      >;
+      return field({
+        valid: isText(500),
+        get: (item) => text(item.details?.product?.[name]),
+        set: (item, value) => {
+          if (item.details?.product) Object.assign(item.details.product, { [name]: value });
+        }
+      });
+    }
+    return field({
+      valid: isText(500),
+      get: (item) => text(item[key as keyof Pkg]),
+      set: (item, value) => Object.assign(item, { [key]: value }),
+      replacesCorrection: key === 'description'
+    });
+  }
+  if (BOOLEAN_KEYS.has(key))
+    return field({
+      choices: BOOLEAN,
+      valid: isBoolean,
+      get: (item) => text(item[key as keyof Pkg]),
+      set: (item, value) => Object.assign(item, { [key]: value === 'true' }),
+      affectsVolume: key === 'isDryFill'
+    });
+
+  const size = /^size\.(value|packQty|container|unit)$/.exec(key)?.[1] as
+    keyof NonNullable<ExternalPackage['size']> | undefined;
+  if (size) {
+    const numeric = size === 'value' || size === 'packQty';
+    const spec = {
+      get: (item: Pkg) => text(item.size?.[size]),
+      set: (item: Pkg, value: string) => {
+        if (item.size) Object.assign(item.size, { [size]: numeric ? Number(value) : value });
+      },
+      // The quantity and unit are what the volume and the salt correction read.
+      affectsVolume: size === 'value' || size === 'unit',
+      replacesCorrection: size === 'value' || size === 'unit'
+    };
+    if (size === 'value') return numberField((item) => positive(item.size?.unit ?? null), spec);
+    if (size === 'packQty') return numberField(positive(null, true), spec);
+    return field({ valid: isText(500), ...spec });
+  }
+
+  const volume = /^resolvedVolume\.(\w+)$/.exec(key)?.[1];
+  if (volume) {
+    const target = (item: Pkg) =>
+      (item.resolvedVolume ??= {
+        meaning: 'unknown',
+        finalVolumeMl: null,
+        diluentMl: null,
+        concentrationMgPerMl: null
+      });
+    const get = (item: Pkg) =>
+      text(item.resolvedVolume?.[volume as keyof NonNullable<ExternalPackage['resolvedVolume']>]);
+    if (volume === 'meaning')
+      return field({
+        choices: VOLUME_MEANINGS,
+        valid: (value) => (VOLUME_MEANINGS as readonly string[]).includes(value),
+        get,
+        set: (item, value) => {
+          target(item).meaning = value as (typeof VOLUME_MEANINGS)[number];
+        },
+        correctsVolume: true
+      });
+    const quantity =
+      volume === 'powderDisplacementMl'
+        ? { ...positive('mL'), exclusiveMin: false }
+        : volume === 'concentrationMgPerMl'
+          ? positive('mg/mL')
+          : volume === 'diluentMl' || volume === 'finalVolumeMl'
+            ? positive('mL')
+            : null;
+    if (!quantity) return null;
+    return numberField(quantity, {
+      get,
+      set: (item, value) => Object.assign(target(item), { [volume]: Number(value) }),
+      correctsVolume: true
+    });
+  }
+
+  const ingredient = INGREDIENT_STRENGTH_KEY.exec(key);
+  if (ingredient) {
+    const index = Number(ingredient[1]);
+    return field({
+      valid: isText(200),
+      get: (item) => item.details?.spl?.ingredients[index]?.strength ?? null,
+      set: (item, value) => {
+        const target = item.details?.spl?.ingredients[index];
+        if (!target) return;
+        // The catalog's own ingredient list drives volume rules; keep it in step.
+        for (const listed of item.ingredients)
+          if (listed.name.toLowerCase() === target.name.toLowerCase()) listed.strength = value;
+        target.strength = value;
+      },
+      affectsVolume: true
+    });
+  }
+
+  const reconstitution = RECONSTITUTION_OVERRIDE_KEY.exec(key);
+  if (reconstitution) {
+    const [, id, name, concentration] = reconstitution;
+    // An id that no longer matches means the label's instruction changed since
+    // the override was written; it stops applying rather than landing on
+    // whichever row now sits in its place.
+    const rowOf = (item: Pick<Pkg, 'reconstitution'>) =>
+      /^\d+$/.test(id)
+        ? item.reconstitution[Number(id)]
+        : item.reconstitution.find((row) => row.id === id);
+    const onRow =
+      (write: (row: ReconRow, value: string, removed: Set<ReconRow>) => void) =>
+      (item: Pkg, value: string, removed: Set<ReconRow>) => {
+        const row = rowOf(item);
+        if (row) write(row, value, removed);
+      };
+    if (name === 'removed')
+      return field({
+        choices: BOOLEAN,
+        valid: isBoolean,
+        get: (item) => (rowOf(item) ? 'false' : null),
+        set: onRow((row, value, removed) => {
+          if (value === 'true') removed.add(row);
+        }),
+        affectsVolume: true
+      });
+    if (name === 'routes')
+      return field({
+        choices: RECONSTITUTION_ROUTES,
+        separator: ', ',
+        valid: (value) => parseRouteList(value) !== null,
+        get: (item) => rowOf(item)?.routes?.join(', ') ?? null,
+        set: onRow((row, value) => {
+          const routes = parseRouteList(value);
+          if (routes) row.routes = routes;
+        }),
+        affectsVolume: true
+      });
+    if (name === 'diluents')
+      return field({
+        valid: (value) => parseDiluentList(value).length > 0 && value.length <= 200,
+        get: (item) => rowOf(item)?.diluents?.join(', ') ?? null,
+        set: onRow((row, value) => {
+          row.diluents = parseDiluentList(value);
+        }),
+        affectsVolume: true
+      });
+    if (concentration !== undefined) {
+      const index = Number(concentration);
+      return numberField(positive('mg/mL'), {
+        get: (item) => text(rowOf(item)?.concentrations[index]?.mgPerMl),
+        set: onRow((row, value) => {
+          const existing = row.concentrations[index];
+          if (existing) existing.mgPerMl = Number(value);
+          else if (index === row.concentrations.length)
+            row.concentrations.push({ name: null, mgPerMl: Number(value) });
+        }),
+        affectsVolume: true
+      });
+    }
+    const amount = name as 'vialMassMg' | 'diluentMl' | 'finalVolumeMl';
+    return numberField(positive(amount === 'vialMassMg' ? 'mg' : 'mL'), {
+      get: (item) => text(rowOf(item)?.[amount]),
+      set: onRow((row, value) => {
+        row[amount] = Number(value);
+      }),
+      affectsVolume: true
+    });
+  }
   return null;
 }
 
-/** The value the page currently shows for `key`, as override text. */
-export function overrideCurrentValue(
-  item: Omit<ExternalPackage, 'splXml' | 'evidence'>,
-  key: string
-): string | null {
-  const text = (value: unknown) => (value == null ? null : String(value));
-  if (key.startsWith('details.product.'))
-    return text(
-      item.details?.product?.[
-        key.slice('details.product.'.length) as keyof NonNullable<
-          NonNullable<ExternalPackage['details']>['product']
-        >
-      ]
-    );
-  if (key.startsWith('size.'))
-    return text(
-      item.size?.[key.slice('size.'.length) as keyof NonNullable<ExternalPackage['size']>]
-    );
-  if (key.startsWith('resolvedVolume.'))
-    return text(
-      item.resolvedVolume?.[
-        key.slice('resolvedVolume.'.length) as keyof NonNullable<ExternalPackage['resolvedVolume']>
-      ]
-    );
-  const match = RECONSTITUTION_OVERRIDE_KEY.exec(key);
-  if (match) {
-    const row = /^\d+$/.test(match[1])
-      ? item.reconstitution[Number(match[1])]
-      : item.reconstitution.find((candidate) => candidate.id === match[1]);
-    if (!row) return null;
-    if (match[3]) return text(row.concentrations[Number(match[3])]?.mgPerMl);
-    if (match[2] === 'routes' || match[2] === 'diluents') return row[match[2]]?.join(', ') ?? null;
-    return text(row[match[2] as 'vialMassMg' | 'diluentMl' | 'finalVolumeMl']);
-  }
-  return text((item as unknown as Record<string, unknown>)[key]);
+const resolved = new Map<string, OverrideField | null>();
+
+/** What an override key means, or null for a key no field answers to. */
+export function overrideField(key: string): OverrideField | null {
+  if (!resolved.has(key)) resolved.set(key, resolveField(key));
+  return resolved.get(key)!;
 }
+
+/** Fixed choices for a field, or null when it takes free text or a number. */
+export const overrideChoices = (key: string): readonly string[] | null =>
+  overrideField(key)?.choices ?? null;
+
+/** The separator of a field that takes several of its choices, or null for a single value. */
+export const overrideSeparator = (key: string): string | null =>
+  overrideField(key)?.separator ?? null;
+
+/** The quantity a numeric override takes, or null for a text or choice field. */
+export const overrideQuantity = (
+  key: string,
+  item: Pick<ExternalPackage, 'size'>
+): OverrideQuantity | null => overrideField(key)?.quantity(item) ?? null;
+
+/** The value the page currently shows for `key`, as override text. */
+export const overrideCurrentValue = (item: Pkg, key: string): string | null =>
+  overrideField(key)?.get(item) ?? null;
+
+export const validOverrideValue = (key: string, value: string): boolean =>
+  overrideField(key)?.valid(value) ?? false;
 
 /**
  * `source`'s value for each of `item`'s overridable fields. A reconstitution
  * row is matched by content id, or failing that by position, since equivalent
  * labels often word the same instruction differently.
  */
-export function equivalentValues(
-  item: Omit<ExternalPackage, 'splXml' | 'evidence'>,
-  source: Omit<ExternalPackage, 'splXml' | 'evidence'>
-): Record<string, string> {
+export function equivalentValues(item: Pkg, source: Pkg): Record<string, string> {
   const values: Record<string, string> = {};
   for (const { key } of overrideTargets(item)) {
+    // Adding or removing a row is the user's call, not something to copy.
+    if (key.endsWith('.removed') || /^reconstitution\.a\d+\./.test(key)) continue;
     let value = overrideCurrentValue(source, key);
     const match = value == null ? RECONSTITUTION_OVERRIDE_KEY.exec(key) : null;
     if (match) {
@@ -245,31 +569,4 @@ export function equivalentValues(
     if (value != null && value.trim() !== '' && validOverrideValue(key, value)) values[key] = value;
   }
   return values;
-}
-
-export function validOverrideValue(key: string, value: string): boolean {
-  if (
-    textFields.some(([field]) => field === key) ||
-    key === 'size.container' ||
-    key === 'size.unit'
-  )
-    return !!value.trim() && value.length <= 500;
-  if (booleanFields.some(([field]) => field === key)) return value === 'true' || value === 'false';
-  if (key === 'resolvedVolume.meaning')
-    return ['final', 'diluent', 'capacity', 'unknown'].includes(value);
-  const reconField = RECONSTITUTION_OVERRIDE_KEY.exec(key)?.[2];
-  if (reconField === 'routes') return parseRouteList(value) !== null;
-  if (reconField === 'diluents') return parseDiluentList(value).length > 0 && value.length <= 200;
-  if (
-    volumeFields.some(([field]) => field === key) ||
-    key === 'size.value' ||
-    key === 'size.packQty' ||
-    reconField !== undefined
-  )
-    return (
-      Number.isFinite(Number(value)) &&
-      (key === 'resolvedVolume.powderDisplacementMl' ? Number(value) >= 0 : Number(value) > 0) &&
-      value.trim() !== ''
-    );
-  return false;
 }

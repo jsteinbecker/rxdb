@@ -1,24 +1,24 @@
 <script lang="ts">
-	import { page } from '$app/state';
-	import { untrack } from 'svelte';
-	import { afterNavigate, replaceState } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { SvelteSet } from 'svelte/reactivity';
-	import {
-		DIMENSIONS,
-		DIMENSION_BY_KEY,
-		buildTree,
-		comboKey,
-		packageSize,
-		parseLevels,
-		strengthOf,
-		summedDescription,
-		type ComboDoseDisplay,
-		type FormularyRow,
-		type TreeNode
-	} from '$lib/formulary-hierarchy';
+      import {page} from '$app/state';
+      import {untrack} from 'svelte';
+      import {afterNavigate, replaceState} from '$app/navigation';
+      import {resolve} from '$app/paths';
+      import {SvelteSet} from 'svelte/reactivity';
+      import {
+            buildTree,
+            type ComboDoseDisplay,
+            comboKey,
+            DIMENSION_BY_KEY,
+            DIMENSIONS,
+            type FormularyRow,
+            packageSize,
+            parseLevels,
+            strengthOf,
+            summedDescription,
+            type TreeNode
+      } from '$lib/formulary-hierarchy';
 
-	let { data } = $props();
+      let { data } = $props();
 
 	// Restore the tree as it was when returning from an NDC's detail page.
 	export const snapshot = {
@@ -87,6 +87,16 @@
 	/** Tree node whose options menu is open; one at a time. */
 	let menuFor: string | null = $state(null);
 
+	const nodeRows = (node: TreeNode): FormularyRow[] => [
+		...node.rows,
+		...node.children.flatMap(nodeRows)
+	];
+	/** The one formulary item a node stands for, when its rows all come from one load. */
+	const nodeItemId = (node: TreeNode) => {
+		const ids = new Set(nodeRows(node).map((row) => row.formularyItemId));
+		return ids.size === 1 ? [...ids][0] : null;
+	};
+
 	const firstRow = (node: TreeNode): FormularyRow | undefined =>
 		node.rows[0] ?? (node.children[0] && firstRow(node.children[0]));
 
@@ -133,6 +143,19 @@
 	});
 
 	const tree = $derived(buildTree(rows, levels));
+
+	/** How many open levels sit beneath each open node. On narrow screens the tree
+	 * doesn't indent, so ancestors shrink and fade by this much to read as further away. */
+	const recede = $derived.by(() => {
+		const depths = new Map<string, number>();
+		const measure = (node: TreeNode): number => {
+			const below = expanded.has(node.id) ? 1 + Math.max(0, ...node.children.map(measure)) : 0;
+			depths.set(node.id, below);
+			return below;
+		};
+		tree.forEach(measure);
+		return depths;
+	});
 	// Enriched catalog facts can refresh while this page is cached in the router.
 	// Keep open branches only while their actual node still exists in the tree.
 	$effect(() => {
@@ -286,7 +309,7 @@
 			{@const isOpen = expanded.has(node.id)}
 			{@const combo = node.dimension === 'ingredientCombo' && node.label.includes(' / ')}
 			<li role="treeitem" aria-expanded={isOpen} aria-selected="false">
-				<div class="node-row">
+				<div class="node-row" style:--recede={recede.get(node.id) ?? 0}>
 					<button class="node" onclick={() => toggle(node.id)} style:--depth={depth}>
 						<span class="twisty" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
 						<span class="node-label"
@@ -295,9 +318,16 @@
 									firstRow(node)?.doseDisplay
 								)}{:else}{node.label}{/if}</span
 						>
-                                    <span class="node-dim">{DIMENSION_BY_KEY.get(node.dimension)?.label}</span>
-                                    <span class="count">{plural(node.count, 'NDC')}</span>
+						<span class="node-dim">{DIMENSION_BY_KEY.get(node.dimension)?.label}</span>
+						<span class="count">{plural(node.count, 'NDC')}</span>
 					</button>
+					{#if node.dimension === 'formularyItem' && nodeItemId(node)}
+						<a
+							class="item-link"
+							href={resolve('/formulary/items/[id]', { id: nodeItemId(node)! })}
+							aria-label="Open formulary item {node.label}">Item →</a
+						>
+					{/if}
 					{#if combo}
 						{@const current = doseChoice(node.label)}
 						<div class="row-menu" class:open={menuFor === node.id}>
@@ -764,6 +794,24 @@
 		padding: 0 0.2rem;
 	}
 
+	.item-link {
+		flex: none;
+		color: #3464a5;
+		font-size: 0.8rem;
+		font-weight: 650;
+		text-decoration: none;
+		opacity: 0;
+	}
+
+	.node-row:hover .item-link,
+	.item-link:focus-visible {
+		opacity: 1;
+	}
+
+	.item-link:hover {
+		text-decoration: underline;
+	}
+
 	.row-menu {
 		position: relative;
 		flex: none;
@@ -965,6 +1013,22 @@
 
 		.package {
 			flex-wrap: wrap;
+		}
+
+		/* Stack levels flush-left instead of indenting; ancestors recede instead. */
+		.children {
+			margin-left: 0;
+			padding-left: 0;
+			border-left: none;
+		}
+
+		.node-dim {
+			display: none;
+		}
+
+		.node-row {
+			font-size: calc(1em * max(0.78, 1 - 0.06 * var(--recede)));
+			opacity: max(0.45, 1 - 0.14 * var(--recede));
 		}
 	}
 </style>

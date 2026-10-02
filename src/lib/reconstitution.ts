@@ -20,14 +20,9 @@
 //
 // Everything here is pure and offline. Fetching is the caller's job.
 
-import { isVialForm } from './ingredient-content.js';
-import {
-  diluentList,
-  diluentsIn,
-  routeList,
-  routesIn,
-  type ReconstitutionRoute
-} from './reconstitution-terms.js';
+import {isVialForm} from './ingredient-content.js';
+import {mgPer} from './units.js';
+import {diluentList, diluentsIn, type ReconstitutionRoute, routeList, routesIn} from './reconstitution-terms.js';
 
 /** One reconstitution instruction: a vial size and what to add to it. */
 export interface ReconstitutionRow {
@@ -56,8 +51,6 @@ export interface ReconstitutionRow {
   diluents?: string[];
 }
 
-const MASS_TO_MG: Record<string, number> = { mcg: 0.001, ug: 0.001, mg: 1, g: 1000, gm: 1000 };
-
 const normalizeQuantity = (text: string) =>
   text
     .replace(/(?<=\d),(?=\d{3}\b)/g, '')
@@ -79,7 +72,25 @@ const finite = (value: number): number | null =>
 export function parseMassMg(text: string): number | null {
   const match = MASS.exec(normalizeQuantity(text));
   if (!match) return null;
-  return finite(Number(match[1]) * MASS_TO_MG[match[2].toLowerCase()]);
+  return finite(Number(match[1]) * mgPer(match[2])!);
+}
+
+/**
+ * A stub cell naming the vial and, in parentheses, the route its row is for:
+ * cefepime's "1 g (IV)" and "1 g (IM)" rows under a single "Single-Dose Vials
+ * for Intravenous (IV)/Intramuscular (IM) Administration" header. Only route
+ * words may sit in the parentheses, so "1 g (as the sodium salt)" stays text.
+ */
+const MASS_WITH_ROUTE =
+  /^\s*(.+?)\s*\(\s*((?:I\.?V\.?|I\.?M\.?|S\.?C\.?|SQ)(?:\s*(?:\/|,|or|and)\s*(?:I\.?V\.?|I\.?M\.?|S\.?C\.?|SQ))*)\s*\)\s*$/i;
+
+/** A stub cell's vial mass and the routes it names, or null if it states no mass. */
+export function parseMassCell(text: string): { mg: number; routes: ReconstitutionRoute[] } | null {
+  const bare = parseMassMg(text);
+  if (bare !== null) return { mg: bare, routes: [] };
+  const match = MASS_WITH_ROUTE.exec(text);
+  const mg = match ? parseMassMg(match[1]) : null;
+  return mg === null ? null : { mg, routes: routesIn(match![2].toUpperCase()) };
 }
 
 /** Milliliters from a bare volume cell ("3.6 mL"), or null if it isn't one. */
@@ -93,7 +104,7 @@ export function parseVolumeMl(text: string): number | null {
 export function parseConcentrationMgPerMl(text: string): number | null {
   const match = CONCENTRATION.exec(normalizeQuantity(text));
   if (!match) return null;
-  return finite((Number(match[1]) * MASS_TO_MG[match[2].toLowerCase()]) / Number(match[3] ?? 1));
+  return finite((Number(match[1]) * mgPer(match[2])!) / Number(match[3] ?? 1));
 }
 
 const ENTITIES: Record<string, string> = {
@@ -144,7 +155,9 @@ export function toGrid(tableMarkup: string): string[][] {
   rows.forEach((row, rowIndex) => {
     grid[rowIndex] ??= [];
     let column = 0;
-    for (const cell of row.match(/<t[hd]\b[^>]*>[\s\S]*?<\/t[hd]>/gi) ?? []) {
+    // An empty cell may be self-closing (`<td valign="top"/>`); matched as an
+    // open tag it would swallow the next cell and shift the row left.
+    for (const cell of row.match(/<t[hd]\b[^>]*\/>|<t[hd]\b[^>]*>[\s\S]*?<\/t[hd]>/gi) ?? []) {
       const attrs = /<t[hd]\b([^>]*)>/i.exec(cell)?.[1] ?? '';
       const text = cellText(cell.replace(/^<t[hd]\b[^>]*>|<\/t[hd]>$/gi, ''));
       const colspan = spanOf(attrs, 'colspan');
@@ -209,7 +222,7 @@ export function parseReconstitutionTable(
 
   // Header rows are the leading rows holding no mass value; the vial sizes
   // start at the first row that does.
-  const firstBody = grid.findIndex((row) => row.some((cell) => parseMassMg(cell) !== null));
+  const firstBody = grid.findIndex((row) => row.some((cell) => parseMassCell(cell) !== null));
   if (firstBody < 1) return [];
 
   // A full-width "Intramuscular" row is a section divider, not a header: it
@@ -280,11 +293,25 @@ export function parseReconstitutionTable(
     row
       .filter(
         (cell) =>
-          parseMassMg(cell) === null &&
+          parseMassCell(cell) === null &&
           parseVolumeMl(cell) === null &&
           parseConcentrationMgPerMl(cell) === null
       )
       .join(' ');
+
+  // A blank concentration cell continues the one above: Wilshire's vancomycin
+  // kit table states "25 mg/mL" once for both the 3.75 g and 7.5 g bottles.
+  roles.forEach((role, column) => {
+    if (role !== 'concentration') return;
+    body.forEach((row, r) => {
+      if (
+        r > 0 &&
+        !row[column]?.trim() &&
+        parseConcentrationMgPerMl(body[r - 1][column] ?? '') !== null
+      )
+        row[column] = body[r - 1][column];
+    });
+  });
 
   const rows: ReconstitutionRow[] = [];
   for (const row of body) {
@@ -293,17 +320,19 @@ export function parseReconstitutionTable(
       section = divider;
       continue;
     }
-    const massIndex = row.findIndex((cell) => parseMassMg(cell) !== null);
+    const massIndex = row.findIndex((cell) => parseMassCell(cell) !== null);
     if (massIndex < 0) continue;
     const rowText = textCells(row);
-    const vialMassMg = parseMassMg(row[massIndex])!;
+    const { mg: vialMassMg, routes: massRoutes } = parseMassCell(row[massIndex])!;
 
     let finalVolumeMl: number | null = null;
     // A body cell like "375 mg/mL" under "Approximate Concentration" beats
     // a header that names none.
     let bodyConcentration: number | null = null;
-    for (let column = massIndex + 1; column < row.length; column++) {
+    for (let column = 0; column < row.length; column++) {
+      // The final volume may sit left of the vial size, as in the kit table.
       if (roles[column] === 'final') finalVolumeMl ??= parseVolumeMl(row[column]);
+      if (column <= massIndex) continue;
       if (parseVolumeMl(row[column]) === null)
         bodyConcentration ??= parseConcentrationMgPerMl(row[column]);
     }
@@ -315,7 +344,7 @@ export function parseReconstitutionTable(
       // Most specific first: the column ("Diluent for IM Use"), the row's
       // own stub, then the section divider above it.
       const columnRoutes = routesIn(headerText(column));
-      const stubRoutes = routesIn(rowText);
+      const stubRoutes = massRoutes.length ? massRoutes : routesIn(rowText);
       const routes = routeList(
         columnRoutes.length ? columnRoutes : stubRoutes.length ? stubRoutes : section
       );
@@ -395,6 +424,115 @@ export function reconstitutionFromLabel(label: Record<string, unknown>): Reconst
     }
   }
   return dedupeReconstitutionRows(rows);
+}
+
+// ── Bottles for oral constitution ────────────────────────────────────────────
+// An oral powder is tabulated by what it becomes, not by what it contains:
+// "Strength | Bottle Size | Amount of Water Required for Reconstitution", with
+// "200 mg/5 mL | 100 mL | 69 mL". There is no vial mass to key a row on, so
+// these never pass `parseReconstitutionTable`'s mass/volume test — and the
+// bottle size is the finished volume, which is the fact worth having.
+
+/** One oral-constitution instruction: a bottle, its water, its strength. */
+export interface BottleReconstitution {
+  /** Volume the constituted bottle holds, in mL — the size the carton states. */
+  bottleMl: number;
+  /** Water to add, in mL. */
+  waterMl: number;
+  /** Combined strength the row is for, in mg/mL, when the table says. */
+  concentrationMgPerMl: number | null;
+}
+
+/**
+ * Combined mg/mL from a strength cell: "Oral Suspension 200 mg/5 mL" is 40,
+ * and amoxicillin/clavulanate's "250 mg/62.5 mg per 5 mL" is 62.5 — every
+ * mass before the volume denominator, summed, as the package's per-mL
+ * ingredient strengths sum.
+ */
+export function parseCombinedConcentration(text: string): number | null {
+  const normalized = normalizeQuantity(text);
+  const denominators = [...normalized.matchAll(/(?:\/|\bper\b)\s*(?:([\d.]+)\s*)?mL\b/gi)];
+  const last = denominators[denominators.length - 1];
+  if (!last) return null;
+  const masses = [...normalized.slice(0, last.index).matchAll(/([\d.]+)\s*(mcg|ug|mg|gm|g)\b/gi)];
+  const per = finite(Number(last[1] ?? 1));
+  if (!masses.length || per === null) return null;
+  const total = masses.reduce((sum, m) => sum + Number(m[1]) * mgPer(m[2])!, 0);
+  return finite(total / per);
+}
+
+const volumesIn = (cell: string): number[] =>
+  [...normalizeQuantity(cell).matchAll(/([\d.]+)\s*mL\b/gi)].flatMap((m) => {
+    const value = finite(Number(m[1]));
+    return value === null ? [] : [value];
+  });
+
+/**
+ * Bottle rows from one SPL table, or `[]` when it isn't a bottle table.
+ *
+ * The header row names a bottle column and a water column. A strength cell
+ * left blank continues the one above (amoxicillin lists 200 mg/5 mL once for
+ * its three bottles), and a cell listing several volumes ("75 mL 100 mL
+ * 150 mL") pairs with its water cell in order — only when the counts agree.
+ */
+export function parseBottleTable(tableMarkup: string): BottleReconstitution[] {
+  const grid = toGrid(tableMarkup);
+  const headerIndex = grid.findIndex(
+    (row) =>
+      row.some((cell) => /\bbottle\b/i.test(cell) && !/water|diluent/i.test(cell)) &&
+      row.some((cell) => /water|diluent/i.test(cell))
+  );
+  if (headerIndex < 0) return [];
+  const header = grid[headerIndex];
+  const bottleColumn = header.findIndex(
+    (cell) => /\bbottle\b/i.test(cell) && !/water|diluent/i.test(cell)
+  );
+  const waterColumn = header.findIndex(
+    (cell, c) => c !== bottleColumn && /water|diluent/i.test(cell)
+  );
+  const strengthColumn = header.findIndex((cell) => /strength/i.test(cell));
+
+  const rows: BottleReconstitution[] = [];
+  let strength: number | null = null;
+  for (const row of grid.slice(headerIndex + 1)) {
+    if (strengthColumn >= 0 && row[strengthColumn]?.trim())
+      strength = parseCombinedConcentration(row[strengthColumn]);
+    const bottles = volumesIn(row[bottleColumn] ?? '');
+    const waters = volumesIn(row[waterColumn] ?? '');
+    if (!bottles.length || bottles.length !== waters.length) continue;
+    bottles.forEach((bottleMl, i) => {
+      // Water beyond the finished volume is not constitution; it is a misread.
+      if (waters[i] > bottleMl * 1.02) return;
+      rows.push({ bottleMl, waterMl: waters[i], concentrationMgPerMl: strength });
+    });
+  }
+  return rows;
+}
+
+/** Every bottle row across a label's tables, de-duplicated. */
+export function bottleReconstitutionFromLabel(
+  label: Record<string, unknown>
+): BottleReconstitution[] {
+  const rows = new Map<string, BottleReconstitution>();
+  for (const section of new Set([
+    ...TABLE_SECTIONS,
+    ...Object.keys(label).filter((key) => key.endsWith('_table'))
+  ])) {
+    const tables = label[section];
+    if (!Array.isArray(tables)) continue;
+    for (const table of tables) {
+      if (typeof table !== 'string') continue;
+      const found = table.match(/<(?:[\w.-]+:)?table\b[^>]*>[\s\S]*?<\/(?:[\w.-]+:)?table>/gi) ?? [
+        table
+      ];
+      for (const markup of found) {
+        for (const row of parseBottleTable(markup)) {
+          rows.set(`${row.bottleMl}|${row.waterMl}|${row.concentrationMgPerMl}`, row);
+        }
+      }
+    }
+  }
+  return [...rows.values()];
 }
 
 /** Remove exact duplicates while preserving conflicting label alternatives. */

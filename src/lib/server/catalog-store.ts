@@ -4,11 +4,12 @@ import type { ExternalPackage, RxConcept, SourcePayload } from './catalog-provid
 import {
   CACHE_SOURCE,
   CATALOG_VERSION,
+  type PackageSnapshot,
   readSnapshot,
-  snapshotPackage,
-  type PackageSnapshot
+  snapshotPackage
 } from './catalog-cache';
 import { exclusionReason } from './catalog-facts';
+import { linkPseudoScd } from './pseudo-scd-store';
 
 type Db = Prisma.TransactionClient;
 
@@ -23,21 +24,32 @@ export function uniqueRunEvidence(evidence: SourcePayload[]): SourcePayload[] {
   return [...uniqueByKey.values()];
 }
 
+export type CacheRecord = { sourceNativeId: string; payload: unknown };
+
+/**
+ * The newest completed cache snapshot for each native ID. Prisma's `distinct`
+ * fetches every historical row and dedupes in memory, so this is DISTINCT ON.
+ */
+export function latestCacheRecords(
+  db: Pick<PrismaClient, '$queryRaw'>,
+  nativeIds: string[]
+): Promise<CacheRecord[]> {
+  if (!nativeIds.length) return Promise.resolve([]);
+  return db.$queryRaw<CacheRecord[]>`
+    SELECT DISTINCT ON (r.source_native_id) r.source_native_id AS "sourceNativeId", r.payload
+    FROM source_record r
+    JOIN ingestion_run run ON run.id = r.ingestion_run_id
+    WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
+      AND r.source_native_id = ANY(${nativeIds}::text[])
+    ORDER BY r.source_native_id, r.observed_at DESC`;
+}
+
 /** Fetched concepts are staged as provenance until someone loads them. */
 export async function loadConceptSnapshots(
   db: PrismaClient,
   rxcuis: string[]
 ): Promise<Map<string, RxConcept>> {
-  if (!rxcuis.length) return new Map();
-  const records = await db.sourceRecord.findMany({
-    where: {
-      sourceNativeId: { in: rxcuis.map(conceptKey) },
-      ingestionRun: { source: CACHE_SOURCE, status: 'completed' }
-    },
-    orderBy: [{ sourceNativeId: 'asc' }, { observedAt: 'desc' }],
-    distinct: ['sourceNativeId'],
-    select: { payload: true }
-  });
+  const records = await latestCacheRecords(db, rxcuis.map(conceptKey));
   return new Map(
     records.flatMap((record) => {
       const snapshot = record.payload as ConceptSnapshot | null;
@@ -88,16 +100,7 @@ export async function loadPackageSnapshots(
   db: PrismaClient,
   ndcs: string[]
 ): Promise<Map<string, PackageSnapshot>> {
-  if (!ndcs.length) return new Map();
-  const records = await db.sourceRecord.findMany({
-    where: {
-      sourceNativeId: { in: ndcs },
-      ingestionRun: { source: CACHE_SOURCE, status: 'completed' }
-    },
-    orderBy: [{ sourceNativeId: 'asc' }, { observedAt: 'desc' }],
-    distinct: ['sourceNativeId'],
-    select: { sourceNativeId: true, payload: true }
-  });
+  const records = await latestCacheRecords(db, ndcs);
   return new Map(
     records.flatMap((record) => {
       const snapshot = readSnapshot(record.payload);
@@ -108,14 +111,63 @@ export async function loadPackageSnapshots(
   );
 }
 
+/** JSON with object keys sorted, so equal payloads always serialize alike. */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(value, (_, nested) =>
+    nested && typeof nested === 'object' && !Array.isArray(nested)
+      ? Object.fromEntries(Object.entries(nested).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : nested
+  );
+}
+
+/**
+ * The hash that decides whether a payload says anything new. A cache
+ * snapshot's `refreshAt` changes on every refresh without changing the facts,
+ * so it is left out; otherwise every refresh would store another copy.
+ */
+export function payloadHash(source: string, payload: unknown) {
+  const stable =
+    source === CACHE_SOURCE && payload && typeof payload === 'object' && 'refreshAt' in payload
+      ? { ...payload, refreshAt: undefined }
+      : payload;
+  return createHash('sha256').update(canonicalJson(stable)).digest();
+}
+
+/** The newest completed record per source/native ID, to compare hashes against. */
+async function latestRecords(db: Db, evidence: SourcePayload[]) {
+  if (!evidence.length) return new Map<string, { id: string; payloadHash: Uint8Array }>();
+  const rows = await db.$queryRaw<
+    { id: string; source: string; nativeId: string; payloadHash: Uint8Array }[]
+  >`
+    SELECT DISTINCT ON (run.source, r.source_native_id)
+      r.id, run.source, r.source_native_id AS "nativeId", r.payload_hash AS "payloadHash"
+    FROM source_record r
+    JOIN ingestion_run run ON run.id = r.ingestion_run_id
+    WHERE run.status = 'completed'
+      AND run.source = ANY(${[...new Set(evidence.map((item) => item.source))]}::text[])
+      AND r.source_native_id = ANY(${[...new Set(evidence.map((item) => item.nativeId))]}::text[])
+    ORDER BY run.source, r.source_native_id, r.observed_at DESC`;
+  return new Map(rows.map((row) => [`${row.source}:${row.nativeId}`, row]));
+}
+
 async function recordEvidence(db: Db, evidence: SourcePayload[]): Promise<Map<string, string>> {
   const runs = new Map<string, string>();
   const records = new Map<string, string>();
+  const latest = await latestRecords(db, evidence);
   for (const item of evidence) {
-    const serialized = JSON.stringify(item.payload);
-    const hash = createHash('sha256').update(serialized).digest();
+    const hash = payloadHash(item.source, item.payload);
     const key = `${item.source}:${item.nativeId}:${hash.toString('hex')}`;
     if (records.has(key)) continue;
+    // Unchanged since the last observation: refresh that record in place.
+    const previous = latest.get(`${item.source}:${item.nativeId}`);
+    if (previous && hash.equals(previous.payloadHash)) {
+      await db.sourceRecord.update({
+        where: { id: previous.id },
+        data: { payload: item.payload as Prisma.InputJsonValue, observedAt: new Date() }
+      });
+      records.set(key, previous.id);
+      continue;
+    }
     let runId = runs.get(item.source);
     if (!runId) {
       await db.source.upsert({
@@ -402,6 +454,8 @@ async function persistPackage(db: Db, item: ExternalPackage, sourceRecordId: str
       }
     }
   }
+  // A bulk dry fill RxNorm codes by concentration is also placed on its content concept.
+  await linkPseudoScd(db, entityId, item, sourceRecordId);
 }
 
 async function attachBrands(db: Db, entityId: string, concept: RxConcept) {

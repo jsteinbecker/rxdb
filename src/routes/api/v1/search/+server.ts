@@ -1,4 +1,5 @@
 import { toNdc11 } from '$lib/ndc';
+import { naturalCompare } from '$lib/natural-sort';
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { stagedTree, syncExternalSearch } from '$lib/server/catalog-sync';
@@ -375,7 +376,7 @@ export const GET: RequestHandler = async ({ url }) => {
       .sort(
         (a, b) =>
           rank(a, query, exactIdentifierIds) - rank(b, query, exactIdentifierIds) ||
-          a.name.localeCompare(b.name)
+          naturalCompare(a.name, b.name)
       )
       .slice(0, limit)
   });

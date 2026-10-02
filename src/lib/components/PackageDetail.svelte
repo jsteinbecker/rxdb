@@ -1,12 +1,16 @@
 <script lang="ts">
-  import type { StagedPackage } from '$lib/server/catalog-sync';
-  import { appearanceText } from '$lib/spl-characteristics';
-  import { resolve } from '$app/paths';
-  import SplLabelSections from './SplLabelSections.svelte';
-  import OverrideCitation from './OverrideCitation.svelte';
-  import { overrideTargets } from '$lib/property-override-fields';
+      import type {StagedPackage} from '$lib/server/catalog-sync';
+      import type {LabelIngredient} from '$lib/server/catalog-providers';
+      import {appearanceText} from '$lib/spl-characteristics';
+      import {resolve} from '$app/paths';
+      import SplLabelSections from './SplLabelSections.svelte';
+      import OverrideCitation from './OverrideCitation.svelte';
+      import {nextAddedRowId, overrideTargets} from '$lib/property-override-fields';
+      import {AMBIGUITY_KINDS} from '$lib/labeler-ambiguity';
+      import {pseudoScdFor} from '$lib/pseudo-scd';
+      import {withBiosimilarSuffix} from '$lib/biosimilar';
 
-  let {
+      let {
     item,
     editing = false,
     editKeys = [],
@@ -21,6 +25,10 @@
   } = $props();
 
   const d = $derived(item.details);
+  const pseudoScd = $derived(pseudoScdFor(item));
+  // A biosimilar's ingredient carries its FDA suffix even when the source names only the reference.
+  const substance = (name: string) =>
+    withBiosimilarSuffix(name, [item.genericName, item.splTitle, d?.rxnav?.conceptName]);
   const active = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'active') ?? []);
   const inactive = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'inactive') ?? []);
   const ionic = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'ionic') ?? []);
@@ -32,6 +40,14 @@
   const noteMark = (note: string) => '*'.repeat(strengthNotes.indexOf(note) + 1);
   const rxnavMarketingStatus = $derived(
     d?.rxnav?.properties.find((property) => property.name === 'MARKETING_STATUS')?.value ?? null
+  );
+  // RxNav's NDC properties mix RxNorm identifiers with package facts (labeler,
+  // marketing, SPL ids) that RxNorm doesn't own; only the former belong in the
+  // RxNorm section.
+  const RXNORM_PROP = /^(RXCUI|RXAUI|TTY|SAB|CODE|RXNORM_NAME)$/i;
+  const rxnormProps = $derived(d?.rxnav?.properties.filter((p) => RXNORM_PROP.test(p.name)) ?? []);
+  const otherRxnavProps = $derived(
+    d?.rxnav?.properties.filter((p) => !RXNORM_PROP.test(p.name)) ?? []
   );
   const flag = (value: boolean | null, yes: string, no: string) =>
     value === true ? yes : value === false ? no : 'Unknown';
@@ -56,10 +72,67 @@
           : null
     };
   };
+  // Corrections are cited like footnotes too: a mark beside the corrected value,
+  // with the original and the evidence in a footer.
+  const corrections = $derived(
+    [
+      item.unitOfUseCorrection && {
+        id: 'uou',
+        mark: '†',
+        text: item.unitOfUseCorrection.note,
+        original: item.unitOfUseCorrection.from,
+        evidence: []
+      },
+      item.doseFormCorrection && {
+        id: 'dose-form',
+        mark: '‡',
+        text: `Dose form corrected from stated value of ${item.doseFormCorrection.from}`,
+        original: null,
+        evidence: item.doseFormCorrection.evidence
+      }
+    ].filter((c) => !!c)
+  );
+  const correction = (id: string) => corrections.find((c) => c.id === id);
   const overrideFields = $derived(overrideTargets(item));
+  // Manual overrides are cited like footnotes: a numbered mark beside each
+  // overridden value, with the sourcing listed in a footer at the end.
+  const uid = $props.id();
+  const overrides = $derived(Object.entries(item.propertyOverrides ?? {}));
+  const citeNumber = (key: string) => overrides.findIndex(([k]) => k === key) + 1;
+  const splIndex = (ingredient: LabelIngredient) => d?.spl?.ingredients.indexOf(ingredient) ?? -1;
+  // One reconstitution row's actions menu open at a time.
+  let rowMenu = $state<string | null>(null);
+  const openFromMenu = (keys: string[]) => {
+    rowMenu = null;
+    onedit?.(keys);
+  };
 </script>
 
+<svelte:window
+  onclick={(event) => {
+    if (rowMenu && !(event.target as Element).closest('.row-menu, .row-menu-trigger'))
+      rowMenu = null;
+  }}
+  onkeydown={(event) => {
+    if (event.key === 'Escape') rowMenu = null;
+  }}
+/>
+
+{#snippet correctionMark(id: string)}
+  {@const c = correction(id)}
+  {#if c}<sup class="cite"><a href={`#${uid}-${c.id}-note`} title={c.text}>[{c.mark}]</a></sup>{/if}
+{/snippet}
+{#snippet cite(keys: string[])}
+  {#each keys.map(citeNumber).filter((n) => n > 0) as n (n)}<sup class="cite"
+      ><a href={`#${uid}-override-${n}`} title="Manually overridden — see sources">[{n}]</a></sup
+    >{/each}
+{/snippet}
+
 {#snippet edit(keys: string[], label: string)}
+  {@render cite(keys)}{@render editButton(keys, label)}
+{/snippet}
+
+{#snippet editButton(keys: string[], label: string)}
   {@const available = keys.filter((key) => overrideFields.some((field) => field.key === key))}
   {#if editing && available.length}
     <button
@@ -130,17 +203,12 @@
       <dt>Description</dt>
       <dd>
         {item.description ?? '—'}{@render edit(['description'], 'description')}
-        {#if item.unitOfUseCorrection}
-          <span class="corrected">corrected from {item.unitOfUseCorrection.from}</span>
-        {/if}
+        {@render correctionMark('uou')}
       </dd>
-      <dt>Brand / generic</dt>
-      <dd>
-        {[item.brandName, item.genericName].filter(Boolean).join(' / ') || '—'}{@render edit(
-          ['brandName', 'genericName'],
-          'brand / generic'
-        )}
-      </dd>
+      <dt>Brand</dt>
+      <dd>{item.brandName ?? '—'}{@render edit(['brandName'], 'brand name')}</dd>
+      <dt>Generic</dt>
+      <dd>{item.genericName ?? '—'}{@render edit(['genericName'], 'generic name')}</dd>
       <dt>Labeler</dt>
       <dd>
         {item.labelerName ?? '—'}
@@ -153,28 +221,32 @@
       <dd>
         {item.doseForm ?? '—'}{@render edit(['doseForm'], 'dose form')}
         {#if item.doseFormCorrection}
-          <span class="corrected">corrected from {item.doseFormCorrection.from}</span>
-          <ul class="evidence">
-            {#each item.doseFormCorrection.evidence as ev, i (i)}
-              <li><b>{ev.kind}</b> ({ev.source}): {ev.excerpt}</li>
-            {/each}
-          </ul>
+          {@render correctionMark('dose-form')}
         {/if}
       </dd>
       <dt>Routes</dt>
       <dd>{d?.product?.routes.join(', ') || '—'}</dd>
       {#if item.size}
+        <dt>Unit of sale</dt>
+        <dd>
+          {item.size.packQty}
+          {item.size.container.toLowerCase()}{item.size.packQty === 1 ? '' : 's'}{@render edit(
+            ['size.packQty'],
+            'unit of sale'
+          )}
+          {#if item.size.packQty > 1 && item.size.kind !== 'count'}
+            <span class="muted">({round(item.size.packQty * item.size.value)} {item.size.unit} total)</span>
+          {/if}
+        </dd>
         <dt>Unit of use</dt>
         <dd>
-          {item.size.packQty > 1 ? `${item.size.packQty} × ` : ''}{item.size.value}
+          {item.size.value}
           {item.size.unit ?? ''}
           {item.size.container.toLowerCase()}{@render edit(
-            ['size.value', 'size.packQty', 'size.container', 'size.unit'],
+            ['size.value', 'size.container', 'size.unit'],
             'unit of use'
           )}
-          {#if item.unitOfUseCorrection}
-            <span class="corrected">{item.unitOfUseCorrection.note}</span>
-          {/if}
+          {@render correctionMark('uou')}
         </dd>
       {/if}
       <dt>Multi-dose</dt>
@@ -191,29 +263,7 @@
           'dry fill'
         )}
       </dd>
-      {#if d?.packaging?.siblings.length}
-        <dt>Sibling packages</dt>
-        <dd>
-          <ul>
-            {#each d.packaging.siblings as sibling (sibling.ndc)}
-              <li><span class="mono">{sibling.ndc}</span> {sibling.description ?? ''}</li>
-            {/each}
-          </ul>
-        </dd>
-      {/if}
     </dl>
-    {#if item.propertyOverrides && Object.keys(item.propertyOverrides).length}
-      <h5>Manual property overrides</h5>
-      <ul class="evidence">
-        {#each Object.entries(item.propertyOverrides) as [key, override] (key)}
-          <li>
-            <b>{overrideFields.find((field) => field.key === key)?.label ?? key}:</b>
-            {override.value}{@render edit([key], 'this property')}
-            <br /><span><OverrideCitation {override} /></span>
-          </li>
-        {/each}
-      </ul>
-    {/if}
   </section>
 
   <section>
@@ -281,18 +331,6 @@
       <dd>{date(d?.product?.listingExpirationDate) ?? '—'}</dd>
       <dt>Sample</dt>
       <dd>{d?.packaging?.sample === true ? 'Yes' : d?.packaging?.sample === false ? 'No' : '—'}</dd>
-      {#if d?.product?.pharmClasses.length}
-        <dt>Pharmacologic class</dt>
-        <dd class="pharm-classes">
-          {#each d.product.pharmClasses as pharmClass, i (i)}
-            {@const classType = /\[.*]$/.exec(pharmClass)?.[0] ?? ''}
-            <div class="pharm-class">
-              {#if classType}<span class="class-type mono">{classType}</span>{/if}
-              <span>{pharmClass.replace(/\s*\[.*]$/, '')}</span>
-            </div>
-          {/each}
-        </dd>
-      {/if}
       {#if d?.product?.rxcuis.length}
         <dt>openFDA RxCUIs</dt>
         <dd class="mono">{d.product.rxcuis.join(', ')}</dd>
@@ -308,7 +346,61 @@
     </dl>
   </section>
 
-  {#if volume || item.reconstitution.length}
+  {#if d?.product?.pharmClasses.length}
+    <section>
+      <h4>Pharmacologic class</h4>
+      <div class="pharm-classes">
+        {#each d.product.pharmClasses as pharmClass, i (i)}
+          {@const classType = /\[(.*)]$/.exec(pharmClass)?.[1] ?? ''}
+          <div class="pharm-class">
+            {#if classType}<span class="class-type mono">{classType}</span>{/if}
+            <span>{pharmClass.replace(/\s*\[.*]$/, '')}</span>
+          </div>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
+  {#if d?.packaging?.siblings.length}
+    <section>
+      <h4>Sibling packages</h4>
+      <div class="table-wrap mini-wrap">
+        <table class="data-table mini-table">
+          <thead>
+            <tr><th scope="col">Pkg</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            {#each [...d.packaging.siblings, { ndc: item.ndc, description: item.description }].sort( (a, b) => a.ndc.localeCompare(b.ndc) ) as sibling (sibling.ndc)}
+              {@const current = sibling.ndc === item.ndc}
+              <tr class:current>
+                <td>
+                  {#if current}
+                    <span class="mono sib-code disabled" aria-current="page" title="This package"
+                      >-{sibling.ndc.slice(-2)}</span
+                    >
+                  {:else}
+                    <a
+                      class="mono sib-code"
+                      href={resolve('/formulary/ndc/[ndc]', { ndc: sibling.ndc })}
+                      >-{sibling.ndc.slice(-2)}</a
+                    >
+                  {/if}
+                </td>
+                <td>
+                  {(sibling.description ?? '')
+                    .replace(/\s*\(\d{4,5}-\d{3,4}-\d{1,2}\)\s*/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {/if}
+
+  {#if volume || item.reconstitution.length || editing}
     <section class="wide">
       <h4>Reconstitution, concentration and volume</h4>
       {#if volume}
@@ -356,7 +448,9 @@
               ><tr
                 ><th>Route</th><th>Vial content</th><th>Diluent to add</th><th>Diluent</th><th
                   >Stated final volume</th
-                ><th>Stated concentration</th></tr
+                ><th>Stated concentration</th>{#if editing}<th
+                    ><span class="visually-hidden">Row actions</span></th
+                  >{/if}</tr
               ></thead
             >
             <tbody>
@@ -413,11 +507,48 @@
                           `Calculated: ${step.vialMassMg} mg ÷ ${step.finalVolumeMl} mL`
                         )}{:else}Not stated{/if}{/each}</td
                   >
+                  {#if editing}
+                    <td class="row-actions">
+                      <button
+                        class="row-menu-trigger"
+                        type="button"
+                        aria-label={`Actions for reconstitution ${i + 1}`}
+                        aria-haspopup="menu"
+                        aria-expanded={rowMenu === rowKey}
+                        onclick={() => (rowMenu = rowMenu === rowKey ? null : rowKey)}>⋯</button
+                      >
+                      {#if rowMenu === rowKey}
+                        <div class="row-menu" role="menu">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onclick={() =>
+                              openFromMenu([
+                                `${rowKey}.concentrations.${step.concentrations.length}.mgPerMl`
+                              ])}>Add a concentration</button
+                          >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onclick={() => openFromMenu([`${rowKey}.removed`])}>Remove row</button
+                          >
+                        </div>
+                      {/if}
+                    </td>
+                  {/if}
                 </tr>
               {/each}
             </tbody>
           </table>
         </div>
+      {/if}
+      {#if editing}
+        <button
+          class="add-row"
+          type="button"
+          onclick={() => onedit?.([`reconstitution.${nextAddedRowId(item)}.diluentMl`])}
+          >+ Add reconstitution row</button
+        >
       {/if}
     </section>
   {/if}
@@ -426,7 +557,7 @@
     <h4>Ingredients</h4>
     {#if active.length || inactive.length || ionic.length}
       <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table ing-table">
           <thead>
             <tr
               ><th>Kind</th><th>Substance</th><th>UNII</th><th>Strength</th><th>Basis</th><th
@@ -438,7 +569,7 @@
             {#each [...active, ...inactive, ...ionic] as ingredient, i (i)}
               <tr class:muted={ingredient.kind !== 'active'}>
                 <td>{ingredient.kind}</td>
-                <td>{ingredient.name}</td>
+                <td>{ingredient.kind === 'active' ? substance(ingredient.name) : ingredient.name}</td>
                 <td class="mono">
                   {#if ingredient.unii}<a
                       href={resolve('/formulary/unii/[unii]', { unii: ingredient.unii })}
@@ -449,7 +580,10 @@
                   >{ingredient.strength ?? '—'}{#if ingredient.strengthNotes?.length}<sup
                       title={ingredient.strengthNotes.join('\n')}
                       >{ingredient.strengthNotes.map(noteMark).join(',')}</sup
-                    >{/if}</td
+                    >{/if}{@render edit(
+                    [`details.spl.ingredients.${splIndex(ingredient)}.strength`],
+                    `${ingredient.name} strength`
+                  )}</td
                 >
                 <td>{ingredient.basis ?? '—'}</td>
                 <td>
@@ -482,7 +616,7 @@
     {:else if item.ingredients.length}
       <ul>
         {#each item.ingredients as ingredient (ingredient.name)}
-          <li>{ingredient.name}{ingredient.strength ? ` — ${ingredient.strength}` : ''}</li>
+          <li>{substance(ingredient.name)}{ingredient.strength ? ` — ${ingredient.strength}` : ''}</li>
         {/each}
       </ul>
     {:else}
@@ -531,7 +665,7 @@
 
   {#if d?.rxnav}
     <section class="wide">
-      <h4>RxNav</h4>
+      <h4>RxNorm</h4>
       <dl>
         <dt>Concept</dt>
         <dd>
@@ -539,11 +673,17 @@
           {#if d.rxnav.rxcui}<span class="mono">({d.rxnav.rxcui})</span>{/if}
           {d.rxnav.conceptStatus ?? ''}
         </dd>
-        {#if d.rxnav.packaging.length}
-          <dt>Packaging</dt>
-          <dd>{d.rxnav.packaging.join('; ')}</dd>
+        {#if pseudoScd}
+          <dt>Used as</dt>
+          <dd>
+            {pseudoScd.name} <span class="mono">(pseudo-SCD)</span>
+            <br /><span class="muted"
+              >RxNorm codes this dry fill by its reconstituted concentration; the catalog places it
+              by vial content.</span
+            >
+          </dd>
         {/if}
-        {#each d.rxnav.properties as prop, i (i)}
+        {#each rxnormProps as prop, i (i)}
           <dt>{prop.name}</dt>
           <dd>{prop.value}</dd>
         {/each}
@@ -567,10 +707,67 @@
           </table>
         </div>
       {/if}
+      {#if editing}
+        <button
+          class="add-row"
+          type="button"
+          onclick={() => onedit?.([`reconstitution.${nextAddedRowId(item)}.diluentMl`])}
+          >+ Add reconstitution row</button
+        >
+      {/if}
+    </section>
+  {/if}
+  {#if otherRxnavProps.length}
+    <section class="wide">
+      <h4>RxNav NDC properties</h4>
+      <dl>
+        {#each otherRxnavProps as prop, i (i)}
+          <dt>{prop.name}</dt>
+          <dd>{prop.value}</dd>
+        {/each}
+      </dl>
     </section>
   {/if}
   {#if !item.complete}
     <p class="muted wide">Some providers did not answer; values may be incomplete.</p>
+  {/if}
+  {#if corrections.length}
+    <footer class="wide citations">
+      <h4>Corrections</h4>
+      <ul class="note-list">
+        {#each corrections as c (c.id)}
+          <li id={`${uid}-${c.id}-note`}>
+            <sup>{c.mark}</sup>
+            {c.text}.
+            {#if c.evidence.length}
+              <ul class="evidence">
+                {#each c.evidence as ev, i (i)}
+                  <li><b>{ev.kind}</b> ({ev.source}): {ev.excerpt}</li>
+                {/each}
+              </ul>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    </footer>
+  {/if}
+  {#if overrides.length}
+    <footer class="wide citations">
+      <h4>Manual overrides</h4>
+      <ol>
+        {#each overrides as [key, override], i (key)}
+          <li id={`${uid}-override-${i + 1}`}>
+            <b>{overrideFields.find((field) => field.key === key)?.label ?? key}:</b>
+            {override.value}{@render editButton([key], 'this property')}
+            {#if override.ambiguity}<span class="ambiguity-tag"
+                >{AMBIGUITY_KINDS[override.ambiguity.kind]?.label ?? override.ambiguity.kind}</span
+              >{#if override.ambiguity.note}
+                <i>{override.ambiguity.note}</i>{/if}{/if}
+            — <OverrideCitation {override} />
+          </li>
+        {/each}
+      </ol>
+    </footer>
   {/if}
 </div>
 
@@ -578,6 +775,44 @@
   .resolved-summary {
     font-size: 0.85rem;
     line-height: 1.6;
+  }
+  .citations {
+    border-top: 1px solid #e3e8ee;
+    padding-top: 0.6rem;
+  }
+  .citations ol {
+    margin: 0;
+    padding-left: 1.6rem;
+    color: #5c6777;
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+  .ambiguity-tag {
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: #fff0d6;
+    color: #8a5a00;
+    font-weight: 600;
+  }
+  .citations ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: #5c6777;
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+  .citations li:target {
+    background: #fff6d6;
+  }
+  .cite {
+    margin-left: 0.15em;
+    font-size: 0.7em;
+    line-height: 0;
+  }
+  .cite a {
+    color: #3464a5;
+    text-decoration: none;
   }
   .footnotes {
     list-style: none;
@@ -699,6 +934,81 @@
   tbody tr:hover {
     background: #eef5ff;
   }
+  .ing-table {
+    min-width: 0;
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+  .ing-table th,
+  .ing-table td {
+    padding: 0.28rem 0.5rem;
+  }
+  .ing-table td:nth-child(1),
+  .ing-table td:nth-child(3),
+  .ing-table td:nth-child(4),
+  .ing-table td:nth-child(5) {
+    white-space: nowrap;
+  }
+  .ing-table td:nth-child(2),
+  .ing-table td:nth-child(6) {
+    overflow-wrap: anywhere;
+  }
+  .ing-table td:nth-child(1) {
+    color: #5c6777;
+    font-size: 0.72rem;
+  }
+
+  .mini-wrap {
+    border: 1px dashed #b7c4d6;
+    border-left: 3px solid #6b8fc7;
+    border-radius: 0.3rem;
+    background: #f7f9fc;
+    box-shadow: none;
+  }
+  .mini-table {
+    min-width: 0;
+    font-size: 0.7rem;
+    line-height: 1.3;
+  }
+  .mini-table th,
+  .mini-table td {
+    padding: 0.2rem 0.45rem;
+  }
+  .mini-table th {
+    position: static;
+    background: transparent;
+    color: #6b7a90;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .mini-table tbody tr:nth-child(even) {
+    background: transparent;
+  }
+  .mini-table tbody tr:hover {
+    background: #e8f0fb;
+  }
+  .sib-code {
+    display: inline-block;
+    padding: 0 0.35em;
+    border-radius: 0.6em;
+    background: #e3ebf7;
+    color: #2f5391;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .sib-code.disabled {
+    background: #6b8fc7;
+    color: #fff;
+    cursor: default;
+  }
+  .mini-table tbody tr.current {
+    background: #eaf1fb;
+    font-weight: 600;
+  }
+  .sib-code:not(.disabled):hover {
+    background: #cfdcf1;
+  }
   .calc-chip {
     display: inline-flex;
     align-items: center;
@@ -746,14 +1056,66 @@
     background: #3464a5;
     color: #fff;
   }
+  .row-actions {
+    position: relative;
+    width: 2rem;
+  }
+  .row-menu-trigger {
+    padding: 0 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: none;
+    color: #3464a5;
+    cursor: pointer;
+  }
+  .row-menu-trigger:hover,
+  .row-menu-trigger[aria-expanded='true'] {
+    border-color: #c9d6e8;
+    background: #fff;
+  }
+  .row-menu {
+    position: absolute;
+    right: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    min-width: 11rem;
+    padding: 0.25rem;
+    border: 1px solid #c9d6e8;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+  }
+  .row-menu button {
+    padding: 0.35rem 0.6rem;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+  }
+  .row-menu button:hover {
+    background: #eef3fa;
+  }
+  .add-row {
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px dashed #c9d6e8;
+    border-radius: 5px;
+    background: none;
+    color: #3464a5;
+    cursor: pointer;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
   .edit svg {
     width: 0.8rem;
     height: 0.8rem;
-  }
-  .corrected {
-    margin-left: 0.4em;
-    font-size: 0.85em;
-    color: #9a5b00;
   }
   .evidence {
     margin: 0.25em 0 0;

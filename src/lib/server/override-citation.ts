@@ -1,9 +1,10 @@
 import {
-  overrideTargets,
-  validOverrideValue,
   type EquivalentPackage,
-  type PropertyOverride
+  overrideTargets,
+  type PropertyOverride,
+  validOverrideValue
 } from '../property-override-fields';
+import { AMBIGUITY_KINDS, type AmbiguityKind } from '../labeler-ambiguity';
 import type { LabelBlock } from '../spl-sections';
 import type { ExternalPackage } from './catalog-providers';
 
@@ -151,4 +152,33 @@ export function citeOverride(
     splSetId: current.splSetId,
     createdAt
   };
+}
+
+/**
+ * The overrides for correcting `key` because of a labeler ambiguity: the
+ * corrected value, plus whatever else the ambiguity implies, all with the same
+ * citation and the ambiguity's name. An equivalent NDC cannot be cited: it
+ * lists field values, not the reason a labeler's value was wrong.
+ */
+export function buildAmbiguityOverrides(
+  current: Package,
+  key: string,
+  value: string,
+  kind: AmbiguityKind,
+  note: string,
+  citation: OverrideCitationInput,
+  now = new Date()
+): Record<string, PropertyOverride> {
+  const definition = AMBIGUITY_KINDS[kind];
+  if (!definition.appliesTo(key))
+    throw new Error('This ambiguity does not apply to this property.');
+  if (citation.source === 'ndc')
+    throw new Error('Cite this package’s SPL or an outside source for this correction.');
+  const tag = { kind, note: note.trim().slice(0, 500) || null };
+  return Object.fromEntries(
+    Object.entries({ ...definition.companions, [key]: value }).map(([field, fieldValue]) => [
+      field,
+      { ...citeOverride(current, field, fieldValue, citation, [], now), ambiguity: tag }
+    ])
+  );
 }

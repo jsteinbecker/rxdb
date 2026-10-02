@@ -1,7 +1,9 @@
-import type { PrismaClient } from '../../generated/client';
-import type { FormularyRow } from '../formulary-hierarchy';
-import { loadPackageSnapshots } from './catalog-store';
-import { correctedIngredients, packageDisplayTitle } from '../package-title';
+import {quantifiedScdName} from '$lib/quantified-scd';
+import type {PrismaClient} from '../../generated/client';
+import type {FormularyRow} from '../formulary-hierarchy';
+import {loadPackageSnapshots} from './catalog-store';
+import {correctedIngredients, packageDisplayTitle} from '../package-title';
+import {PACKAGE_PSEUDO_SCD} from './pseudo-scd-store';
 
 /**
  * Every package currently linked into a formulary scope, flattened with the
@@ -27,6 +29,12 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
           entity: {
             select: {
               status: true,
+              // A bulk dry fill sits under its content pseudo-SCD, not RxNorm's concentration.
+              relationshipsFrom: {
+                where: { relationshipType: PACKAGE_PSEUDO_SCD, validTo: null },
+                take: 1,
+                select: { toEntity: { select: { clinicalDrug: { select: { name: true } } } } }
+              },
               externalIdentifiers: {
                 where: { namespace: 'ndc11', validTo: null },
                 select: { normalizedValue: true },
@@ -63,31 +71,35 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
     const item = snapshots.get(ndc)?.item;
     const product = link.package.components[0]?.childProduct;
     const doseType = link.package.containerSpecs[0]?.doseType;
-    const labeler = item?.labelerName ?? product?.labeler.name ?? null;
-    const metadataRoutes = item?.details?.product?.routes ?? [];
+    const pseudo = link.package.entity.relationshipsFrom[0]?.toEntity.clinicalDrug;
+    // The snapshot's facts, falling back to the catalog's; the title and the
+    // hierarchy both read these, so they never disagree.
+    const facts = {
+      ...item,
+      description: item?.description ?? link.package.description,
+      doseForm: item?.doseForm ?? item?.details?.spl?.doseForm ?? product?.doseForm ?? null,
+      brandName: item?.brandName ?? product?.proprietaryName ?? null,
+      genericName: item?.genericName ?? null,
+      labelerName: item?.labelerName ?? product?.labeler.name ?? null,
+      size: item?.size ?? null,
+      isMultiDose: item?.isMultiDose ?? (doseType ? doseType === 'multi-dose' : null)
+    };
     return [
       {
         packageId: link.package.id,
         ndc,
         formularyItemId: link.formularyItem.id,
-        formularyItem: link.formularyItem.displayName,
-        description: item?.description ?? link.package.description,
-        displayTitle: packageDisplayTitle({
-          ...item,
-          description: item?.description ?? link.package.description,
-          doseForm: item?.doseForm ?? product?.doseForm ?? null,
-          brandName: item?.brandName ?? product?.proprietaryName ?? null,
-          isMultiDose: item?.isMultiDose ?? (doseType ? doseType === 'multi-dose' : null),
-          labelerName: labeler
-        }),
-        routes: metadataRoutes,
-        doseForm: item?.doseForm ?? item?.details?.spl?.doseForm ?? product?.doseForm ?? null,
+        formularyItem: quantifiedScdName(pseudo?.name ?? link.formularyItem.displayName),
+        description: facts.description,
+        displayTitle: packageDisplayTitle(facts),
+        routes: item?.details?.product?.routes ?? [],
+        doseForm: facts.doseForm,
         ingredients: item ? correctedIngredients(item) : [],
-        brandName: item?.brandName ?? product?.proprietaryName ?? null,
-        genericName: item?.genericName ?? null,
-        labeler,
-        size: item?.size ?? null,
-        isMultiDose: item?.isMultiDose ?? (doseType ? doseType === 'multi-dose' : null),
+        brandName: facts.brandName,
+        genericName: facts.genericName,
+        labeler: facts.labelerName,
+        size: facts.size,
+        isMultiDose: facts.isMultiDose,
         preferenceRank: link.preferenceRank,
         status: link.package.entity.status
       }

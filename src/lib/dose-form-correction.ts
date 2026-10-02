@@ -139,7 +139,10 @@ export function correctDoseForm(input: DoseFormInput): DoseFormCorrection | null
 	const rule = RULES[from];
 	if (!rule) return null;
 
-	if ((input.siblingForms ?? []).some((form) => form && normalize(form) === rule.to)) return null;
+	// Any powder sibling (`…, POWDER, LYOPHILIZED, FOR SOLUTION` included) means the
+	// label's dry-product text may describe that product rather than this one.
+	if ((input.siblingForms ?? []).some((form) => form && /\b(?:POWDER|LYOPHILIZED)\b/.test(normalize(form))))
+		return null;
 	const everything = { ...input.identity, ...input.instructions };
 	if (findFirst(everything, READY_TO_USE)) return null;
 

@@ -144,14 +144,19 @@ const SALT_SENSITIVE = new Set([
 
 const HYDRATE = /hydrate$|^anhydrous$/;
 
+/** A trailing solvate phrase (`PROPYLENE GLYCOL SOLVATE`, `ETHANOLATE`) — a crystal form, not a different drug. */
+const SOLVATE =
+	/(?:\s+(?:propylene|glycol|ethanol|methanol|isopropanol|acetone|dimethyl|sulfoxide|dmso|water))*\s+solvate$|\s+(?:ethanolate|methanolate)$/i;
+
 /**
  * The name to group an active ingredient under, in its source casing:
  * `CEFEPIME HYDROCHLORIDE` → `CEFEPIME`, `Metoprolol Succinate` unchanged,
- * `POTASSIUM CHLORIDE` unchanged. Hydrate words are always dropped.
+ * `POTASSIUM CHLORIDE` unchanged. Hydrate and solvate words are always dropped.
  */
 export function ingredientGroup(name: string): string {
 	const words = name
 		.trim()
+		.replace(SOLVATE, '')
 		.split(/[\s,]+/)
 		.filter(Boolean)
 		.map((word) => ABBREVIATIONS[word.toLowerCase()] ?? word);

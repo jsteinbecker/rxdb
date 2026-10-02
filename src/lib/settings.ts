@@ -2,11 +2,12 @@
 // Preferences stored on the formulary scope. Anything missing or malformed
 // falls back to the default, so older rows and hand edits never break a page.
 
+import { naturalCompare } from './natural-sort';
 import {
-	DEFAULT_LEVELS,
-	DIMENSION_BY_KEY,
-	ingredientLabel,
-	type ComboDoseDisplay
+  type ComboDoseDisplay,
+  DEFAULT_LEVELS,
+  DIMENSION_BY_KEY,
+  ingredientLabel
 } from './formulary-hierarchy';
 
 export type ExpandDepth = 'none' | 'first' | 'all';
@@ -38,11 +39,10 @@ export function parseComboDoseDisplay(value: unknown): ComboDoseDisplay | null {
 	return null;
 }
 
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 /** Keys saved before salts were grouped (`Piperacillin Sodium / …`) read as `comboKey` now makes them. */
 function canonicalComboKey(key: string): string {
-	return [...new Set(key.split(' / ').map(ingredientLabel))].sort(collator.compare).join(' / ');
+	return [...new Set(key.split(' / ').map(ingredientLabel))].sort(naturalCompare).join(' / ');
 }
 
 const EXPAND_DEPTHS: ExpandDepth[] = ['none', 'first', 'all'];

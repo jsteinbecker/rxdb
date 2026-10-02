@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import type { LoadedItem } from '$lib/server/catalog-formulary';
+      import {enhance} from '$app/forms';
+      import {naturalCompare} from '$lib/natural-sort';
+      import type {LoadedItem} from '$lib/server/catalog-formulary';
 
-	let { data, form } = $props();
+      let { data, form } = $props();
 
 	let filter = $state('');
 	let level = $state<'all' | 'concept' | 'package'>('all');
@@ -24,7 +25,7 @@
 						item.target.kind === 'concept' ? item.target.rxcui : item.target.ndc
 					].some((value) => value.toLowerCase().includes(term))
 			)
-			.sort((a: LoadedItem, b: LoadedItem) => a.displayName.localeCompare(b.displayName));
+			.sort((a: LoadedItem, b: LoadedItem) => naturalCompare(a.displayName, b.displayName));
 	});
 
 	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
@@ -106,7 +107,7 @@
 				<li>
 					<span class="level" class:package={item.target.kind === 'package'}>{levelOf(item)}</span>
 					<span class="desc">
-						{item.displayName}
+						<a href="/formulary/items/{item.formularyItemId}">{item.displayName}</a>
 						<span class="small mono">
 							{item.target.kind === 'concept'
 								? `RxCUI ${item.target.rxcui}`

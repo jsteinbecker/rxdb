@@ -4,10 +4,10 @@ import { applyPropertyOverrides } from './apply-property-overrides';
 import { mergePackage } from './catalog-cache';
 import { packageFixture } from './catalog-test-fixtures';
 import {
+  type EquivalentPackage,
   equivalentValues,
   overrideTargets,
-  validOverrideValue,
-  type EquivalentPackage
+  validOverrideValue
 } from '../property-override-fields';
 import { citeOverride } from './override-citation';
 
@@ -139,4 +139,78 @@ test('equivalent-NDC overrides copy exactly what the equivalent lists', () => {
     () => citeOverride(item, 'brandName', 'X', { source: 'ndc', ndc: '99999999999' }, equivalents),
     /equivalent/
   );
+});
+
+test('overrides add and remove reconstitution rows and correct ingredient strengths', () => {
+  const base = packageFixture({
+    reconstitution: [
+      { id: 'raaaaaaaa', vialMassMg: 1000, diluentMl: 10, concentrations: [] },
+      { id: 'rbbbbbbbb', vialMassMg: 1000, diluentMl: 3.5, concentrations: [] }
+    ]
+  });
+  const item = {
+    ...base,
+    details: {
+      ...base.details!,
+      spl: {
+        ...base.details?.spl,
+        ingredients: [
+          {
+            name: 'Cefazolin sodium',
+            unii: null,
+            kind: 'active' as const,
+            basis: null,
+            strength: '1 g',
+            moieties: [],
+            productCode: null
+          }
+        ]
+      }
+    }
+  } as typeof base;
+  const keys = overrideTargets(item).map((target) => target.key);
+  assert.ok(keys.includes('reconstitution.a0.diluentMl'));
+  assert.ok(keys.includes('reconstitution.rbbbbbbbb.removed'));
+  assert.ok(keys.includes('reconstitution.raaaaaaaa.concentrations.0.mgPerMl'));
+  assert.ok(keys.includes('details.spl.ingredients.0.strength'));
+  assert.equal(validOverrideValue('reconstitution.rbbbbbbbb.removed', 'yes'), false);
+
+  const applied = applyPropertyOverrides({
+    ...item,
+    propertyOverrides: {
+      'reconstitution.a0.diluentMl': cited('5'),
+      'reconstitution.a0.vialMassMg': cited('500'),
+      'reconstitution.raaaaaaaa.concentrations.0.mgPerMl': cited('95'),
+      'reconstitution.rbbbbbbbb.removed': cited('true'),
+      'details.spl.ingredients.0.strength': cited('2 g')
+    }
+  });
+  assert.deepEqual(
+    applied.reconstitution.map((row) => [row.id, row.diluentMl, row.vialMassMg]),
+    [
+      ['raaaaaaaa', 10, 1000],
+      ['a0', 5, 500]
+    ]
+  );
+  assert.equal(applied.reconstitution[0].concentrations[0].mgPerMl, 95);
+  assert.equal(applied.details?.spl?.ingredients[0].strength, '2 g');
+  // Reapplying to the stored result is stable, and the next new row takes a1.
+  assert.equal(applyPropertyOverrides(applied).reconstitution.length, 2);
+  assert.ok(
+    overrideTargets(applied).some((target) => target.key === 'reconstitution.a1.diluentMl')
+  );
+});
+
+test('dropping an override restores the provider value and keeps the others', () => {
+  const original = packageFixture({
+    propertyOverrides: { description: cited('Edited'), doseForm: cited('SOLUTION') }
+  });
+  const applied = applyPropertyOverrides(original);
+  const remaining = { doseForm: original.propertyOverrides!.doseForm };
+  const restored = mergePackage(
+    { ...applied, propertyOverrides: remaining },
+    packageFixture({ propertyOverrides: undefined })
+  );
+  assert.equal(restored.description, packageFixture().description);
+  assert.equal(restored.doseForm, 'SOLUTION');
 });

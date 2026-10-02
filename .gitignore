@@ -7,9 +7,13 @@ package-lock.json
 .output
 .vercel
 .netlify
+.svelte-kit
 .wrangler
 /.svelte-kit
 /build
+/.idea
+/.vscode
+/outputs
 
 # OS
 .DS_Store

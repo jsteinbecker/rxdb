@@ -6,32 +6,35 @@
 // none lands in a "Not specified" bucket rather than disappearing.
 
 import { ingredientGroup } from './ingredient-group';
+import { labelerGroup } from './labeler-group';
+import { naturalCompare } from './natural-sort';
+import { mgPer } from './units';
 
 export type FormularyRow = {
-	packageId: string;
-	ndc: string;
-	formularyItemId: string;
-	formularyItem: string;
-	description: string | null;
-	displayTitle?: string | null;
-	routes: string[];
-	doseForm: string | null;
-	ingredients: { name: string; strength: string | null }[];
-	brandName: string | null;
-	genericName: string | null;
-	labeler: string | null;
-	size: {
-		kind: 'volume' | 'mass' | 'count';
-		value: number;
-		unit: string | null;
-		container: string;
-		packQty: number;
-	} | null;
-	isMultiDose: boolean | null;
-	preferenceRank: number;
-	status: string;
-	/** How a combination product's dose reads; attached from the formulary settings. */
-	doseDisplay?: ComboDoseDisplay;
+  packageId: string;
+  ndc: string;
+  formularyItemId: string;
+  formularyItem: string;
+  description: string | null;
+  displayTitle?: string | null;
+  routes: string[];
+  doseForm: string | null;
+  ingredients: { name: string; strength: string | null }[];
+  brandName: string | null;
+  genericName: string | null;
+  labeler: string | null;
+  size: {
+    kind: 'volume' | 'mass' | 'count';
+    value: number;
+    unit: string | null;
+    container: string;
+    packQty: number;
+  } | null;
+  isMultiDose: boolean | null;
+  preferenceRank: number;
+  status: string;
+  /** How a combination product's dose reads; attached from the formulary settings. */
+  doseDisplay?: ComboDoseDisplay;
 };
 
 /**
@@ -70,7 +73,17 @@ const titleCase = (value: string) =>
 const clean = (value: string | null | undefined) => value?.trim() || null;
 
 /** An ingredient as the hierarchy names it: `Cefepime`, never `Cefepime Hydrochloride`. */
-export const ingredientLabel = (name: string) => titleCase(ingredientGroup(name));
+export const ingredientLabel = (name: string) =>
+	titleCase(ingredientGroup(name)).replace(/-([A-Za-z]{4})$/, (_, suffix) => `-${suffix.toLowerCase()}`);
+
+/**
+ * A labeler as the hierarchy names it: `Teva`, for every spelling of Teva.
+ * All-caps directory names are title-cased so they meet their label spelling.
+ */
+export const labelerLabel = (name: string) => {
+	const group = labelerGroup(name);
+	return group === group.toUpperCase() ? titleCase(group) : group;
+};
 
 const ROUTE_CLASSES: [RegExp, string][] = [
 	// Word boundaries matter: PARENTERAL contains ENTERAL.
@@ -140,8 +153,6 @@ export function comboKey(row: FormularyRow): string | null {
 	return names.length > 1 ? names.join(' / ') : null;
 }
 
-// Mass units scale to milligrams; anything else only sums with itself.
-const MASS: Record<string, number> = { g: 1000, mg: 1, mcg: 0.001, ug: 0.001, µg: 0.001, ng: 1e-6 };
 
 /** "500 mg", "5 mg/5 mL" → amount in a base unit over a denominator. */
 function parseStrength(strength: string) {
@@ -152,7 +163,8 @@ function parseStrength(strength: string) {
 	const value = Number(match[1].replace(/,/g, ''));
 	const unit = match[2].toLowerCase();
 	if (!Number.isFinite(value)) return null;
-	const scale = MASS[unit];
+	// Mass units scale to milligrams; anything else only sums with itself.
+	const scale = mgPer(unit);
 	return {
 		base: scale ? value * scale : value,
 		family: scale ? 'mass' : unit,
@@ -175,7 +187,7 @@ export function summedStrength(strengths: string[]): string | null {
 		parsed.some((item) => !item || item.family !== first.family || item.per !== first.per)
 	)
 		return null;
-	const total = parsed.reduce((sum, item) => sum + item!.base, 0) / (MASS[first.unit] ?? 1);
+	const total = parsed.reduce((sum, item) => sum + item!.base, 0) / (mgPer(first.unit) ?? 1);
 	return `${Number(total.toPrecision(6))}${first.unit}${first.perLabel}`.replace(/\s+/g, '');
 }
 
@@ -196,7 +208,7 @@ export function normalizeStrength(strength: string): string {
 				: parsed.base >= 1
 					? 'mg'
 					: parsed.unit;
-	const value = parsed.family === 'mass' ? parsed.base / MASS[unit] : parsed.base;
+	const value = parsed.family === 'mass' ? parsed.base / mgPer(unit)! : parsed.base;
 	return `${Number(value.toPrecision(6))}${unit}${parsed.perLabel}`;
 }
 
@@ -324,7 +336,10 @@ export const DIMENSIONS: Dimension[] = [
 		key: 'labeler',
 		label: 'Labeler',
 		hint: 'Manufacturer or repackager',
-		values: (row) => (clean(row.labeler) ? [clean(row.labeler)!] : [])
+		values: (row) => {
+				const labeler = clean(row.labeler);
+				return labeler ? [labelerLabel(labeler)] : [];
+			}
 	}
 ];
 
@@ -342,7 +357,7 @@ export type TreeNode = {
 	rows: FormularyRow[];
 };
 
-const compare = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare;
+const compare = naturalCompare;
 
 /**
  * Group rows by each dimension in turn. The last level's nodes hold the rows

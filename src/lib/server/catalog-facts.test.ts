@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { inactivatedOnDailyMed } from './catalog-providers';
-import { parsePackageFacts, exclusionReason, type ActivityInput } from './catalog-facts';
+import { type ActivityInput, exclusionReason, parsePackageFacts } from './catalog-facts';
 import {
   CATALOG_VERSION,
   isFresh,
@@ -94,9 +94,10 @@ test('withdrawal volume columns are yields, not diluent, and sibling vial sizes 
     ],
     { dosage_and_administration_table: [ampicillinSulbactamTable] }
   );
-  assert.deepEqual(facts.reconstitution.map(({ id: _id, ...row }) => row), [
-    { vialMassMg: 1500, diluentMl: 3.2, concentrations: [], finalVolumeMl: 4 }
-  ]);
+  assert.deepEqual(
+    facts.reconstitution.map(({ id: _id, ...row }) => row),
+    [{ vialMassMg: 1500, diluentMl: 3.2, concentrations: [], finalVolumeMl: 4 }]
+  );
   assert.equal(facts.resolvedVolume?.diluentMl, 3.2);
   assert.equal(facts.resolvedVolume?.finalVolumeMl, 4);
   // 1500 mg / 4 mL — the 375 mg/mL the label's prose states for this vial.
@@ -119,14 +120,17 @@ test('reconstitution captures concentrations beside volumes and removes less inf
       '<table><tr><th>Vial</th><th>Volume of diluent to be added</th><th>Approximate concentration</th></tr><tr><td>100 mg</td><td>20 mL</td><td>5 mg/mL paclitaxel</td></tr></table>'
     ]
   });
-  assert.deepEqual(facts.reconstitution.map(({ id: _id, ...row }) => row), [
-    {
-      vialMassMg: 100,
-      diluentMl: 20,
-      concentrations: [{ name: null, mgPerMl: 5 }],
-      finalVolumeMl: null
-    }
-  ]);
+  assert.deepEqual(
+    facts.reconstitution.map(({ id: _id, ...row }) => row),
+    [
+      {
+        vialMassMg: 100,
+        diluentMl: 20,
+        concentrations: [{ name: null, mgPerMl: 5 }],
+        finalVolumeMl: null
+      }
+    ]
+  );
 });
 
 test('reconstitution retains every explicitly allowed solution volume', () => {
@@ -278,4 +282,42 @@ test('partial refresh resolves label evidence using retained ingredient masses',
     packageFixture({ isDryFill: false, doseForm: 'INJECTION, SOLUTION', complete: false })
   );
   assert.equal(solution.resolvedVolume, null);
+});
+
+test('a kit narrows the shared table by its powder mass and pre-measured diluent', () => {
+  // Wilshire's vancomycin oral solution kit 52536-108-10: no listed
+  // ingredients, one label tabulating all four kit sizes.
+  const table =
+    '<table ID="_Ref38297091" cellpadding="3.6pt" width="75%"><caption>Table 1: Vancomycin Concentration and Volume after Reconstitution</caption><col width="21%"/><col width="21%"/><col width="21%"/><col width="21%"/><thead><tr><th align="left" styleCode="Botrule " valign="middle"><content styleCode="bold">Vancomycin Concentration after Reconstitution</content></th><th align="left" styleCode="Botrule " valign="middle"><content styleCode="bold">Final Volume of Vancomycin Hydrochloride after Reconstitution</content></th><th align="left" styleCode="Botrule " valign="middle"><content styleCode="bold">Vancomycin Strength per Bottle</content></th><th align="left" styleCode="Botrule " valign="middle"><content styleCode="bold">Diluent for Vancomycin Hydrochloride</content></th></tr></thead><tbody><tr><td styleCode="Toprule " valign="top"><paragraph>25 mg/mL</paragraph></td><td styleCode="Toprule " valign="top"><paragraph>150 mL</paragraph></td><td styleCode="Toprule " valign="top"><paragraph>3.75 g</paragraph></td><td styleCode="Toprule " valign="top"><paragraph>147 mL</paragraph></td></tr><tr><td styleCode="Botrule " valign="top"/><td styleCode="Botrule " valign="top"><paragraph>300 mL</paragraph></td><td styleCode="Botrule " valign="top"><paragraph>7.5 g</paragraph></td><td styleCode="Botrule " valign="top"><paragraph>295 mL</paragraph></td></tr><tr><td styleCode="Toprule " valign="top"><paragraph>50 mg/mL</paragraph></td><td styleCode="Toprule " valign="top"><paragraph>150 mL</paragraph></td><td styleCode="Toprule " valign="top"><paragraph>7.5 g</paragraph></td><td styleCode="Toprule " valign="top"><paragraph>145 mL</paragraph></td></tr><tr><td valign="top"/><td valign="top"><paragraph>300 mL</paragraph></td><td valign="top"><paragraph>15.0 g</paragraph></td><td valign="top"><paragraph>289 mL</paragraph></td></tr></tbody></table>';
+  const facts = parsePackageFacts(
+    '52536-108-10',
+    '1 KIT in 1 CARTON (52536-108-10)  *  15 g in 1 BOTTLE (52536-098-10)  *  289 mL in 1 BOTTLE (52536-088-10)',
+    'KIT',
+    [],
+    { dosage_and_administration_table: [table] }
+  );
+  assert.deepEqual(
+    facts.reconstitution.map((row) => [row.vialMassMg, row.diluentMl, row.finalVolumeMl]),
+    [[15000, 289, 300]]
+  );
+  assert.deepEqual(
+    facts.reconstitution[0].concentrations.map((c) => c.mgPerMl),
+    [50]
+  );
+});
+
+test('a row that names no vial mass takes the package ingredient strength as its vial content', () => {
+  const facts = parsePackageFacts(
+    '66621079002',
+    '1 VIAL in 1 CARTON (66621-0790-2) / 10 mL in 1 VIAL (66621-0790-1)',
+    'INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION',
+    [{ name: 'PIT VIPER (CROTALINAE) IMMUNE GLOBULIN ANTIVENIN (EQUINE)', strength: '120 mg' }],
+    {
+      dosage_and_administration: [
+        'Reconstitute the contents of each vial with 10 mL of sterile normal saline.'
+      ]
+    }
+  );
+  assert.equal(facts.reconstitution.length, 1);
+  assert.equal(facts.reconstitution[0].vialMassMg, 120);
 });

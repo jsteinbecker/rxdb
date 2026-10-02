@@ -1,13 +1,14 @@
-import { parsePackageFacts, type PackageFacts } from './catalog-facts';
+import { naturalCompare } from '../natural-sort';
+import { type PackageFacts, parsePackageFacts } from './catalog-facts';
 import type { PropertyOverride } from '../property-override-fields';
-import { toNdc11, hyphenCandidates, labelerCandidates } from '../ndc';
-import { parseSplIngredients, strengthText, type SplIngredient } from '../spl-ingredients';
-import { checkProductStrengths, type CheckedStrength } from '../spl-strength-checks';
+import { hyphenCandidates, labelerCandidates, toNdc11 } from '../ndc';
+import { parseSplIngredients, type SplIngredient, strengthText } from '../spl-ingredients';
+import { type CheckedStrength, checkProductStrengths } from '../spl-strength-checks';
 import { appearancesByPackage, type PillAppearance } from '../spl-characteristics';
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
-import { labelSectionBlocks, type LabelBlock } from '../spl-sections';
-import { absoluteFillStrength, isDryFillForm } from '../ingredient-content';
+import { type LabelBlock, labelSectionBlocks } from '../spl-sections';
+import { absoluteFillStrength, isDryFillForm, pharmacyBulkFillMl } from '../ingredient-content';
 import { parseUnitOfUse } from '../ndc-packaging';
 
 const RXNAV = 'https://rxnav.nlm.nih.gov/REST';
@@ -323,7 +324,8 @@ function labelIngredientOf(
   checked: CheckedStrength,
   productCode: string | null,
   dryFill: boolean,
-  fillVolumeMl: number | null
+  fillVolumeMl: number | null,
+  bulkFillMl: number | null
 ): LabelIngredient {
   const statedStrength = strengthText(checked);
   const totalStrength =
@@ -340,7 +342,9 @@ function labelIngredientOf(
     unii: ingredient.unii,
     kind: ingredient.kind,
     basis: ingredient.basis,
-    strength: dryFill ? absoluteFillStrength(statedStrength) : (totalStrength ?? statedStrength),
+    strength: dryFill
+      ? absoluteFillStrength(statedStrength, bulkFillMl, fillVolumeMl)
+      : (totalStrength ?? statedStrength),
     moieties: ingredient.moieties,
     productCode,
     ...(checked.corrections.length
@@ -607,9 +611,7 @@ export async function discoverRxNavPage(
     .sort((a, b) => {
       const [x, y] = [score(a), score(b)];
       const i = x.findIndex((value, index) => value !== y[index]);
-      return i >= 0
-        ? x[i] - y[i]
-        : a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+      return i >= 0 ? x[i] - y[i] : naturalCompare(a.name, b.name);
     });
   const isVetOnly = async (rxcui: string) => {
     const url = `${RXNAV}/rxcui/${encodeURIComponent(rxcui)}/allProperties.json?prop=attributes`;
@@ -814,7 +816,7 @@ export async function enrichPackages(
         }
       }
       const labelPayload = label.status === 'fulfilled' ? label.value : null;
-      const matchedLabel =
+      let matchedLabel =
         (
           labelPayload as {
             results?: (Record<string, unknown> & { openfda?: { package_ndc?: string[] } })[];
@@ -846,6 +848,16 @@ export async function enrichPackages(
         ? `${DAILYMED_DOCUMENT}/${encodeURIComponent(splHit.setid)}.xml`
         : null;
       const xml = documentUrl ? await getText(documentUrl).catch(() => null) : null;
+      // Biologics (BLA) carry an empty `openfda` block, so the package_ndc
+      // search misses their label — Anavip 66621-0790. Fall back to the SPL's
+      // set id, which openFDA indexes for every label.
+      if (!matchedLabel && splHit?.setid) {
+        const bySetId = (await getJson(
+          fdaUrl(OPENFDA_LABEL, `set_id:"${splHit.setid}"`, apiKey),
+          true
+        ).catch(() => null)) as { results?: Record<string, unknown>[] } | null;
+        matchedLabel = bySetId?.results?.find((row) => row.set_id === splHit.setid) ?? null;
+      }
       const labelerCode = ndc.slice(0, 5);
       const labelerUrl = labelerCode
         ? fdaUrl(
@@ -966,6 +978,7 @@ export async function enrichPackages(
       ]
         .filter((text): text is string => Boolean(text))
         .join('\n');
+      const structuredRoutes = [...(product?.route ?? []), ...rxRoutes];
       const labelRoutes = [
         ...routesFromProductText(productRouteText),
         ...routesFromLabelText(labelRouteText)
@@ -1002,9 +1015,12 @@ export async function enrichPackages(
       const unitSize = packageDescription ? parseUnitOfUse(packageDescription) : null;
       const fillVolumeMl =
         unitSize?.kind === 'volume' ? unitSize.value * (unitSize.unit === 'L' ? 1000 : 1) : null;
+      const bulkFillMl = pharmacyBulkFillMl(packageDescription, fillVolumeMl);
       const ingredients = sourceIngredients.map((ingredient) => ({
         ...ingredient,
-        strength: dryFill ? absoluteFillStrength(ingredient.strength) : ingredient.strength
+        strength: dryFill
+          ? absoluteFillStrength(ingredient.strength, bulkFillMl, fillVolumeMl)
+          : ingredient.strength
       }));
       const saltIngredients = [
         ...new Set(
@@ -1024,7 +1040,10 @@ export async function enrichPackages(
         product: hasProductFacts
           ? {
               productType: product?.product_type ?? null,
-              routes: normalizeRoutes([...(product?.route ?? []), ...rxRoutes, ...labelRoutes]),
+              // Structured routes are authoritative; label prose only fills a gap.
+              // Metoprolol tartrate tablet labels describe IV dosing of the
+              // separate injection, which would otherwise read as INTRAVENOUS.
+              routes: normalizeRoutes(structuredRoutes.length ? structuredRoutes : labelRoutes),
               marketingCategory: product?.marketing_category ?? null,
               applicationNumber: product?.application_number ?? null,
               deaSchedule: product?.dea_schedule ?? null,
@@ -1084,7 +1103,8 @@ export async function enrichPackages(
                       checked[index],
                       item.productCode,
                       dryFill,
-                      fillVolumeMl
+                      fillVolumeMl,
+                      bulkFillMl
                     )
                   );
                 }),

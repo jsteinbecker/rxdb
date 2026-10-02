@@ -1,21 +1,24 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
-  import { deserialize } from '$app/forms';
-  import { invalidateAll } from '$app/navigation';
-  import type { StagedPackage } from '$lib/server/catalog-sync';
-  import SplLabelSections from './SplLabelSections.svelte';
-  import OverrideCitation from './OverrideCitation.svelte';
-  import QuantityField from './QuantityField.svelte';
-  import { quantityDecimal, type Quantity } from '$lib/quantity';
-  import {
-    overrideChoices,
-    overrideCurrentValue,
-    overrideQuantity,
-    overrideTargets,
-    type EquivalentPackage
-  } from '$lib/property-override-fields';
+      import {untrack} from 'svelte';
+      import {deserialize} from '$app/forms';
+      import {invalidateAll} from '$app/navigation';
+      import type {StagedPackage} from '$lib/server/catalog-sync';
+      import SplLabelSections from './SplLabelSections.svelte';
+      import OverrideCitation from './OverrideCitation.svelte';
+      import QuantityField from './QuantityField.svelte';
+      import {type Quantity, quantityDecimal} from '$lib/quantity';
+      import {AMBIGUITY_KINDS, type AmbiguityKind, ambiguityKindsFor} from '$lib/labeler-ambiguity';
+      import {
+            type EquivalentPackage,
+            overrideChoices,
+            overrideCurrentValue,
+            overrideQuantity,
+            overrideSeparator,
+            overrideTargets,
+            splitMulti
+      } from '$lib/property-override-fields';
 
-  let {
+      let {
     item,
     keys,
     equivalents = [],
@@ -31,7 +34,7 @@
   let panel: HTMLElement;
   // The editing row fixes `keys` for this panel's lifetime (the page re-keys it).
   // svelte-ignore state_referenced_locally
-  let overrideKey = $state(keys[0]);
+  let overrideKey = $state(keys[0] ?? '');
   let overrideValue = $state('');
   let sectionKey = $state('');
   let excerpt = $state('');
@@ -47,12 +50,40 @@
   let equivalentNdc = $state('');
   let overrideMessage = $state('');
   let savingOverride = $state(false);
+  // Why the labeler's value was wrong, when it is a known pattern for this field.
+  let kind = $state<AmbiguityKind | ''>('');
+  let kindNote = $state('');
 
   const fields = $derived(overrideTargets(item).filter((field) => keys.includes(field.key)));
   const field = $derived(fields.find((candidate) => candidate.key === overrideKey));
   const existing = $derived(item.propertyOverrides?.[overrideKey]);
   const current = $derived(overrideCurrentValue(item, overrideKey));
+  const kinds = $derived(ambiguityKindsFor(overrideKey));
   const choices = $derived(overrideChoices(overrideKey));
+  const separator = $derived(overrideSeparator(overrideKey));
+  // A value may already hold entries the fixed choices lack; keep them pickable.
+  const picked = $derived(separator ? splitMulti(overrideValue, separator) : []);
+  const options = $derived(
+    choices ? [...choices, ...picked.filter((p) => !choices.includes(p))] : []
+  );
+  // "INJECTION, SOLUTION" nests under "INJECTION" when both are options.
+  const tree = $derived(
+    options.map((option) => {
+      const parents = options.filter((other) => option.startsWith(`${other}, `));
+      const parent = parents.sort((a, b) => b.length - a.length)[0];
+      return {
+        option,
+        depth: parents.length,
+        label: parent ? option.slice(parent.length + 2) : option
+      };
+    })
+  );
+  function toggle(option: string, on: boolean) {
+    const next = new Set(picked);
+    if (on) next.add(option);
+    else next.delete(option);
+    overrideValue = options.filter((o) => next.has(o)).join(separator ?? '');
+  }
   const quantitySpec = $derived(overrideQuantity(overrideKey, item));
   let quantity = $state<Quantity | null>(null);
   // Numbers are stored as decimals in the field's unit, however they were typed.
@@ -80,6 +111,8 @@
     overrideValue = untrack(() => overrideCurrentValue(item, key)) ?? '';
     equivalentNdc = '';
     overrideMessage = '';
+    kind = '';
+    kindNote = '';
   });
 
   // Beside the details it stays in view; stacked above them (narrow screens)
@@ -112,12 +145,40 @@
     }
   }
 
+  let removing = $state(false);
+  async function removeOverride() {
+    removing = true;
+    overrideMessage = '';
+    const form = new FormData();
+    form.set('key', overrideKey);
+    try {
+      const response = await fetch('?/removeOverride', { method: 'POST', body: form });
+      const result = deserialize(await response.text());
+      if (result.type === 'success') {
+        await invalidateAll();
+        onclose();
+      } else
+        overrideMessage =
+          result.type === 'failure'
+            ? String(result.data?.message ?? 'Could not remove override.')
+            : 'Could not remove override.';
+    } catch {
+      overrideMessage = 'Could not remove override.';
+    } finally {
+      removing = false;
+    }
+  }
+
   async function saveOverride() {
     savingOverride = true;
     overrideMessage = '';
     const form = new FormData();
     form.set('key', overrideKey);
     form.set('value', submittedValue);
+    if (kind) {
+      form.set('ambiguity', kind);
+      form.set('note', kindNote);
+    }
     form.set('source', source);
     if (source === 'spl') {
       form.set('sectionKey', sectionKey);
@@ -179,33 +240,75 @@
       </dd>
     {/if}
   </dl>
-  <label
-    >Correct value
-    {#if choices}
-      <select bind:value={overrideValue} disabled={source === 'ndc'}
-        ><option value="">Choose…</option>{#each choices as choice (choice)}<option value={choice}
-            >{choice}</option
+  {#if separator && choices}
+    <fieldset class="multi" disabled={source === 'ndc'}>
+      <legend>Correct value <span class="optional">(choose any)</span></legend>
+      {#each tree as { option, depth, label } (option)}
+        <label class="check" style:padding-left="{0.4 + depth * 1.4}rem"
+          ><input
+            type="checkbox"
+            checked={picked.includes(option)}
+            onchange={(event) => toggle(option, event.currentTarget.checked)}
+          />{label}</label
+        >
+      {/each}
+    </fieldset>
+  {:else}
+    <label
+      >Correct value
+      {#if choices}
+        <select bind:value={overrideValue} disabled={source === 'ndc'}
+          ><option value="">Choose…</option>{#each choices as choice (choice)}<option value={choice}
+              >{choice}</option
+            >{/each}</select
+        >
+      {:else if quantitySpec}
+        <QuantityField
+          bind:value={overrideValue}
+          bind:quantity
+          unit={quantitySpec.unit}
+          integer={quantitySpec.integer}
+          min={quantitySpec.min}
+          exclusiveMin={quantitySpec.exclusiveMin}
+          readonly={source === 'ndc'}
+          placeholder={quantitySpec.unit
+            ? `In ${quantitySpec.unit}, or another unit (e.g. 131 11/19, 1.5 g)`
+            : quantitySpec.integer
+              ? 'Enter a whole number'
+              : 'Enter a number'}
+        />
+      {:else}
+        <input bind:value={overrideValue} readonly={source === 'ndc'} maxlength="500" />
+      {/if}
+    </label>
+  {/if}
+  {#if kinds.length}
+    <label
+      >Why the labeled value was wrong <span class="optional">(optional)</span>
+      <select
+        bind:value={kind}
+        onchange={() => {
+          // An equivalent NDC lists values, not reasons.
+          if (kind && source === 'ndc') source = hasSpl ? 'spl' : 'url';
+        }}
+        ><option value="">Not a known labeler ambiguity</option
+        >{#each kinds as option (option)}<option value={option}
+            >{AMBIGUITY_KINDS[option].label}</option
           >{/each}</select
+      ></label
+    >
+    {#if kind}
+      <p class="hint">{AMBIGUITY_KINDS[kind].explanation}</p>
+      <label
+        >Note <span class="optional">(optional)</span>
+        <input
+          bind:value={kindNote}
+          maxlength="500"
+          placeholder="Anything worth remembering"
+        /></label
       >
-    {:else if quantitySpec}
-      <QuantityField
-        bind:value={overrideValue}
-        bind:quantity
-        unit={quantitySpec.unit}
-        integer={quantitySpec.integer}
-        min={quantitySpec.min}
-        exclusiveMin={quantitySpec.exclusiveMin}
-        readonly={source === 'ndc'}
-        placeholder={quantitySpec.unit
-          ? `In ${quantitySpec.unit}, or another unit (e.g. 131 11/19, 1.5 g)`
-          : quantitySpec.integer
-            ? 'Enter a whole number'
-            : 'Enter a number'}
-      />
-    {:else}
-      <input bind:value={overrideValue} readonly={source === 'ndc'} maxlength="500" />
     {/if}
-  </label>
+  {/if}
   <div class="source-tabs" role="tablist" aria-label="Cite">
     <span>Cite</span>
     <button
@@ -224,6 +327,8 @@
       type="button"
       role="tab"
       aria-selected={source === 'ndc'}
+      disabled={!!kind}
+      title={kind ? 'A labeler ambiguity must cite this SPL or an outside source.' : undefined}
       onclick={() => (source = 'ndc')}>Equivalent NDC ({candidates.length})</button
     >
   </div>
@@ -313,6 +418,13 @@
   {/if}
   {#if overrideMessage}<p class="error">{overrideMessage}</p>{/if}
   <div class="actions">
+    {#if existing}<button
+        class="remove"
+        type="button"
+        disabled={removing || savingOverride}
+        title="Discard this override and restore the value from the providers"
+        onclick={removeOverride}>{removing ? 'Removing…' : 'Remove override'}</button
+      >{/if}
     <button type="button" onclick={onclose}>Cancel</button><button
       class="primary"
       type="button"
@@ -323,6 +435,40 @@
 </aside>
 
 <style>
+  .multi {
+    display: grid;
+    gap: 0;
+    max-height: 14rem;
+    overflow: auto;
+    margin: 0;
+    padding: 0.25rem;
+    border: 1px solid #bfc9d6;
+    border-radius: 6px;
+    min-width: 0;
+  }
+  .multi legend {
+    padding: 0 0.3rem;
+    font-weight: 600;
+  }
+  .multi .check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 400;
+    line-height: 1.3;
+    cursor: pointer;
+  }
+  .multi .check:hover {
+    background: #f4f6f9;
+  }
+  .multi .check input {
+    flex: none;
+    width: auto;
+    margin: 0.15rem 0 0;
+    padding: 0;
+  }
   aside {
     box-sizing: border-box;
     display: flex;
@@ -404,6 +550,11 @@
     display: grid;
     gap: 0.3rem;
     font-weight: 600;
+  }
+  .was {
+    color: #7a8594;
+    font-size: 0.78rem;
+    font-weight: 400;
   }
   .optional {
     color: #7a8594;
@@ -555,6 +706,11 @@
     background: #fff;
     font: inherit;
     cursor: pointer;
+  }
+  .actions .remove {
+    margin-right: auto;
+    border-color: #d9b3b3;
+    color: #a32b2b;
   }
   .actions .primary {
     border-color: #3464a5;

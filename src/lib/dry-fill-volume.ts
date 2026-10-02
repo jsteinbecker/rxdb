@@ -40,13 +40,8 @@
 //
 // Everything in this module is pure. Fetching is the caller's job.
 
-import {
-  diluentList,
-  diluentsIn,
-  routeList,
-  routesIn,
-  type ReconstitutionRoute
-} from './reconstitution-terms.js';
+import {diluentList, diluentsIn, type ReconstitutionRoute, routeList, routesIn} from './reconstitution-terms.js';
+import {mgPer} from './units.js';
 
 /** What a labeled volume on a dry-fill package turns out to denote. */
 export type VolumeMeaning =
@@ -84,23 +79,18 @@ export interface ProseReconstitution {
   /** Diluents the label allows for this instruction (`reconstitution-terms.ts` codes). */
   diluents?: string[];
   /**
+   * An oral-constitution bottle row: `finalVolumeMl` is the bottle, and its
+   * concentration is the product's strength rather than a vial's yield. Only
+   * `resolveBottleVolume` reads these; a vial resolver dividing a per-5 mL
+   * strength by them would invent a volume.
+   */
+  bottle?: true;
+  /**
    * Stable handle for this row within its package, derived from its content
    * (`reconstitutionRowId`). Assigned per package, so bare parser output has none.
    */
   id?: string;
 }
-
-const MASS_TO_MG: Record<string, number> = {
-  mcg: 0.001,
-  ug: 0.001,
-  mg: 1,
-  milligram: 1,
-  milligrams: 1,
-  g: 1000,
-  gm: 1000,
-  gram: 1000,
-  grams: 1000
-};
 
 // Sentence boundaries, minus the one that matters here: a period between two
 // digits is a decimal point. "Reconstitute the pharmacy bulk vial of 13.5
@@ -200,8 +190,8 @@ const finite = (value: number): number | null =>
   Number.isFinite(value) && value > 0 ? value : null;
 
 const toMg = (value: string, unit: string): number | null => {
-  const scale = MASS_TO_MG[unit.toLowerCase()];
-  return scale === undefined ? null : finite(Number(value) * scale);
+  const scale = mgPer(unit);
+  return scale === null ? null : finite(Number(value) * scale);
 };
 
 const normalizeName = (name: string): string => name.trim().toUpperCase().replace(/\s+/g, ' ');
@@ -367,6 +357,116 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
   return dedupeProseReconstitutions(rows);
 }
 
+// ── Concentrations the label states apart from its instructions ─────────────
+// Vancomycin writes the instruction and its result in different sections:
+// "Reconstitute the 500 mg vial with 10 mL" under Dosage and Administration,
+// "When reconstituted with Sterile Water for Injection to a concentration of
+// 50 mg/mL, the pH of the solution is between 2.5 and 4.5" under Description.
+// Neither sentence resolves the vial alone; together they are exact.
+
+/** A reconstituted concentration stated anywhere in a label. */
+export interface LabelConcentration {
+  mgPerMl: number;
+  /** The vial it is stated for ("100 mg/mL for the 10 g bottle"), when it names one. */
+  vialMassMg: number | null;
+}
+
+/**
+ * "50 mg/mL", "50 mg per mL", "500 mg/10 mL", "50 mg of vancomycin/mL". Mass
+ * units only: epoprostenol's "3,000 ng/mL" is an infusion, and units/mL is
+ * not a mass.
+ */
+const STATED_CONCENTRATION =
+  /(\d[\d,]*(?:\.\d+)?)\s*(mcg|ug|mg|gm|grams?|g)\s*(?:of\s+[A-Za-z-]+\s*)?(?:\/|\s+per\s+)\s*(?:([\d.]+)\s*)?mL\b/gi;
+
+/** "Each 5 mL of reconstituted solution contains ... 250 mg". */
+const EACH_CONTAINS =
+  /\beach\s+([\d.]+)\s*mL\b[^;]{0,80}?\bcontains?\b[^;]{0,80}?\b([\d.]+)\s*(mcg|mg|gm|grams?|g)\b/gi;
+
+/** A limit, not a result: "to no more than 5 mg/mL", "not to exceed 10 mg/mL". */
+const LIMIT_BEFORE = /(?:no more than|not (?:to )?exceed|up to|less than|maximum(?: of)?|at least|final concentrations? of)\s*$/i;
+
+const VIAL_AFTER = /^\s*(?:for|in)\s+(?:the|each|a)\s+([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\b/i;
+
+/**
+ * Reconstituted concentrations a label states, wherever it states them.
+ *
+ * A concentration counts only when reconstitution is what produced it: the
+ * nearest governing verb before it is `reconstitut…`, never `dilut…` — the
+ * same label goes on to "further dilute to a final concentration of no more
+ * than 5 mg/mL", which is the bag. Limits are dropped for the same reason.
+ */
+export function statedReconstitutedConcentrations(text: string): LabelConcentration[] {
+  const found: LabelConcentration[] = [];
+  for (const sentence of sentences(text)) {
+    if (!/reconstitut/i.test(sentence)) continue;
+    for (const match of sentence.matchAll(STATED_CONCENTRATION)) {
+      const before = sentence.slice(0, match.index);
+      const verbs = [...before.matchAll(/\b(reconstitut\w*|dilut\w*|mix\w*|combin\w*)/gi)];
+      if (!verbs.length || !/^reconstitut/i.test(verbs[verbs.length - 1][1])) continue;
+      if (LIMIT_BEFORE.test(before)) continue;
+      const mass = toMg(match[1].replace(/,/g, ''), match[2]);
+      const per = match[3] ? finite(Number(match[3])) : 1;
+      if (mass === null || per === null) continue;
+      const vial = VIAL_AFTER.exec(sentence.slice(match.index + match[0].length));
+      found.push({ mgPerMl: mass / per, vialMassMg: vial ? toMg(vial[1], vial[2]) : null });
+    }
+    if (/dilut/i.test(sentence)) continue;
+    for (const match of sentence.matchAll(EACH_CONTAINS)) {
+      const mass = toMg(match[2], match[3]);
+      const per = finite(Number(match[1]));
+      if (mass !== null && per !== null) found.push({ mgPerMl: mass / per, vialMassMg: null });
+    }
+  }
+  const unique = new Map(found.map((c) => [`${c.mgPerMl}|${c.vialMassMg}`, c]));
+  return [...unique.values()];
+}
+
+/**
+ * Most diluent a gram of powder displaces. Labels run from almost none
+ * (vancomycin: 10 mL onto 500 mg yields 10 mL) to cefepime's 1.2 mL/g with its
+ * arginine; 1.5 leaves room for that and nothing like a wrong concentration.
+ */
+const MAX_DISPLACEMENT_ML_PER_G = 1.5;
+
+/**
+ * Give rows that state no result the one label concentration that fits them.
+ *
+ * A concentration fits a row when the volume it implies for the vial is what
+ * adding that row's diluent could produce: at least the diluent, and no more
+ * than the powder can displace on top of it. Pharmacy bulk labels state two
+ * ("50 mg/mL for the 5 g bottle and 100 mg/mL for the 10 g bottle"); the vial
+ * each names, or failing that the physics, picks one. A row that more than one
+ * fits, or none, keeps no concentration — it stays unresolved rather than guessed.
+ */
+export function withLabelConcentrations(
+  rows: readonly ProseReconstitution[],
+  stated: readonly LabelConcentration[],
+  vialMg: number | null
+): ProseReconstitution[] {
+  if (!stated.length) return [...rows];
+  return rows.map((row) => {
+    if (row.concentrations.length || row.finalVolumeMl != null) return row;
+    const mass = row.vialMassMg ?? vialMg;
+    if (!(mass && mass > 0)) return row;
+    const fitting = new Set(
+      stated
+        .filter((c) => c.vialMassMg === null || near(c.vialMassMg, mass) ||
+          Math.abs(c.vialMassMg - mass) <= SALT_TOLERANCE * Math.max(c.vialMassMg, mass))
+        .filter((c) => {
+          const yieldMl = mass / c.mgPerMl;
+          return (
+            yieldMl >= row.diluentMl * (1 - TOLERANCE) &&
+            yieldMl - row.diluentMl <= (mass / 1000) * MAX_DISPLACEMENT_ML_PER_G + TOLERANCE * yieldMl
+          );
+        })
+        .map((c) => c.mgPerMl)
+    );
+    if (fitting.size !== 1) return row;
+    return { ...row, concentrations: [{ name: null, mgPerMl: [...fitting][0] }] };
+  });
+}
+
 /**
  * Whether two rows could be the same instruction as far as route goes. A row
  * that names no route is compatible with any — the table and the prose often
@@ -413,6 +513,7 @@ export function dedupeProseReconstitutions(
       merged.set(`${concentration.name ?? ''}:${concentration.mgPerMl}`, concentration);
     }
     byInstruction.set(key, {
+      ...(previous.bottle || row.bottle ? { bottle: true as const } : {}),
       vialMassMg: row.vialMassMg ?? previous.vialMassMg,
       diluentMl: row.diluentMl,
       concentrations: [...merged.values()],
@@ -469,6 +570,88 @@ export const fromReconstitutionRows = (
     finalVolumeMl: row.finalVolumeMl,
     ...optionFields(row.routes, row.diluents)
   }));
+
+/**
+ * Bottle instructions stated in prose: vancomycin oral's "80 mL – Slowly add
+ * 80 mL water and shake vigorously", or "For the 100 mL bottle, add 69 mL of
+ * water". The water clause is required, which keeps "dilute in 1 oz of water"
+ * and the dosing paragraphs out.
+ */
+const BOTTLE_PROSE =
+  /\b([\d.]+)\s*mL(?:\s+bottle)?\s*(?:[–—:,-]|\s)\s*(?:slowly\s+)?add\s+([\d.]+)\s*mL\s+(?:of\s+)?(?:(?:purified|distilled|tap)\s+)?water\b/gi;
+
+export function parseBottleProse(
+  text: string
+): { bottleMl: number; waterMl: number; concentrationMgPerMl: null }[] {
+  const rows = new Map<string, { bottleMl: number; waterMl: number; concentrationMgPerMl: null }>();
+  for (const match of text.matchAll(BOTTLE_PROSE)) {
+    const bottleMl = finite(Number(match[1]));
+    const waterMl = finite(Number(match[2]));
+    if (bottleMl === null || waterMl === null || waterMl > bottleMl * (1 + TOLERANCE)) continue;
+    rows.set(`${bottleMl}|${waterMl}`, { bottleMl, waterMl, concentrationMgPerMl: null });
+  }
+  return [...rows.values()];
+}
+
+/**
+ * Bottle rows in the shape this module resolves. A bottle names no mass — its
+ * content is whatever its strength times its volume comes to — so the row is
+ * about any bottle of that finished volume, which is what `finalVolumeMl` says.
+ */
+export const fromBottleRows = (
+  rows: readonly { bottleMl: number; waterMl: number; concentrationMgPerMl: number | null }[]
+): ProseReconstitution[] =>
+  rows.map((row) => ({
+    vialMassMg: null,
+    diluentMl: row.waterMl,
+    concentrations:
+      row.concentrationMgPerMl === null ? [] : [{ name: null, mgPerMl: row.concentrationMgPerMl }],
+    finalVolumeMl: row.bottleMl,
+    bottle: true
+  }));
+
+/**
+ * Resolve a bottle whose strength is per volume ("400 mg/5mL") and whose
+ * carton states a volume, from the label's bottle rows.
+ *
+ * `resolveDryFillVolume` needs a content mass to divide, and an oral powder
+ * declares none: its strength is what the constituted suspension will be. The
+ * evidence here is different and just as direct — the label lists this bottle
+ * size and the water that makes it — so a row whose finished volume is the
+ * labeled one, at this package's strength when the row states one, settles
+ * the number as `final`. Rows that match but disagree on water resolve nothing.
+ */
+export function resolveBottleVolume(
+  labeledMl: number | null,
+  packageMgPerMl: number | null,
+  rows: readonly ProseReconstitution[]
+): ResolvedDryFillVolume {
+  const unresolved: ResolvedDryFillVolume = {
+    meaning: 'unknown',
+    finalVolumeMl: null,
+    diluentMl: null,
+    concentrationMgPerMl: null
+  };
+  if (labeledMl === null) return unresolved;
+  const matching = rows.filter(
+    (row) =>
+      row.bottle &&
+      row.finalVolumeMl != null &&
+      near(row.finalVolumeMl, labeledMl) &&
+      (!row.concentrations.length ||
+        (packageMgPerMl !== null &&
+          row.concentrations.some((c) => near(c.mgPerMl, packageMgPerMl))))
+  );
+  if (!matching.length || new Set(matching.map((row) => row.diluentMl)).size !== 1) return unresolved;
+  const row = matching[0];
+  return {
+    meaning: 'final',
+    finalVolumeMl: labeledMl,
+    diluentMl: row.diluentMl,
+    concentrationMgPerMl: packageMgPerMl,
+    ...(row.id ? { rowId: row.id } : {})
+  };
+}
 
 /**
  * A row's id: a hash of what it instructs, so it survives the reparse that
@@ -661,7 +844,10 @@ export function resolveDryFillVolume(
 
   // A row naming a vial mass is only about that vial. One naming none is
   // about whatever vial the label was fetched for, which is this one.
-  const applicable = rowsForVial(rows, total);
+  const applicable = rowsForVial(
+    rows.filter((row) => !row.bottle),
+    total
+  );
   if (!applicable.length) return unresolved;
 
   let resolved: ResolvedDryFillVolume | null = null;
