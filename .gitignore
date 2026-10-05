@@ -30,3 +30,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 /src/generated/prisma
+
+# Pill photos saved by hand for local mockup work; never committed or served in production
+/dev-pill-photos/*
+!/dev-pill-photos/README.md

@@ -100,6 +100,7 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
         labeler: facts.labelerName,
         size: facts.size,
         isMultiDose: facts.isMultiDose,
+        kit: item?.kit ?? null,
         preferenceRank: link.preferenceRank,
         status: link.package.entity.status
       }

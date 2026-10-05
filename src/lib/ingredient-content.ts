@@ -77,6 +77,29 @@ export function absoluteFillStrength(
 	return match[1].trim();
 }
 
+/**
+ * A powder constituted into a liquid given by mouth (or any non-injectable
+ * route): vancomycin "for Oral Solution", amoxicillin "for Oral Suspension".
+ */
+export const isOralDryFillForm = (dosageForm: string | null | undefined): boolean =>
+	isDryFillForm(dosageForm ?? '') && !/\bINJECT/i.test(dosageForm ?? '');
+
+/**
+ * The strength a dry-fill package should carry. An oral powder's per-volume
+ * strength is always the constituted concentration — "250 mg/5mL" is what
+ * every 5 mL of ANI's 80 mL vancomycin bottle will hold once mixed, not the
+ * 250 mg the bottle contains (it holds 4 g) — so it is kept as stated. An
+ * injectable dry fill follows `absoluteFillStrength`.
+ */
+export function dryFillStrength(
+	strength: string | null,
+	doseForm: string | null | undefined,
+	bulkFillMl: number | null = null,
+	fillVolumeMl: number | null = null
+): string | null {
+	return isOralDryFillForm(doseForm) ? strength : absoluteFillStrength(strength, bulkFillMl, fillVolumeMl);
+}
+
 /** The package volume in mL when the package is a pharmacy bulk package. */
 export function pharmacyBulkFillMl(
 	description: string | null | undefined,

@@ -17,6 +17,7 @@
 
 	type SyncSummary = {
 		concepts: number;
+		ndcs: number;
 		packages: number;
 		excluded: number;
 		partial: boolean;
@@ -45,6 +46,12 @@
 	const open = new SvelteSet<string>();
 	const pending = new SvelteSet<string>();
 	let notices: Record<string, { ok: boolean; text: string }> = $state({});
+	/** Per-concept package fetch, keyed by RxCUI; absent until the row is first expanded. */
+	type PackageState =
+		| { status: 'loading' }
+		| { status: 'loaded'; warning: string | null }
+		| { status: 'error'; message: string };
+	const packageState = new SvelteMap<string, PackageState>();
 	let controller: AbortController | undefined;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -95,10 +102,12 @@
 			staged = null;
 			sync = null;
 			notices = {};
+			packageState.clear();
 			message = results.length ? '' : `No local results for “${term}”. Checking live sources…`;
-			const externalResponse = await fetch(`/api/v1/search?q=${encodeURIComponent(term)}`, {
-				signal: request.signal
-			});
+			const externalResponse = await fetch(
+				`/api/v1/search?q=${encodeURIComponent(term)}&external=1`,
+				{ signal: request.signal }
+			);
 			const externalPayload = await externalResponse.json();
 			if (!externalResponse.ok) {
 				const msg = externalPayload.message ?? 'Live search could not be completed.';
@@ -113,11 +122,6 @@
 			if (controller !== request) return;
 			staged = externalPayload.staged;
 			sync = externalPayload.sync;
-			const externalIds = new Set(results.map((result) => result.id));
-			results = [
-				...results,
-				...externalPayload.results.filter((result: Result) => !externalIds.has(result.id))
-			];
 			message =
 				results.length || staged?.concepts.length || staged?.packages.length
 					? ''
@@ -146,7 +150,7 @@
 		loadingMore = true;
 		try {
 			const response = await fetch(
-				`/api/v1/search?q=${encodeURIComponent(term)}&offset=${nextOffset}`
+				`/api/v1/search?q=${encodeURIComponent(term)}&offset=${nextOffset}&external=1`
 			);
 			const payload = await response.json();
 			if (!response.ok) {
@@ -173,6 +177,7 @@
 				offset: payload.sync.offset,
 				total: payload.sync.total,
 				concepts: sync.concepts + payload.sync.concepts,
+				ndcs: sync.ndcs + payload.sync.ndcs,
 				packages: sync.packages + payload.sync.packages,
 				excluded: sync.excluded + payload.sync.excluded,
 				partial: sync.partial || payload.sync.partial,
@@ -192,6 +197,42 @@
 	function toggle(key: string) {
 		if (open.has(key)) open.delete(key);
 		else open.add(key);
+	}
+
+	/** Packages are fetched when a concept is first expanded, not with the search. */
+	async function loadPackages(concept: StagedConcept) {
+		const { rxcui } = concept;
+		const current = packageState.get(rxcui)?.status;
+		if (current === 'loading' || current === 'loaded') return;
+		if (!concept.ndcs.length) {
+			packageState.set(rxcui, { status: 'loaded', warning: null });
+			return;
+		}
+		const request = controller;
+		packageState.set(rxcui, { status: 'loading' });
+		try {
+			const response = await fetch(`/api/v1/search/packages?rxcui=${encodeURIComponent(rxcui)}`);
+			const payload = await response.json();
+			// A newer search replaced the list while this concept was in flight.
+			if (controller !== request) return;
+			if (!response.ok) {
+				packageState.set(rxcui, {
+					status: 'error',
+					message: payload.message ?? 'Packages could not be fetched.'
+				});
+				return;
+			}
+			const target = staged?.concepts.find((item) => item.rxcui === rxcui);
+			if (target) target.packages = payload.packages;
+			if (sync && payload.excluded) sync = { ...sync, excluded: sync.excluded + payload.excluded };
+			packageState.set(rxcui, { status: 'loaded', warning: payload.warning });
+		} catch (error) {
+			if (controller !== request) return;
+			packageState.set(rxcui, {
+				status: 'error',
+				message: error instanceof Error ? error.message : 'Packages could not be fetched.'
+			});
+		}
 	}
 
 	async function load(key: string, body: { rxcui: string } | { ndc: string }) {
@@ -317,11 +358,14 @@
 	{#if sync}
 		<section class:warning={sync.partial} class="import-status" aria-live="polite">
 			<strong
-				>Fetched {sync.concepts} clinical concept{sync.concepts === 1 ? '' : 's'} and {sync.packages}
-				package{sync.packages === 1 ? '' : 's'}</strong
+				>Fetched {sync.concepts} clinical concept{sync.concepts === 1 ? '' : 's'} listing {sync.ndcs}
+				NDC{sync.ndcs === 1 ? '' : 's'}{sync.packages
+					? ` and ${sync.packages} package${sync.packages === 1 ? '' : 's'}`
+					: ''}</strong
 			>
 			<span
-				>from RxNav, openFDA, and DailyMed. Nothing is added to the formulary until you load a node.</span
+				>from RxNav, openFDA, and DailyMed. Expand a concept to fetch its packages. Nothing is added
+				to the formulary until you load a node.</span
 			>
 			{#if sync.excluded}<span
 					>{sync.excluded} ineligible package{sync.excluded === 1 ? '' : 's'} found.</span
@@ -341,22 +385,25 @@
 			{#each staged.concepts as concept (concept.rxcui)}
 				{@const key = `c:${concept.rxcui}`}
 				{@const packages = visible(concept.packages)}
+				{@const fetched = packageState.get(concept.rxcui)}
 				<li class="node">
 					<div class="node-head">
 						<button
 							aria-expanded={open.has(key)}
 							class="twisty"
-							onclick={() => toggle(key)}
+							onclick={() => {
+								toggle(key);
+								if (open.has(key)) void loadPackages(concept);
+							}}
 							type="button">{open.has(key) ? '▾' : '▸'}</button
 						>
 						<div class="node-title">
 							<span class="kind">{concept.tty ?? 'concept'}</span>
 							<h3>{concept.name}</h3>
 							<p class="meta">
-								RxCUI <span class="mono">{concept.rxcui}</span> · {packages.length} package{packages.length ===
-								1
-									? ''
-									: 's'}{concept.details && concept.details.ndcCount > concept.ndcs.length
+								RxCUI <span class="mono">{concept.rxcui}</span> · {fetched?.status === 'loaded'
+									? `${packages.length} package${packages.length === 1 ? '' : 's'}`
+									: `${concept.ndcs.length} NDC${concept.ndcs.length === 1 ? '' : 's'}`}{concept.details && concept.details.ndcCount > concept.ndcs.length
 									? ` (of ${concept.details.ndcCount} in RxNorm)`
 									: ''}{concept.vetOnly ? ' · veterinary only' : ''}
 							</p>
@@ -427,13 +474,25 @@
 								</details>
 							{/if}
 						{/if}
-						<ul class="packages">
-							{#each packages as item (item.ndc)}
-								{@render packageNode(item)}
-							{:else}
-								<li class="muted">No eligible packages were returned.</li>
-							{/each}
-						</ul>
+						{#if fetched?.status === 'error'}
+							<p class="notice warning-text">
+								{fetched.message}
+								<button class="retry" onclick={() => void loadPackages(concept)} type="button"
+									>Retry</button
+								>
+							</p>
+						{:else if fetched?.status === 'loaded'}
+							{#if fetched.warning}<p class="notice warning-text">{fetched.warning}</p>{/if}
+							<ul class="packages">
+								{#each packages as item (item.ndc)}
+									{@render packageNode(item)}
+								{:else}
+									<li class="muted">No eligible packages were returned.</li>
+								{/each}
+							</ul>
+						{:else}
+							<p class="muted" aria-live="polite">Fetching packages…</p>
+						{/if}
 					{/if}
 				</li>
 			{/each}
@@ -834,6 +893,12 @@
 
 	.muted {
 		color: #7a8594;
+	}
+
+	.retry {
+		margin-left: 0.5rem;
+		padding: 0.2rem 0.6rem;
+		font-size: 0.8rem;
 	}
 
 	@media (max-width: 640px) {

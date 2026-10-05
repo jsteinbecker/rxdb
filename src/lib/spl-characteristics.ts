@@ -18,12 +18,13 @@ import type { SplCharacteristic, SplProduct } from './spl-ingredients';
 // `shapeGeometry` and `swatchesFor`. A rendering decision made here is made
 // once.
 
-/** The five observations that describe a pill. Everything else is skipped. */
+/** The five observations that describe a pill, and the photo of it. Everything else is skipped. */
 const COLOR = 'SPLCOLOR';
 const SHAPE = 'SPLSHAPE';
 const SIZE = 'SPLSIZE';
 const SCORE = 'SPLSCORE';
 const IMPRINT = 'SPLIMPRINT';
+const IMAGE = 'SPLIMAGE';
 
 /**
  * A product's appearance as its label states it.
@@ -51,8 +52,14 @@ export interface PillAppearance {
 	/** What the labeler wrote before the code flattened it: `pale yellow`. */
 	colorText: string | null;
 
-	/** Coded shape, uppercased as the vocabulary writes it: `ROUND`, `CAPSULE`. */
+	/**
+	 * Canonical shape term: `ROUND`, `CAPSULE`, `HEXAGON`. Taken from the NCI
+	 * code when the label carries one, so spelling variants in `displayName`
+	 * (`HEXAGON (6 SIDED)`, `SEMI-CIRCLE`) all land on the same term.
+	 */
 	shape: string | null;
+	/** The NCI Thesaurus code the shape was stated with: `C48348`. */
+	shapeCode: string | null;
 	/** The labeler's own words: `round, biconvex`. */
 	shapeText: string | null;
 
@@ -73,6 +80,41 @@ export interface PillAppearance {
 	 * so the renderer can split them rather than having to guess at a joiner.
 	 */
 	imprint: string | null;
+
+	/**
+	 * The imprint's layout in Imprint Layout Notation, saved by hand as a
+	 * property override (`details.spl.appearances.<i>.iln`). SPL never states
+	 * one; when absent the mockup uses the photo's measured layout or a guess.
+	 */
+	iln?: string | null;
+
+	/**
+	 * The tablet's side profile — `biconvex`, `flat-faced, bevel-edged` — which
+	 * SPL never codes. Only ever set by hand as a property override.
+	 */
+	profile?: string | null;
+
+	/**
+	 * Fields a property override set (`colors`, `shape`, …). The label's prose
+	 * refines everything else but leaves these as corrected.
+	 */
+	overridden?: string[];
+
+	/**
+	 * The label's photo of the product (`SPLIMAGE`), as a file name within the
+	 * label: `AHP48801.jpg`. With the label's set ID it is a DailyMed URL, and
+	 * `$lib/server/pill-image-store.ts` measures where the imprint sits in it.
+	 *
+	 * Optional because snapshots stored before it was parsed lack it.
+	 */
+	image?: string | null;
+
+	/**
+	 * The label's prose description this appearance was refined from, when
+	 * How Supplied or Dosage Forms & Strengths described it; see
+	 * `$lib/spl-appearance-text.ts`. Never stored — laid over at display time.
+	 */
+	labelText?: { section: string; text: string } | null;
 }
 
 /** Whether a decoded appearance says anything at all. */
@@ -83,9 +125,59 @@ export const hasAppearance = (appearance: PillAppearance): boolean =>
 	appearance.imprint !== null ||
 	(appearance.score !== null && appearance.score > 1);
 
+/**
+ * SPL's shape vocabulary (FDA SPL "Shape" value set), NCI code → canonical term.
+ *
+ * The terms are the vocabulary's own with the side-count parentheticals
+ * dropped — `HEXAGON (6 SIDED)` is HEXAGON — and are what `shapeGeometry`
+ * draws and `appearanceText` prints.
+ */
+export const SHAPE_CODES: Record<string, string> = {
+	C48335: 'BULLET',
+	C48336: 'CAPSULE',
+	C48337: 'CLOVER',
+	C48338: 'DIAMOND',
+	C48339: 'DOUBLE CIRCLE',
+	C48340: 'FREEFORM',
+	C48341: 'GEAR',
+	C48342: 'HEPTAGON',
+	C48343: 'HEXAGON',
+	C48344: 'OCTAGON',
+	C48345: 'OVAL',
+	C48346: 'PENTAGON',
+	C48347: 'RECTANGLE',
+	C48348: 'ROUND',
+	C48349: 'SEMI-CIRCLE',
+	C48350: 'SQUARE',
+	C48351: 'TEAR',
+	C48352: 'TRAPEZOID',
+	C48353: 'TRIANGLE'
+};
+
+/** A shape's display name without its parenthetical: `HEXAGON (6 SIDED)` → `HEXAGON`. */
+const canonicalShapeName = (name: string): string =>
+	name.replace(/\s*\([^)]*\)\s*/g, ' ').trim().toUpperCase();
+
+/** The canonical shape for an observation: by code when known, else by its name. */
+export function shapeTerm(code: string | null, name: string | null): string | null {
+	const byCode = code ? SHAPE_CODES[code.toUpperCase()] : undefined;
+	if (byCode) return byCode;
+	return name ? canonicalShapeName(name) || null : null;
+}
+
 const textOf = (characteristic: SplCharacteristic): string | null => {
 	const value = characteristic.value?.trim();
 	return value ? value : null;
+};
+
+/**
+ * The palette term for one `SPLCOLOR`. The coded value has no shades, so a
+ * labeler's own `dark blue` keeps its shade when it names the same colour.
+ */
+const codedColor = (entry: SplCharacteristic): string | null => {
+	const coded = colorTerm(textOf(entry));
+	const own = colorTerm(entry.originalText);
+	return own && coded && baseColor(own) === baseColor(coded) ? own : coded;
 };
 
 /**
@@ -104,23 +196,25 @@ export function appearanceOf(product: SplProduct): PillAppearance | null {
 	const size = of(SIZE)[0];
 	const score = of(SCORE)[0];
 	const imprint = of(IMPRINT)[0];
+	const image = of(IMAGE).find((entry) => entry.reference);
 
 	const appearance: PillAppearance = {
 		productCode: product.productCode,
 		colors: colors
-			.map(textOf)
-			.filter((color): color is string => !!color)
-			.map((color) => color.toLowerCase()),
+			.map(codedColor)
+			.filter((color): color is string => !!color),
 		// The first colour's own words. A two-tone capsule states one per
 		// colour and joining them would invent a phrase no labeler wrote.
 		colorText: colors.map((entry) => entry.originalText).find((text) => !!text) ?? null,
-		shape: shape ? (textOf(shape)?.toUpperCase() ?? null) : null,
+		shape: shape ? shapeTerm(shape.valueCode, textOf(shape)) : null,
+		shapeCode: shape?.valueCode ?? null,
 		shapeText: shape?.originalText ?? null,
 		// `mm` is the only unit the vocabulary permits here; a value in
 		// anything else is a label error and is dropped rather than drawn.
 		sizeMm: size && (size.unit === null || size.unit === 'mm') ? size.number : null,
 		score: score?.number ?? null,
-		imprint: imprint ? textOf(imprint) : null
+		imprint: imprint ? textOf(imprint) : null,
+		image: image?.reference ?? null
 	};
 
 	return hasAppearance(appearance) ? appearance : null;
@@ -177,6 +271,17 @@ export function isSolidDoseForm(form: string | null | undefined): boolean {
 // ── Rendering ────────────────────────────────────────────────────────────────
 
 /** Hex for each colour in the SPL colour vocabulary, plus a fallback. */
+/** Side profiles a tablet may be corrected to; SPL has no vocabulary for them. */
+export const PROFILE_CHOICES = [
+	'flat',
+	'flat-faced, bevel-edged',
+	'biconvex',
+	'shallow convex',
+	'deep convex',
+	'concave',
+	'biconcave'
+] as const;
+
 const PALETTE: Record<string, string> = {
 	white: '#f7f7f4',
 	'off-white': '#f2efe6',
@@ -195,7 +300,123 @@ const PALETTE: Record<string, string> = {
 };
 
 /** The swatch a bare colour name renders as; unknown names read as neutral. */
-export const swatchOf = (color: string): string => PALETTE[color.toLowerCase()] ?? '#dcdcd6';
+/** Colour names the mockup knows how to paint. */
+export const COLOR_CHOICES = Object.keys(PALETTE).filter((name) => name !== 'grey');
+
+/** Colour words → the SPL colour vocabulary `swatchOf` draws. */
+export const COLOR_WORDS: Record<string, string> = {
+	white: 'white',
+	'off-white': 'off-white',
+	offwhite: 'off-white',
+	ivory: 'off-white',
+	cream: 'off-white',
+	creamy: 'off-white',
+	'cream-colored': 'off-white',
+	beige: 'brown',
+	tan: 'brown',
+	buff: 'brown',
+	brown: 'brown',
+	brownish: 'brown',
+	chocolate: 'brown',
+	caramel: 'brown',
+	black: 'black',
+	gray: 'gray',
+	grey: 'gray',
+	grayish: 'gray',
+	silver: 'gray',
+	blue: 'blue',
+	bluish: 'blue',
+	navy: 'blue',
+	aqua: 'turquoise',
+	teal: 'turquoise',
+	turquoise: 'turquoise',
+	cyan: 'turquoise',
+	green: 'green',
+	greenish: 'green',
+	olive: 'green',
+	mint: 'green',
+	yellow: 'yellow',
+	yellowish: 'yellow',
+	lemon: 'yellow',
+	gold: 'yellow',
+	golden: 'yellow',
+	mustard: 'yellow',
+	orange: 'orange',
+	orangish: 'orange',
+	peach: 'orange',
+	apricot: 'orange',
+	coral: 'orange',
+	amber: 'orange',
+	rust: 'orange',
+	pink: 'pink',
+	pinkish: 'pink',
+	rose: 'pink',
+	salmon: 'pink',
+	red: 'red',
+	reddish: 'red',
+	maroon: 'red',
+	scarlet: 'red',
+	crimson: 'red',
+	burgundy: 'red',
+	purple: 'purple',
+	purplish: 'purple',
+	violet: 'purple',
+	lavender: 'purple',
+	lilac: 'purple',
+	mauve: 'purple',
+	plum: 'purple'
+};
+
+/**
+ * The palette term a free-text colour names, or null when it names none.
+ *
+ * Labels and hand edits say `LIGHT BLUE`, `white (black ink)` or `white,
+ * imprinted in red ink`; only the body colour may reach the swatch, never the
+ * ink, and an unrecognised word must not silently paint the pill neutral.
+ */
+export function colorTerm(raw: string | null | undefined): string | null {
+	if (!raw) return null;
+	const text = raw
+		.toLowerCase()
+		// Ink phrases name the imprint, not the body: "printed in black ink", "(red ink)".
+		.replace(/(?:\b(?:imprinted|printed|marked)\s+)?(?:\b(?:in|with|using)\s+)?(?:\b(?:light|dark|edible)\s+)*\b[a-z-]+\s+(?:edible\s+)?ink\b/g, ' ')
+		.replace(/\b(?:imprinted|printed|marked)\b.*$/g, ' ')
+		.trim();
+	const base = baseTerm(text);
+	return base && DARK_WORD.test(text) ? `dark ${base}` : base;
+}
+
+/** "dark"/"deep" in a colour phrase; kept so the swatch can show it. */
+const DARK_WORD = /\b(?:dark|deep)\b/;
+
+function baseTerm(text: string): string | null {
+	if (PALETTE[text]) return text === 'grey' ? 'gray' : text;
+	if (COLOR_WORDS[text]) return COLOR_WORDS[text];
+	for (const word of text.split(/[^a-z-]+/)) {
+		if (COLOR_WORDS[word]) return COLOR_WORDS[word];
+		for (const part of word.split('-')) if (COLOR_WORDS[part]) return COLOR_WORDS[part];
+	}
+	return null;
+}
+
+/** A colour term without its shade: `dark blue` → `blue`. For comparing colours. */
+export const baseColor = (term: string): string => term.replace(/^dark /, '');
+
+/** How much of the base swatch a `dark` colour keeps, per channel. */
+const DARKEN = 0.55;
+
+const darken = (hex: string): string =>
+	'#' +
+	[1, 3, 5]
+		.map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * DARKEN).toString(16).padStart(2, '0'))
+		.join('');
+
+export const swatchOf = (color: string): string => {
+	const term = colorTerm(color) ?? '';
+	const swatch = PALETTE[baseColor(term)];
+	if (!swatch) return '#dcdcd6';
+	return term === baseColor(term) ? swatch : darken(swatch);
+};
 
 /**
  * Fill colours for a pill, always at least one.
@@ -214,6 +435,8 @@ export interface ShapeGeometry {
 	/** Box-relative width and height, so an oblong is drawn wider than tall. */
 	width: number;
 	height: number;
+	/** The through-hole a composite shape carries (a `HOLES` id), drawn centred. */
+	hole?: string;
 }
 
 const roundedRect = (w: number, h: number, r: number): string => {
@@ -252,21 +475,28 @@ const ellipse = (w: number, h: number): string => {
  * rather than a misleading empty drawing.
  */
 export function shapeGeometry(shape: string | null): ShapeGeometry {
-	switch ((shape ?? '').toUpperCase().replace(/[^A-Z]/g, '')) {
+	const term = (shapeTerm(null, shape) ?? '').replace(/[^A-Z]/g, '');
+	// A letter-shaped through-hole: VDONUT, KDONUT, ADONUT ...
+	const letterHole = /^([A-Z])DONUT$/.exec(term);
+	if (letterHole) return { path: ellipse(84, 84), width: 84, height: 84, hole: letterHole[1] };
+	switch (term) {
 		case 'ROUND':
 			return { path: ellipse(84, 84), width: 84, height: 84 };
 		case 'OVAL':
 		case 'ELLIPTICAL':
 			return { path: ellipse(94, 62), width: 94, height: 62 };
-		case 'EGG':
-			return {
-				path: 'M50,8C72,8 91,25 91,48C91,72 72,91 50,91C28,91 13,75 13,53C13,30 27,8 50,8z',
-				width: 78,
-				height: 83
-			};
+		case 'THINOVAL':
+			return { path: ellipse(96, 42), width: 96, height: 42 };
+		case 'PAREN':
+			// Long sides bowed out, short ends bowed in: "( )".
+			return { path: 'M8,30Q50,16 92,30Q84,50 92,70Q50,84 8,70Q16,50 8,30z', width: 84, height: 54 };
+		case 'USHAPE':return { path: 'M12,14H88V52A38,38 0 0 1 12,52z', width: 76, height: 76 };
+		case 'SHIELD':return { path: 'M14,12H86V46C86,70 68,84 50,92C32,84 14,70 14,46z', width: 72, height: 80 };
+		case 'DONUT':return { path: ellipse(84, 84), width: 84, height: 84, hole: 'ROUND' };
+		case 'EGG':return {path: 'M50,8C72,8 91,25 91,48C91,72 72,91 50,91C28,91 13,75 13,53C13,30 27,8 50,8z', width: 78, height: 83};
 		case 'CAPSULE':
 		case 'CAPSULESHAPED':
-			return { path: roundedRect(96, 44, 22), width: 96, height: 44 };
+			return { path: roundedRect(96, 36, 18), width: 96, height: 44 };
 		case 'OBLONG':
 			return { path: roundedRect(94, 52, 14), width: 94, height: 52 };
 		case 'SQUARE':
@@ -281,12 +511,15 @@ export function shapeGeometry(shape: string | null): ShapeGeometry {
 			return { path: polygon(5), width: 84, height: 84 };
 		case 'HEXAGON':
 			return { path: polygon(6), width: 84, height: 84 };
+		case 'HEPTAGON':
+			return { path: polygon(7), width: 84, height: 84 };
 		case 'OCTAGON':
 			return { path: polygon(8), width: 84, height: 84 };
 		case 'SEMICIRCLE':
 			return { path: 'M8,72A42,42 0 0 1 92,72z', width: 84, height: 42 };
 		case 'TRAPEZOID':
 			return { path: 'M25,15h50l16,70H9z', width: 82, height: 70 };
+		case 'TEAR':
 		case 'TEARDROP':
 			return {
 				path: 'M50,7C50,7 84,42 84,64A34,34 0 1 1 16,64C16,42 50,7 50,7z',
@@ -338,6 +571,7 @@ export function shapeGeometry(shape: string | null): ShapeGeometry {
 		case 'BULLET':
 			return { path: 'M50,8C72,8 88,25 88,46v30H12V46C12,25 28,8 50,8z', width: 76, height: 68 };
 		case 'FREEFORM':
+		case 'CHARACTER':
 			return {
 				path: 'M17,29C23,10 49,8 66,16C84,24 90,45 80,63C72,78 52,91 33,84C14,77 8,49 17,29z',
 				width: 82,
@@ -400,8 +634,10 @@ export function appearanceText(appearance: PillAppearance): string {
 	const color =
 		appearance.colorText ?? (appearance.colors.length ? appearance.colors.join(' and ') : null);
 	if (color) parts.push(color);
-	const shape = appearance.shapeText ?? appearance.shape?.toLowerCase() ?? null;
+	const shape =
+		appearance.shapeText ?? shapeTerm(appearance.shapeCode, appearance.shape)?.toLowerCase() ?? null;
 	if (shape) parts.push(shape);
+	if (appearance.profile) parts.push(appearance.profile);
 	if (appearance.sizeMm !== null) parts.push(`${appearance.sizeMm} mm`);
 	if (appearance.score !== null && appearance.score > 1) {
 		parts.push(appearance.score === 2 ? 'scored' : `scored into ${appearance.score}`);

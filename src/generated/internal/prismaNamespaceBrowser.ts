@@ -107,7 +107,9 @@ export const ModelName = {
   BuildPlanLine: 'BuildPlanLine',
   BuildPlanFinding: 'BuildPlanFinding',
   OpenComponent: 'OpenComponent',
-  ScdDosingMeasure: 'ScdDosingMeasure'
+  ScdDosingMeasure: 'ScdDosingMeasure',
+  PillImageLayout: 'PillImageLayout',
+  PillPhoto: 'PillPhoto'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -207,7 +209,8 @@ export const FormularyItemScalarFieldEnum = {
   type: 'type',
   scopeId: 'scopeId',
   kind: 'kind',
-  displayName: 'displayName'
+  displayName: 'displayName',
+  releaseAbbreviation: 'releaseAbbreviation'
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
@@ -1008,6 +1011,31 @@ export const ScdDosingMeasureScalarFieldEnum = {
 } as const
 
 export type ScdDosingMeasureScalarFieldEnum = (typeof ScdDosingMeasureScalarFieldEnum)[keyof typeof ScdDosingMeasureScalarFieldEnum]
+
+
+export const PillImageLayoutScalarFieldEnum = {
+  setId: 'setId',
+  image: 'image',
+  imprint: 'imprint',
+  analyzerVersion: 'analyzerVersion',
+  status: 'status',
+  layout: 'layout',
+  error: 'error',
+  analyzedAt: 'analyzedAt'
+} as const
+
+export type PillImageLayoutScalarFieldEnum = (typeof PillImageLayoutScalarFieldEnum)[keyof typeof PillImageLayoutScalarFieldEnum]
+
+
+export const PillPhotoScalarFieldEnum = {
+  ndc: 'ndc',
+  part: 'part',
+  setId: 'setId',
+  image: 'image',
+  checkedAt: 'checkedAt'
+} as const
+
+export type PillPhotoScalarFieldEnum = (typeof PillPhotoScalarFieldEnum)[keyof typeof PillPhotoScalarFieldEnum]
 
 
 export const SortOrder = {

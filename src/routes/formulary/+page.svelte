@@ -282,7 +282,11 @@
 	<ul class="packages">
 		{#each items as row (`${row.formularyItemId}:${row.packageId}`)}
 			<li class:excluded={row.status !== 'active'}>
-				<a class="package" href={resolve('/formulary/ndc/[ndc]', { ndc: row.ndc })}>
+				<a
+					class="package"
+					href={resolve('/formulary/ndc/[ndc]', { ndc: row.ndc })}
+					data-nav-title={row.displayTitle ?? row.brandName ?? row.genericName ?? row.description ?? row.formularyItem}
+				>
 					<span class="mono ndc">{formatNdc(row.ndc)}</span>
 					<span class="desc">
 						{@render summedText(
@@ -324,6 +328,7 @@
 					{#if node.dimension === 'formularyItem' && nodeItemId(node)}
 						<a
 							class="item-link"
+							data-nav-title={node.label}
 							href={resolve('/formulary/items/[id]', { id: nodeItemId(node)! })}
 							aria-label="Open formulary item {node.label}">Item →</a
 						>

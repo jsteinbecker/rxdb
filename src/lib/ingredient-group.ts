@@ -142,6 +142,118 @@ const SALT_SENSITIVE = new Set([
 	'triamcinolone'
 ]);
 
+// ── One moiety, several names ────────────────────────────────────────────────
+// Stripping the counterion leaves `CLAVULANATE`, but the label's moiety and some
+// listings say `CLAVULANIC ACID` — the conjugate acid of the same anion. And a
+// handful of drugs arrive under their INN or BAN (`ARGIPRESSIN`, `SALBUTAMOL`).
+//
+// Both lists are explicit rather than a suffix rule: `-ate` → `-ic acid` would
+// turn methotrexate and glycopyrrolate into acids that do not exist, and a
+// moiety-UNII join would merge metoprolol's salts and every prodrug ester with
+// its parent. Each entry is a pair that names one substance.
+
+/**
+ * Conjugate pairs by stem: `<stem>ic acid` and `<stem>ate` are one moiety. The
+ * value is the name RxNorm's ingredient uses, which is the one we show.
+ */
+const CONJUGATES: Record<string, 'acid' | 'base'> = {
+	// Named for the anion
+	alendron: 'base',
+	clavulan: 'base',
+	clodron: 'base',
+	etidron: 'base',
+	ibandron: 'base',
+	pamidron: 'base',
+	risedron: 'base',
+	tiludron: 'base',
+	hyaluron: 'base',
+	meclofenam: 'base',
+	edet: 'base',
+	pentet: 'base',
+	diatrizo: 'base',
+	iothalam: 'base',
+	gadoben: 'base',
+	gadopentet: 'base',
+	gadoter: 'base',
+	gadoxet: 'base',
+	// Named for the acid
+	zoledron: 'acid',
+	valpro: 'acid',
+	ethacryn: 'acid',
+	tranexam: 'acid',
+	aminocapro: 'acid',
+	aminolevulin: 'acid',
+	aminosalicyl: 'acid',
+	mefenam: 'acid',
+	fusid: 'acid',
+	fol: 'acid',
+	ascorb: 'acid',
+	aspart: 'acid',
+	glutam: 'acid',
+	nalidix: 'acid',
+	obetichol: 'acid',
+	bempedo: 'acid',
+	undecylen: 'acid'
+};
+
+/** INN or BAN → the US adopted name, which is what RxNorm and US labels use. */
+const SYNONYMS: Record<string, string> = {
+	argipressin: 'vasopressin',
+	glycopyrronium: 'glycopyrrolate',
+	paracetamol: 'acetaminophen',
+	salbutamol: 'albuterol',
+	levosalbutamol: 'levalbuterol',
+	adrenaline: 'epinephrine',
+	noradrenaline: 'norepinephrine',
+	isoprenaline: 'isoproterenol',
+	lignocaine: 'lidocaine',
+	frusemide: 'furosemide',
+	glibenclamide: 'glyburide',
+	ciclosporin: 'cyclosporine',
+	rifampicin: 'rifampin',
+	aciclovir: 'acyclovir',
+	valaciclovir: 'valacyclovir',
+	cefalexin: 'cephalexin',
+	amoxycillin: 'amoxicillin',
+	colecalciferol: 'cholecalciferol',
+	phytomenadione: 'phytonadione',
+	pethidine: 'meperidine',
+	suxamethonium: 'succinylcholine',
+	dexamfetamine: 'dextroamphetamine',
+	mesalazine: 'mesalamine',
+	beclometasone: 'beclomethasone',
+	clomifene: 'clomiphene',
+	ethinylestradiol: 'ethinyl estradiol',
+	'glyceryl trinitrate': 'nitroglycerin',
+	'ursodeoxycholic acid': 'ursodiol',
+	'folinic acid': 'leucovorin',
+	'levofolinic acid': 'levoleucovorin',
+	'acetylsalicylic acid': 'aspirin'
+};
+
+/** `name` rewritten to the one name its moiety goes by, or null when it has no other. */
+function canonicalName(name: string): string | null {
+	const lower = name.toLowerCase();
+	if (SYNONYMS[lower]) return SYNONYMS[lower];
+	const acid = lower.match(/^(.+)ic acid$/);
+	if (acid && CONJUGATES[acid[1]] === 'base') return `${acid[1]}ate`;
+	const base = lower.match(/^(.+)ate$/);
+	if (base && CONJUGATES[base[1]] === 'acid') return `${base[1]}ic acid`;
+	return null;
+}
+
+/** `canonical` in the casing `source` was written in: all caps, title case or lower. */
+function inCasing(source: string, canonical: string): string {
+	if (source === source.toUpperCase()) return canonical.toUpperCase();
+	if (/^[A-Z]/.test(source)) return canonical.replace(/(^|\s)([a-z])/g, (_, lead, c) => lead + c.toUpperCase());
+	return canonical;
+}
+
+const resolved = (name: string) => {
+	const canonical = canonicalName(name);
+	return canonical ? inCasing(name, canonical) : name;
+};
+
 const HYDRATE = /hydrate$|^anhydrous$/;
 
 /** A trailing solvate phrase (`PROPYLENE GLYCOL SOLVATE`, `ETHANOLATE`) — a crystal form, not a different drug. */
@@ -151,7 +263,9 @@ const SOLVATE =
 /**
  * The name to group an active ingredient under, in its source casing:
  * `CEFEPIME HYDROCHLORIDE` → `CEFEPIME`, `Metoprolol Succinate` unchanged,
- * `POTASSIUM CHLORIDE` unchanged. Hydrate and solvate words are always dropped.
+ * `POTASSIUM CHLORIDE` unchanged. Hydrate and solvate words are always dropped,
+ * and a conjugate or INN spelling takes its moiety's one name: `CLAVULANIC ACID`
+ * → `CLAVULANATE`, `ARGIPRESSIN` → `VASOPRESSIN`.
  */
 export function ingredientGroup(name: string): string {
 	const words = name
@@ -169,8 +283,7 @@ export function ingredientGroup(name: string): string {
 
 	const base = [...words];
 	while (base.length > 1 && INCIDENTAL.has(lower(base.at(-1)!))) base.pop();
-	if (base.length === words.length) return salt;
-	if (base.length === 1 && ELEMENTS.has(lower(base[0]))) return salt;
+	if (base.length === 1 && ELEMENTS.has(lower(base[0])) && base.length < words.length) return salt;
 	if (SALT_SENSITIVE.has(base.map(lower).join(' '))) return salt;
-	return base.join(' ');
+	return resolved(base.join(' '));
 }

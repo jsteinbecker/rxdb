@@ -108,12 +108,23 @@ export interface SplCharacteristic {
 	code: string;
 	/** `displayName` for a coded value, the element's text for a plain one. */
 	value: string | null;
+	/**
+	 * The `code` of a coded (CE) value — an NCI Thesaurus concept such as
+	 * `C48348` for ROUND. Stabler than `displayName`, whose spelling varies
+	 * (`HEXAGON (6 SIDED)`, `SEMI-CIRCLE`) between labels and versions.
+	 */
+	valueCode: string | null;
 	/** What the labeler wrote when the code flattened it: `pale yellow`. */
 	originalText: string | null;
 	/** The `value` attribute of an INT or PQ value; null for anything else. */
 	number: number | null;
 	/** The unit of a PQ value — `mm`, for the one characteristic that has one. */
 	unit: string | null;
+	/**
+	 * The file an ED value points at — `AHP48801.jpg` for an `SPLIMAGE`, the
+	 * label's own photo of the product. A name within the label's media, not a URL.
+	 */
+	reference: string | null;
 }
 
 /** One product in a label, with the packages its ingredients describe. */
@@ -143,6 +154,21 @@ export interface SplProduct {
 	 * of its own (a kit part).
 	 */
 	presentation: SplPresentation | null;
+	/**
+	 * Set when the product is one `<part>` of a kit: how much of it the kit
+	 * holds (`7.5 g`, `145 mL`) and the kit's own product code. A kit part's
+	 * strength is per its own measure — vancomycin powder is `1 g/1 g` — so
+	 * this quantity is what turns the ratio into the bottle's content.
+	 */
+	part: SplPart | null;
+}
+
+/** A kit part's `<part><quantity>`, and the kit it belongs to. */
+export interface SplPart {
+	amount: number | null;
+	amountUnit: string | null;
+	/** The enclosing kit's labeler-product code, `65628-206`. */
+	kitCode: string | null;
 }
 
 /** One `<asContent>` level: how much product is in one container of `form`. */
@@ -288,7 +314,7 @@ const unitOf = (value: string | undefined): string | null =>
 function substanceOf(node: XmlNode): SplSubstance | null {
 	const name = nameOf(node);
 	if (!name) return null;
-	return { name, unii: codeOf(node, OID_UNII) };
+	return { name: withoutUnspecified(name), unii: codeOf(node, OID_UNII) };
 }
 
 function ingredientOf(node: XmlNode, sequence: number): SplIngredient | null {
@@ -385,9 +411,11 @@ function characteristicsIn(node: XmlNode): SplCharacteristic[] {
 			out.push({
 				code: name,
 				value: value.attrs.displayName ?? (text ? decode(text) : null),
+				valueCode: value.attrs.code?.trim() || null,
 				originalText: firstNamed(value, 'originalText')?.text.trim() || null,
 				number: numberOf(value.attrs.value),
-				unit: unitOf(value.attrs.unit)
+				unit: unitOf(value.attrs.unit),
+				reference: firstNamed(value, 'reference')?.attrs.value?.trim() || null
 			});
 		}
 	}
@@ -407,17 +435,45 @@ function characteristicsIn(node: XmlNode): SplCharacteristic[] {
 const isProduct = (node: XmlNode): boolean =>
 	node.children.some((child) => child.tag === 'ingredient');
 
+/** The kit a `<part>` belongs to: its carton codes and the part's quantity. */
+interface KitContext {
+	codes: string[];
+	part: SplPart;
+}
+
+/** A `<part>` element's quantity, attributed to `kit`, the element it sits in. */
+function kitContextOf(part: XmlNode, kit: XmlNode): KitContext {
+	const quantity = firstNamed(part, 'quantity');
+	const numerator = quantity && firstNamed(quantity, 'numerator');
+	// The kit's cartons, not its parts' own bottles: those are listed under
+	// each `<part>`, and a sibling part's bottle is not this part's package.
+	const codes: string[] = [];
+	for (const child of kit.children) if (child.tag !== 'part') packageCodesIn(child, codes);
+	return {
+		codes,
+		part: {
+			amount: numberOf(numerator?.attrs.value),
+			amountUnit: unitOf(numerator?.attrs.unit),
+			kitCode: codeOf(kit, OID_NDC)
+		}
+	};
+}
+
 function collectProducts(
 	node: XmlNode,
 	inherited: string[],
 	inheritedCharacteristics: SplCharacteristic[],
-	into: SplProduct[]
+	into: SplProduct[],
+	kit: KitContext | null = null
 ): void {
 	const own = packageCodesIn(node);
-	// A kit part has no packaging of its own: what it comes in is the kit's
-	// carton, so it is attributed there. Without this a kit's parts would parse
-	// to ingredient lists belonging to no NDC at all.
-	const packageCodes = own.length ? own : inherited;
+	// A kit part with no packaging of its own comes in the kit's carton, so it
+	// is attributed there. Without this a kit's parts would parse to ingredient
+	// lists belonging to no NDC at all. A part that has its own bottle NDC
+	// (Wilshire's 52536-094-05) is in the kit's carton all the same: it is
+	// attributed to both, or the kit would read as having no ingredients.
+	const packageCodes =
+		kit && isProduct(node) ? [...new Set([...own, ...kit.codes])] : own.length ? own : inherited;
 
 	// Appearance is stated one level up from the ingredients — see
 	// `SplProduct.characteristics` — so it descends the same way, and a product
@@ -440,13 +496,15 @@ function collectProducts(
 				packageCodes,
 				ingredients,
 				characteristics,
-				presentation: presentationOf(node)
+				presentation: presentationOf(node),
+				part: kit?.part ?? null
 			});
 		}
 	}
 
 	for (const child of node.children) {
-		collectProducts(child, packageCodes, characteristics, into);
+		const context = child.tag === 'part' ? kitContextOf(child, node) : isProduct(node) ? null : kit;
+		collectProducts(child, packageCodes, characteristics, into, context);
 	}
 }
 
@@ -466,9 +524,21 @@ export function parseSplIngredients(xml: string): SplProduct[] {
 	return products;
 }
 
+/**
+ * An ingredient name without the substance registry's `, UNSPECIFIED` qualifier
+ * and its variants (`GELATIN, UNSPECIFIED`, `MENTHOL, UNSPECIFIED FORM`,
+ * `CARBOMER, UNSPECIFIED TYPE`). The qualifier only says no grade or form was
+ * registered, so keeping it would split one substance into several for display
+ * and aggregation. It is dropped wherever it closes a name, including inside a
+ * combined name (`MENTHOL, UNSPECIFIED FORM AND METHYL SALICYLATE`).
+ */
+const UNSPECIFIED_QUALIFIER =
+	/\s*,\s*unspecified(?:\s+(?:form|type|grade|kind|source|species|variety|strain))?(?=\s*$|\s*[,;/]|\s+and\s)/gi;
+export const withoutUnspecified = (name: string): string => name.replace(UNSPECIFIED_QUALIFIER, '').trimEnd();
+
 /** Lowercased, whitespace-collapsed ingredient name — the dedupe and match key. */
 export const ingredientKeyOf = (name: string): string =>
-	String(name ?? '')
+	withoutUnspecified(String(name ?? ''))
 		.trim()
 		.toLowerCase()
 		.replace(/\s+/g, ' ');

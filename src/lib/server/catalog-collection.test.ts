@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { collectPackages } from './catalog-collection';
-import { snapshotPackage, type PackageSnapshot } from './catalog-cache';
+import { type PackageSnapshot, snapshotPackage } from './catalog-cache';
 import { packageFixture } from './catalog-test-fixtures';
 
 test('a new collector reads durable snapshots without another provider request or write', async () => {
@@ -78,5 +78,60 @@ test('a requested NDC does not wait for product-family sibling enrichment', asyn
 		save: async () => {}
 	});
 	assert.deepEqual(fetched, [[item.ndc]]);
-	assert.deepEqual(results.map((result) => result.ndc), [item.ndc]);
+	assert.deepEqual(
+		results.map((result) => result.ndc),
+		[item.ndc]
+	);
+});
+
+test('a rate-limited refetch keeps the product facts the failed provider supplied before', async () => {
+	const productSection = (overrides: object) =>
+		({
+			productType: null,
+			routes: [],
+			marketingCategory: null,
+			applicationNumber: null,
+			deaSchedule: null,
+			marketingStartDate: null,
+			listingExpirationDate: null,
+			finished: null,
+			pharmClasses: [],
+			rxcuis: [],
+			uniis: [],
+			manufacturers: [],
+			splId: null,
+			...overrides
+		}) as NonNullable<NonNullable<ReturnType<typeof packageFixture>['details']>['product']>;
+	const old = packageFixture();
+	old.details = {
+		product: productSection({
+			productType: 'HUMAN PRESCRIPTION DRUG',
+			marketingCategory: 'ANDA',
+			routes: ['INTRAVENOUS'],
+			rxcuis: ['1']
+		})
+	} as NonNullable<typeof old.details>;
+	// openFDA failed; RxNorm alone rebuilt the product section with a new rxcui.
+	const partial = packageFixture({
+		complete: false,
+		providerErrors: [{ source: 'openFDA', status: 429, message: 'rate limit exceeded' }]
+	});
+	partial.details = {
+		product: productSection({ rxcuis: ['2'] })
+	} as NonNullable<typeof partial.details>;
+	const [result] = await collectPackages(
+		[old.ndc],
+		{
+			load: async () =>
+				new Map([[old.ndc, snapshotPackage(old, new Date('2026-09-01T00:00:00Z'))]]),
+			fetch: async () => [partial],
+			save: async () => {}
+		},
+		new Date('2026-09-22T00:00:00Z')
+	);
+	assert.equal(result.details?.product?.productType, 'HUMAN PRESCRIPTION DRUG');
+	assert.equal(result.details?.product?.marketingCategory, 'ANDA');
+	assert.deepEqual(result.details?.product?.routes, ['INTRAVENOUS']);
+	assert.deepEqual(result.details?.product?.rxcuis, ['2']);
+	assert.equal(result.providerErrors?.[0].status, 429);
 });

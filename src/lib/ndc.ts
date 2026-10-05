@@ -97,3 +97,17 @@ export type ProductCode = string;
  */
 export const productCode = (ndc11: Ndc11): ProductCode | null =>
 	isNdc11(ndc11) ? ndc11.slice(0, 9) : null;
+
+/**
+ * The 10-digit hyphenation printed on the package, recovered from the labeled
+ * `product_ndc` openFDA returned (`0409-4887`). The package segment takes the
+ * remaining digits. Null when the product code is missing or does not
+ * normalize back to this NDC; callers can then fall back to `hyphenCandidates`.
+ */
+export function labeledNdc(ndc11: Ndc11, labeledProduct: string | null | undefined): string | null {
+	if (!isNdc11(ndc11) || !labeledProduct || !/^\d+-\d+$/.test(labeledProduct)) return null;
+	const pkgLength = 10 - labeledProduct.replace('-', '').length;
+	if (pkgLength < 1 || pkgLength > 2) return null;
+	const labeled = `${labeledProduct}-${ndc11.slice(11 - pkgLength)}`;
+	return toNdc11(labeled) === ndc11 ? labeled : null;
+}

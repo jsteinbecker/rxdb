@@ -1,6 +1,6 @@
 import { toNdc11 } from '../ndc';
 import { isFresh, mergePackage, type PackageSnapshot } from './catalog-cache';
-import { MAX_CONCEPTS, MAX_NDCS_PER_CONCEPT, type ExternalPackage } from './catalog-providers';
+import { type ExternalPackage } from './catalog-providers';
 
 type CollectionStore = {
 	load: (ndcs: string[]) => Promise<Map<string, PackageSnapshot>>;
@@ -15,10 +15,7 @@ export async function collectPackages(
 	now = new Date(),
 	{ force = false } = {}
 ) {
-	const unique = [...new Set(ndcs.map(toNdc11).filter((ndc): ndc is string => ndc !== null))].slice(
-		0,
-		MAX_CONCEPTS * MAX_NDCS_PER_CONCEPT
-	);
+	const unique = [...new Set(ndcs.map(toNdc11).filter((ndc): ndc is string => ndc !== null))];
 	if (!unique.length) return [];
 	const cached = await store.load(unique);
 	const missing = unique.filter(

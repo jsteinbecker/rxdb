@@ -1,6 +1,17 @@
 import type {ExternalPackage} from '$lib/server/catalog-providers';
 import type {AmbiguityTag} from './labeler-ambiguity';
 import {RECONSTITUTION_ROUTES, type ReconstitutionRoute} from './reconstitution-terms';
+import {guessIln} from './imprints/spl-to-iln';
+import {validateIln} from './imprints/iln-parse';
+import {toSplAppearance} from './imprints/iln-render';
+import {
+    COLOR_CHOICES,
+    colorTerm,
+    isSolidDoseForm,
+    type PillAppearance,
+    PROFILE_CHOICES,
+    SHAPE_CODES
+} from './spl-characteristics';
 
 /** How an equivalent NDC relates to the one being corrected. */
 export type EquivalentRelation = 'sibling' | 'concept';
@@ -8,13 +19,15 @@ export type EquivalentRelation = 'sibling' | 'concept';
 /**
  * A corrected value and what it cites: a passage of this package's SPL
  * (overrides saved before `source` existed are all SPL citations), a quoted
- * outside source, or the same field of an equivalent NDC.
+ * outside source, the same field of an equivalent NDC, or nothing at all.
  */
 export type PropertyOverride = {
   value: string;
   createdAt: string;
   /** Why the labeler's value was wrong, when the correction names a known pattern. */
   ambiguity?: AmbiguityTag;
+  /** The sibling NDC this was saved on, when copied here because the field is product-level. */
+  propagatedFrom?: string;
 } & (
   | {
       source?: 'spl';
@@ -33,7 +46,28 @@ export type PropertyOverride = {
       relation: EquivalentRelation;
       description: string | null;
     }
+  | { source: 'none' }
 );
+
+/**
+ * Fields that describe the product rather than one package of it, so a
+ * correction applies to every package NDC of the same product: appearance,
+ * ingredients, dose form, routes, names and product registration details.
+ */
+export const isProductLevelKey = (key: string): boolean =>
+  [
+    'brandName',
+    'genericName',
+    'labelerName',
+    'labelerCode',
+    'productCode',
+    'doseForm',
+    'splPresent',
+    'isVeterinary'
+  ].includes(key) ||
+  key.startsWith('details.product.') ||
+  key.startsWith('details.spl.appearances.') ||
+  key.startsWith('details.spl.ingredients.');
 
 /** An NDC whose values may stand in for this one's, with each overridable value it has. */
 export type EquivalentPackage = {
@@ -141,6 +175,23 @@ export const RECONSTITUTION_OVERRIDE_KEY =
 /** `details.spl.ingredients.<index>.strength`: an ingredient's labeled amount. */
 export const INGREDIENT_STRENGTH_KEY = /^details\.spl\.ingredients\.(\d+)\.strength$/;
 
+/** `details.spl.appearances.<index>.iln`: a pill's imprint layout, in ILN. */
+export const PILL_ILN_KEY = /^details\.spl\.appearances\.(\d+)\.iln$/;
+export const pillIlnKey = (index: number) => `details.spl.appearances.${index}.iln`;
+
+/** `details.spl.appearances.<index>.<field>`: one coded fact about a pill. */
+export const PILL_FIELD_KEY =
+  /^details\.spl\.appearances\.(\d+)\.(colors|shape|sizeMm|score|imprint|profile)$/;
+const PILL_FIELDS = [
+  ['colors', 'colors'],
+  ['shape', 'shape'],
+  ['sizeMm', 'size (mm)'],
+  ['score', 'score (pieces it divides into)'],
+  ['profile', 'profile (flat, biconvex, concave…)']
+] as const;
+const SHAPE_CHOICES = [...new Set(Object.values(SHAPE_CODES))];
+const SCORE_CHOICES = ['1', '2', '3', '4'] as const;
+
 /** The id the next user-added reconstitution row takes. */
 export function nextAddedRowId(
   item: Pick<ExternalPackage, 'reconstitution' | 'propertyOverrides'>
@@ -185,13 +236,14 @@ const describeRow = (row: ReconRow, index: number) =>
     .join(' · ')})`;
 
 export function overrideTargets(
-  item: Pick<ExternalPackage, 'reconstitution' | 'size' | 'details'> &
+  item: Pick<ExternalPackage, 'reconstitution' | 'size' | 'details' | 'doseForm'> &
     Partial<Pick<ExternalPackage, 'propertyOverrides'>>
 ): { key: string; label: string }[] {
   return [
     ...textFields
       .filter(([key]) => !key.startsWith('details.product.') || item.details?.product)
       .map(([key, label]) => ({ key, label })),
+    { key: 'manualExclusion', label: 'Formulary exclusion reason' },
     { key: 'doseForm', label: 'Dose form (choose any)' },
     ...(item.details?.product
       ? [{ key: 'details.product.routes', label: 'Routes (choose any)' }]
@@ -234,6 +286,18 @@ export function overrideTargets(
       key: `reconstitution.${nextAddedRowId({ propertyOverrides: {}, ...item })}.diluentMl`,
       label: 'New reconstitution row: diluent to add (mL)'
     },
+    ...(isSolidDoseForm(item.doseForm) ? (item.details?.spl?.appearances ?? []) : []).map(
+      (appearance, index, all) => {
+        const name = `Pill appearance${all.length > 1 ? ` ${index + 1}${appearance.productCode ? ` (${appearance.productCode})` : ''}` : ''}`;
+        return [
+          ...PILL_FIELDS.map(([field, label]) => ({
+            key: `details.spl.appearances.${index}.${field}`,
+            label: `${name}: ${label}`
+          })),
+          { key: pillIlnKey(index), label: `${name}: imprint layout (ILN)` }
+        ];
+      }
+    ).flat(),
     ...(item.details?.spl?.ingredients ?? []).flatMap((ingredient, index) =>
       ingredient.kind === 'ionic'
         ? []
@@ -324,6 +388,12 @@ export const splitMulti = (value: string, separator: string): string[] =>
     .filter(Boolean);
 
 function resolveField(key: string): OverrideField | null {
+  if (key === 'manualExclusion')
+    return field({
+      valid: isText(500),
+      get: (item) => text(item.manualExclusion),
+      set: (item, value) => Object.assign(item, { manualExclusion: value })
+    });
   if (key === 'doseForm')
     return field({
       choices: DOSE_FORM_CHOICES,
@@ -426,6 +496,92 @@ function resolveField(key: string): OverrideField | null {
       set: (item, value) => Object.assign(target(item), { [volume]: Number(value) }),
       correctsVolume: true
     });
+  }
+
+  const pill = PILL_ILN_KEY.exec(key);
+  if (pill) {
+    const index = Number(pill[1]);
+    return field({
+      valid: (value) => value.length <= 500 && validateIln(value).ok,
+      // What the mockup draws without an override: the guess from SPL.
+      get: (item) => {
+        const appearance = item.details?.spl?.appearances[index];
+        if (!appearance) return null;
+        return appearance.iln ?? guessIln(toSplAppearance(appearance, item.doseForm)).iln;
+      },
+      set: (item, value) => {
+        const appearance = item.details?.spl?.appearances[index];
+        if (appearance) appearance.iln = value.trim();
+      }
+    });
+  }
+
+  const pillField = PILL_FIELD_KEY.exec(key);
+  if (pillField) {
+    const index = Number(pillField[1]);
+    const name = pillField[2] as (typeof PILL_FIELDS)[number][0] | 'imprint';
+    const appearanceOf = (item: Pkg) => item.details?.spl?.appearances[index];
+    const mark = (appearance: PillAppearance) => {
+      appearance.overridden = [...new Set([...(appearance.overridden ?? []), name])];
+    };
+    const set = (apply: (appearance: PillAppearance, value: string) => void) => (item: Pkg, value: string) => {
+      const appearance = appearanceOf(item);
+      if (!appearance) return;
+      apply(appearance, value.trim());
+      mark(appearance);
+    };
+    switch (name) {
+      case 'colors':
+        return field({
+          choices: COLOR_CHOICES,
+          separator: ', ',
+          valid: (value) => isText(200)(value) && splitMulti(value, ',').length > 0,
+          get: (item) => appearanceOf(item)?.colors.join(', ') || null,
+          set: set((appearance, value) => {
+            appearance.colors = splitMulti(value, ',')
+              .map(colorTerm)
+              .filter((color): color is string => !!color);
+            appearance.colorText = null;
+          })
+        });
+      case 'shape':
+        return field({
+          choices: SHAPE_CHOICES,
+          valid: (value) => SHAPE_CHOICES.includes(value),
+          get: (item) => appearanceOf(item)?.shape ?? null,
+          set: set((appearance, value) => {
+            appearance.shape = value;
+            appearance.shapeCode = null;
+            appearance.shapeText = null;
+          })
+        });
+      case 'sizeMm':
+        return numberField(positive('mm'), {
+          get: (item) => text(appearanceOf(item)?.sizeMm),
+          set: set((appearance, value) => (appearance.sizeMm = Number(value)))
+        });
+      case 'score':
+        return field({
+          choices: SCORE_CHOICES,
+          valid: (value) => (SCORE_CHOICES as readonly string[]).includes(value),
+          get: (item) => text(appearanceOf(item)?.score),
+          set: set((appearance, value) => (appearance.score = Number(value)))
+        });
+      case 'profile':
+        return field({
+          choices: PROFILE_CHOICES,
+          valid: isText(100),
+          get: (item) => appearanceOf(item)?.profile ?? null,
+          set: set((appearance, value) => (appearance.profile = value))
+        });
+      // No longer offered (the ILN carries the imprint); kept so saved overrides still apply.
+      case 'imprint':
+        return field({
+          valid: isText(200),
+          get: (item) => appearanceOf(item)?.imprint ?? null,
+          set: set((appearance, value) => (appearance.imprint = value))
+        });
+    }
   }
 
   const ingredient = INGREDIENT_STRENGTH_KEY.exec(key);
@@ -557,6 +713,9 @@ export function equivalentValues(item: Pkg, source: Pkg): Record<string, string>
   for (const { key } of overrideTargets(item)) {
     // Adding or removing a row is the user's call, not something to copy.
     if (key.endsWith('.removed') || /^reconstitution\.a\d+\./.test(key)) continue;
+    // Another product's guessed layout says nothing; only a saved one is worth copying.
+    const pill = PILL_ILN_KEY.exec(key);
+    if (pill && !source.details?.spl?.appearances[Number(pill[1])]?.iln) continue;
     let value = overrideCurrentValue(source, key);
     const match = value == null ? RECONSTITUTION_OVERRIDE_KEY.exec(key) : null;
     if (match) {

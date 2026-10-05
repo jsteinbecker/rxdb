@@ -17,7 +17,7 @@
 
 import * as runtime from "@prisma/client/runtime/client"
 import type * as Prisma from "../models.ts"
-import { type PrismaClient } from "./class.ts"
+import {type PrismaClient} from "./class.ts"
 
 export type * from '../models.ts'
 
@@ -453,7 +453,9 @@ export const ModelName = {
   BuildPlanLine: 'BuildPlanLine',
   BuildPlanFinding: 'BuildPlanFinding',
   OpenComponent: 'OpenComponent',
-  ScdDosingMeasure: 'ScdDosingMeasure'
+  ScdDosingMeasure: 'ScdDosingMeasure',
+  PillImageLayout: 'PillImageLayout',
+  PillPhoto: 'PillPhoto'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -469,7 +471,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4691,6 +4693,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PillImageLayout: {
+      payload: Prisma.$PillImageLayoutPayload<ExtArgs>
+      fields: Prisma.PillImageLayoutFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PillImageLayoutFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PillImageLayoutFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>
+        }
+        findFirst: {
+          args: Prisma.PillImageLayoutFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PillImageLayoutFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>
+        }
+        findMany: {
+          args: Prisma.PillImageLayoutFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>[]
+        }
+        create: {
+          args: Prisma.PillImageLayoutCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>
+        }
+        createMany: {
+          args: Prisma.PillImageLayoutCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PillImageLayoutCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>[]
+        }
+        delete: {
+          args: Prisma.PillImageLayoutDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>
+        }
+        update: {
+          args: Prisma.PillImageLayoutUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>
+        }
+        deleteMany: {
+          args: Prisma.PillImageLayoutDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PillImageLayoutUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PillImageLayoutUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>[]
+        }
+        upsert: {
+          args: Prisma.PillImageLayoutUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillImageLayoutPayload>
+        }
+        aggregate: {
+          args: Prisma.PillImageLayoutAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePillImageLayout>
+        }
+        groupBy: {
+          args: Prisma.PillImageLayoutGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PillImageLayoutGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PillImageLayoutCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PillImageLayoutCountAggregateOutputType> | number
+        }
+      }
+    }
+    PillPhoto: {
+      payload: Prisma.$PillPhotoPayload<ExtArgs>
+      fields: Prisma.PillPhotoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PillPhotoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PillPhotoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>
+        }
+        findFirst: {
+          args: Prisma.PillPhotoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PillPhotoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>
+        }
+        findMany: {
+          args: Prisma.PillPhotoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>[]
+        }
+        create: {
+          args: Prisma.PillPhotoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>
+        }
+        createMany: {
+          args: Prisma.PillPhotoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PillPhotoCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>[]
+        }
+        delete: {
+          args: Prisma.PillPhotoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>
+        }
+        update: {
+          args: Prisma.PillPhotoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>
+        }
+        deleteMany: {
+          args: Prisma.PillPhotoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PillPhotoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PillPhotoUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>[]
+        }
+        upsert: {
+          args: Prisma.PillPhotoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PillPhotoPayload>
+        }
+        aggregate: {
+          args: Prisma.PillPhotoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePillPhoto>
+        }
+        groupBy: {
+          args: Prisma.PillPhotoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PillPhotoGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PillPhotoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PillPhotoCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -4815,7 +4965,8 @@ export const FormularyItemScalarFieldEnum = {
   type: 'type',
   scopeId: 'scopeId',
   kind: 'kind',
-  displayName: 'displayName'
+  displayName: 'displayName',
+  releaseAbbreviation: 'releaseAbbreviation'
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
@@ -5618,6 +5769,31 @@ export const ScdDosingMeasureScalarFieldEnum = {
 export type ScdDosingMeasureScalarFieldEnum = (typeof ScdDosingMeasureScalarFieldEnum)[keyof typeof ScdDosingMeasureScalarFieldEnum]
 
 
+export const PillImageLayoutScalarFieldEnum = {
+  setId: 'setId',
+  image: 'image',
+  imprint: 'imprint',
+  analyzerVersion: 'analyzerVersion',
+  status: 'status',
+  layout: 'layout',
+  error: 'error',
+  analyzedAt: 'analyzedAt'
+} as const
+
+export type PillImageLayoutScalarFieldEnum = (typeof PillImageLayoutScalarFieldEnum)[keyof typeof PillImageLayoutScalarFieldEnum]
+
+
+export const PillPhotoScalarFieldEnum = {
+  ndc: 'ndc',
+  part: 'part',
+  setId: 'setId',
+  image: 'image',
+  checkedAt: 'checkedAt'
+} as const
+
+export type PillPhotoScalarFieldEnum = (typeof PillPhotoScalarFieldEnum)[keyof typeof PillPhotoScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -6180,6 +6356,8 @@ export type GlobalOmitConfig = {
   buildPlanFinding?: Prisma.BuildPlanFindingOmit
   openComponent?: Prisma.OpenComponentOmit
   scdDosingMeasure?: Prisma.ScdDosingMeasureOmit
+  pillImageLayout?: Prisma.PillImageLayoutOmit
+  pillPhoto?: Prisma.PillPhotoOmit
 }
 
 /* Types for Logging */

@@ -1,6 +1,7 @@
 <script lang="ts">
       import {resolve} from '$app/paths';
       import {afterNavigate} from '$app/navigation';
+      import {enhance} from '$app/forms';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
       import ReinterpretDialog from '$lib/components/ReinterpretDialog.svelte';
       import DosingMeasureForm from '$lib/components/DosingMeasureForm.svelte';
@@ -11,8 +12,8 @@
 
       let fromFormulary = $state(false);
       let reinterpret: ReinterpretDialog;
-      let editing = $state(false);
       let editKeys = $state<string[]>([]);
+      let excludeDialog: HTMLDialogElement;
 
       afterNavigate(({from}) => (fromFormulary = from?.url.pathname === '/formulary'));
 
@@ -40,7 +41,7 @@
             <h1>
                   {displayTitle ?? item.brandName ?? item.genericName ?? item.description ?? `NDC ${item.ndc}`}
             </h1>
-            {#if item.labelerName}<p class="sub">{item.labelerName}</p>{/if}
+            {#if item.labelerName}<p class="sub"><a href={resolve('/formulary/labeler/[code]', {code: item.ndc.slice(0, 5)})}>{item.labelerName}</a></p>{/if}
             {#if data.formularyItems.length}
                   <p class="sub">
                         On formulary as
@@ -51,22 +52,46 @@
                         {/each}
                   </p>
             {/if}
+            {#if item.manualExclusion}
+                  <form class="sub exclusion" method="POST" action="?/include" use:enhance>
+                        <span class="excluded">Excluded from formulary:</span> {item.manualExclusion}
+                        <button class="link" type="submit">Include again</button>
+                  </form>
+            {:else}
+                  <button class="link exclude" onclick={() => excludeDialog.showModal()} type="button">
+                        Exclude from formulary…
+                  </button>
+            {/if}
             <button class="action" onclick={() => reinterpret.open()} type="button">
                   Reload &amp; Reinterpret Results
             </button>
-            <button
-                  aria-pressed={editing}
-                  class="override-action"
-                  onclick={() => {
-        editing = !editing;
-        editKeys = [];
-      }}
-                  type="button">{editing ? 'Done overriding' : 'Override properties'}</button
-            >
       </header>
+      <dialog bind:this={excludeDialog}>
+            <form
+                  method="POST"
+                  action="?/exclude"
+                  use:enhance={() =>
+                        async ({update}) => {
+                              await update();
+                              if (!form?.message) excludeDialog.close();
+                        }}
+            >
+                  <h2>Exclude {formatNdc(item.ndc)}</h2>
+                  <p>It is unlinked from any formulary item and skipped by future loads.</p>
+                  <label>
+                        Reason
+                        <textarea name="reason" maxlength="500" required rows="3"></textarea>
+                  </label>
+                  {#if form?.message}<p class="error">{form.message}</p>{/if}
+                  <div class="dialog-actions">
+                        <button class="link" type="button" onclick={() => excludeDialog.close()}>Cancel</button>
+                        <button class="action-inline" type="submit">Exclude</button>
+                  </div>
+            </form>
+      </dialog>
       <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.message ?? null}/>
       <div class="body" class:with-panel={editKeys.length}>
-            <PackageDetail {editKeys} {editing} {item} onedit={(keys) => (editKeys = keys)}/>
+            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} onedit={(keys) => (editKeys = keys)}/>
             {#if editKeys.length}
                   {#key editKeys}
                         <div class="panel-slot">
@@ -74,6 +99,7 @@
                                     {item}
                                     keys={editKeys}
                                     equivalents={data.equivalents}
+                                    pillMedia={data.pillMedia}
                                     onclose={() => (editKeys = [])}
                               />
                         </div>
@@ -140,28 +166,6 @@
             background: #eef3fa;
       }
 
-      .override-action {
-            margin-top: 0.65rem;
-            border: 0;
-            background: none;
-            color: #3464a5;
-            font: inherit;
-            font-size: 0.85rem;
-            font-weight: 650;
-            cursor: pointer;
-      }
-
-      .override-action:disabled {
-            color: #8993a0;
-            cursor: default;
-      }
-
-      .override-action[aria-pressed='true'] {
-            padding: 0.2rem 0.6rem;
-            border-radius: 999px;
-            background: #eef3fa;
-      }
-
       main:has(.with-panel) {
             max-width: 1440px;
       }
@@ -219,6 +223,86 @@
       .sub {
             margin: 0.4rem 0 0;
             color: #5c6777;
+      }
+
+      .link {
+            padding: 0;
+            border: 0;
+            background: none;
+            color: #3464a5;
+            font: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+      }
+
+      .link:hover {
+            text-decoration: underline;
+      }
+
+      .exclude {
+            margin-top: 0.4rem;
+            color: #a4461a;
+      }
+
+      .exclusion .link {
+            margin-left: 0.5rem;
+      }
+
+      .excluded {
+            color: #a4461a;
+            font-weight: 650;
+      }
+
+      dialog {
+            width: min(28rem, calc(100vw - 2rem));
+            border: 1px solid #c9d6e8;
+            border-radius: 0.65rem;
+            padding: 1.1rem 1.25rem;
+      }
+
+      dialog h2 {
+            margin: 0 0 0.4rem;
+            font-size: 1.05rem;
+      }
+
+      dialog p {
+            margin: 0 0 0.75rem;
+            color: #5c6777;
+            font-size: 0.85rem;
+      }
+
+      dialog label {
+            display: grid;
+            gap: 0.3rem;
+            font-size: 0.85rem;
+      }
+
+      dialog textarea {
+            font: inherit;
+      }
+
+      dialog .error {
+            margin: 0.6rem 0 0;
+            color: #a4461a;
+      }
+
+      .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 0.9rem;
+      }
+
+      .action-inline {
+            padding: 0.4rem 0.9rem;
+            border: 0;
+            border-radius: 7px;
+            background: #a4461a;
+            color: #fff;
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 650;
+            cursor: pointer;
       }
 
       .mono {

@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { toNdc11, hyphenCandidates } from '../ndc';
+import { hyphenCandidates, toNdc11 } from '../ndc';
+import type { SplProduct } from '../spl-ingredients';
 import {
 	discoverRxNav,
 	enrichPackages,
+	labelIngredientsOf,
+	providerFailures,
 	routesFromLabelText,
 	routesFromProductText
 } from './catalog-providers';
@@ -460,6 +463,69 @@ test('package enrichment does not borrow an unmatched sibling SPL dose form', as
 			item.details?.spl?.ingredients.map((ingredient) => ingredient.name),
 			['TWO']
 		);
+	} finally {
+		globalThis.fetch = original;
+	}
+});
+
+test("label ingredients come from this NDC's own SPL product, actives first, once each", () => {
+	const product = (code: string, names: [string, 'active' | 'inactive'][]) =>
+		({
+			productCode: code,
+			packageCodes: [],
+			ingredients: names.map(([name, kind]) => ({ name, kind }))
+		}) as unknown as SplProduct;
+	const own = product('0143-9001', [
+		['SODIUM HYDROXIDE', 'inactive'],
+		['VANCOMYCIN', 'active'],
+		['GELATIN, UNSPECIFIED', 'inactive'],
+		['Sodium  hydroxide', 'inactive']
+	]);
+	const sibling = product('0143-9002', [['LIDOCAINE', 'active']]);
+	assert.deepEqual(labelIngredientsOf([own, sibling, own], [own, own]), [
+		{ name: 'VANCOMYCIN', kind: 'active' },
+		{ name: 'SODIUM HYDROXIDE', kind: 'inactive' },
+		{ name: 'GELATIN', kind: 'inactive' }
+	]);
+	// No product names this NDC: every product's, still once each.
+	assert.deepEqual(
+		labelIngredientsOf([own, sibling], []).map((item) => item.name),
+		['VANCOMYCIN', 'LIDOCAINE', 'SODIUM HYDROXIDE', 'GELATIN']
+	);
+});
+
+test('provider failures name each failed source once and call out rate limits', () => {
+	const timeout = Object.assign(new Error('aborted'), { name: 'TimeoutError' });
+	const failures = providerFailures([
+		['openFDA', { status: 'rejected', reason: new Error('x') }],
+		['openFDA', { status: 'rejected', reason: new Error('y') }],
+		['DailyMed', { status: 'fulfilled', value: {} }],
+		['RxNav', { status: 'rejected', reason: timeout }]
+	]);
+	assert.deepEqual(
+		failures.map((f) => [f.source, f.message]),
+		[
+			['openFDA', 'did not answer'],
+			['RxNav', 'timed out']
+		]
+	);
+});
+
+test('an openFDA rate limit is reported on the package instead of read as unlisted', async () => {
+	const original = globalThis.fetch;
+	globalThis.fetch = async (input) => {
+		const url = new URL(String(input));
+		if (url.hostname === 'api.fda.gov')
+			return Response.json({ error: { code: 'OVER_RATE_LIMIT' } }, { status: 429 });
+		return Response.json({});
+	};
+	try {
+		const [item] = await enrichPackages(['70594004302']);
+		assert.deepEqual(item.providerErrors, [
+			{ source: 'openFDA', status: 429, message: 'rate limit exceeded' }
+		]);
+		assert.equal(item.listed, null);
+		assert.equal(item.complete, false);
 	} finally {
 		globalThis.fetch = original;
 	}

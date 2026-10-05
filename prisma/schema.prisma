@@ -4,1461 +4,1497 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider        = "prisma-client"
-  output          = "../src/generated"
-  previewFeatures = ["typedSql"]
+      provider        = "prisma-client"
+      output          = "../src/generated"
+      previewFeatures = ["typedSql"]
 }
 
 datasource db {
-  provider = "postgresql"
+      provider = "postgresql"
 }
 
 // ---------------------------------------------------------------------
 // Enums
 // ---------------------------------------------------------------------
 enum ScopeKind {
-  global
-  org
-  site
-  formulary
+      global
+      org
+      site
+      formulary
 
-  @@map("scope_kind")
+      @@map("scope_kind")
 }
 
 enum EntityType {
-  package
-  product
-  clinical_drug
-  ingredient
-  labeler
-  spl
-  formulary_item
+      package
+      product
+      clinical_drug
+      ingredient
+      labeler
+      spl
+      formulary_item
 
-  @@map("entity_type")
+      @@map("entity_type")
 }
 
 enum ValueType {
-  text
-  code
-  number
-  quantity
-  rational
-  boolean
-  date
-  entity_ref
-  json
+      text
+      code
+      number
+      quantity
+      rational
+      boolean
+      date
+      entity_ref
+      json
 
-  @@map("value_type")
+      @@map("value_type")
 }
 
 enum ResolutionState {
-  asserted
-  derived
-  overridden
-  conflicted
-  unknown
+      asserted
+      derived
+      overridden
+      conflicted
+      unknown
 
-  @@map("resolution_state")
+      @@map("resolution_state")
 }
 
 enum MappingType {
-  exact
-  equivalent
-  broader
-  narrower
-  candidate
+      exact
+      equivalent
+      broader
+      narrower
+      candidate
 
-  @@map("mapping_type")
+      @@map("mapping_type")
 }
 
 enum StrengthBasis {
-  as_labeled
-  active_moiety
-  salt
+      as_labeled
+      active_moiety
+      salt
 
-  @@map("strength_basis")
+      @@map("strength_basis")
 }
 
 enum StorageCondition {
-  controlled_room
-  refrigerated
-  frozen
+      controlled_room
+      refrigerated
+      frozen
 
-  @@map("storage_condition")
+      @@map("storage_condition")
 }
 
 enum CompoundingKind {
-  sterile
-  nonsterile
+      sterile
+      nonsterile
 
-  @@map("compounding_kind")
+      @@map("compounding_kind")
 }
 
 enum TermKind {
-  ingredient
-  ingredient_class
-  product
-  diluent
-  container_material
-  device_feature
-  vehicle
+      ingredient
+      ingredient_class
+      product
+      diluent
+      container_material
+      device_feature
+      vehicle
 
-  @@map("term_kind")
+      @@map("term_kind")
 }
 
 enum RuleContext {
-  same_container
-  y_site
-  syringe
-  contact
-  vehicle
+      same_container
+      y_site
+      syringe
+      contact
+      vehicle
 
-  @@map("rule_context")
+      @@map("rule_context")
 }
 
 enum RuleEffect {
-  prohibit
-  require
-  avoid
-  prefer
-  informational
+      prohibit
+      require
+      avoid
+      prefer
+      informational
 
-  @@map("rule_effect")
+      @@map("rule_effect")
 }
 
 enum CompatVerdict {
-  compatible
-  incompatible
-  conditional
-  variable
-  no_data
+      compatible
+      incompatible
+      conditional
+      variable
+      no_data
 
-  @@map("compat_verdict")
+      @@map("compat_verdict")
 }
 
 enum AvailabilityState {
-  available
-  constrained
-  allocated
-  shortage
-  unavailable
+      available
+      constrained
+      allocated
+      shortage
+      unavailable
 
-  @@map("availability_state")
+      @@map("availability_state")
 }
 
 // ---------------------------------------------------------------------
 // 0. Scopes
 // ---------------------------------------------------------------------
 model Scope {
-  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  kind     ScopeKind
-  parentId String?   @map("parent_id") @db.Uuid
-  name     String
-  /// Per-scope preferences; see src/lib/settings.ts.
-  settings Json      @default("{}")
+      id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      kind     ScopeKind
+      parentId String?   @map("parent_id") @db.Uuid
+      name     String
+      /// Per-scope preferences; see src/lib/settings.ts.
+      settings Json      @default("{}")
 
-  parent                    Scope?                     @relation("ScopeParent", fields: [parentId], references: [id])
-  children                  Scope[]                    @relation("ScopeParent")
-  formularyItems            FormularyItem[]
-  factAssertions            FactAssertion[]
-  resolutionPolicies        ResolutionPolicy[]
-  propertyValues            PropertyValue[]
-  entityMappings            EntityMapping[]
-  reviewItems               ReviewItem[]
-  derivationDirties         DerivationDirty[]
-  propertyGroupIndexes      PropertyGroupIndex[]
-  packageCatalogProjections PackageCatalogProjection[]
-  catalogViews              CatalogView[]
-  termMemberships           TermMembership[]
-  compoundingRules          CompoundingRule[]
-  budRegulatoryLimits       BudRegulatoryLimit[]
-  stabilityCells            StabilityCell[]
-  componentInUseLimits      ComponentInUseLimit[]
-  preparationSpecs          PreparationSpec[]
-  compoundFormulas          CompoundFormula[]
-  componentCosts            ComponentCost[]
-  componentAvailabilities   ComponentAvailability[]
-  optimizerProfiles         OptimizerProfile[]
-  buildPlans                BuildPlan[]
-  openComponents            OpenComponent[]
+      parent                    Scope?                     @relation("ScopeParent", fields: [parentId], references: [id])
+      children                  Scope[]                    @relation("ScopeParent")
+      formularyItems            FormularyItem[]
+      factAssertions            FactAssertion[]
+      resolutionPolicies        ResolutionPolicy[]
+      propertyValues            PropertyValue[]
+      entityMappings            EntityMapping[]
+      reviewItems               ReviewItem[]
+      derivationDirties         DerivationDirty[]
+      propertyGroupIndexes      PropertyGroupIndex[]
+      packageCatalogProjections PackageCatalogProjection[]
+      catalogViews              CatalogView[]
+      termMemberships           TermMembership[]
+      compoundingRules          CompoundingRule[]
+      budRegulatoryLimits       BudRegulatoryLimit[]
+      stabilityCells            StabilityCell[]
+      componentInUseLimits      ComponentInUseLimit[]
+      preparationSpecs          PreparationSpec[]
+      compoundFormulas          CompoundFormula[]
+      componentCosts            ComponentCost[]
+      componentAvailabilities   ComponentAvailability[]
+      optimizerProfiles         OptimizerProfile[]
+      buildPlans                BuildPlan[]
+      openComponents            OpenComponent[]
 
-  @@map("scope")
+      @@map("scope")
 }
 
 // ---------------------------------------------------------------------
 // 1. Core entities
 // ---------------------------------------------------------------------
 model Entity {
-  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type       EntityType
-  status     String     @default("active")
-  mergedInto String?    @map("merged_into") @db.Uuid
-  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  retiredAt  DateTime?  @map("retired_at") @db.Timestamptz(6)
+      id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      type       EntityType
+      status     String     @default("active")
+      mergedInto String?    @map("merged_into") @db.Uuid
+      createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+      retiredAt  DateTime?  @map("retired_at") @db.Timestamptz(6)
 
-  mergedIntoEntity       Entity?              @relation("EntityMerge", fields: [mergedInto], references: [id])
-  mergedFrom             Entity[]             @relation("EntityMerge")
-  relationshipsFrom      EntityRelationship[] @relation("RelationshipFrom")
-  relationshipsTo        EntityRelationship[] @relation("RelationshipTo")
-  assertions             FactAssertion[]      @relation("AssertionSubject")
-  referencedByAssertions FactAssertion[]      @relation("AssertionRef")
-  values                 PropertyValue[]      @relation("ValueSubject")
-  referencedByValues     PropertyValue[]      @relation("ValueRef")
-  mappingsAsSubject      EntityMapping[]      @relation("MappingSubject")
-  mappingsAsObject       EntityMapping[]      @relation("MappingObject")
-  labeler                Labeler?
-  ingredient             Ingredient?
-  product                Product?
-  clinicalDrug           ClinicalDrug?
-  package                Package?
-  formularyItem          FormularyItem?
-  externalIdentifiers    ExternalIdentifier[]
-  reviewItems            ReviewItem[]
-  derivationDirties      DerivationDirty[]
-  propertyGroupIndexes   PropertyGroupIndex[]
-  compoundingTerms       CompoundingTerm[]
+      mergedIntoEntity       Entity?              @relation("EntityMerge", fields: [mergedInto], references: [id])
+      mergedFrom             Entity[]             @relation("EntityMerge")
+      relationshipsFrom      EntityRelationship[] @relation("RelationshipFrom")
+      relationshipsTo        EntityRelationship[] @relation("RelationshipTo")
+      assertions             FactAssertion[]      @relation("AssertionSubject")
+      referencedByAssertions FactAssertion[]      @relation("AssertionRef")
+      values                 PropertyValue[]      @relation("ValueSubject")
+      referencedByValues     PropertyValue[]      @relation("ValueRef")
+      mappingsAsSubject      EntityMapping[]      @relation("MappingSubject")
+      mappingsAsObject       EntityMapping[]      @relation("MappingObject")
+      labeler                Labeler?
+      ingredient             Ingredient?
+      product                Product?
+      clinicalDrug           ClinicalDrug?
+      package                Package?
+      formularyItem          FormularyItem?
+      externalIdentifiers    ExternalIdentifier[]
+      reviewItems            ReviewItem[]
+      derivationDirties      DerivationDirty[]
+      propertyGroupIndexes   PropertyGroupIndex[]
+      compoundingTerms       CompoundingTerm[]
 
-  @@unique([id, type])
-  @@map("entity")
+      @@unique([id, type])
+      @@map("entity")
 }
 
 model Labeler {
-  id   String     @id @db.Uuid
-  type EntityType @default(labeler)
-  name String
+      id   String     @id @db.Uuid
+      type EntityType @default(labeler)
+      name String
 
-  entity                    Entity                     @relation(fields: [id, type], references: [id, type])
-  products                  Product[]
-  packageCatalogProjections PackageCatalogProjection[]
+      entity                    Entity                     @relation(fields: [id, type], references: [id, type])
+      products                  Product[]
+      packageCatalogProjections PackageCatalogProjection[]
 
-  @@unique([id, type])
-  @@map("labeler")
+      @@unique([id, type])
+      @@map("labeler")
 }
 
 model Ingredient {
-  id             String     @id @db.Uuid
-  type           EntityType @default(ingredient)
-  name           String
-  activeMoietyId String?    @map("active_moiety_id") @db.Uuid
+      id             String     @id @db.Uuid
+      type           EntityType @default(ingredient)
+      name           String
+      activeMoietyId String?    @map("active_moiety_id") @db.Uuid
 
-  entity                 Entity              @relation(fields: [id, type], references: [id, type])
-  activeMoiety           Ingredient?         @relation("IngredientMoiety", fields: [activeMoietyId], references: [id])
-  salts                  Ingredient[]        @relation("IngredientMoiety")
-  productIngredients     ProductIngredient[] @relation("ProductIngredientPrecise")
-  productIngredientBases ProductIngredient[] @relation("ProductIngredientBasis")
+      entity                 Entity              @relation(fields: [id, type], references: [id, type])
+      activeMoiety           Ingredient?         @relation("IngredientMoiety", fields: [activeMoietyId], references: [id])
+      salts                  Ingredient[]        @relation("IngredientMoiety")
+      productIngredients     ProductIngredient[] @relation("ProductIngredientPrecise")
+      productIngredientBases ProductIngredient[] @relation("ProductIngredientBasis")
 
-  @@unique([id, type])
-  @@map("ingredient")
+      @@unique([id, type])
+      @@map("ingredient")
 }
 
 model Product {
-  id              String     @id @db.Uuid
-  type            EntityType @default(product)
-  labelerId       String     @map("labeler_id") @db.Uuid
-  proprietaryName String?    @map("proprietary_name")
-  doseForm        String?    @map("dose_form")
-  isKit           Boolean    @default(false) @map("is_kit")
+      id              String     @id @db.Uuid
+      type            EntityType @default(product)
+      labelerId       String     @map("labeler_id") @db.Uuid
+      proprietaryName String?    @map("proprietary_name")
+      doseForm        String?    @map("dose_form")
+      isKit           Boolean    @default(false) @map("is_kit")
 
-  entity             Entity              @relation(fields: [id, type], references: [id, type])
-  labeler            Labeler             @relation(fields: [labelerId], references: [id])
-  packageComponents  PackageComponent[]
-  productIngredients ProductIngredient[]
+      entity             Entity              @relation(fields: [id, type], references: [id, type])
+      labeler            Labeler             @relation(fields: [labelerId], references: [id])
+      packageComponents  PackageComponent[]
+      productIngredients ProductIngredient[]
 
-  @@unique([id, type])
-  @@map("product")
+      @@unique([id, type])
+      @@map("product")
 }
 
 model ClinicalDrug {
-  id   String     @id @db.Uuid
-  type EntityType @default(clinical_drug)
-  name String
-  tty  String?
+      id   String     @id @db.Uuid
+      type EntityType @default(clinical_drug)
+      name String
+      tty  String?
 
-  entity Entity @relation(fields: [id, type], references: [id, type])
+      entity Entity @relation(fields: [id, type], references: [id, type])
 
-  @@unique([id, type])
-  @@map("clinical_drug")
+      @@unique([id, type])
+      @@map("clinical_drug")
 }
 
 model Package {
-  id            String     @id @db.Uuid
-  type          EntityType @default(package)
-  description   String?
-  containerType String?    @map("container_type")
-  billingUnit   String?    @map("billing_unit")
-  isUnitOfUse   Boolean?   @map("is_unit_of_use")
+      id            String     @id @db.Uuid
+      type          EntityType @default(package)
+      description   String?
+      containerType String?    @map("container_type")
+      billingUnit   String?    @map("billing_unit")
+      isUnitOfUse   Boolean?   @map("is_unit_of_use")
 
-  entity                    Entity                     @relation(fields: [id, type], references: [id, type])
-  components                PackageComponent[]         @relation("ComponentParent")
-  containedIn               PackageComponent[]         @relation("ComponentChild")
-  formularyItemPackages     FormularyItemPackage[]
-  packageCatalogProjections PackageCatalogProjection[]
-  containerSpecs            ContainerSpec[]
-  componentInUseLimits      ComponentInUseLimit[]
-  slotCandidates            SlotCandidate[]
-  componentCosts            ComponentCost[]
-  componentAvailabilities   ComponentAvailability[]
-  buildPlanLines            BuildPlanLine[]
-  openComponents            OpenComponent[]
+      entity                    Entity                     @relation(fields: [id, type], references: [id, type])
+      components                PackageComponent[]         @relation("ComponentParent")
+      containedIn               PackageComponent[]         @relation("ComponentChild")
+      formularyItemPackages     FormularyItemPackage[]
+      packageCatalogProjections PackageCatalogProjection[]
+      containerSpecs            ContainerSpec[]
+      componentInUseLimits      ComponentInUseLimit[]
+      slotCandidates            SlotCandidate[]
+      componentCosts            ComponentCost[]
+      componentAvailabilities   ComponentAvailability[]
+      buildPlanLines            BuildPlanLine[]
+      openComponents            OpenComponent[]
 
-  @@unique([id, type])
-  @@map("package")
+      @@unique([id, type])
+      @@map("package")
 }
 
 model FormularyItem {
-  id          String     @id @db.Uuid
-  type        EntityType @default(formulary_item)
-  scopeId     String     @map("scope_id") @db.Uuid
-  kind        String
-  displayName String     @map("display_name")
+      id                  String     @id @db.Uuid
+      type                EntityType @default(formulary_item)
+      scopeId             String     @map("scope_id") @db.Uuid
+      kind                String
+      displayName         String     @map("display_name")
+      /// User-chosen short form for a timed release ("SR", "XR"), replacing "Extended Release (12 HR)".
+      releaseAbbreviation String?    @map("release_abbreviation")
 
-  entity                Entity                 @relation(fields: [id, type], references: [id, type])
-  scope                 Scope                  @relation(fields: [scopeId], references: [id])
-  formularyItemPackages FormularyItemPackage[]
-  compoundFormulas      CompoundFormula[]
-  brands                FormularyItemBrand[]
+      entity                Entity                 @relation(fields: [id, type], references: [id, type])
+      scope                 Scope                  @relation(fields: [scopeId], references: [id])
+      formularyItemPackages FormularyItemPackage[]
+      compoundFormulas      CompoundFormula[]
+      brands                FormularyItemBrand[]
 
-  @@unique([id, type])
-  @@map("formulary_item")
+      @@unique([id, type])
+      @@map("formulary_item")
 }
 
 /// A brand-name tag on a formulary item. RxNorm rows are seeded from SBD → BN on load;
 /// a dismissed RxNorm brand stays as a suppressed row so reloads never resurrect it.
 model FormularyItemBrand {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  formularyItemId String   @map("formulary_item_id") @db.Uuid
-  name            String
-  /// Lower-cased, whitespace-collapsed name; unique per item.
-  nameKey         String   @map("name_key")
-  rxcui           String?
-  source          String
-  suppressed      Boolean  @default(false)
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+      id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      formularyItemId String   @map("formulary_item_id") @db.Uuid
+      name            String
+      /// Lower-cased, whitespace-collapsed name; unique per item.
+      nameKey         String   @map("name_key")
+      rxcui           String?
+      source          String
+      suppressed      Boolean  @default(false)
+      createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  formularyItem FormularyItem @relation(fields: [formularyItemId], references: [id])
+      formularyItem FormularyItem @relation(fields: [formularyItemId], references: [id])
 
-  @@unique([formularyItemId, nameKey])
-  @@map("formulary_item_brand")
+      @@unique([formularyItemId, nameKey])
+      @@map("formulary_item_brand")
 }
 
 model FormularyItemPackage {
-  id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  formularyItemId String                    @map("formulary_item_id") @db.Uuid
-  packageId       String                    @map("package_id") @db.Uuid
-  preferenceRank  Int                       @default(1) @map("preference_rank")
-  validFrom       DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo         DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated tstzrange(valid_from, valid_to)
-  validPeriod     Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      formularyItemId String                    @map("formulary_item_id") @db.Uuid
+      packageId       String                    @map("package_id") @db.Uuid
+      preferenceRank  Int                       @default(1) @map("preference_rank")
+      validFrom       DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo         DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated tstzrange(valid_from, valid_to)
+      validPeriod     Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  formularyItem FormularyItem @relation(fields: [formularyItemId], references: [id])
-  package       Package       @relation(fields: [packageId], references: [id])
+      formularyItem FormularyItem @relation(fields: [formularyItemId], references: [id])
+      package       Package       @relation(fields: [packageId], references: [id])
 
-  @@map("formulary_item_package")
+      @@map("formulary_item_package")
 }
 
 // ---------------------------------------------------------------------
 // 2. Identifiers
 // ---------------------------------------------------------------------
 model IdentifierNamespace {
-  code                String               @id
-  appliesTo           EntityType[]         @map("applies_to")
-  isDerived           Boolean              @default(false) @map("is_derived")
-  normalizer          String?
-  externalIdentifiers ExternalIdentifier[]
+      code                String               @id
+      appliesTo           EntityType[]         @map("applies_to")
+      isDerived           Boolean              @default(false) @map("is_derived")
+      normalizer          String?
+      externalIdentifiers ExternalIdentifier[]
 
-  @@map("identifier_namespace")
+      @@map("identifier_namespace")
 }
 
 model ExternalIdentifier {
-  id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  entityId        String                    @map("entity_id") @db.Uuid
-  namespace       String
-  value           String
-  normalizedValue String                    @map("normalized_value")
-  derivedFromId   String?                   @map("derived_from_id") @db.Uuid
-  derivationRule  String?                   @map("derivation_rule")
-  isPrimary       Boolean                   @default(false) @map("is_primary")
-  validFrom       DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo         DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated tstzrange(valid_from, valid_to)
-  validPeriod     Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
-  sourceRecordId  String?                   @map("source_record_id") @db.Uuid
+      id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      entityId        String                    @map("entity_id") @db.Uuid
+      namespace       String
+      value           String
+      normalizedValue String                    @map("normalized_value")
+      derivedFromId   String?                   @map("derived_from_id") @db.Uuid
+      derivationRule  String?                   @map("derivation_rule")
+      isPrimary       Boolean                   @default(false) @map("is_primary")
+      validFrom       DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo         DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated tstzrange(valid_from, valid_to)
+      validPeriod     Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      sourceRecordId  String?                   @map("source_record_id") @db.Uuid
 
-  entity              Entity               @relation(fields: [entityId], references: [id])
-  identifierNamespace IdentifierNamespace  @relation(fields: [namespace], references: [code])
-  derivedFrom         ExternalIdentifier?  @relation("IdentifierDerivation", fields: [derivedFromId], references: [id])
-  derivatives         ExternalIdentifier[] @relation("IdentifierDerivation")
-  sourceRecord        SourceRecord?        @relation(fields: [sourceRecordId], references: [id])
-  ndcSegments         NdcSegments[]
+      entity              Entity               @relation(fields: [entityId], references: [id])
+      identifierNamespace IdentifierNamespace  @relation(fields: [namespace], references: [code])
+      derivedFrom         ExternalIdentifier?  @relation("IdentifierDerivation", fields: [derivedFromId], references: [id])
+      derivatives         ExternalIdentifier[] @relation("IdentifierDerivation")
+      sourceRecord        SourceRecord?        @relation(fields: [sourceRecordId], references: [id])
+      ndcSegments         NdcSegments[]
 
-  @@index([entityId])
-  @@index([namespace, normalizedValue])
-  @@index([normalizedValue])
-  @@map("external_identifier")
+      @@index([entityId])
+      @@index([namespace, normalizedValue])
+      @@index([normalizedValue])
+      @@map("external_identifier")
 }
 
 model NdcSegments {
-  identifierId  String @id @map("identifier_id") @db.Uuid
-  labelerCode   String @map("labeler_code")
-  productCode   String @map("product_code")
-  packageCode   String @map("package_code")
-  configuration String
+      identifierId  String @id @map("identifier_id") @db.Uuid
+      labelerCode   String @map("labeler_code")
+      productCode   String @map("product_code")
+      packageCode   String @map("package_code")
+      configuration String
 
-  identifier ExternalIdentifier @relation(fields: [identifierId], references: [id])
+      identifier ExternalIdentifier @relation(fields: [identifierId], references: [id])
 
-  @@map("ndc_segments")
+      @@map("ndc_segments")
 }
 
 // ---------------------------------------------------------------------
 // 3. Units, package tree, strengths
 // ---------------------------------------------------------------------
 model UcumUnit {
-  code          String          @id
-  dimension     String
-  toBase        Decimal?        @map("to_base") @db.Decimal
-  ucumUnitAlias UcumUnitAlias[]
+      code          String          @id
+      dimension     String
+      toBase        Decimal?        @map("to_base") @db.Decimal
+      ucumUnitAlias UcumUnitAlias[]
 
-  @@map("ucum_unit")
+      @@map("ucum_unit")
 }
 
 model UcumUnitAlias {
-  alias String @id
-  code  String
+      alias String @id
+      code  String
 
-  unit UcumUnit @relation(fields: [code], references: [code])
+      unit UcumUnit @relation(fields: [code], references: [code])
 
-  @@map("ucum_unit_alias")
+      @@map("ucum_unit_alias")
 }
 
 model PackageComponent {
-  id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  parentPackageId String                    @map("parent_package_id") @db.Uuid
-  childPackageId  String?                   @map("child_package_id") @db.Uuid
-  childProductId  String?                   @map("child_product_id") @db.Uuid
-  quantityMag     Decimal                   @map("quantity_mag") @db.Decimal
-  quantityUom     String                    @map("quantity_uom")
-  /// @generated measure(quantity_mag, quantity_uom)
-  quantity        Unsupported("measure")?   @default(dbgenerated())
-  ordinal         Int                       @default(1)
-  validFrom       DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo         DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod     Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      parentPackageId String                    @map("parent_package_id") @db.Uuid
+      childPackageId  String?                   @map("child_package_id") @db.Uuid
+      childProductId  String?                   @map("child_product_id") @db.Uuid
+      quantityMag     Decimal                   @map("quantity_mag") @db.Decimal
+      quantityUom     String                    @map("quantity_uom")
+      /// @generated measure(quantity_mag, quantity_uom)
+      quantity        Unsupported("measure")?   @default(dbgenerated())
+      ordinal         Int                       @default(1)
+      validFrom       DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo         DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod     Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  parentPackage Package  @relation("ComponentParent", fields: [parentPackageId], references: [id])
-  childPackage  Package? @relation("ComponentChild", fields: [childPackageId], references: [id])
-  childProduct  Product? @relation(fields: [childProductId], references: [id])
+      parentPackage Package  @relation("ComponentParent", fields: [parentPackageId], references: [id])
+      childPackage  Package? @relation("ComponentChild", fields: [childPackageId], references: [id])
+      childProduct  Product? @relation(fields: [childProductId], references: [id])
 
-  @@index([parentPackageId])
-  @@map("package_component")
+      @@index([parentPackageId])
+      @@map("package_component")
 }
 
 model ProductIngredient {
-  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  productId         String                    @map("product_id") @db.Uuid
-  ingredientId      String                    @map("ingredient_id") @db.Uuid
-  basisIngredientId String?                   @map("basis_ingredient_id") @db.Uuid
-  isActive          Boolean                   @default(true) @map("is_active")
-  strengthNumMag    Decimal                   @map("strength_num_mag") @db.Decimal
-  strengthNumUom    String                    @map("strength_num_uom")
-  strengthDenMag    Decimal                   @default(1) @map("strength_den_mag") @db.Decimal
-  strengthDenUom    String                    @map("strength_den_uom")
-  /// @generated numerator measure (500 mg)
-  strengthNum       Unsupported("measure")?   @default(dbgenerated()) @map("strength_num")
-  /// @generated denominator measure (10 mL)
-  strengthDen       Unsupported("measure")?   @default(dbgenerated()) @map("strength_den")
-  /// @generated concentration measure (50 mg/mL) — comparable across units
-  strength          Unsupported("measure")?   @default(dbgenerated())
-  basis             StrengthBasis             @default(as_labeled)
-  ordinal           Int                       @default(1)
-  validFrom         DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo           DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod       Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      productId         String                    @map("product_id") @db.Uuid
+      ingredientId      String                    @map("ingredient_id") @db.Uuid
+      basisIngredientId String?                   @map("basis_ingredient_id") @db.Uuid
+      isActive          Boolean                   @default(true) @map("is_active")
+      strengthNumMag    Decimal                   @map("strength_num_mag") @db.Decimal
+      strengthNumUom    String                    @map("strength_num_uom")
+      strengthDenMag    Decimal                   @default(1) @map("strength_den_mag") @db.Decimal
+      strengthDenUom    String                    @map("strength_den_uom")
+      /// @generated numerator measure (500 mg)
+      strengthNum       Unsupported("measure")?   @default(dbgenerated()) @map("strength_num")
+      /// @generated denominator measure (10 mL)
+      strengthDen       Unsupported("measure")?   @default(dbgenerated()) @map("strength_den")
+      /// @generated concentration measure (50 mg/mL) — comparable across units
+      strength          Unsupported("measure")?   @default(dbgenerated())
+      basis             StrengthBasis             @default(as_labeled)
+      ordinal           Int                       @default(1)
+      validFrom         DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo           DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod       Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  product         Product     @relation(fields: [productId], references: [id])
-  ingredient      Ingredient  @relation("ProductIngredientPrecise", fields: [ingredientId], references: [id])
-  basisIngredient Ingredient? @relation("ProductIngredientBasis", fields: [basisIngredientId], references: [id])
+      product         Product     @relation(fields: [productId], references: [id])
+      ingredient      Ingredient  @relation("ProductIngredientPrecise", fields: [ingredientId], references: [id])
+      basisIngredient Ingredient? @relation("ProductIngredientBasis", fields: [basisIngredientId], references: [id])
 
-  @@index([productId])
-  @@map("product_ingredient")
+      @@index([productId])
+      @@map("product_ingredient")
 }
 
 model RelationshipType {
-  code                String               @id
-  fromType            EntityType           @map("from_type")
-  toType              EntityType           @map("to_type")
-  cardinality         String               @default("many")
-  entityRelationships EntityRelationship[]
+      code                String               @id
+      fromType            EntityType           @map("from_type")
+      toType              EntityType           @map("to_type")
+      cardinality         String               @default("many")
+      entityRelationships EntityRelationship[]
 
-  @@map("relationship_type")
+      @@map("relationship_type")
 }
 
 model EntityRelationship {
-  id               String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  relationshipType String                    @map("relationship_type")
-  fromEntityId     String                    @map("from_entity_id") @db.Uuid
-  toEntityId       String                    @map("to_entity_id") @db.Uuid
-  ordinal          Int                       @default(1)
-  validFrom        DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo          DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod      Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
-  sourceRecordId   String?                   @map("source_record_id") @db.Uuid
+      id               String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      relationshipType String                    @map("relationship_type")
+      fromEntityId     String                    @map("from_entity_id") @db.Uuid
+      toEntityId       String                    @map("to_entity_id") @db.Uuid
+      ordinal          Int                       @default(1)
+      validFrom        DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo          DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod      Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      sourceRecordId   String?                   @map("source_record_id") @db.Uuid
 
-  type         RelationshipType @relation(fields: [relationshipType], references: [code])
-  fromEntity   Entity           @relation("RelationshipFrom", fields: [fromEntityId], references: [id])
-  toEntity     Entity           @relation("RelationshipTo", fields: [toEntityId], references: [id])
-  sourceRecord SourceRecord?    @relation(fields: [sourceRecordId], references: [id])
+      type         RelationshipType @relation(fields: [relationshipType], references: [code])
+      fromEntity   Entity           @relation("RelationshipFrom", fields: [fromEntityId], references: [id])
+      toEntity     Entity           @relation("RelationshipTo", fields: [toEntityId], references: [id])
+      sourceRecord SourceRecord?    @relation(fields: [sourceRecordId], references: [id])
 
-  @@map("entity_relationship")
+      @@map("entity_relationship")
 }
 
 // ---------------------------------------------------------------------
 // 4. Source evidence
 // ---------------------------------------------------------------------
 model Source {
-  code           String          @id
-  description    String?
-  ingestionRuns  IngestionRun[]
-  factAssertions FactAssertion[]
-  entityMappings EntityMapping[]
+      code           String          @id
+      description    String?
+      ingestionRuns  IngestionRun[]
+      factAssertions FactAssertion[]
+      entityMappings EntityMapping[]
 
-  @@map("source")
+      @@map("source")
 }
 
 model IngestionRun {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  source        String
-  sourceRelease String?   @map("source_release")
-  parserVersion String    @map("parser_version")
-  startedAt     DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt   DateTime? @map("completed_at") @db.Timestamptz(6)
-  status        String    @default("running")
+      id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      source        String
+      sourceRelease String?   @map("source_release")
+      parserVersion String    @map("parser_version")
+      startedAt     DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+      completedAt   DateTime? @map("completed_at") @db.Timestamptz(6)
+      status        String    @default("running")
 
-  sourceRef         Source          @relation(fields: [source], references: [code])
-  mappingsFirstSeen EntityMapping[] @relation("MappingFirstSeen")
-  mappingsLastSeen  EntityMapping[] @relation("MappingLastSeen")
-  sourceRecords     SourceRecord[]
-  resolutionRuns    ResolutionRun[]
+      sourceRef         Source          @relation(fields: [source], references: [code])
+      mappingsFirstSeen EntityMapping[] @relation("MappingFirstSeen")
+      mappingsLastSeen  EntityMapping[] @relation("MappingLastSeen")
+      sourceRecords     SourceRecord[]
+      resolutionRuns    ResolutionRun[]
 
-  @@map("ingestion_run")
+      @@map("ingestion_run")
 }
 
 model SourceRecord {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ingestionRunId String   @map("ingestion_run_id") @db.Uuid
-  sourceNativeId String   @map("source_native_id")
-  sourceUrl      String?  @map("source_url")
-  observedAt     DateTime @default(now()) @map("observed_at") @db.Timestamptz(6)
-  payload        Json
-  payloadHash    Bytes    @map("payload_hash")
+      id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      ingestionRunId String   @map("ingestion_run_id") @db.Uuid
+      sourceNativeId String   @map("source_native_id")
+      sourceUrl      String?  @map("source_url")
+      observedAt     DateTime @default(now()) @map("observed_at") @db.Timestamptz(6)
+      payload        Json
+      payloadHash    Bytes    @map("payload_hash")
 
-  ingestionRun        IngestionRun         @relation(fields: [ingestionRunId], references: [id])
-  externalIdentifiers ExternalIdentifier[]
-  entityRelationships EntityRelationship[]
-  factAssertions      FactAssertion[]
-  entityMappings      EntityMapping[]
-  containerSpecs      ContainerSpec[]
-  compoundingRules    CompoundingRule[]
-  stabilityStudies    StabilityStudy[]
+      ingestionRun        IngestionRun         @relation(fields: [ingestionRunId], references: [id])
+      externalIdentifiers ExternalIdentifier[]
+      entityRelationships EntityRelationship[]
+      factAssertions      FactAssertion[]
+      entityMappings      EntityMapping[]
+      containerSpecs      ContainerSpec[]
+      compoundingRules    CompoundingRule[]
+      stabilityStudies    StabilityStudy[]
 
-  @@unique([ingestionRunId, sourceNativeId])
-  @@index([sourceNativeId, observedAt(sort: Desc)])
-  @@index([payloadHash])
-  @@map("source_record")
+      @@unique([ingestionRunId, sourceNativeId])
+      @@index([sourceNativeId, observedAt(sort: Desc)])
+      @@index([payloadHash])
+      @@map("source_record")
 }
 
 // ---------------------------------------------------------------------
 // 5. Property registry, assertions, resolution
 // ---------------------------------------------------------------------
 model PropertyDefinition {
-  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key              String
-  majorVersion     Int         @default(1) @map("major_version")
-  appliesTo        EntityType  @map("applies_to")
-  valueType        ValueType   @map("value_type")
-  cardinality      String      @default("one")
-  /// required for quantity/rational: 'volume', 'mass/volume', 'time' ...
-  unitDimension    String?     @map("unit_dimension")
-  codeSystem       String?     @map("code_system")
-  refEntityType    EntityType? @map("ref_entity_type")
-  isGroupable      Boolean     @default(false) @map("is_groupable")
-  isFilterable     Boolean     @default(true) @map("is_filterable")
-  isSortable       Boolean     @default(false) @map("is_sortable")
-  isDerived        Boolean     @default(false) @map("is_derived")
-  reviewOnChange   String      @default("none") @map("review_on_change")
-  displayConfig    Json        @default("{}") @map("display_config")
-  validationSchema Json?       @map("validation_schema")
-  deprecatedAt     DateTime?   @map("deprecated_at") @db.Timestamptz(6)
-  replacedById     String?     @map("replaced_by") @db.Uuid
+      id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      key              String
+      majorVersion     Int         @default(1) @map("major_version")
+      appliesTo        EntityType  @map("applies_to")
+      valueType        ValueType   @map("value_type")
+      cardinality      String      @default("one")
+      /// required for quantity/rational: 'volume', 'mass/volume', 'time' ...
+      unitDimension    String?     @map("unit_dimension")
+      codeSystem       String?     @map("code_system")
+      refEntityType    EntityType? @map("ref_entity_type")
+      isGroupable      Boolean     @default(false) @map("is_groupable")
+      isFilterable     Boolean     @default(true) @map("is_filterable")
+      isSortable       Boolean     @default(false) @map("is_sortable")
+      isDerived        Boolean     @default(false) @map("is_derived")
+      reviewOnChange   String      @default("none") @map("review_on_change")
+      displayConfig    Json        @default("{}") @map("display_config")
+      validationSchema Json?       @map("validation_schema")
+      deprecatedAt     DateTime?   @map("deprecated_at") @db.Timestamptz(6)
+      replacedById     String?     @map("replaced_by") @db.Uuid
 
-  replacedBy           PropertyDefinition?  @relation("PropertyReplacement", fields: [replacedById], references: [id])
-  replaces             PropertyDefinition[] @relation("PropertyReplacement")
-  factAssertions       FactAssertion[]
-  resolutionPolicies   ResolutionPolicy[]
-  propertyValues       PropertyValue[]
-  reviewItems          ReviewItem[]
-  derivations          Derivation[]
-  derivationInputs     DerivationInput[]
-  derivationDirties    DerivationDirty[]
-  propertyGroupIndexes PropertyGroupIndex[]
-  catalogViewLevels    CatalogViewLevel[]
+      replacedBy           PropertyDefinition?  @relation("PropertyReplacement", fields: [replacedById], references: [id])
+      replaces             PropertyDefinition[] @relation("PropertyReplacement")
+      factAssertions       FactAssertion[]
+      resolutionPolicies   ResolutionPolicy[]
+      propertyValues       PropertyValue[]
+      reviewItems          ReviewItem[]
+      derivations          Derivation[]
+      derivationInputs     DerivationInput[]
+      derivationDirties    DerivationDirty[]
+      propertyGroupIndexes PropertyGroupIndex[]
+      catalogViewLevels    CatalogViewLevel[]
 
-  @@unique([key, majorVersion])
-  @@map("property_definition")
+      @@unique([key, majorVersion])
+      @@map("property_definition")
 }
 
 model FactAssertion {
-  id              String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sourceRecordId  String?                          @map("source_record_id") @db.Uuid
-  source          String
-  scopeId         String                           @map("scope_id") @db.Uuid
-  entityId        String                           @map("entity_id") @db.Uuid
-  propertyId      String                           @map("property_id") @db.Uuid
-  ordinal         Int                              @default(1)
-  textValue       String?                          @map("text_value")
-  codeValue       String?                          @map("code_value")
-  numberValue     Decimal?                         @map("number_value") @db.Decimal
-  /// unit for quantity AND rational values (validated by measure functions, may be compound)
-  unitCode        String?                          @map("unit_code")
-  ratWhole        BigInt?                          @map("rat_whole")
-  ratNum          BigInt?                          @map("rat_num")
-  ratDen          BigInt?                          @map("rat_den")
-  booleanValue    Boolean?                         @map("boolean_value")
-  dateValue       DateTime?                        @map("date_value") @db.Date
-  refEntityId     String?                          @map("ref_entity_id") @db.Uuid
-  jsonValue       Json?                            @map("json_value")
-  /// @generated measure(number_value, unit_code) when unit_code is set
-  measureValue    Unsupported("measure")?          @default(dbgenerated()) @map("measure_value")
-  /// @generated rational_measure(rat_whole, rat_num, rat_den, unit_code)
-  rationalValue   Unsupported("rational_measure")? @default(dbgenerated()) @map("rational_value")
-  isNullAssertion Boolean                          @default(false) @map("is_null_assertion")
-  confidence      Decimal?                         @db.Decimal
-  /// NULL = open (−∞)
-  validFrom       DateTime?                        @map("valid_from") @db.Timestamptz(6)
-  validTo         DateTime?                        @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod     Unsupported("tstzrange")?        @default(dbgenerated()) @map("valid_period")
-  assertedBy      String?                          @map("asserted_by") @db.Uuid
-  justification   String?
-  parserVersion   String?                          @map("parser_version")
-  recordedAt      DateTime                         @default(now()) @map("recorded_at") @db.Timestamptz(6)
-  retractedAt     DateTime?                        @map("retracted_at") @db.Timestamptz(6)
+      id              String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      sourceRecordId  String?                          @map("source_record_id") @db.Uuid
+      source          String
+      scopeId         String                           @map("scope_id") @db.Uuid
+      entityId        String                           @map("entity_id") @db.Uuid
+      propertyId      String                           @map("property_id") @db.Uuid
+      ordinal         Int                              @default(1)
+      textValue       String?                          @map("text_value")
+      codeValue       String?                          @map("code_value")
+      numberValue     Decimal?                         @map("number_value") @db.Decimal
+      /// unit for quantity AND rational values (validated by measure functions, may be compound)
+      unitCode        String?                          @map("unit_code")
+      ratWhole        BigInt?                          @map("rat_whole")
+      ratNum          BigInt?                          @map("rat_num")
+      ratDen          BigInt?                          @map("rat_den")
+      booleanValue    Boolean?                         @map("boolean_value")
+      dateValue       DateTime?                        @map("date_value") @db.Date
+      refEntityId     String?                          @map("ref_entity_id") @db.Uuid
+      jsonValue       Json?                            @map("json_value")
+      /// @generated measure(number_value, unit_code) when unit_code is set
+      measureValue    Unsupported("measure")?          @default(dbgenerated()) @map("measure_value")
+      /// @generated rational_measure(rat_whole, rat_num, rat_den, unit_code)
+      rationalValue   Unsupported("rational_measure")? @default(dbgenerated()) @map("rational_value")
+      isNullAssertion Boolean                          @default(false) @map("is_null_assertion")
+      confidence      Decimal?                         @db.Decimal
+      /// NULL = open (−∞)
+      validFrom       DateTime?                        @map("valid_from") @db.Timestamptz(6)
+      validTo         DateTime?                        @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod     Unsupported("tstzrange")?        @default(dbgenerated()) @map("valid_period")
+      assertedBy      String?                          @map("asserted_by") @db.Uuid
+      justification   String?
+      parserVersion   String?                          @map("parser_version")
+      recordedAt      DateTime                         @default(now()) @map("recorded_at") @db.Timestamptz(6)
+      retractedAt     DateTime?                        @map("retracted_at") @db.Timestamptz(6)
 
-  sourceRecord   SourceRecord?      @relation(fields: [sourceRecordId], references: [id])
-  sourceRef      Source             @relation(fields: [source], references: [code])
-  scope          Scope              @relation(fields: [scopeId], references: [id])
-  entity         Entity             @relation("AssertionSubject", fields: [entityId], references: [id])
-  property       PropertyDefinition @relation(fields: [propertyId], references: [id])
-  refEntity      Entity?            @relation("AssertionRef", fields: [refEntityId], references: [id])
-  propertyValues PropertyValue[]
+      sourceRecord   SourceRecord?      @relation(fields: [sourceRecordId], references: [id])
+      sourceRef      Source             @relation(fields: [source], references: [code])
+      scope          Scope              @relation(fields: [scopeId], references: [id])
+      entity         Entity             @relation("AssertionSubject", fields: [entityId], references: [id])
+      property       PropertyDefinition @relation(fields: [propertyId], references: [id])
+      refEntity      Entity?            @relation("AssertionRef", fields: [refEntityId], references: [id])
+      propertyValues PropertyValue[]
 
-  @@map("fact_assertion")
+      @@map("fact_assertion")
 }
 
 model ResolutionPolicy {
-  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  propertyId     String                    @map("property_id") @db.Uuid
-  scopeId        String                    @map("scope_id") @db.Uuid
-  sourceRank     String[]                  @map("source_rank")
-  tieBreak       String                    @default("latest_observed") @map("tie_break")
-  conflictAction String                    @default("flag") @map("conflict_action")
-  version        Int                       @default(1)
-  validFrom      DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo        DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod    Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      propertyId     String                    @map("property_id") @db.Uuid
+      scopeId        String                    @map("scope_id") @db.Uuid
+      sourceRank     String[]                  @map("source_rank")
+      tieBreak       String                    @default("latest_observed") @map("tie_break")
+      conflictAction String                    @default("flag") @map("conflict_action")
+      version        Int                       @default(1)
+      validFrom      DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo        DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod    Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  property       PropertyDefinition @relation(fields: [propertyId], references: [id])
-  scope          Scope              @relation(fields: [scopeId], references: [id])
-  propertyValues PropertyValue[]
+      property       PropertyDefinition @relation(fields: [propertyId], references: [id])
+      scope          Scope              @relation(fields: [scopeId], references: [id])
+      propertyValues PropertyValue[]
 
-  @@map("resolution_policy")
+      @@map("resolution_policy")
 }
 
 model ResolutionRun {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  triggeredById String?   @map("triggered_by") @db.Uuid
-  startedAt     DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt   DateTime? @map("completed_at") @db.Timestamptz(6)
-  status        String    @default("running")
+      id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      triggeredById String?   @map("triggered_by") @db.Uuid
+      startedAt     DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+      completedAt   DateTime? @map("completed_at") @db.Timestamptz(6)
+      status        String    @default("running")
 
-  triggeredBy               IngestionRun?              @relation(fields: [triggeredById], references: [id])
-  propertyValues            PropertyValue[]
-  reviewItems               ReviewItem[]
-  propertyGroupIndexes      PropertyGroupIndex[]
-  packageCatalogProjections PackageCatalogProjection[]
+      triggeredBy               IngestionRun?              @relation(fields: [triggeredById], references: [id])
+      propertyValues            PropertyValue[]
+      reviewItems               ReviewItem[]
+      propertyGroupIndexes      PropertyGroupIndex[]
+      packageCatalogProjections PackageCatalogProjection[]
 
-  @@map("resolution_run")
+      @@map("resolution_run")
 }
 
 model PropertyValue {
-  id                 String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId            String                           @map("scope_id") @db.Uuid
-  entityId           String                           @map("entity_id") @db.Uuid
-  propertyId         String                           @map("property_id") @db.Uuid
-  ordinal            Int                              @default(1)
-  textValue          String?                          @map("text_value")
-  codeValue          String?                          @map("code_value")
-  numberValue        Decimal?                         @map("number_value") @db.Decimal
-  unitCode           String?                          @map("unit_code")
-  ratWhole           BigInt?                          @map("rat_whole")
-  ratNum             BigInt?                          @map("rat_num")
-  ratDen             BigInt?                          @map("rat_den")
-  booleanValue       Boolean?                         @map("boolean_value")
-  dateValue          DateTime?                        @map("date_value") @db.Date
-  refEntityId        String?                          @map("ref_entity_id") @db.Uuid
-  jsonValue          Json?                            @map("json_value")
-  /// @generated
-  measureValue       Unsupported("measure")?          @default(dbgenerated()) @map("measure_value")
-  /// @generated
-  rationalValue      Unsupported("rational_measure")? @default(dbgenerated()) @map("rational_value")
-  resolutionState    ResolutionState                  @map("resolution_state")
-  winningAssertionId String?                          @map("winning_assertion_id") @db.Uuid
-  policyId           String?                          @map("policy_id") @db.Uuid
-  resolutionRunId    String                           @map("resolution_run_id") @db.Uuid
-  validFrom          DateTime?                        @map("valid_from") @db.Timestamptz(6)
-  validTo            DateTime?                        @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod        Unsupported("tstzrange")?        @default(dbgenerated()) @map("valid_period")
-  recordedAt         DateTime                         @default(now()) @map("recorded_at") @db.Timestamptz(6)
-  supersededAt       DateTime?                        @map("superseded_at") @db.Timestamptz(6)
+      id                 String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId            String                           @map("scope_id") @db.Uuid
+      entityId           String                           @map("entity_id") @db.Uuid
+      propertyId         String                           @map("property_id") @db.Uuid
+      ordinal            Int                              @default(1)
+      textValue          String?                          @map("text_value")
+      codeValue          String?                          @map("code_value")
+      numberValue        Decimal?                         @map("number_value") @db.Decimal
+      unitCode           String?                          @map("unit_code")
+      ratWhole           BigInt?                          @map("rat_whole")
+      ratNum             BigInt?                          @map("rat_num")
+      ratDen             BigInt?                          @map("rat_den")
+      booleanValue       Boolean?                         @map("boolean_value")
+      dateValue          DateTime?                        @map("date_value") @db.Date
+      refEntityId        String?                          @map("ref_entity_id") @db.Uuid
+      jsonValue          Json?                            @map("json_value")
+      /// @generated
+      measureValue       Unsupported("measure")?          @default(dbgenerated()) @map("measure_value")
+      /// @generated
+      rationalValue      Unsupported("rational_measure")? @default(dbgenerated()) @map("rational_value")
+      resolutionState    ResolutionState                  @map("resolution_state")
+      winningAssertionId String?                          @map("winning_assertion_id") @db.Uuid
+      policyId           String?                          @map("policy_id") @db.Uuid
+      resolutionRunId    String                           @map("resolution_run_id") @db.Uuid
+      validFrom          DateTime?                        @map("valid_from") @db.Timestamptz(6)
+      validTo            DateTime?                        @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod        Unsupported("tstzrange")?        @default(dbgenerated()) @map("valid_period")
+      recordedAt         DateTime                         @default(now()) @map("recorded_at") @db.Timestamptz(6)
+      supersededAt       DateTime?                        @map("superseded_at") @db.Timestamptz(6)
 
-  scope            Scope              @relation(fields: [scopeId], references: [id])
-  entity           Entity             @relation("ValueSubject", fields: [entityId], references: [id])
-  property         PropertyDefinition @relation(fields: [propertyId], references: [id])
-  refEntity        Entity?            @relation("ValueRef", fields: [refEntityId], references: [id])
-  winningAssertion FactAssertion?     @relation(fields: [winningAssertionId], references: [id])
-  policy           ResolutionPolicy?  @relation(fields: [policyId], references: [id])
-  resolutionRun    ResolutionRun      @relation(fields: [resolutionRunId], references: [id])
-  reviewsAsOld     ReviewItem[]       @relation("ReviewOldValue")
-  reviewsAsNew     ReviewItem[]       @relation("ReviewNewValue")
+      scope            Scope              @relation(fields: [scopeId], references: [id])
+      entity           Entity             @relation("ValueSubject", fields: [entityId], references: [id])
+      property         PropertyDefinition @relation(fields: [propertyId], references: [id])
+      refEntity        Entity?            @relation("ValueRef", fields: [refEntityId], references: [id])
+      winningAssertion FactAssertion?     @relation(fields: [winningAssertionId], references: [id])
+      policy           ResolutionPolicy?  @relation(fields: [policyId], references: [id])
+      resolutionRun    ResolutionRun      @relation(fields: [resolutionRunId], references: [id])
+      reviewsAsOld     ReviewItem[]       @relation("ReviewOldValue")
+      reviewsAsNew     ReviewItem[]       @relation("ReviewNewValue")
 
-  @@map("property_value")
+      @@map("property_value")
 }
 
 // ---------------------------------------------------------------------
 // 6. Mappings + review
 // ---------------------------------------------------------------------
 model EntityMapping {
-  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  subjectEntityId   String                    @map("subject_entity_id") @db.Uuid
-  objectEntityId    String                    @map("object_entity_id") @db.Uuid
-  mappingType       MappingType               @map("mapping_type")
-  scopeId           String                    @map("scope_id") @db.Uuid
-  assertedBySource  String                    @map("asserted_by_source")
-  firstSeenRunId    String?                   @map("first_seen_run_id") @db.Uuid
-  lastSeenRunId     String?                   @map("last_seen_run_id") @db.Uuid
-  sourceRecordId    String?                   @map("source_record_id") @db.Uuid
-  confidence        Decimal?                  @db.Decimal
-  approvedBy        String?                   @map("approved_by") @db.Uuid
-  approvedAt        DateTime?                 @map("approved_at") @db.Timestamptz(6)
-  validFrom         DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo           DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod       Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
-  recordedAt        DateTime                  @default(now()) @map("recorded_at") @db.Timestamptz(6)
-  supersededAt      DateTime?                 @map("superseded_at") @db.Timestamptz(6)
-  invalidatedReason String?                   @map("invalidated_reason")
+      id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      subjectEntityId   String                    @map("subject_entity_id") @db.Uuid
+      objectEntityId    String                    @map("object_entity_id") @db.Uuid
+      mappingType       MappingType               @map("mapping_type")
+      scopeId           String                    @map("scope_id") @db.Uuid
+      assertedBySource  String                    @map("asserted_by_source")
+      firstSeenRunId    String?                   @map("first_seen_run_id") @db.Uuid
+      lastSeenRunId     String?                   @map("last_seen_run_id") @db.Uuid
+      sourceRecordId    String?                   @map("source_record_id") @db.Uuid
+      confidence        Decimal?                  @db.Decimal
+      approvedBy        String?                   @map("approved_by") @db.Uuid
+      approvedAt        DateTime?                 @map("approved_at") @db.Timestamptz(6)
+      validFrom         DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo           DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod       Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      recordedAt        DateTime                  @default(now()) @map("recorded_at") @db.Timestamptz(6)
+      supersededAt      DateTime?                 @map("superseded_at") @db.Timestamptz(6)
+      invalidatedReason String?                   @map("invalidated_reason")
 
-  subjectEntity Entity        @relation("MappingSubject", fields: [subjectEntityId], references: [id])
-  objectEntity  Entity        @relation("MappingObject", fields: [objectEntityId], references: [id])
-  scope         Scope         @relation(fields: [scopeId], references: [id])
-  source        Source        @relation(fields: [assertedBySource], references: [code])
-  firstSeenRun  IngestionRun? @relation("MappingFirstSeen", fields: [firstSeenRunId], references: [id])
-  lastSeenRun   IngestionRun? @relation("MappingLastSeen", fields: [lastSeenRunId], references: [id])
-  sourceRecord  SourceRecord? @relation(fields: [sourceRecordId], references: [id])
-  reviewItems   ReviewItem[]
+      subjectEntity Entity        @relation("MappingSubject", fields: [subjectEntityId], references: [id])
+      objectEntity  Entity        @relation("MappingObject", fields: [objectEntityId], references: [id])
+      scope         Scope         @relation(fields: [scopeId], references: [id])
+      source        Source        @relation(fields: [assertedBySource], references: [code])
+      firstSeenRun  IngestionRun? @relation("MappingFirstSeen", fields: [firstSeenRunId], references: [id])
+      lastSeenRun   IngestionRun? @relation("MappingLastSeen", fields: [lastSeenRunId], references: [id])
+      sourceRecord  SourceRecord? @relation(fields: [sourceRecordId], references: [id])
+      reviewItems   ReviewItem[]
 
-  @@map("entity_mapping")
+      @@map("entity_mapping")
 }
 
 model ReviewItem {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId         String    @map("scope_id") @db.Uuid
-  kind            String
-  severity        String
-  entityId        String?   @map("entity_id") @db.Uuid
-  propertyId      String?   @map("property_id") @db.Uuid
-  mappingId       String?   @map("mapping_id") @db.Uuid
-  oldValueId      String?   @map("old_value_id") @db.Uuid
-  newValueId      String?   @map("new_value_id") @db.Uuid
-  resolutionRunId String?   @map("resolution_run_id") @db.Uuid
-  status          String    @default("open")
-  resolvedBy      String?   @map("resolved_by") @db.Uuid
-  resolvedAt      DateTime? @map("resolved_at") @db.Timestamptz(6)
-  note            String?
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+      id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId         String    @map("scope_id") @db.Uuid
+      kind            String
+      severity        String
+      entityId        String?   @map("entity_id") @db.Uuid
+      propertyId      String?   @map("property_id") @db.Uuid
+      mappingId       String?   @map("mapping_id") @db.Uuid
+      oldValueId      String?   @map("old_value_id") @db.Uuid
+      newValueId      String?   @map("new_value_id") @db.Uuid
+      resolutionRunId String?   @map("resolution_run_id") @db.Uuid
+      status          String    @default("open")
+      resolvedBy      String?   @map("resolved_by") @db.Uuid
+      resolvedAt      DateTime? @map("resolved_at") @db.Timestamptz(6)
+      note            String?
+      createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  scope         Scope               @relation(fields: [scopeId], references: [id])
-  entity        Entity?             @relation(fields: [entityId], references: [id])
-  property      PropertyDefinition? @relation(fields: [propertyId], references: [id])
-  mapping       EntityMapping?      @relation(fields: [mappingId], references: [id])
-  oldValue      PropertyValue?      @relation("ReviewOldValue", fields: [oldValueId], references: [id])
-  newValue      PropertyValue?      @relation("ReviewNewValue", fields: [newValueId], references: [id])
-  resolutionRun ResolutionRun?      @relation(fields: [resolutionRunId], references: [id])
+      scope         Scope               @relation(fields: [scopeId], references: [id])
+      entity        Entity?             @relation(fields: [entityId], references: [id])
+      property      PropertyDefinition? @relation(fields: [propertyId], references: [id])
+      mapping       EntityMapping?      @relation(fields: [mappingId], references: [id])
+      oldValue      PropertyValue?      @relation("ReviewOldValue", fields: [oldValueId], references: [id])
+      newValue      PropertyValue?      @relation("ReviewNewValue", fields: [newValueId], references: [id])
+      resolutionRun ResolutionRun?      @relation(fields: [resolutionRunId], references: [id])
 
-  @@index([scopeId, status, severity])
-  @@map("review_item")
+      @@index([scopeId, status, severity])
+      @@map("review_item")
 }
 
 // ---------------------------------------------------------------------
 // 7. Derivations, read models, views
 // ---------------------------------------------------------------------
 model Derivation {
-  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  outputPropertyId String  @map("output_property_id") @db.Uuid
-  implementation   String
-  version          Int
-  active           Boolean @default(true)
+      id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      outputPropertyId String  @map("output_property_id") @db.Uuid
+      implementation   String
+      version          Int
+      active           Boolean @default(true)
 
-  outputProperty   PropertyDefinition @relation(fields: [outputPropertyId], references: [id])
-  derivationInputs DerivationInput[]
+      outputProperty   PropertyDefinition @relation(fields: [outputPropertyId], references: [id])
+      derivationInputs DerivationInput[]
 
-  @@unique([outputPropertyId, version])
-  @@map("derivation")
+      @@unique([outputPropertyId, version])
+      @@map("derivation")
 }
 
 model DerivationInput {
-  derivationId    String @map("derivation_id") @db.Uuid
-  inputPropertyId String @map("input_property_id") @db.Uuid
+      derivationId    String @map("derivation_id") @db.Uuid
+      inputPropertyId String @map("input_property_id") @db.Uuid
 
-  derivation    Derivation         @relation(fields: [derivationId], references: [id])
-  inputProperty PropertyDefinition @relation(fields: [inputPropertyId], references: [id])
+      derivation    Derivation         @relation(fields: [derivationId], references: [id])
+      inputProperty PropertyDefinition @relation(fields: [inputPropertyId], references: [id])
 
-  @@id([derivationId, inputPropertyId])
-  @@map("derivation_input")
+      @@id([derivationId, inputPropertyId])
+      @@map("derivation_input")
 }
 
 model DerivationDirty {
-  entityId   String   @map("entity_id") @db.Uuid
-  propertyId String   @map("property_id") @db.Uuid
-  scopeId    String   @map("scope_id") @db.Uuid
-  markedAt   DateTime @default(now()) @map("marked_at") @db.Timestamptz(6)
+      entityId   String   @map("entity_id") @db.Uuid
+      propertyId String   @map("property_id") @db.Uuid
+      scopeId    String   @map("scope_id") @db.Uuid
+      markedAt   DateTime @default(now()) @map("marked_at") @db.Timestamptz(6)
 
-  entity   Entity             @relation(fields: [entityId], references: [id])
-  property PropertyDefinition @relation(fields: [propertyId], references: [id])
-  scope    Scope              @relation(fields: [scopeId], references: [id])
+      entity   Entity             @relation(fields: [entityId], references: [id])
+      property PropertyDefinition @relation(fields: [propertyId], references: [id])
+      scope    Scope              @relation(fields: [scopeId], references: [id])
 
-  @@id([entityId, propertyId, scopeId])
-  @@map("derivation_dirty")
+      @@id([entityId, propertyId, scopeId])
+      @@map("derivation_dirty")
 }
 
 model PropertyGroupIndex {
-  scopeId         String                  @map("scope_id") @db.Uuid
-  entityId        String                  @map("entity_id") @db.Uuid
-  propertyId      String                  @map("property_id") @db.Uuid
-  ordinal         Int
-  groupKey        String                  @map("group_key")
-  displayValue    String                  @map("display_value")
-  sortMag         Decimal?                @map("sort_mag") @db.Decimal
-  sortUom         String?                 @map("sort_uom")
-  /// @generated unit-aware sort key
-  sortValue       Unsupported("measure")? @default(dbgenerated()) @map("sort_value")
-  resolutionRunId String                  @map("resolution_run_id") @db.Uuid
+      scopeId         String                  @map("scope_id") @db.Uuid
+      entityId        String                  @map("entity_id") @db.Uuid
+      propertyId      String                  @map("property_id") @db.Uuid
+      ordinal         Int
+      groupKey        String                  @map("group_key")
+      displayValue    String                  @map("display_value")
+      sortMag         Decimal?                @map("sort_mag") @db.Decimal
+      sortUom         String?                 @map("sort_uom")
+      /// @generated unit-aware sort key
+      sortValue       Unsupported("measure")? @default(dbgenerated()) @map("sort_value")
+      resolutionRunId String                  @map("resolution_run_id") @db.Uuid
 
-  scope         Scope              @relation(fields: [scopeId], references: [id])
-  entity        Entity             @relation(fields: [entityId], references: [id])
-  property      PropertyDefinition @relation(fields: [propertyId], references: [id])
-  resolutionRun ResolutionRun      @relation(fields: [resolutionRunId], references: [id])
+      scope         Scope              @relation(fields: [scopeId], references: [id])
+      entity        Entity             @relation(fields: [entityId], references: [id])
+      property      PropertyDefinition @relation(fields: [propertyId], references: [id])
+      resolutionRun ResolutionRun      @relation(fields: [resolutionRunId], references: [id])
 
-  @@id([scopeId, entityId, propertyId, ordinal])
-  @@index([scopeId, propertyId, groupKey])
-  @@map("property_group_index")
+      @@id([scopeId, entityId, propertyId, ordinal])
+      @@index([scopeId, propertyId, groupKey])
+      @@map("property_group_index")
 }
 
 model PackageCatalogProjection {
-  scopeId              String                  @map("scope_id") @db.Uuid
-  packageId            String                  @map("package_id") @db.Uuid
-  active               Boolean
-  ndc11                String?
-  gtin                 String?
-  ingredientSetPrecise String?                 @map("ingredient_set_precise")
-  ingredientSetMoiety  String?                 @map("ingredient_set_moiety")
-  route                String?
-  doseForm             String?                 @map("dose_form")
-  containerType        String?                 @map("container_type")
-  fillVolumeMag        Decimal?                @map("fill_volume_mag") @db.Decimal
-  fillVolumeUom        String?                 @map("fill_volume_uom")
-  /// @generated
-  fillVolume           Unsupported("measure")? @default(dbgenerated()) @map("fill_volume")
-  strengthMag          Decimal?                @map("strength_mag") @db.Decimal
-  strengthUom          String?                 @map("strength_uom")
-  /// @generated
-  strength             Unsupported("measure")? @default(dbgenerated())
-  strengthDisplay      String?                 @map("strength_display")
-  labelerId            String?                 @map("labeler_id") @db.Uuid
-  onFormulary          Boolean                 @default(false) @map("on_formulary")
-  tags                 Json                    @default("{}")
-  resolutionRunId      String                  @map("resolution_run_id") @db.Uuid
-  refreshedAt          DateTime                @default(now()) @map("refreshed_at") @db.Timestamptz(6)
+      scopeId              String                  @map("scope_id") @db.Uuid
+      packageId            String                  @map("package_id") @db.Uuid
+      active               Boolean
+      ndc11                String?
+      gtin                 String?
+      ingredientSetPrecise String?                 @map("ingredient_set_precise")
+      ingredientSetMoiety  String?                 @map("ingredient_set_moiety")
+      route                String?
+      doseForm             String?                 @map("dose_form")
+      containerType        String?                 @map("container_type")
+      fillVolumeMag        Decimal?                @map("fill_volume_mag") @db.Decimal
+      fillVolumeUom        String?                 @map("fill_volume_uom")
+      /// @generated
+      fillVolume           Unsupported("measure")? @default(dbgenerated()) @map("fill_volume")
+      strengthMag          Decimal?                @map("strength_mag") @db.Decimal
+      strengthUom          String?                 @map("strength_uom")
+      /// @generated
+      strength             Unsupported("measure")? @default(dbgenerated())
+      strengthDisplay      String?                 @map("strength_display")
+      labelerId            String?                 @map("labeler_id") @db.Uuid
+      onFormulary          Boolean                 @default(false) @map("on_formulary")
+      tags                 Json                    @default("{}")
+      resolutionRunId      String                  @map("resolution_run_id") @db.Uuid
+      refreshedAt          DateTime                @default(now()) @map("refreshed_at") @db.Timestamptz(6)
 
-  scope         Scope         @relation(fields: [scopeId], references: [id])
-  package       Package       @relation(fields: [packageId], references: [id])
-  labeler       Labeler?      @relation(fields: [labelerId], references: [id])
-  resolutionRun ResolutionRun @relation(fields: [resolutionRunId], references: [id])
+      scope         Scope         @relation(fields: [scopeId], references: [id])
+      package       Package       @relation(fields: [packageId], references: [id])
+      labeler       Labeler?      @relation(fields: [labelerId], references: [id])
+      resolutionRun ResolutionRun @relation(fields: [resolutionRunId], references: [id])
 
-  @@id([scopeId, packageId])
-  @@index([scopeId, ingredientSetMoiety, route])
-  @@index([ndc11])
-  @@index([gtin])
-  @@map("package_catalog_projection")
+      @@id([scopeId, packageId])
+      @@index([scopeId, ingredientSetMoiety, route])
+      @@index([ndc11])
+      @@index([gtin])
+      @@map("package_catalog_projection")
 }
 
 model CatalogView {
-  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId          String     @map("scope_id") @db.Uuid
-  name             String
-  entityScope      EntityType @default(package) @map("entity_scope")
-  filterExpression Json       @default("{}") @map("filter_expression")
-  version          Int        @default(1)
-  ownerId          String?    @map("owner_id") @db.Uuid
-  status           String     @default("ok")
+      id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId          String     @map("scope_id") @db.Uuid
+      name             String
+      entityScope      EntityType @default(package) @map("entity_scope")
+      filterExpression Json       @default("{}") @map("filter_expression")
+      version          Int        @default(1)
+      ownerId          String?    @map("owner_id") @db.Uuid
+      status           String     @default("ok")
 
-  scope             Scope              @relation(fields: [scopeId], references: [id])
-  catalogViewLevels CatalogViewLevel[]
+      scope             Scope              @relation(fields: [scopeId], references: [id])
+      catalogViewLevels CatalogViewLevel[]
 
-  @@unique([scopeId, name])
-  @@map("catalog_view")
+      @@unique([scopeId, name])
+      @@map("catalog_view")
 }
 
 model CatalogViewLevel {
-  viewId             String  @map("view_id") @db.Uuid
-  position           Int
-  propertyId         String  @map("property_id") @db.Uuid
-  pinnedMajorVersion Int     @map("pinned_major_version")
-  mode               String  @default("group")
-  nullBehavior       String  @default("bucket") @map("null_behavior")
-  multiValueBehavior String  @default("repeat") @map("multi_value_behavior")
-  sortStrategy       String  @default("lexical") @map("sort_strategy")
-  sortExpression     Json?   @map("sort_expression")
-  labelTemplate      String? @map("label_template")
+      viewId             String  @map("view_id") @db.Uuid
+      position           Int
+      propertyId         String  @map("property_id") @db.Uuid
+      pinnedMajorVersion Int     @map("pinned_major_version")
+      mode               String  @default("group")
+      nullBehavior       String  @default("bucket") @map("null_behavior")
+      multiValueBehavior String  @default("repeat") @map("multi_value_behavior")
+      sortStrategy       String  @default("lexical") @map("sort_strategy")
+      sortExpression     Json?   @map("sort_expression")
+      labelTemplate      String? @map("label_template")
 
-  view     CatalogView        @relation(fields: [viewId], references: [id], onDelete: Cascade)
-  property PropertyDefinition @relation(fields: [propertyId], references: [id])
+      view     CatalogView        @relation(fields: [viewId], references: [id], onDelete: Cascade)
+      property PropertyDefinition @relation(fields: [propertyId], references: [id])
 
-  @@id([viewId, position])
-  @@map("catalog_view_level")
+      @@id([viewId, position])
+      @@map("catalog_view_level")
 }
 
 // =====================================================================
 // COMPOUNDING
 // =====================================================================
 model CompoundingTerm {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  kind        TermKind
-  refEntityId String?  @map("ref_entity_id") @db.Uuid
-  code        String?
-  display     String
+      id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      kind        TermKind
+      refEntityId String?  @map("ref_entity_id") @db.Uuid
+      code        String?
+      display     String
 
-  refEntity               Entity?                 @relation(fields: [refEntityId], references: [id])
-  memberships             TermMembership[]        @relation("MembershipMember")
-  members                 TermMembership[]        @relation("MembershipClass")
-  rulesAsLeft             CompoundingRule[]       @relation("RuleLeft")
-  rulesAsRight            CompoundingRule[]       @relation("RuleRight")
-  stabilityCells          StabilityCell[]         @relation("CellIngredient")
-  stabilityDiluentCells   StabilityCell[]         @relation("CellDiluent")
-  stabilityContainerCells StabilityCell[]         @relation("CellContainer")
-  preparationsAsDiluent   PreparationSpec[]       @relation("PrepDiluent")
-  preparationsAsContainer PreparationSpec[]       @relation("PrepContainer")
-  containerSpecs          ContainerSpec[]
-  preparationIngredients  PreparationIngredient[]
-  formulaSlots            FormulaSlot[]
-  slotCandidates          SlotCandidate[]
+      refEntity               Entity?                 @relation(fields: [refEntityId], references: [id])
+      memberships             TermMembership[]        @relation("MembershipMember")
+      members                 TermMembership[]        @relation("MembershipClass")
+      rulesAsLeft             CompoundingRule[]       @relation("RuleLeft")
+      rulesAsRight            CompoundingRule[]       @relation("RuleRight")
+      stabilityCells          StabilityCell[]         @relation("CellIngredient")
+      stabilityDiluentCells   StabilityCell[]         @relation("CellDiluent")
+      stabilityContainerCells StabilityCell[]         @relation("CellContainer")
+      preparationsAsDiluent   PreparationSpec[]       @relation("PrepDiluent")
+      preparationsAsContainer PreparationSpec[]       @relation("PrepContainer")
+      containerSpecs          ContainerSpec[]
+      preparationIngredients  PreparationIngredient[]
+      formulaSlots            FormulaSlot[]
+      slotCandidates          SlotCandidate[]
 
-  @@unique([kind, refEntityId])
-  @@unique([kind, code])
-  @@map("compounding_term")
+      @@unique([kind, refEntityId])
+      @@unique([kind, code])
+      @@map("compounding_term")
 }
 
 model TermMembership {
-  memberTermId String                    @map("member_term_id") @db.Uuid
-  classTermId  String                    @map("class_term_id") @db.Uuid
-  scopeId      String                    @map("scope_id") @db.Uuid
-  validFrom    DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo      DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod  Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      memberTermId String                    @map("member_term_id") @db.Uuid
+      classTermId  String                    @map("class_term_id") @db.Uuid
+      scopeId      String                    @map("scope_id") @db.Uuid
+      validFrom    DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo      DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod  Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  memberTerm CompoundingTerm @relation("MembershipMember", fields: [memberTermId], references: [id])
-  classTerm  CompoundingTerm @relation("MembershipClass", fields: [classTermId], references: [id])
-  scope      Scope           @relation(fields: [scopeId], references: [id])
+      memberTerm CompoundingTerm @relation("MembershipMember", fields: [memberTermId], references: [id])
+      classTerm  CompoundingTerm @relation("MembershipClass", fields: [classTermId], references: [id])
+      scope      Scope           @relation(fields: [scopeId], references: [id])
 
-  @@id([memberTermId, classTermId, scopeId])
-  @@map("term_membership")
+      @@id([memberTermId, classTermId, scopeId])
+      @@map("term_membership")
 }
 
 model ContainerSpec {
-  packageId         String                  @id @map("package_id") @db.Uuid
-  materialTermId    String?                 @map("material_term_id") @db.Uuid
-  nominalVolumeMag  Decimal?                @map("nominal_volume_mag") @db.Decimal
-  nominalVolumeUom  String?                 @default("mL") @map("nominal_volume_uom")
-  /// @generated
-  nominalVolume     Unsupported("measure")? @default(dbgenerated()) @map("nominal_volume")
-  labeledFillMag    Decimal?                @map("labeled_fill_mag") @db.Decimal
-  labeledFillUom    String?                 @default("mL") @map("labeled_fill_uom")
-  /// @generated
-  labeledFill       Unsupported("measure")? @default(dbgenerated()) @map("labeled_fill")
-  overfillMag       Decimal                 @default(0) @map("overfill_mag") @db.Decimal
-  overfillUom       String                  @default("mL") @map("overfill_uom")
-  /// @generated
-  overfill          Unsupported("measure")? @default(dbgenerated())
-  maxFillMag        Decimal?                @map("max_fill_mag") @db.Decimal
-  maxFillUom        String?                 @default("mL") @map("max_fill_uom")
-  /// @generated
-  maxFill           Unsupported("measure")? @default(dbgenerated()) @map("max_fill")
-  residualMag       Decimal                 @default(0) @map("residual_mag") @db.Decimal
-  residualUom       String                  @default("mL") @map("residual_uom")
-  /// @generated unrecoverable hold-up
-  residual          Unsupported("measure")? @default(dbgenerated())
-  doseType          String?                 @map("dose_type")
-  isLightProtective Boolean                 @default(false) @map("is_light_protective")
-  latexFree         Boolean?                @map("latex_free")
-  dehpFree          Boolean?                @map("dehp_free")
-  sourceRecordId    String?                 @map("source_record_id") @db.Uuid
+      packageId         String                  @id @map("package_id") @db.Uuid
+      materialTermId    String?                 @map("material_term_id") @db.Uuid
+      nominalVolumeMag  Decimal?                @map("nominal_volume_mag") @db.Decimal
+      nominalVolumeUom  String?                 @default("mL") @map("nominal_volume_uom")
+      /// @generated
+      nominalVolume     Unsupported("measure")? @default(dbgenerated()) @map("nominal_volume")
+      labeledFillMag    Decimal?                @map("labeled_fill_mag") @db.Decimal
+      labeledFillUom    String?                 @default("mL") @map("labeled_fill_uom")
+      /// @generated
+      labeledFill       Unsupported("measure")? @default(dbgenerated()) @map("labeled_fill")
+      overfillMag       Decimal                 @default(0) @map("overfill_mag") @db.Decimal
+      overfillUom       String                  @default("mL") @map("overfill_uom")
+      /// @generated
+      overfill          Unsupported("measure")? @default(dbgenerated())
+      maxFillMag        Decimal?                @map("max_fill_mag") @db.Decimal
+      maxFillUom        String?                 @default("mL") @map("max_fill_uom")
+      /// @generated
+      maxFill           Unsupported("measure")? @default(dbgenerated()) @map("max_fill")
+      residualMag       Decimal                 @default(0) @map("residual_mag") @db.Decimal
+      residualUom       String                  @default("mL") @map("residual_uom")
+      /// @generated unrecoverable hold-up
+      residual          Unsupported("measure")? @default(dbgenerated())
+      doseType          String?                 @map("dose_type")
+      isLightProtective Boolean                 @default(false) @map("is_light_protective")
+      latexFree         Boolean?                @map("latex_free")
+      dehpFree          Boolean?                @map("dehp_free")
+      sourceRecordId    String?                 @map("source_record_id") @db.Uuid
 
-  package      Package          @relation(fields: [packageId], references: [id])
-  materialTerm CompoundingTerm? @relation(fields: [materialTermId], references: [id])
-  sourceRecord SourceRecord?    @relation(fields: [sourceRecordId], references: [id])
+      package      Package          @relation(fields: [packageId], references: [id])
+      materialTerm CompoundingTerm? @relation(fields: [materialTermId], references: [id])
+      sourceRecord SourceRecord?    @relation(fields: [sourceRecordId], references: [id])
 
-  @@map("container_spec")
+      @@map("container_spec")
 }
 
 model CompoundingRule {
-  id             String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId        String                        @map("scope_id") @db.Uuid
-  leftTermId     String                        @map("left_term_id") @db.Uuid
-  rightTermId    String                        @map("right_term_id") @db.Uuid
-  context        RuleContext
-  verdict        CompatVerdict
-  effect         RuleEffect
-  penaltyWeight  Decimal                       @default(0) @map("penalty_weight") @db.Decimal
-  leftConcLoMag  Decimal?                      @map("left_conc_lo_mag") @db.Decimal
-  leftConcHiMag  Decimal?                      @map("left_conc_hi_mag") @db.Decimal
-  leftConcUom    String?                       @map("left_conc_uom")
-  /// @generated [lo, hi] concentration band for the left term
-  leftConcBand   Unsupported("measure_range")? @default(dbgenerated()) @map("left_conc_band")
-  rightConcLoMag Decimal?                      @map("right_conc_lo_mag") @db.Decimal
-  rightConcHiMag Decimal?                      @map("right_conc_hi_mag") @db.Decimal
-  rightConcUom   String?                       @map("right_conc_uom")
-  /// @generated
-  rightConcBand  Unsupported("measure_range")? @default(dbgenerated()) @map("right_conc_band")
-  storage        StorageCondition?
-  maxContactMag  Decimal?                      @map("max_contact_mag") @db.Decimal
-  maxContactUom  String?                       @default("h") @map("max_contact_uom")
-  /// @generated e.g. 4 h at Y-site
-  maxContact     Unsupported("measure")?       @default(dbgenerated()) @map("max_contact")
-  mechanism      String?
-  rationale      String?
-  evidenceRef    String?                       @map("evidence_ref")
-  sourceRecordId String?                       @map("source_record_id") @db.Uuid
-  approvedBy     String?                       @map("approved_by") @db.Uuid
-  approvedAt     DateTime?                     @map("approved_at") @db.Timestamptz(6)
-  validFrom      DateTime                      @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo        DateTime?                     @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod    Unsupported("tstzrange")?     @default(dbgenerated()) @map("valid_period")
-  recordedAt     DateTime                      @default(now()) @map("recorded_at") @db.Timestamptz(6)
-  supersededAt   DateTime?                     @map("superseded_at") @db.Timestamptz(6)
+      id             String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId        String                        @map("scope_id") @db.Uuid
+      leftTermId     String                        @map("left_term_id") @db.Uuid
+      rightTermId    String                        @map("right_term_id") @db.Uuid
+      context        RuleContext
+      verdict        CompatVerdict
+      effect         RuleEffect
+      penaltyWeight  Decimal                       @default(0) @map("penalty_weight") @db.Decimal
+      leftConcLoMag  Decimal?                      @map("left_conc_lo_mag") @db.Decimal
+      leftConcHiMag  Decimal?                      @map("left_conc_hi_mag") @db.Decimal
+      leftConcUom    String?                       @map("left_conc_uom")
+      /// @generated [lo, hi] concentration band for the left term
+      leftConcBand   Unsupported("measure_range")? @default(dbgenerated()) @map("left_conc_band")
+      rightConcLoMag Decimal?                      @map("right_conc_lo_mag") @db.Decimal
+      rightConcHiMag Decimal?                      @map("right_conc_hi_mag") @db.Decimal
+      rightConcUom   String?                       @map("right_conc_uom")
+      /// @generated
+      rightConcBand  Unsupported("measure_range")? @default(dbgenerated()) @map("right_conc_band")
+      storage        StorageCondition?
+      maxContactMag  Decimal?                      @map("max_contact_mag") @db.Decimal
+      maxContactUom  String?                       @default("h") @map("max_contact_uom")
+      /// @generated e.g. 4 h at Y-site
+      maxContact     Unsupported("measure")?       @default(dbgenerated()) @map("max_contact")
+      mechanism      String?
+      rationale      String?
+      evidenceRef    String?                       @map("evidence_ref")
+      sourceRecordId String?                       @map("source_record_id") @db.Uuid
+      approvedBy     String?                       @map("approved_by") @db.Uuid
+      approvedAt     DateTime?                     @map("approved_at") @db.Timestamptz(6)
+      validFrom      DateTime                      @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo        DateTime?                     @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod    Unsupported("tstzrange")?     @default(dbgenerated()) @map("valid_period")
+      recordedAt     DateTime                      @default(now()) @map("recorded_at") @db.Timestamptz(6)
+      supersededAt   DateTime?                     @map("superseded_at") @db.Timestamptz(6)
 
-  scope             Scope              @relation(fields: [scopeId], references: [id])
-  leftTerm          CompoundingTerm    @relation("RuleLeft", fields: [leftTermId], references: [id])
-  rightTerm         CompoundingTerm    @relation("RuleRight", fields: [rightTermId], references: [id])
-  sourceRecord      SourceRecord?      @relation(fields: [sourceRecordId], references: [id])
-  buildPlanFindings BuildPlanFinding[]
+      scope             Scope              @relation(fields: [scopeId], references: [id])
+      leftTerm          CompoundingTerm    @relation("RuleLeft", fields: [leftTermId], references: [id])
+      rightTerm         CompoundingTerm    @relation("RuleRight", fields: [rightTermId], references: [id])
+      sourceRecord      SourceRecord?      @relation(fields: [sourceRecordId], references: [id])
+      buildPlanFindings BuildPlanFinding[]
 
-  @@map("compounding_rule")
+      @@map("compounding_rule")
 }
 
 model BudRegulatoryLimit {
-  id                    String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId               String                    @map("scope_id") @db.Uuid
-  kind                  CompoundingKind
-  standardRef           String                    @map("standard_ref")
-  category              String
-  storage               StorageCondition
-  /// NULL = storage not permitted for this category
-  maxDurationMag        Decimal?                  @map("max_duration_mag") @db.Decimal
-  maxDurationUom        String?                   @default("h") @map("max_duration_uom")
-  /// @generated
-  maxDuration           Unsupported("measure")?   @default(dbgenerated()) @map("max_duration")
-  requiresSterilityTest Boolean                   @default(false) @map("requires_sterility_test")
-  validFrom             DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo               DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod           Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      id                    String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId               String                    @map("scope_id") @db.Uuid
+      kind                  CompoundingKind
+      standardRef           String                    @map("standard_ref")
+      category              String
+      storage               StorageCondition
+      /// NULL = storage not permitted for this category
+      maxDurationMag        Decimal?                  @map("max_duration_mag") @db.Decimal
+      maxDurationUom        String?                   @default("h") @map("max_duration_uom")
+      /// @generated
+      maxDuration           Unsupported("measure")?   @default(dbgenerated()) @map("max_duration")
+      requiresSterilityTest Boolean                   @default(false) @map("requires_sterility_test")
+      validFrom             DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo               DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod           Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  scope Scope @relation(fields: [scopeId], references: [id])
+      scope Scope @relation(fields: [scopeId], references: [id])
 
-  @@map("bud_regulatory_limit")
+      @@map("bud_regulatory_limit")
 }
 
 model StabilityStudy {
-  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  citation       String
-  method         String?
-  acceptancePct  Decimal @default(90) @map("acceptance_pct") @db.Decimal
-  sourceRecordId String? @map("source_record_id") @db.Uuid
-  qualityGrade   String? @map("quality_grade")
+      id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      citation       String
+      method         String?
+      acceptancePct  Decimal @default(90) @map("acceptance_pct") @db.Decimal
+      sourceRecordId String? @map("source_record_id") @db.Uuid
+      qualityGrade   String? @map("quality_grade")
 
-  sourceRecord   SourceRecord?   @relation(fields: [sourceRecordId], references: [id])
-  stabilityCells StabilityCell[]
+      sourceRecord   SourceRecord?   @relation(fields: [sourceRecordId], references: [id])
+      stabilityCells StabilityCell[]
 
-  @@map("stability_study")
+      @@map("stability_study")
 }
 
 model StabilityCell {
-  id               String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  studyId          String                        @map("study_id") @db.Uuid
-  scopeId          String                        @map("scope_id") @db.Uuid
-  ingredientTermId String                        @map("ingredient_term_id") @db.Uuid
-  diluentTermId    String?                       @map("diluent_term_id") @db.Uuid
-  containerTermId  String?                       @map("container_term_id") @db.Uuid
-  concLoMag        Decimal                       @map("conc_lo_mag") @db.Decimal
-  concHiMag        Decimal                       @map("conc_hi_mag") @db.Decimal
-  concUom          String                        @map("conc_uom")
-  /// @generated inclusive concentration band studied
-  concBand         Unsupported("measure_range")? @default(dbgenerated()) @map("conc_band")
-  storage          StorageCondition
-  lightProtected   Boolean?                      @map("light_protected")
-  supportedMag     Decimal                       @map("supported_mag") @db.Decimal
-  supportedUom     String                        @default("h") @map("supported_uom")
-  /// @generated supported duration
-  supported        Unsupported("measure")?       @default(dbgenerated())
-  followedByCellId String?                       @map("followed_by_cell_id") @db.Uuid
-  localCapMag      Decimal?                      @map("local_cap_mag") @db.Decimal
-  localCapUom      String?                       @default("h") @map("local_cap_uom")
-  /// @generated policy haircut
-  localCap         Unsupported("measure")?       @default(dbgenerated()) @map("local_cap")
-  approvedBy       String?                       @map("approved_by") @db.Uuid
-  approvedAt       DateTime?                     @map("approved_at") @db.Timestamptz(6)
-  recordedAt       DateTime                      @default(now()) @map("recorded_at") @db.Timestamptz(6)
-  supersededAt     DateTime?                     @map("superseded_at") @db.Timestamptz(6)
+      id               String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      studyId          String                        @map("study_id") @db.Uuid
+      scopeId          String                        @map("scope_id") @db.Uuid
+      ingredientTermId String                        @map("ingredient_term_id") @db.Uuid
+      diluentTermId    String?                       @map("diluent_term_id") @db.Uuid
+      containerTermId  String?                       @map("container_term_id") @db.Uuid
+      concLoMag        Decimal                       @map("conc_lo_mag") @db.Decimal
+      concHiMag        Decimal                       @map("conc_hi_mag") @db.Decimal
+      concUom          String                        @map("conc_uom")
+      /// @generated inclusive concentration band studied
+      concBand         Unsupported("measure_range")? @default(dbgenerated()) @map("conc_band")
+      storage          StorageCondition
+      lightProtected   Boolean?                      @map("light_protected")
+      supportedMag     Decimal                       @map("supported_mag") @db.Decimal
+      supportedUom     String                        @default("h") @map("supported_uom")
+      /// @generated supported duration
+      supported        Unsupported("measure")?       @default(dbgenerated())
+      followedByCellId String?                       @map("followed_by_cell_id") @db.Uuid
+      localCapMag      Decimal?                      @map("local_cap_mag") @db.Decimal
+      localCapUom      String?                       @default("h") @map("local_cap_uom")
+      /// @generated policy haircut
+      localCap         Unsupported("measure")?       @default(dbgenerated()) @map("local_cap")
+      approvedBy       String?                       @map("approved_by") @db.Uuid
+      approvedAt       DateTime?                     @map("approved_at") @db.Timestamptz(6)
+      recordedAt       DateTime                      @default(now()) @map("recorded_at") @db.Timestamptz(6)
+      supersededAt     DateTime?                     @map("superseded_at") @db.Timestamptz(6)
 
-  study          StabilityStudy   @relation(fields: [studyId], references: [id])
-  scope          Scope            @relation(fields: [scopeId], references: [id])
-  ingredientTerm CompoundingTerm  @relation("CellIngredient", fields: [ingredientTermId], references: [id])
-  diluentTerm    CompoundingTerm? @relation("CellDiluent", fields: [diluentTermId], references: [id])
-  containerTerm  CompoundingTerm? @relation("CellContainer", fields: [containerTermId], references: [id])
-  followedBy     StabilityCell?   @relation("CellSequence", fields: [followedByCellId], references: [id])
-  precededBy     StabilityCell[]  @relation("CellSequence")
+      study          StabilityStudy   @relation(fields: [studyId], references: [id])
+      scope          Scope            @relation(fields: [scopeId], references: [id])
+      ingredientTerm CompoundingTerm  @relation("CellIngredient", fields: [ingredientTermId], references: [id])
+      diluentTerm    CompoundingTerm? @relation("CellDiluent", fields: [diluentTermId], references: [id])
+      containerTerm  CompoundingTerm? @relation("CellContainer", fields: [containerTermId], references: [id])
+      followedBy     StabilityCell?   @relation("CellSequence", fields: [followedByCellId], references: [id])
+      precededBy     StabilityCell[]  @relation("CellSequence")
 
-  @@map("stability_cell")
+      @@map("stability_cell")
 }
 
 model ComponentInUseLimit {
-  id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId        String                  @map("scope_id") @db.Uuid
-  doseType       String                  @map("dose_type")
-  environment    String
-  packageId      String?                 @map("package_id") @db.Uuid
-  maxDurationMag Decimal                 @map("max_duration_mag") @db.Decimal
-  maxDurationUom String                  @default("h") @map("max_duration_uom")
-  /// @generated
-  maxDuration    Unsupported("measure")? @default(dbgenerated()) @map("max_duration")
-  basis          String?
+      id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId        String                  @map("scope_id") @db.Uuid
+      doseType       String                  @map("dose_type")
+      environment    String
+      packageId      String?                 @map("package_id") @db.Uuid
+      maxDurationMag Decimal                 @map("max_duration_mag") @db.Decimal
+      maxDurationUom String                  @default("h") @map("max_duration_uom")
+      /// @generated
+      maxDuration    Unsupported("measure")? @default(dbgenerated()) @map("max_duration")
+      basis          String?
 
-  scope   Scope    @relation(fields: [scopeId], references: [id])
-  package Package? @relation(fields: [packageId], references: [id])
+      scope   Scope    @relation(fields: [scopeId], references: [id])
+      package Package? @relation(fields: [packageId], references: [id])
 
-  @@map("component_in_use_limit")
+      @@map("component_in_use_limit")
 }
 
 model PreparationSpec {
-  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId         String                  @map("scope_id") @db.Uuid
-  kind            CompoundingKind
-  budCategory     String                  @map("bud_category")
-  diluentTermId   String?                 @map("diluent_term_id") @db.Uuid
-  containerTermId String?                 @map("container_term_id") @db.Uuid
-  finalVolumeMag  Decimal?                @map("final_volume_mag") @db.Decimal
-  finalVolumeUom  String?                 @default("mL") @map("final_volume_uom")
-  /// @generated
-  finalVolume     Unsupported("measure")? @default(dbgenerated()) @map("final_volume")
-  storage         StorageCondition
-  lightProtected  Boolean                 @default(false) @map("light_protected")
+      id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId         String                  @map("scope_id") @db.Uuid
+      kind            CompoundingKind
+      budCategory     String                  @map("bud_category")
+      diluentTermId   String?                 @map("diluent_term_id") @db.Uuid
+      containerTermId String?                 @map("container_term_id") @db.Uuid
+      finalVolumeMag  Decimal?                @map("final_volume_mag") @db.Decimal
+      finalVolumeUom  String?                 @default("mL") @map("final_volume_uom")
+      /// @generated
+      finalVolume     Unsupported("measure")? @default(dbgenerated()) @map("final_volume")
+      storage         StorageCondition
+      lightProtected  Boolean                 @default(false) @map("light_protected")
 
-  scope                  Scope                   @relation(fields: [scopeId], references: [id])
-  diluentTerm            CompoundingTerm?        @relation("PrepDiluent", fields: [diluentTermId], references: [id])
-  containerTerm          CompoundingTerm?        @relation("PrepContainer", fields: [containerTermId], references: [id])
-  preparationIngredients PreparationIngredient[]
-  buildPlans             BuildPlan[]
+      scope                  Scope                   @relation(fields: [scopeId], references: [id])
+      diluentTerm            CompoundingTerm?        @relation("PrepDiluent", fields: [diluentTermId], references: [id])
+      containerTerm          CompoundingTerm?        @relation("PrepContainer", fields: [containerTermId], references: [id])
+      preparationIngredients PreparationIngredient[]
+      buildPlans             BuildPlan[]
 
-  @@map("preparation_spec")
+      @@map("preparation_spec")
 }
 
 model PreparationIngredient {
-  preparationId    String                  @map("preparation_id") @db.Uuid
-  ingredientTermId String                  @map("ingredient_term_id") @db.Uuid
-  finalConcMag     Decimal                 @map("final_conc_mag") @db.Decimal
-  finalConcUom     String                  @map("final_conc_uom")
-  /// @generated
-  finalConc        Unsupported("measure")? @default(dbgenerated()) @map("final_conc")
+      preparationId    String                  @map("preparation_id") @db.Uuid
+      ingredientTermId String                  @map("ingredient_term_id") @db.Uuid
+      finalConcMag     Decimal                 @map("final_conc_mag") @db.Decimal
+      finalConcUom     String                  @map("final_conc_uom")
+      /// @generated
+      finalConc        Unsupported("measure")? @default(dbgenerated()) @map("final_conc")
 
-  preparation    PreparationSpec @relation(fields: [preparationId], references: [id], onDelete: Cascade)
-  ingredientTerm CompoundingTerm @relation(fields: [ingredientTermId], references: [id])
+      preparation    PreparationSpec @relation(fields: [preparationId], references: [id], onDelete: Cascade)
+      ingredientTerm CompoundingTerm @relation(fields: [ingredientTermId], references: [id])
 
-  @@id([preparationId, ingredientTermId])
-  @@map("preparation_ingredient")
+      @@id([preparationId, ingredientTermId])
+      @@map("preparation_ingredient")
 }
 
 model CompoundFormula {
-  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId         String           @map("scope_id") @db.Uuid
-  formularyItemId String?          @map("formulary_item_id") @db.Uuid
-  kind            CompoundingKind
-  name            String
-  budCategory     String           @map("bud_category")
-  defaultStorage  StorageCondition @map("default_storage")
-  version         Int              @default(1)
-  status          String           @default("draft")
-  approvedBy      String?          @map("approved_by") @db.Uuid
-  approvedAt      DateTime?        @map("approved_at") @db.Timestamptz(6)
-  /// explicit total volume, mixed number in `totalVolumeUom` (mL); null = sum of component volumes
-  totalVolumeWhole BigInt? @map("total_volume_whole")
-  totalVolumeNum   BigInt? @map("total_volume_num")
-  totalVolumeDen   BigInt? @map("total_volume_den")
-  totalVolumeUom   String? @map("total_volume_uom")
+      id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId          String           @map("scope_id") @db.Uuid
+      formularyItemId  String?          @map("formulary_item_id") @db.Uuid
+      kind             CompoundingKind
+      name             String
+      budCategory      String           @map("bud_category")
+      defaultStorage   StorageCondition @map("default_storage")
+      version          Int              @default(1)
+      status           String           @default("draft")
+      approvedBy       String?          @map("approved_by") @db.Uuid
+      approvedAt       DateTime?        @map("approved_at") @db.Timestamptz(6)
+      /// explicit total volume, mixed number in `totalVolumeUom` (mL); null = sum of component volumes
+      totalVolumeWhole BigInt?          @map("total_volume_whole")
+      totalVolumeNum   BigInt?          @map("total_volume_num")
+      totalVolumeDen   BigInt?          @map("total_volume_den")
+      totalVolumeUom   String?          @map("total_volume_uom")
 
-  scope         Scope          @relation(fields: [scopeId], references: [id])
-  formularyItem FormularyItem? @relation(fields: [formularyItemId], references: [id])
-  formulaSlots  FormulaSlot[]
-  buildPlans    BuildPlan[]
+      scope         Scope          @relation(fields: [scopeId], references: [id])
+      formularyItem FormularyItem? @relation(fields: [formularyItemId], references: [id])
+      formulaSlots  FormulaSlot[]
+      buildPlans    BuildPlan[]
 
-  @@unique([scopeId, name, version])
-  @@map("compound_formula")
+      @@unique([scopeId, name, version])
+      @@map("compound_formula")
 }
 
 model FormulaSlot {
-  id                  String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  formulaId           String                           @map("formula_id") @db.Uuid
-  role                String
-  ingredientTermId    String?                          @map("ingredient_term_id") @db.Uuid
-  /// mixed-number amount per unit of preparation, e.g. 1 1/2 tsp
-  targetAmountWhole   BigInt?                          @map("target_amount_whole")
-  targetAmountNum     BigInt?                          @default(0) @map("target_amount_num")
-  targetAmountDen     BigInt?                          @default(1) @map("target_amount_den")
-  targetAmountUom     String?                          @map("target_amount_uom")
-  /// @generated
-  targetAmount        Unsupported("rational_measure")? @default(dbgenerated()) @map("target_amount")
-  targetConcMag       Decimal?                         @map("target_conc_mag") @db.Decimal
-  targetConcUom       String?                          @map("target_conc_uom")
-  /// @generated
-  targetConc          Unsupported("measure")?          @default(dbgenerated()) @map("target_conc")
-  /// component volume, mixed number in `volumeUom` (mL)
-  volumeWhole         BigInt?                          @map("volume_whole")
-  volumeNum           BigInt?                          @map("volume_num")
-  volumeDen           BigInt?                          @map("volume_den")
-  volumeUom           String?                          @map("volume_uom")
-  tolerancePct        Decimal                          @default(0) @map("tolerance_pct") @db.Decimal
-  allowMultiComponent Boolean                          @default(true) @map("allow_multi_component")
-  ordinal             Int                              @default(1)
+      id                  String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      formulaId           String                           @map("formula_id") @db.Uuid
+      role                String
+      ingredientTermId    String?                          @map("ingredient_term_id") @db.Uuid
+      /// mixed-number amount per unit of preparation, e.g. 1 1/2 tsp
+      targetAmountWhole   BigInt?                          @map("target_amount_whole")
+      targetAmountNum     BigInt?                          @default(0) @map("target_amount_num")
+      targetAmountDen     BigInt?                          @default(1) @map("target_amount_den")
+      targetAmountUom     String?                          @map("target_amount_uom")
+      /// @generated
+      targetAmount        Unsupported("rational_measure")? @default(dbgenerated()) @map("target_amount")
+      targetConcMag       Decimal?                         @map("target_conc_mag") @db.Decimal
+      targetConcUom       String?                          @map("target_conc_uom")
+      /// @generated
+      targetConc          Unsupported("measure")?          @default(dbgenerated()) @map("target_conc")
+      /// component volume, mixed number in `volumeUom` (mL)
+      volumeWhole         BigInt?                          @map("volume_whole")
+      volumeNum           BigInt?                          @map("volume_num")
+      volumeDen           BigInt?                          @map("volume_den")
+      volumeUom           String?                          @map("volume_uom")
+      tolerancePct        Decimal                          @default(0) @map("tolerance_pct") @db.Decimal
+      allowMultiComponent Boolean                          @default(true) @map("allow_multi_component")
+      ordinal             Int                              @default(1)
 
-  formula        CompoundFormula  @relation(fields: [formulaId], references: [id], onDelete: Cascade)
-  ingredientTerm CompoundingTerm? @relation(fields: [ingredientTermId], references: [id])
-  slotCandidates SlotCandidate[]
-  buildPlanLines BuildPlanLine[]
+      formula        CompoundFormula  @relation(fields: [formulaId], references: [id], onDelete: Cascade)
+      ingredientTerm CompoundingTerm? @relation(fields: [ingredientTermId], references: [id])
+      slotCandidates SlotCandidate[]
+      buildPlanLines BuildPlanLine[]
 
-  @@map("formula_slot")
+      @@map("formula_slot")
 }
 
 model SlotCandidate {
-  slotId                      String                    @map("slot_id") @db.Uuid
-  packageId                   String                    @map("package_id") @db.Uuid
-  preferenceRank              Int                       @default(1) @map("preference_rank")
-  isRestricted                Boolean                   @default(false) @map("is_restricted")
-  sourceConcMag               Decimal?                  @map("source_conc_mag") @db.Decimal
-  sourceConcUom               String?                   @map("source_conc_uom")
-  /// @generated
-  sourceConc                  Unsupported("measure")?   @default(dbgenerated()) @map("source_conc")
-  requiresReconstitution      Boolean                   @default(false) @map("requires_reconstitution")
-  reconstitutionDiluentTermId String?                   @map("reconstitution_diluent_term_id") @db.Uuid
-  reconstitutedVolumeMag      Decimal?                  @map("reconstituted_volume_mag") @db.Decimal
-  reconstitutedVolumeUom      String?                   @default("mL") @map("reconstituted_volume_uom")
-  /// @generated
-  reconstitutedVolume         Unsupported("measure")?   @default(dbgenerated()) @map("reconstituted_volume")
-  note                        String?
-  validFrom                   DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo                     DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod                 Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      slotId                      String                    @map("slot_id") @db.Uuid
+      packageId                   String                    @map("package_id") @db.Uuid
+      preferenceRank              Int                       @default(1) @map("preference_rank")
+      isRestricted                Boolean                   @default(false) @map("is_restricted")
+      sourceConcMag               Decimal?                  @map("source_conc_mag") @db.Decimal
+      sourceConcUom               String?                   @map("source_conc_uom")
+      /// @generated
+      sourceConc                  Unsupported("measure")?   @default(dbgenerated()) @map("source_conc")
+      requiresReconstitution      Boolean                   @default(false) @map("requires_reconstitution")
+      reconstitutionDiluentTermId String?                   @map("reconstitution_diluent_term_id") @db.Uuid
+      reconstitutedVolumeMag      Decimal?                  @map("reconstituted_volume_mag") @db.Decimal
+      reconstitutedVolumeUom      String?                   @default("mL") @map("reconstituted_volume_uom")
+      /// @generated
+      reconstitutedVolume         Unsupported("measure")?   @default(dbgenerated()) @map("reconstituted_volume")
+      note                        String?
+      validFrom                   DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo                     DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod                 Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  slot                      FormulaSlot      @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  package                   Package          @relation(fields: [packageId], references: [id])
-  reconstitutionDiluentTerm CompoundingTerm? @relation(fields: [reconstitutionDiluentTermId], references: [id])
+      slot                      FormulaSlot      @relation(fields: [slotId], references: [id], onDelete: Cascade)
+      package                   Package          @relation(fields: [packageId], references: [id])
+      reconstitutionDiluentTerm CompoundingTerm? @relation(fields: [reconstitutionDiluentTermId], references: [id])
 
-  @@id([slotId, packageId])
-  @@map("slot_candidate")
+      @@id([slotId, packageId])
+      @@map("slot_candidate")
 }
 
 model ComponentCost {
-  id          String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  packageId   String                    @map("package_id") @db.Uuid
-  scopeId     String                    @map("scope_id") @db.Uuid
-  costPerUnit Decimal                   @map("cost_per_unit") @db.Decimal
-  currency    String                    @default("USD")
-  basis       String?
-  validFrom   DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo     DateTime?                 @map("valid_to") @db.Timestamptz(6)
-  /// @generated
-  validPeriod Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
+      id          String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      packageId   String                    @map("package_id") @db.Uuid
+      scopeId     String                    @map("scope_id") @db.Uuid
+      costPerUnit Decimal                   @map("cost_per_unit") @db.Decimal
+      currency    String                    @default("USD")
+      basis       String?
+      validFrom   DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
+      validTo     DateTime?                 @map("valid_to") @db.Timestamptz(6)
+      /// @generated
+      validPeriod Unsupported("tstzrange")? @default(dbgenerated()) @map("valid_period")
 
-  package Package @relation(fields: [packageId], references: [id])
-  scope   Scope   @relation(fields: [scopeId], references: [id])
+      package Package @relation(fields: [packageId], references: [id])
+      scope   Scope   @relation(fields: [scopeId], references: [id])
 
-  @@map("component_cost")
+      @@map("component_cost")
 }
 
 model ComponentAvailability {
-  id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  packageId             String            @map("package_id") @db.Uuid
-  scopeId               String            @map("scope_id") @db.Uuid
-  state                 AvailabilityState
-  onHandUnits           Decimal?          @map("on_hand_units") @db.Decimal
-  allocationUnitsPerDay Decimal?          @map("allocation_units_per_day") @db.Decimal
-  conserveWeight        Decimal           @default(0) @map("conserve_weight") @db.Decimal
-  source                String?
-  observedAt            DateTime          @default(now()) @map("observed_at") @db.Timestamptz(6)
+      id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      packageId             String            @map("package_id") @db.Uuid
+      scopeId               String            @map("scope_id") @db.Uuid
+      state                 AvailabilityState
+      onHandUnits           Decimal?          @map("on_hand_units") @db.Decimal
+      allocationUnitsPerDay Decimal?          @map("allocation_units_per_day") @db.Decimal
+      conserveWeight        Decimal           @default(0) @map("conserve_weight") @db.Decimal
+      source                String?
+      observedAt            DateTime          @default(now()) @map("observed_at") @db.Timestamptz(6)
 
-  package Package @relation(fields: [packageId], references: [id])
-  scope   Scope   @relation(fields: [scopeId], references: [id])
+      package Package @relation(fields: [packageId], references: [id])
+      scope   Scope   @relation(fields: [scopeId], references: [id])
 
-  @@index([packageId, scopeId, observedAt(sort: Desc)])
-  @@map("component_availability")
+      @@index([packageId, scopeId, observedAt(sort: Desc)])
+      @@map("component_availability")
 }
 
 model OptimizerProfile {
-  id                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId              String                  @map("scope_id") @db.Uuid
-  name                 String
-  wComponentCount      Decimal                 @default(1) @map("w_component_count") @db.Decimal
-  wCost                Decimal                 @default(1) @map("w_cost") @db.Decimal
-  wWasteCost           Decimal                 @default(1) @map("w_waste_cost") @db.Decimal
-  wWasteVolume         Decimal                 @default(0) @map("w_waste_volume") @db.Decimal
-  wPreference          Decimal                 @default(1) @map("w_preference") @db.Decimal
-  allowRestricted      Boolean                 @default(false) @map("allow_restricted")
-  allowVialSharing     Boolean                 @default(true) @map("allow_vial_sharing")
-  minBudMag            Decimal?                @map("min_bud_mag") @db.Decimal
-  minBudUom            String?                 @default("h") @map("min_bud_uom")
-  /// @generated reject plans that expire sooner
-  minBud               Unsupported("measure")? @default(dbgenerated()) @map("min_bud")
-  maxComponentsPerSlot Int                     @default(6) @map("max_components_per_slot")
+      id                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId              String                  @map("scope_id") @db.Uuid
+      name                 String
+      wComponentCount      Decimal                 @default(1) @map("w_component_count") @db.Decimal
+      wCost                Decimal                 @default(1) @map("w_cost") @db.Decimal
+      wWasteCost           Decimal                 @default(1) @map("w_waste_cost") @db.Decimal
+      wWasteVolume         Decimal                 @default(0) @map("w_waste_volume") @db.Decimal
+      wPreference          Decimal                 @default(1) @map("w_preference") @db.Decimal
+      allowRestricted      Boolean                 @default(false) @map("allow_restricted")
+      allowVialSharing     Boolean                 @default(true) @map("allow_vial_sharing")
+      minBudMag            Decimal?                @map("min_bud_mag") @db.Decimal
+      minBudUom            String?                 @default("h") @map("min_bud_uom")
+      /// @generated reject plans that expire sooner
+      minBud               Unsupported("measure")? @default(dbgenerated()) @map("min_bud")
+      maxComponentsPerSlot Int                     @default(6) @map("max_components_per_slot")
 
-  scope      Scope       @relation(fields: [scopeId], references: [id])
-  buildPlans BuildPlan[]
+      scope      Scope       @relation(fields: [scopeId], references: [id])
+      buildPlans BuildPlan[]
 
-  @@unique([scopeId, name])
-  @@map("optimizer_profile")
+      @@unique([scopeId, name])
+      @@map("optimizer_profile")
 }
 
 model BuildPlan {
-  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId               String                  @map("scope_id") @db.Uuid
-  formulaId             String                  @map("formula_id") @db.Uuid
-  profileId             String                  @map("profile_id") @db.Uuid
-  batchUnits            Int                     @default(1) @map("batch_units")
-  preparationId         String?                 @map("preparation_id") @db.Uuid
-  objectiveValue        Decimal?                @map("objective_value") @db.Decimal
-  totalCost             Decimal?                @map("total_cost") @db.Decimal
-  totalWasteMag         Decimal?                @map("total_waste_mag") @db.Decimal
-  totalWasteUom         String?                 @default("mL") @map("total_waste_uom")
-  /// @generated
-  totalWaste            Unsupported("measure")? @default(dbgenerated()) @map("total_waste")
-  totalWasteCost        Decimal?                @map("total_waste_cost") @db.Decimal
-  componentCount        Int?                    @map("component_count")
-  budMag                Decimal?                @map("bud_mag") @db.Decimal
-  budUom                String?                 @default("h") @map("bud_uom")
-  /// @generated
-  bud                   Unsupported("measure")? @default(dbgenerated())
-  budLimitingFactor     String?                 @map("bud_limiting_factor")
-  rankAmongAlternatives Int?                    @map("rank_among_alternatives")
-  solverVersion         String                  @map("solver_version")
-  inputsSnapshot        Json                    @map("inputs_snapshot")
-  status                String                  @default("proposed")
-  createdAt             DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+      id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId               String                  @map("scope_id") @db.Uuid
+      formulaId             String                  @map("formula_id") @db.Uuid
+      profileId             String                  @map("profile_id") @db.Uuid
+      batchUnits            Int                     @default(1) @map("batch_units")
+      preparationId         String?                 @map("preparation_id") @db.Uuid
+      objectiveValue        Decimal?                @map("objective_value") @db.Decimal
+      totalCost             Decimal?                @map("total_cost") @db.Decimal
+      totalWasteMag         Decimal?                @map("total_waste_mag") @db.Decimal
+      totalWasteUom         String?                 @default("mL") @map("total_waste_uom")
+      /// @generated
+      totalWaste            Unsupported("measure")? @default(dbgenerated()) @map("total_waste")
+      totalWasteCost        Decimal?                @map("total_waste_cost") @db.Decimal
+      componentCount        Int?                    @map("component_count")
+      budMag                Decimal?                @map("bud_mag") @db.Decimal
+      budUom                String?                 @default("h") @map("bud_uom")
+      /// @generated
+      bud                   Unsupported("measure")? @default(dbgenerated())
+      budLimitingFactor     String?                 @map("bud_limiting_factor")
+      rankAmongAlternatives Int?                    @map("rank_among_alternatives")
+      solverVersion         String                  @map("solver_version")
+      inputsSnapshot        Json                    @map("inputs_snapshot")
+      status                String                  @default("proposed")
+      createdAt             DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  scope             Scope              @relation(fields: [scopeId], references: [id])
-  formula           CompoundFormula    @relation(fields: [formulaId], references: [id])
-  profile           OptimizerProfile   @relation(fields: [profileId], references: [id])
-  preparation       PreparationSpec?   @relation(fields: [preparationId], references: [id])
-  buildPlanLines    BuildPlanLine[]
-  buildPlanFindings BuildPlanFinding[]
-  openComponents    OpenComponent[]
+      scope             Scope              @relation(fields: [scopeId], references: [id])
+      formula           CompoundFormula    @relation(fields: [formulaId], references: [id])
+      profile           OptimizerProfile   @relation(fields: [profileId], references: [id])
+      preparation       PreparationSpec?   @relation(fields: [preparationId], references: [id])
+      buildPlanLines    BuildPlanLine[]
+      buildPlanFindings BuildPlanFinding[]
+      openComponents    OpenComponent[]
 
-  @@map("build_plan")
+      @@map("build_plan")
 }
 
 model BuildPlanLine {
-  planId              String                  @map("plan_id") @db.Uuid
-  slotId              String                  @map("slot_id") @db.Uuid
-  packageId           String                  @map("package_id") @db.Uuid
-  units               Int
-  drawnMag            Decimal?                @map("drawn_mag") @db.Decimal
-  drawnUom            String?                 @default("mL") @map("drawn_uom")
-  /// @generated
-  drawn               Unsupported("measure")? @default(dbgenerated())
-  residualMag         Decimal?                @map("residual_mag") @db.Decimal
-  residualUom         String?                 @default("mL") @map("residual_uom")
-  /// @generated
-  residual            Unsupported("measure")? @default(dbgenerated())
-  residualDisposition String?                 @map("residual_disposition")
-  retainedUntil       DateTime?               @map("retained_until") @db.Timestamptz(6)
-  lineCost            Decimal?                @map("line_cost") @db.Decimal
-  wasteCost           Decimal?                @map("waste_cost") @db.Decimal
+      planId              String                  @map("plan_id") @db.Uuid
+      slotId              String                  @map("slot_id") @db.Uuid
+      packageId           String                  @map("package_id") @db.Uuid
+      units               Int
+      drawnMag            Decimal?                @map("drawn_mag") @db.Decimal
+      drawnUom            String?                 @default("mL") @map("drawn_uom")
+      /// @generated
+      drawn               Unsupported("measure")? @default(dbgenerated())
+      residualMag         Decimal?                @map("residual_mag") @db.Decimal
+      residualUom         String?                 @default("mL") @map("residual_uom")
+      /// @generated
+      residual            Unsupported("measure")? @default(dbgenerated())
+      residualDisposition String?                 @map("residual_disposition")
+      retainedUntil       DateTime?               @map("retained_until") @db.Timestamptz(6)
+      lineCost            Decimal?                @map("line_cost") @db.Decimal
+      wasteCost           Decimal?                @map("waste_cost") @db.Decimal
 
-  plan    BuildPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
-  slot    FormulaSlot @relation(fields: [slotId], references: [id])
-  package Package     @relation(fields: [packageId], references: [id])
+      plan    BuildPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+      slot    FormulaSlot @relation(fields: [slotId], references: [id])
+      package Package     @relation(fields: [packageId], references: [id])
 
-  @@id([planId, slotId, packageId])
-  @@map("build_plan_line")
+      @@id([planId, slotId, packageId])
+      @@map("build_plan_line")
 }
 
 model BuildPlanFinding {
-  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  planId   String  @map("plan_id") @db.Uuid
-  ruleId   String? @map("rule_id") @db.Uuid
-  severity String
-  detail   String
+      id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      planId   String  @map("plan_id") @db.Uuid
+      ruleId   String? @map("rule_id") @db.Uuid
+      severity String
+      detail   String
 
-  plan BuildPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
-  rule CompoundingRule? @relation(fields: [ruleId], references: [id])
+      plan BuildPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+      rule CompoundingRule? @relation(fields: [ruleId], references: [id])
 
-  @@map("build_plan_finding")
+      @@map("build_plan_finding")
 }
 
 model OpenComponent {
-  id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scopeId        String                  @map("scope_id") @db.Uuid
-  packageId      String                  @map("package_id") @db.Uuid
-  lot            String?
-  expiresLot     DateTime?               @map("expires_lot") @db.Date
-  openedAt       DateTime                @map("opened_at") @db.Timestamptz(6)
-  inUseUntil     DateTime                @map("in_use_until") @db.Timestamptz(6)
-  remainingMag   Decimal                 @map("remaining_mag") @db.Decimal
-  remainingUom   String                  @default("mL") @map("remaining_uom")
-  /// @generated
-  remaining      Unsupported("measure")? @default(dbgenerated())
-  environment    String
-  openedByPlanId String?                 @map("opened_by_plan") @db.Uuid
-  closedAt       DateTime?               @map("closed_at") @db.Timestamptz(6)
+      id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId        String                  @map("scope_id") @db.Uuid
+      packageId      String                  @map("package_id") @db.Uuid
+      lot            String?
+      expiresLot     DateTime?               @map("expires_lot") @db.Date
+      openedAt       DateTime                @map("opened_at") @db.Timestamptz(6)
+      inUseUntil     DateTime                @map("in_use_until") @db.Timestamptz(6)
+      remainingMag   Decimal                 @map("remaining_mag") @db.Decimal
+      remainingUom   String                  @default("mL") @map("remaining_uom")
+      /// @generated
+      remaining      Unsupported("measure")? @default(dbgenerated())
+      environment    String
+      openedByPlanId String?                 @map("opened_by_plan") @db.Uuid
+      closedAt       DateTime?               @map("closed_at") @db.Timestamptz(6)
 
-  scope        Scope      @relation(fields: [scopeId], references: [id])
-  package      Package    @relation(fields: [packageId], references: [id])
-  openedByPlan BuildPlan? @relation(fields: [openedByPlanId], references: [id])
+      scope        Scope      @relation(fields: [scopeId], references: [id])
+      package      Package    @relation(fields: [packageId], references: [id])
+      openedByPlan BuildPlan? @relation(fields: [openedByPlanId], references: [id])
 
-  @@map("open_component")
+      @@map("open_component")
 }
 
 /// Dosing measure chosen for a combination SCD concept (`rxcui:…` or `pscd:…`).
 /// Keyed by concept so every NDC under it shares one selection.
 model ScdDosingMeasure {
-  conceptKey String   @id @map("concept_key")
-  mode       String
-  ingredient String?
-  updatedAt  DateTime @updatedAt @map("updated_at")
+      conceptKey String   @id @map("concept_key")
+      mode       String
+      ingredient String?
+      updatedAt  DateTime @updatedAt @map("updated_at")
 
-  @@map("scd_dosing_measure")
+      @@map("scd_dosing_measure")
+}
+
+/// Where a label photo (`SPLIMAGE`) shows each imprint section, measured by
+/// `pill-image-analyze`. Keyed by the label's set ID and the photo's file
+/// name; `analyzerVersion` lets a better analyzer re-measure old rows.
+model PillImageLayout {
+      setId           String   @map("set_id")
+      image           String
+      /// The imprint the photo was measured against; a new label version may change it.
+      imprint         String
+      analyzerVersion Int      @map("analyzer_version")
+      /// `measured`, `no-pill` (nothing separable), or `failed` (fetch/decode error).
+      status          String
+      layout          Json?
+      error           String?
+      analyzedAt      DateTime @default(now()) @map("analyzed_at") @db.Timestamptz(6)
+
+      @@id([setId, image])
+      @@map("pill_image_layout")
+}
+
+/// Which photo shows a package's pill, looked up when its label names none:
+/// the label re-read, then NLM's C3PI archive. `part` is the appearance's
+/// position in the package (a kit's parts look different). A row with no
+/// image records that nothing was found, and is looked up again later.
+model PillPhoto {
+      ndc       String
+      part      Int
+      setId     String?  @map("set_id")
+      image     String?
+      checkedAt DateTime @default(now()) @map("checked_at") @db.Timestamptz(6)
+
+      @@id([ndc, part])
+      @@map("pill_photo")
 }

@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+      import {resolve} from '$app/paths';
 
-	let { data } = $props();
+      let { data } = $props();
 
 	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 	const counts = $derived({
 		active: data.usages.filter((u) => u.roles.some((r) => r.kind === 'active')).length,
 		inactive: data.usages.filter((u) => u.roles.some((r) => r.kind === 'inactive')).length,
-		moiety: data.usages.filter((u) => u.roles.some((r) => r.kind === 'moiety')).length,
-		onFormulary: data.usages.filter((u) => u.onFormulary).length
+		moiety: data.usages.filter((u) => u.roles.some((r) => r.kind === 'moiety')).length
 	});
 </script>
 
@@ -50,10 +49,6 @@
 			<dt>As moiety</dt>
 			<dd>{counts.moiety}</dd>
 		</div>
-		<div>
-			<dt>On formulary</dt>
-			<dd>{counts.onFormulary}</dd>
-		</div>
 	</dl>
 
 	{#if data.usages.length}
@@ -68,7 +63,6 @@
 							<a href={resolve('/formulary/ndc/[ndc]', { ndc: usage.ndc })}
 								>{formatNdc(usage.ndc)}</a
 							>
-							{#if usage.onFormulary}<span class="tag">formulary</span>{/if}
 						</td>
 						<td>
 							<div class="product-name">
@@ -84,7 +78,11 @@
 								{/if}
 							</div>
 						</td>
-						<td>{usage.labelerName ?? '—'}</td>
+						<td>
+							{#if usage.labelerName}<a href={resolve('/formulary/labeler/[code]', { code: usage.ndc.slice(0, 5) })}
+									>{usage.labelerName}</a
+								>{:else}—{/if}
+						</td>
 						<td>
 							{#each usage.roles as role, i (i)}
 								<span class="role {role.kind}">
@@ -202,7 +200,6 @@
 		margin-top: 0.15rem;
 		color: #5c6777;
 	}
-	.tag,
 	.role {
 		display: inline-block;
 		margin: 0 0.25rem 0.15rem 0;
@@ -211,12 +208,6 @@
 		font-size: 0.75rem;
 		background: #eef1f5;
 		color: #3a4556;
-	}
-	.tag {
-		margin-left: 0.35rem;
-		background: #e3f1e8;
-		color: #22663d;
-		font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 	}
 	.role.active {
 		background: #e4ecf8;

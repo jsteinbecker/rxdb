@@ -2,206 +2,253 @@ import { env } from '$env/dynamic/private';
 import { prisma } from '$lib/server/prisma';
 import { toNdc11 } from '../ndc';
 import {
-  discoverRxNav,
-  discoverRxNavPage,
-  enrichPackages,
-  type ExternalPackage,
-  type RxConcept
+	discoverRxNav,
+	discoverRxNavPage,
+	enrichPackages,
+	type ExternalPackage,
+	type RxConcept
 } from './catalog-providers';
 import { collectPackages } from './catalog-collection';
 import { exclusionReason } from './catalog-facts';
 import {
-  loadConceptSnapshots,
-  loadPackageSnapshots,
-  refreshPackageEligibility,
-  stageCollection
+	loadConceptSnapshots,
+	loadPackageSnapshots,
+	refreshPackageEligibility,
+	stageCollection
 } from './catalog-store';
 import {
-  DEFAULT_FORMULARY,
-  defaultScope,
-  findDefaultScope,
-  loadedOrigins,
-  type LoadTarget,
-  loadToFormulary
+	DEFAULT_FORMULARY,
+	defaultScope,
+	findDefaultScope,
+	loadedOrigins,
+	type LoadTarget,
+	loadToFormulary
 } from './catalog-formulary';
 
 const SEARCH_TTL_MS = 12 * 60 * 60 * 1000;
 const recentSearches = new Map<string, { expiresAt: number; promise: Promise<SyncSummary> }>();
 export type SyncSummary = {
-  concepts: number;
-  packages: number;
-  excluded: number;
-  partial: boolean;
-  /** Ranked RxNav roots available across all pages, and this page's offset. */
-  total: number;
-  offset: number;
-  staged: { concepts: RxConcept[]; packages: ExternalPackage[] };
+	concepts: number;
+	/** NDCs the page's concepts list; their packages are fetched per concept. */
+	ndcs: number;
+	/** Packages enriched with the search itself (a direct NDC hit only). */
+	packages: number;
+	excluded: number;
+	partial: boolean;
+	/** Ranked RxNav roots available across all pages, and this page's offset. */
+	total: number;
+	offset: number;
+	staged: { concepts: RxConcept[]; packages: ExternalPackage[] };
 };
 
 /** Read-through package collection shared by search and package detail. Fetched
  * data is staged as provenance; nothing enters the catalog until it is loaded. */
 export async function syncExternalPackages(ndcs: string[], { force = false } = {}) {
-  const packages = await collectPackages(
-    ndcs,
-    {
-      load: (ndcs) => loadPackageSnapshots(prisma, ndcs),
-      fetch: (ndcs) => enrichPackages(ndcs, env.OPENFDA_API_KEY),
-      save: (items) => stageCollection(prisma, [], items)
-    },
-    new Date(),
-    { force }
-  );
-  // Marketing dates can cross midnight while otherwise fresh facts stay cached.
-  await refreshPackageEligibility(prisma, packages);
-  return packages;
+	const packages = await collectPackages(
+		ndcs,
+		{
+			load: (ndcs) => loadPackageSnapshots(prisma, ndcs),
+			fetch: (ndcs) => enrichPackages(ndcs, env.OPENFDA_API_KEY),
+			save: (items) => stageCollection(prisma, [], items)
+		},
+		new Date(),
+		{ force }
+	);
+	// Marketing dates can cross midnight while otherwise fresh facts stay cached.
+	await refreshPackageEligibility(prisma, packages);
+	return packages;
 }
 
 async function runExternalSearchSync(query: string, offset: number): Promise<SyncSummary> {
-  const directNdc = toNdc11(query);
-  // BUD is an established abbreviation for beyond-use dating in this app's
-  // compounding domain. Sending the bare acronym to RxNav's approximate-term
-  // endpoint produces unrelated lexical matches (including botanical terms).
-  const isBeyondUseDateQuery = /^B\.?U\.?D\.?$/i.test(query.trim());
-  let discoveryFailed = false;
-  const { concepts, total } = isBeyondUseDateQuery
-    ? { concepts: [], total: 0 }
-    : await discoverRxNavPage(query, offset).catch((error) => {
-        if (!directNdc) throw error;
-        discoveryFailed = true;
-        return { concepts: [], total: 0 };
-      });
-  // Later pages list only RxNav concepts; a direct NDC hit belongs to page one.
-  const includeDirect = directNdc && offset === 0;
-  await stageCollection(prisma, concepts, []);
-  const packages = await syncExternalPackages([
-    ...(includeDirect ? [directNdc] : []),
-    ...concepts.flatMap((concept) => concept.ndcs)
-  ]);
-  const excluded = packages.filter((item) => exclusionReason(item) !== null).length;
-  return {
-    concepts: concepts.filter((concept) => !concept.vetOnly).length,
-    packages: packages.filter(
-      (item) =>
-        !exclusionReason(item) &&
-        (item.listed || item.splPresent || item.rxcuiStatus?.toUpperCase() === 'ACTIVE')
-    ).length,
-    excluded,
-    partial: discoveryFailed || packages.some((item) => !item.complete),
-    total,
-    offset,
-    staged: { concepts, packages }
-  };
+	const directNdc = toNdc11(query);
+	// BUD is an established abbreviation for beyond-use dating in this app's
+	// compounding domain. Sending the bare acronym to RxNav's approximate-term
+	// endpoint produces unrelated lexical matches (including botanical terms).
+	const isBeyondUseDateQuery = /^B\.?U\.?D\.?$/i.test(query.trim());
+	let discoveryFailed = false;
+	const { concepts, total } = isBeyondUseDateQuery
+		? { concepts: [], total: 0 }
+		: await discoverRxNavPage(query, offset).catch((error) => {
+				if (!directNdc) throw error;
+				discoveryFailed = true;
+				return { concepts: [], total: 0 };
+			});
+	// Later pages list only RxNav concepts; a direct NDC hit belongs to page one.
+	const includeDirect = directNdc && offset === 0;
+	await stageCollection(prisma, concepts, []);
+	// Concept packages are the slow part (several providers per NDC), so the
+	// search returns without them; they are warmed in rank order meanwhile.
+	warmConceptPackages(concepts);
+	const packages = includeDirect ? await syncExternalPackages([directNdc]) : [];
+	const excluded = packages.filter((item) => exclusionReason(item) !== null).length;
+	return {
+		concepts: concepts.filter((concept) => !concept.vetOnly).length,
+		ndcs: concepts.reduce((sum, concept) => sum + concept.ndcs.length, 0),
+		packages: packages.filter(
+			(item) =>
+				!exclusionReason(item) &&
+				(item.listed || item.splPresent || item.rxcuiStatus?.toUpperCase() === 'ACTIVE')
+		).length,
+		excluded,
+		partial: discoveryFailed || packages.some((item) => !item.complete),
+		total,
+		offset,
+		// Direct packages stay unclaimed: no concept on this page has fetched them.
+		staged: { concepts, packages }
+	};
+}
+
+const inflightPackages = new Map<string, Promise<ExternalPackage[]>>();
+
+/** A concept's packages, sharing one in-flight collection between the warm-up,
+ * an expanded search row and a load. Settled work is served by the snapshot cache. */
+export function conceptPackages(concept: Pick<RxConcept, 'rxcui' | 'ndcs'>) {
+	let pending = inflightPackages.get(concept.rxcui);
+	if (!pending) {
+		pending = syncExternalPackages(concept.ndcs).finally(() =>
+			inflightPackages.delete(concept.rxcui)
+		);
+		inflightPackages.set(concept.rxcui, pending);
+	}
+	return pending;
+}
+
+/** Fire-and-forget, one concept at a time so an expanded row is not starved. */
+function warmConceptPackages(concepts: RxConcept[]) {
+	void (async () => {
+		for (const concept of concepts) {
+			if (concept.vetOnly || !concept.ndcs.length) continue;
+			await conceptPackages(concept).catch(() => undefined);
+		}
+	})();
+}
+
+/** One staged concept's packages, shaped for the search tree; null if never staged. */
+export async function stagedConceptPackages(rxcui: string) {
+	const concept = (await loadConceptSnapshots(prisma, [rxcui])).get(rxcui);
+	if (!concept) return null;
+	const packages = concept.vetOnly ? [] : await conceptPackages(concept);
+	const tree = await stagedTree({ concepts: [concept], packages });
+	return {
+		packages: tree.concepts[0]?.packages ?? [],
+		excluded: packages.filter((item) => exclusionReason(item) !== null).length,
+		partial: packages.some((item) => !item.complete)
+	};
 }
 
 export function syncExternalSearch(query: string, offset = 0): Promise<SyncSummary> {
-  const key = `${toNdc11(query) ?? query.trim().toLocaleLowerCase()}@${offset}`;
-  const cached = recentSearches.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.promise;
-  for (const [entry, value] of recentSearches) {
-    if (value.expiresAt <= Date.now()) recentSearches.delete(entry);
-  }
-  if (recentSearches.size >= 128) recentSearches.delete(recentSearches.keys().next().value!);
-  const promise = runExternalSearchSync(query, offset).catch((error) => {
-    recentSearches.delete(key);
-    throw error;
-  });
-  recentSearches.set(key, { expiresAt: Date.now() + SEARCH_TTL_MS, promise });
-  return promise;
+	const key = `${toNdc11(query) ?? query.trim().toLocaleLowerCase()}@${offset}`;
+	const cached = recentSearches.get(key);
+	if (cached && cached.expiresAt > Date.now()) return cached.promise;
+	for (const [entry, value] of recentSearches) {
+		if (value.expiresAt <= Date.now()) recentSearches.delete(entry);
+	}
+	if (recentSearches.size >= 128) recentSearches.delete(recentSearches.keys().next().value!);
+	const promise = runExternalSearchSync(query, offset).catch((error) => {
+		recentSearches.delete(key);
+		throw error;
+	});
+	recentSearches.set(key, { expiresAt: Date.now() + SEARCH_TTL_MS, promise });
+	return promise;
 }
 
 /** Promote one staged node into the formulary, refetching if its snapshot expired. */
 export async function loadStagedNode(
-  target: LoadTarget,
-  scopeId?: string,
-  { force = false }: { force?: boolean } = {}
+	target: LoadTarget,
+	scopeId?: string,
+	{ force = false }: { force?: boolean } = {}
 ) {
-  const scope = scopeId
-    ? await prisma.scope.findUniqueOrThrow({ where: { id: scopeId } })
-    : await defaultScope(prisma);
-  let concept: RxConcept | null = null;
-  let ndcs: string[];
-  if (target.kind === 'concept') {
-    concept = force
-      ? null
-      : ((await loadConceptSnapshots(prisma, [target.rxcui])).get(target.rxcui) ?? null);
-    if (!concept) {
-      const found = await discoverRxNav(target.rxcui);
-      concept = found.find((item) => item.rxcui === target.rxcui) ?? null;
-      if (concept) await stageCollection(prisma, [concept], []);
-    }
-    if (!concept) throw new Error(`RxCUI ${target.rxcui} could not be found.`);
-    if (concept.vetOnly) throw new Error('Veterinary-only concepts cannot be loaded.');
-    ndcs = concept.ndcs;
-  } else ndcs = [target.ndc];
-  const packages = await syncExternalPackages(ndcs, { force });
-  const result = await loadToFormulary(prisma, scope.id, target, concept, packages);
-  await refreshPackageEligibility(prisma, packages);
-  return { ...result, scope: { id: scope.id, name: scope.name } };
+	const scope = scopeId
+		? await prisma.scope.findUniqueOrThrow({ where: { id: scopeId } })
+		: await defaultScope(prisma);
+	let concept: RxConcept | null = null;
+	let ndcs: string[];
+	if (target.kind === 'concept') {
+		concept = force
+			? null
+			: ((await loadConceptSnapshots(prisma, [target.rxcui])).get(target.rxcui) ?? null);
+		if (!concept) {
+			const found = await discoverRxNav(target.rxcui);
+			concept = found.find((item) => item.rxcui === target.rxcui) ?? null;
+			if (concept) await stageCollection(prisma, [concept], []);
+		}
+		if (!concept) throw new Error(`RxCUI ${target.rxcui} could not be found.`);
+		if (concept.vetOnly) throw new Error('Veterinary-only concepts cannot be loaded.');
+		ndcs = concept.ndcs;
+	} else ndcs = [target.ndc];
+	// Joins a search warm-up already collecting this concept's packages.
+	const packages =
+		concept && !force
+			? await conceptPackages(concept)
+			: await syncExternalPackages(ndcs, { force });
+	const result = await loadToFormulary(prisma, scope.id, target, concept, packages);
+	await refreshPackageEligibility(prisma, packages);
+	return { ...result, scope: { id: scope.id, name: scope.name } };
 }
 
 /** Mark which staged nodes are already on the formulary. */
 export async function loadedState(concepts: RxConcept[], packages: ExternalPackage[]) {
-  const scope =
-    (await prisma.scope.findFirst({ where: { kind: 'formulary', name: DEFAULT_FORMULARY } })) ??
-    (await findDefaultScope(prisma));
-  if (!scope) return { scope: null, loaded: new Map<string, string>() };
-  const loaded = await loadedOrigins(prisma, scope.id, [
-    ...concepts.map((concept) => ({ kind: 'concept' as const, rxcui: concept.rxcui })),
-    ...packages.map((item) => ({ kind: 'package' as const, ndc: item.ndc }))
-  ]);
-  return { scope: { id: scope.id, name: scope.name }, loaded };
+	const scope =
+		(await prisma.scope.findFirst({ where: { kind: 'formulary', name: DEFAULT_FORMULARY } })) ??
+		(await findDefaultScope(prisma));
+	if (!scope) return { scope: null, loaded: new Map<string, string>() };
+	const loaded = await loadedOrigins(prisma, scope.id, [
+		...concepts.map((concept) => ({ kind: 'concept' as const, rxcui: concept.rxcui })),
+		...packages.map((item) => ({ kind: 'package' as const, ndc: item.ndc }))
+	]);
+	return { scope: { id: scope.id, name: scope.name }, loaded };
 }
 
 export type StagedPackage = Omit<ExternalPackage, 'evidence' | 'splXml'> & {
-  exclusionReason: string | null;
-  loaded: boolean;
-  formularyItemId: string | null;
+	exclusionReason: string | null;
+	loaded: boolean;
+	formularyItemId: string | null;
 };
 export type StagedConcept = Omit<RxConcept, 'evidence'> & {
-  loaded: boolean;
-  formularyItemId: string | null;
-  packages: StagedPackage[];
+	loaded: boolean;
+	formularyItemId: string | null;
+	packages: StagedPackage[];
 };
 
 /** Shape a sync into a concept → package tree annotated with formulary state. */
 export async function stagedTree(staged: SyncSummary['staged']) {
-  const { scope, loaded } = await loadedState(staged.concepts, staged.packages);
-  const byNdc = new Map(
-    staged.packages.map((item) => {
-      const { evidence: _evidence, splXml: _xml, ...facts } = item;
-      void _evidence;
-      void _xml;
-      return [
-        item.ndc,
-        {
-          ...facts,
-          exclusionReason: exclusionReason(item),
-          loaded: loaded.has(`${scope?.id}:ndc:${item.ndc}`),
-          formularyItemId: loaded.get(`${scope?.id}:ndc:${item.ndc}`) ?? null
-        } satisfies StagedPackage
-      ] as const;
-    })
-  );
-  const claimed = new Set<string>();
-  const concepts: StagedConcept[] = staged.concepts.map((concept) => {
-    const { evidence: _evidence, ...rest } = concept;
-    void _evidence;
-    const packages = concept.ndcs.flatMap((ndc) => {
-      const item = byNdc.get(ndc);
-      if (item) claimed.add(ndc);
-      return item ? [item] : [];
-    });
-    const key = `${scope?.id}:rxcui:${concept.rxcui}`;
-    return {
-      ...rest,
-      loaded: loaded.has(key),
-      formularyItemId: loaded.get(key) ?? null,
-      packages
-    };
-  });
-  return {
-    scope,
-    concepts,
-    packages: [...byNdc.values()].filter((item) => !claimed.has(item.ndc))
-  };
+	const { scope, loaded } = await loadedState(staged.concepts, staged.packages);
+	const byNdc = new Map(
+		staged.packages.map((item) => {
+			const { evidence: _evidence, splXml: _xml, ...facts } = item;
+			void _evidence;
+			void _xml;
+			return [
+				item.ndc,
+				{
+					...facts,
+					exclusionReason: exclusionReason(item),
+					loaded: loaded.has(`${scope?.id}:ndc:${item.ndc}`),
+					formularyItemId: loaded.get(`${scope?.id}:ndc:${item.ndc}`) ?? null
+				} satisfies StagedPackage
+			] as const;
+		})
+	);
+	const claimed = new Set<string>();
+	const concepts: StagedConcept[] = staged.concepts.map((concept) => {
+		const { evidence: _evidence, ...rest } = concept;
+		void _evidence;
+		const packages = concept.ndcs.flatMap((ndc) => {
+			const item = byNdc.get(ndc);
+			if (item) claimed.add(ndc);
+			return item ? [item] : [];
+		});
+		const key = `${scope?.id}:rxcui:${concept.rxcui}`;
+		return {
+			...rest,
+			loaded: loaded.has(key),
+			formularyItemId: loaded.get(key) ?? null,
+			packages
+		};
+	});
+	return {
+		scope,
+		concepts,
+		packages: [...byNdc.values()].filter((item) => !claimed.has(item.ndc))
+	};
 }

@@ -12,13 +12,14 @@ export const load: PageServerLoad = async ({ params }) => {
 	const onFormulary = new Set(
 		scope ? (await formularyRows(prisma, scope.id)).map((row) => row.ndc) : []
 	);
+	const onFormularyUsages = usages.filter((usage) => onFormulary.has(usage.ndc));
 	const names = new Map<string, number>();
-	for (const usage of usages)
+	for (const usage of onFormularyUsages)
 		for (const role of usage.roles)
 			if ('name' in role) names.set(role.name, (names.get(role.name) ?? 0) + 1);
 	return {
 		unii,
 		names: [...names].sort((a, b) => b[1] - a[1]).map(([name]) => name),
-		usages: usages.map((usage) => ({ ...usage, onFormulary: onFormulary.has(usage.ndc) }))
+		usages: onFormularyUsages
 	};
 };

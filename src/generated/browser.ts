@@ -14,6 +14,7 @@
  */
 
 import * as Prisma from './internal/prismaNamespaceBrowser.ts'
+
 export { Prisma }
 export * as $Enums from './enums.ts'
 export * from './enums.ts';
@@ -304,3 +305,18 @@ export type OpenComponent = Prisma.OpenComponentModel
  * Keyed by concept so every NDC under it shares one selection.
  */
 export type ScdDosingMeasure = Prisma.ScdDosingMeasureModel
+/**
+ * Model PillImageLayout
+ * Where a label photo (`SPLIMAGE`) shows each imprint section, measured by
+ * `pill-image-analyze`. Keyed by the label's set ID and the photo's file
+ * name; `analyzerVersion` lets a better analyzer re-measure old rows.
+ */
+export type PillImageLayout = Prisma.PillImageLayoutModel
+/**
+ * Model PillPhoto
+ * Which photo shows a package's pill, looked up when its label names none:
+ * the label re-read, then NLM's C3PI archive. `part` is the appearance's
+ * position in the package (a kit's parts look different). A row with no
+ * image records that nothing was found, and is looked up again later.
+ */
+export type PillPhoto = Prisma.PillPhotoModel

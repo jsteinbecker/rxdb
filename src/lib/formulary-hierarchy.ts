@@ -5,36 +5,39 @@
 // (a combination product's ingredients) repeats under each, and a row with
 // none lands in a "Not specified" bucket rather than disappearing.
 
+import type { KitComposition } from './kit-parts';
 import { ingredientGroup } from './ingredient-group';
 import { labelerGroup } from './labeler-group';
 import { naturalCompare } from './natural-sort';
 import { mgPer } from './units';
 
 export type FormularyRow = {
-  packageId: string;
-  ndc: string;
-  formularyItemId: string;
-  formularyItem: string;
-  description: string | null;
-  displayTitle?: string | null;
-  routes: string[];
-  doseForm: string | null;
-  ingredients: { name: string; strength: string | null }[];
-  brandName: string | null;
-  genericName: string | null;
-  labeler: string | null;
-  size: {
-    kind: 'volume' | 'mass' | 'count';
-    value: number;
-    unit: string | null;
-    container: string;
-    packQty: number;
-  } | null;
-  isMultiDose: boolean | null;
-  preferenceRank: number;
-  status: string;
-  /** How a combination product's dose reads; attached from the formulary settings. */
-  doseDisplay?: ComboDoseDisplay;
+	packageId: string;
+	ndc: string;
+	formularyItemId: string;
+	formularyItem: string;
+	description: string | null;
+	displayTitle?: string | null;
+	routes: string[];
+	doseForm: string | null;
+	ingredients: { name: string; strength: string | null }[];
+	brandName: string | null;
+	genericName: string | null;
+	labeler: string | null;
+	size: {
+		kind: 'volume' | 'mass' | 'count';
+		value: number;
+		unit: string | null;
+		container: string;
+		packQty: number;
+	} | null;
+	isMultiDose: boolean | null;
+	/** A kit's parts; its diluent reads beside the drug bottle in the package size. */
+	kit?: KitComposition | null;
+	preferenceRank: number;
+	status: string;
+	/** How a combination product's dose reads; attached from the formulary settings. */
+	doseDisplay?: ComboDoseDisplay;
 };
 
 /**
@@ -113,7 +116,7 @@ export function packagingClass(row: FormularyRow): string {
 const amount = (value: number, unit: string | null) =>
 	`${Number(value.toPrecision(6))}${unit && /^[a-z%]/i.test(unit) && unit.length <= 3 ? '' : ' '}${unit ? (unit.length > 3 ? titleCase(unit) : unit) : ''}`.trim();
 
-/** "75 mL Bottle", "30 Tablet Blister × 10" */
+/** "75 mL Bottle", "30 Tablet Blister × 10", a kit's "7.5g Bottle + 145mL Diluent" */
 export function packageSize(row: FormularyRow): string | null {
 	if (!row.size) return null;
 	const { value, unit, container, packQty } = row.size;
@@ -122,7 +125,12 @@ export function packageSize(row: FormularyRow): string | null {
 		.replace(/\s*,\s*,/g, ',')
 		.replace(/^\s*,\s*|\s*,\s*$/g, '')
 		.trim();
-	return `${amount(value, unit)} ${titleCase(packageContainer)}${packQty > 1 ? ` × ${packQty}` : ''}`;
+	const diluent = row.kit?.partOf?.length
+		? null
+		: row.kit?.parts.find((part) => part.role === 'diluent' && part.amount !== null);
+	return `${amount(value, unit)} ${titleCase(packageContainer)}${packQty > 1 ? ` × ${packQty}` : ''}${
+		diluent ? ` + ${amount(diluent.amount!, diluent.unit)} Diluent` : ''
+	}`;
 }
 
 const routeLabel = (route: string) => `${titleCase(route)} route`;
