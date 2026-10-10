@@ -61,7 +61,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	}));
 	const [shown] = await withPharmClassRules(prisma, (await defaultScope(prisma)).id, packages.slice(0, 1));
 	return {
-		item: packages[0],
+		item: shown,
 		equivalents,
 		dosingMeasure,
 		formularyItems,
