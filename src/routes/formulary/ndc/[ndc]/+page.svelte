@@ -5,6 +5,7 @@
       import PackageDetail from '$lib/components/PackageDetail.svelte';
       import ReinterpretDialog from '$lib/components/ReinterpretDialog.svelte';
       import DosingMeasureForm from '$lib/components/DosingMeasureForm.svelte';
+      import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
       import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
       import {packageDisplayTitle} from '$lib/package-title';
 
@@ -12,6 +13,7 @@
 
       let fromFormulary = $state(false);
       let reinterpret: ReinterpretDialog;
+      let pharmClassRule: PharmClassRuleDialog;
       let editKeys = $state<string[]>([]);
       let excludeDialog: HTMLDialogElement;
 
@@ -91,7 +93,7 @@
       </dialog>
       <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.message ?? null}/>
       <div class="body" class:with-panel={editKeys.length}>
-            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} onedit={(keys) => (editKeys = keys)}/>
+            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)}/>
             {#if editKeys.length}
                   {#key editKeys}
                         <div class="panel-slot">
@@ -106,6 +108,7 @@
                   {/key}
             {/if}
       </div>
+      <PharmClassRuleDialog bind:this={pharmClassRule} rules={data.pharmClassRules} message={form?.message ?? null}/>
       <ReinterpretDialog bind:this={reinterpret} {item}/>
 </main>
 
