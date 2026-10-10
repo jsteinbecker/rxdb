@@ -3,7 +3,8 @@ import { toNdc11 } from '$lib/ndc';
 import { prisma } from '$lib/server/prisma';
 import { quantifiedScdName } from '$lib/quantified-scd';
 import { stagedTree, syncExternalPackages } from '$lib/server/catalog-sync';
-import { unlinkPackage } from '$lib/server/catalog-formulary';
+import { defaultScope, unlinkPackage } from '$lib/server/catalog-formulary';
+import { withPharmClassRules } from '$lib/server/pharm-class-view';
 import { applyReinterpret, previewReinterpret } from '$lib/server/reinterpret';
 import {
 	findEquivalentPackages,
@@ -58,6 +59,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		id: formularyItem.id,
 		displayName: quantifiedScdName(formularyItem.displayName)
 	}));
+	const [shown] = await withPharmClassRules(prisma, (await defaultScope(prisma)).id, packages.slice(0, 1));
 	return {
 		item: packages[0],
 		equivalents,

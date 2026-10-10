@@ -105,6 +105,11 @@ export type PackageDetails = {
 		pharmClasses: string[];
 		rxcuis: string[];
 		uniis: string[];
+		/** Read-side only: set when pharm-class rules were applied to `pharmClasses`. */
+		pharmClassResolution?: {
+			source: string[];
+			applied: { ruleId: string; mode: string; classes: string[] }[];
+		};
 		manufacturers: string[];
 		splId: string | null;
 	} | null;
