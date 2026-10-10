@@ -1517,6 +1517,6 @@ model PharmClassRule {
   scope Scope @relation(fields: [scopeId], references: [id])
 
   @@index([scopeId, moietyKey])
+  @@unique([scopeId, moietyKey, doseFormGroup, route, strengthKey], map: "pharm_class_rule_key")
   @@map("pharm_class_rule")
 }
-  @@unique([scopeId, moietyKey, doseFormGroup, route, strengthKey], map: "pharm_class_rule_key")
