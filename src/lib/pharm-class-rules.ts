@@ -47,7 +47,7 @@ export function resolvePharmClasses(
   for (const rule of matching) {
     if (rule.mode === 'replace') classes = [...new Set(rule.classes)];
     else if (rule.mode === 'add') classes = [...new Set([...classes, ...rule.classes])];
-    else classes = classes.filter((name) => !rule.classes.includes(name));
+    else classes = rule.classes.length ? classes.filter((name) => !rule.classes.includes(name)) : [];
   }
   return {
     classes,

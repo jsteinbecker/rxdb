@@ -1519,3 +1519,4 @@ model PharmClassRule {
   @@index([scopeId, moietyKey])
   @@map("pharm_class_rule")
 }
+  @@unique([scopeId, moietyKey, doseFormGroup, route, strengthKey], map: "pharm_class_rule_key")

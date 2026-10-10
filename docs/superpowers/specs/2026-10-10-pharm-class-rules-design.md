@@ -50,7 +50,7 @@ with a "custom" tag.
 3. Fold them from least to most specific, starting from `source`:
    - `replace`: the result becomes `rule.classes`
    - `add`: union with `rule.classes`
-   - `suppress`: remove `rule.classes`
+   - `suppress`: remove `rule.classes`; with no classes, hide all (the result is empty)
 
    The most specific rule wins on what overlaps, while broader `add` rules still contribute when nothing narrower
    replaces them.

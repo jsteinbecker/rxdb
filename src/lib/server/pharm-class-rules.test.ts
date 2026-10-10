@@ -67,6 +67,12 @@ test('suppress removes a source class; add keeps order and de-duplicates', () =>
   assert.deepEqual(out.classes, ['T', 'N']);
 });
 
+test('suppress with no classes hides every source class', () => {
+  const out = resolvePharmClasses(['S', 'T'], key, [rule('x', { mode: 'suppress', classes: [] })]);
+  assert.deepEqual(out.classes, []);
+  assert.deepEqual(out.source, ['S', 'T']);
+});
+
 test('a different form group does not match', () => {
   const out = resolvePharmClasses(['S'], key, [rule('a', { doseFormGroup: 'injectable', classes: ['A'] })]);
   assert.deepEqual(out.classes, ['S']);

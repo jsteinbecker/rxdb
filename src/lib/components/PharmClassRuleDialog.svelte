@@ -42,7 +42,12 @@
 		scope = id;
 		const rule = scopes.find((candidate) => candidate.id === id)?.rule;
 		ruleId = rule?.id ?? '';
-		if (!rule) return;
+		if (!rule) {
+			mode = 'add';
+			classes = [];
+			note = '';
+			return;
+		}
 		mode = rule.mode;
 		classes = [...rule.classes];
 		note = rule.note;
