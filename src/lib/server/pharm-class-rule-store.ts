@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PrismaClient } from '../../generated/client';
 import { packageClassKey } from '../pharm-class-key';
-import { normalizeRuleClasses } from '../pharm-class-rule-input';
+import { moietyUniis, normalizeRuleClasses } from '../pharm-class-rule-input';
 import { ruleMatches, type PharmClassRule } from '../pharm-class-rules';
 import { CACHE_SOURCE } from './catalog-cache';
 import type { ExternalPackage } from './catalog-providers';
@@ -103,7 +103,7 @@ export async function countMatches(
 	db: Db,
 	rule: Pick<PharmClassRule, 'moietyKey' | 'doseFormGroup' | 'route' | 'strengthKey'>
 ): Promise<{ count: number; capped: boolean }> {
-	const uniis = rule.moietyKey.split('|').filter(Boolean);
+	const uniis = moietyUniis(rule.moietyKey);
 	if (!uniis.length) return { count: 0, capped: false };
 	const rows = await db.$queryRaw<{ payload: { item?: ExternalPackage } | null }[]>`
     WITH latest AS (
@@ -116,7 +116,18 @@ export async function countMatches(
     )
     SELECT r.payload #- '{item,details,label}' AS payload
     FROM source_record r JOIN latest ON latest.id = r.id
-    WHERE r.payload #> '{item,details,product,uniis}' @> ${JSON.stringify(uniis)}::jsonb
+    WHERE NOT EXISTS (
+      SELECT 1 FROM unnest(${uniis}::text[]) AS u(unii)
+      WHERE NOT COALESCE(
+        jsonb_exists(r.payload #> '{item,details,product,uniis}', u.unii)
+        OR jsonb_path_exists(
+          r.payload,
+          '$.item.details.spl.ingredients[*] ? (@.unii == $u || @.moieties[*].unii == $u)',
+          jsonb_build_object('u', u.unii)
+        ),
+        false
+      )
+    )
     LIMIT ${MATCH_LIMIT}`;
 	const full = { id: '', mode: 'replace' as const, classes: [], ...rule };
 	const count = rows.filter(

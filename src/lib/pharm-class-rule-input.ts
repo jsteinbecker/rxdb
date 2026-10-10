@@ -11,3 +11,7 @@ export function normalizeRuleClasses(classes: string[], mode: string): string[] 
 		throw new RuleInputError('Add at least one pharmacologic class.');
 	return cleaned;
 }
+
+/** The moiety UNIIs in a rule's `|`-joined key. */
+export const moietyUniis = (moietyKey: string): string[] =>
+	[...new Set(moietyKey.split('|').filter(Boolean))];
