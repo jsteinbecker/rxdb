@@ -181,6 +181,7 @@ model Scope {
       optimizerProfiles         OptimizerProfile[]
       buildPlans                BuildPlan[]
       openComponents            OpenComponent[]
+      pharmClassRules           PharmClassRule[]
 
       @@map("scope")
 }
@@ -1497,4 +1498,24 @@ model PillPhoto {
 
       @@id([ndc, part])
       @@map("pill_photo")
+}
+
+model PharmClassRule {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scopeId       String   @map("scope_id") @db.Uuid
+  moietyKey     String   @map("moiety_key")
+  moietyNames   String   @map("moiety_names")
+  doseFormGroup String?  @map("dose_form_group")
+  route         String?
+  strengthKey   String?  @map("strength_key")
+  mode          String   @default("replace")
+  classes       String[]
+  note          String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  scope Scope @relation(fields: [scopeId], references: [id])
+
+  @@index([scopeId, moietyKey])
+  @@map("pharm_class_rule")
 }
