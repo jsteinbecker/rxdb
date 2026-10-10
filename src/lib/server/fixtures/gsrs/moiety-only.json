@@ -1,0 +1,33 @@
+{
+ "uuid": "557a32d8-90e2-4a7b-be35-cd6d9b8cf36f",
+ "substanceClass": "chemical",
+ "approvalID": "9I628532GX",
+ "_name": "Piperacillin anhydrous",
+ "names": [
+  {
+   "name": "Piperacillin anhydrous",
+   "displayName": true
+  }
+ ],
+ "relationships": [
+  {
+   "type": "ACTIVE MOIETY",
+   "relatedSubstance": {
+    "name": "Piperacillin anhydrous",
+    "approvalID": "9I628532GX"
+   }
+  }
+ ],
+ "structure": {
+  "formula": "C23H27N5O7S",
+  "mwt": 517.5568,
+  "count": 1
+ },
+ "moieties": [
+  {
+   "formula": "C23H27N5O7S",
+   "mwt": 517.5568,
+   "count": 1
+  }
+ ]
+}

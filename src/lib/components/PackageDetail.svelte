@@ -1,13 +1,18 @@
 <script lang="ts">
+	import { racemicDisplayName } from '$lib/ingredient-group';
+	import RxCui from '$lib/components/RxCui.svelte';
       import type {StagedPackage} from '$lib/server/catalog-sync';
       import type {LabelIngredient} from '$lib/server/catalog-providers';
-      import {appearanceText, imprintFaces, isSolidDoseForm} from '$lib/spl-characteristics';
+      import {appearanceText, imprintFaces, isSolidDoseForm, SHAPE_CODES} from '$lib/spl-characteristics';
       import {refineAppearances} from '$lib/spl-appearance-text';
       import PillMockup from './PillMockup.svelte';
       import RouteBadge from './RouteBadge.svelte';
       import {drugsComImprintUrl, drugsComNdcUrl} from '$lib/drugs-com';
       import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from '$lib/pill-image-layout';
       import {resolve} from '$app/paths';
+      import {constituentName, ionDisplayName} from '$lib/ions';
+      import {deserialize} from '$app/forms';
+      import {invalidateAll} from '$app/navigation';
       import SplLabelSections from './SplLabelSections.svelte';
       import OverrideCitation from './OverrideCitation.svelte';
       import {nextAddedRowId, overrideTargets, pillIlnKey} from '$lib/property-override-fields';
@@ -19,20 +24,38 @@
       import {toNdc11} from '$lib/ndc';
       import MixedFraction from './MixedFraction.svelte';
       import {fromNumber, toNumber} from '$lib/rational';
+      import {ingredientCorrectionKey} from '$lib/ingredient-correction';
+      import {packageClassKey} from '$lib/pharm-class-key';
+      import {scopeOptions} from '$lib/pharm-class-scope-options';
 
       let {
             item,
             editing = false,
             editKeys = [],
             pillMedia = undefined,
-            onedit
+            formularyItems = undefined,
+            onretry = undefined,
+            onassignclass = undefined,
+            onedit,
+            oncorrect
       }: {
             item: StagedPackage;
+            /**
+             * Every formulary item that lists this package, however it was loaded. Without it the
+             * row can only say whether the NDC was loaded as an item of its own.
+             */
+            formularyItems?: { id: string; displayName: string }[];
+            /** Fetches the package again; offered where a provider did not answer. */
+            onretry?: () => void;
+            /** Opens the "Assign class…" dialog from the pharmacologic class menu. */
+            onassignclass?: () => void;
             /** Offer a pencil (revealed on hover) beside each overridable property. */
             editing?: boolean;
             /** Keys open in the override panel, to mark their pencil. */
             editKeys?: string[];
             onedit?: (keys: string[]) => void;
+            /** Opens the ingredient correction wizard on the ingredient at this index. */
+            oncorrect?: (index: number) => void;
             /** Each appearance's photo and measured layout; may still be on its way. */
             pillMedia?: PillMedia | Promise<PillMedia>;
       } = $props();
@@ -52,14 +75,32 @@
       const pseudoScd = $derived(pseudoScdFor(item));
       // A biosimilar's ingredient carries its FDA suffix even when the source names only the reference.
       const substance = (name: string) =>
-            withBiosimilarSuffix(name, [item.genericName, item.splTitle, d?.rxnav?.conceptName]);
+            withBiosimilarSuffix(racemicDisplayName(name), [item.genericName, item.splTitle, d?.rxnav?.conceptName]);
       const active = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'active') ?? []);
       const inactive = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'inactive') ?? []);
       const ionic = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'ionic') ?? []);
+      // Each ion constituent sits right under the last salt it comes from, so it
+      // reads as part of that ingredient rather than as one more ingredient.
+      const ingredientRows = $derived.by(() => {
+            const placed = new Set<(typeof ionic)[number]>();
+            const rows = active.flatMap((ingredient, index) => {
+                  const ions = ionic.filter(
+                        (ion) =>
+                              !placed.has(ion) &&
+                              ion.ionicContent?.sourceIngredients.includes(ingredient.name) &&
+                              !active
+                                    .slice(index + 1)
+                                    .some((later) => ion.ionicContent?.sourceIngredients.includes(later.name))
+                  );
+                  ions.forEach((ion) => placed.add(ion));
+                  return [ingredient, ...ions];
+            });
+            return [...rows, ...ionic.filter((ion) => !placed.has(ion)), ...inactive];
+      });
       // Strength corrections, numbered by first appearance so identical notes on
       // several rows (a miscoded denominator shared by every excipient) share a mark.
       const strengthNotes = $derived([
-            ...new Set([...active, ...inactive].flatMap((i) => i.strengthNotes ?? []))
+            ...new Set(ingredientRows.flatMap((i) => i.strengthNotes ?? []))
       ]);
       const noteMark = (note: string) => '*'.repeat(strengthNotes.indexOf(note) + 1);
       const rxnavMarketingStatus = $derived(
@@ -73,6 +114,47 @@
       const otherRxnavProps = $derived(
             d?.rxnav?.properties.filter((p) => !RXNORM_PROP.test(p.name)) ?? []
       );
+      // RxNav names its properties in SPL field codes and states shapes and dates as
+      // codes; say them in words, keeping the code beside anything translated.
+      const RXNAV_LABELS: Record<string, string> = {
+            COLORTEXT: 'Color',
+            COLOR: 'Color code',
+            SHAPE: 'Shape',
+            SHAPETEXT: 'Shape',
+            SIZE: 'Size',
+            SCORE: 'Score',
+            IMPRINT_CODE: 'Imprint',
+            LABELER: 'Labeler',
+            LABEL_TYPE: 'Label type',
+            MARKETING_CATEGORY: 'Marketing category',
+            MARKETING_STATUS: 'Marketing status',
+            MARKETING_EFFECTIVE_TIME_LOW: 'Marketing start',
+            MARKETING_EFFECTIVE_TIME_HIGH: 'Marketing end',
+            DM_SPL_ID: 'DailyMed SPL ID',
+            SPL_SET_ID: 'SPL set ID',
+            DCSA: 'DEA schedule',
+            ANDA: 'Application',
+            NDA: 'Application',
+            BLA: 'Application',
+            NDA_AUTHORIZED_GENERIC: 'Application'
+      };
+      const rxnavLabel = (name: string) =>
+            RXNAV_LABELS[name] ?? name.charAt(0) + name.slice(1).toLowerCase().replace(/_/g, ' ');
+      const rxnavValue = (name: string, value: string) => {
+            if (/^\d{8}$/.test(value) && /TIME|DATE/.test(name)) return date(value) ?? value;
+            if (name === 'SHAPE' && SHAPE_CODES[value]) return `${SHAPE_CODES[value].toLowerCase()} (${value})`;
+            if (name === 'IMPRINT_CODE') return value.split(';').join(' / ');
+            if (name === 'SCORE') return value === '1' ? 'none (1 piece)' : `${value} pieces`;
+            return value;
+      };
+      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
+      // The 10-digit form the FDA lists, from the product code's segment widths (4-4-2, 5-3-2, 5-4-1).
+      const fdaNdc = $derived.by(() => {
+            const code = item.productCode;
+            if (!code || !/^\d+-\d+$/.test(code)) return null;
+            const pkg = code.replace('-', '').length === 9 ? item.ndc.slice(-1) : item.ndc.slice(-2);
+            return `${code}-${pkg}`;
+      });
       const flag = (value: boolean | null, yes: string, no: string) =>
             value === true ? yes : value === false ? no : 'Unknown';
       const date = (value: string | null | undefined) =>
@@ -112,6 +194,8 @@
             return r && Math.abs(toNumber(r) - value) <= 1e-9 * Math.max(1, Math.abs(value)) ? r : null;
       };
       const round = (value: number) => Math.round(value * 100) / 100;
+      // A label's "/1" (per tablet, per vial) adds nothing a reader needs.
+      const strengthText = (strength: string) => strength.replace(/\s*\/\s*1$/, '');
       const calculated = (step: StagedPackage['reconstitution'][number]) => {
             const mass = step.vialMassMg;
             const stated = step.concentrations.length === 1 ? step.concentrations[0].mgPerMl : null;
@@ -180,7 +264,8 @@
                         detail: [
                               `set ${item.splSetId}`,
                               d?.spl?.version ? `v${d.spl.version}` : null,
-                              d?.spl?.publishedDate ? `published ${d.spl.publishedDate}` : null
+                              d?.spl?.publishedDate ? `published ${d.spl.publishedDate}` : null,
+                              d?.spl?.siblingNdc ? `via sibling NDC ${d.spl.siblingNdc}` : null
                         ]
                   },
                   d?.label && {
@@ -208,14 +293,62 @@
                   }
             ].filter((source) => !!source)
       );
+      // Why a package counts as incomplete, in the terms of the rule that decides it.
+      const incompleteReasons = $derived(
+            [
+                  item.listed === null && 'the FDA NDC Directory has no entry for this exact package',
+                  item.splPresent === null && 'DailyMed did not say whether it has a label',
+                  !d?.label && 'no openFDA label came back',
+                  !d?.rxnav && 'RxNav did not answer'
+            ].filter((reason) => !!reason)
+      );
       const sourceNumber = (id: SourceId) => sources.findIndex((source) => source.id === id) + 1;
       const splIndex = (ingredient: LabelIngredient) => d?.spl?.ingredients.indexOf(ingredient) ?? -1;
       // One reconstitution row's actions menu open at a time.
       let rowMenu = $state<string | null>(null);
+      // Every value cites its provider; the marks show on hover, or all at once on request.
+      let showSources = $state(false);
       const openFromMenu = (keys: string[]) => {
             rowMenu = null;
             onedit?.(keys);
       };
+
+      // Classes the source gave that a rule removed, and which shown classes a rule added.
+      const classSource = $derived(d?.product?.pharmClassResolution?.source);
+      /** Assigning needs an ingredient set to key the rule on. */
+      const canAssignClass = $derived(!!onassignclass && scopeOptions(packageClassKey(item)).length > 0);
+      const hiddenClasses = $derived(
+            (classSource ?? []).filter((name) => !d?.product?.pharmClasses.includes(name))
+      );
+      const isRuleClass = (name: string) => !!classSource && !classSource.includes(name);
+
+      let deletingKey = $state<string | null>(null);
+      let deleteMessage = $state('');
+
+      /** Deletes a manual override and its citation, restoring the provider value. */
+      async function deleteOverride(key: string, label: string) {
+            if (!confirm(`Delete the override and citation for ${label}? The provider value will be restored.`))
+                  return;
+            deletingKey = key;
+            deleteMessage = '';
+            const form = new FormData();
+            form.set('key', key);
+            try {
+                  const result = deserialize(
+                        await (await fetch('?/removeOverride', {method: 'POST', body: form})).text()
+                  );
+                  if (result.type === 'success') await invalidateAll();
+                  else
+                        deleteMessage =
+                              result.type === 'failure'
+                                    ? String(result.data?.message ?? 'Could not delete override.')
+                                    : 'Could not delete override.';
+            } catch {
+                  deleteMessage = 'Could not delete override.';
+            } finally {
+                  deletingKey = null;
+            }
+      }
 </script>
 
 <svelte:window
@@ -241,7 +374,7 @@
 {/snippet}
 {#snippet src(id: SourceId)}
       {@const n = sourceNumber(id)}
-      {#if n}<sup class="cite"
+      {#if n}<sup class="cite source"
       ><a href={`#${uid}-source-${n}`} title={sources[n - 1].name}>[{n}]</a></sup
       >{/if}
 {/snippet}
@@ -250,6 +383,19 @@
       {#if keys.some((key) => citeNumber(key) > 0)}{@render cite(keys)}{:else if source}{@render src(
             source
       )}{/if}{@render editButton(keys, label)}
+{/snippet}
+
+{#snippet deleteButton(key: string, label: string)}
+      {#if editing}
+            <button
+                  class="delete"
+                  type="button"
+                  disabled={deletingKey !== null}
+                  title={`Delete the override and citation for ${label}`}
+                  aria-label={`Delete the override and citation for ${label}`}
+                  onclick={() => deleteOverride(key, label)}
+            >{deletingKey === key ? 'Deleting…' : 'Delete'}</button>
+      {/if}
 {/snippet}
 
 {#snippet editButton(keys: string[], label: string)}
@@ -321,7 +467,7 @@
       >
 {/snippet}
 
-<div class="detail">
+<div class="detail" class:show-sources={showSources}>
       {#if item.providerErrors?.length}
             <p class="wide provider-errors" role="status">
                   <b>Incomplete:</b>
@@ -332,13 +478,83 @@
                   are missing or kept from an earlier fetch.
             </p>
       {:else if !item.complete}
-            <p class="muted wide">Some providers did not answer; values may be incomplete.</p>
+            <p class="muted wide provider-errors" role="status">
+                  <b>Incomplete:</b>
+                  {incompleteReasons.length
+                        ? incompleteReasons.join('; ')
+                        : 'some providers did not answer'}, so some values may be missing.
+                  {#if onretry}<button class="link-button" type="button" onclick={onretry}>Fetch again</button>{/if}
+            </p>
       {/if}
+      <!-- What the package looks like comes first: it is how a pharmacist confirms they hold the right one. -->
+      {#if appearances.length}
+      <section class="wide identification">
+            <h4>Appearance</h4>
+                  <p>
+                        {appearances.map(appearanceText).join(' · ')}{@render edit(
+                        appearances.flatMap((_, i) => [
+                              ...['colors', 'shape', 'sizeMm', 'score', 'profile', 'imprint'].map(
+                                    (field) => `details.spl.appearances.${i}.${field}`
+                              ),
+                              pillIlnKey(i)
+                        ]),
+                        'pill appearance',
+                        'spl'
+                  )}
+                  </p>
+                  {#if isSolidDoseForm(item.doseForm)}
+                        <div class="pill-mockups">
+                              {#await pillMedia}
+                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
+                                          <PillMockup {appearance} doseForm={item.doseForm}/>
+                                    {/each}
+                              {:then media}
+                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
+                                          {@const photo = media?.photos[i] ?? labelPhotoOf(appearance)}
+                                          <PillMockup
+                                                {appearance}
+                                                doseForm={item.doseForm}
+                                                layout={photo
+									? (media?.layouts[pillImageKey(photo.setId, photo.image)] ?? null)
+									: null}
+                                                photoUrl={photo ? pillPhotoUrl(photo) : null}
+                                          />
+                                    {/each}
+                              {:catch}
+                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
+                                          {@const photo = labelPhotoOf(appearance)}
+                                          <PillMockup
+                                                {appearance}
+                                                doseForm={item.doseForm}
+                                                photoUrl={photo ? pillPhotoUrl(photo) : null}
+                                          />
+                                    {/each}
+                              {/await}
+                        </div>
+                  {/if}
+                  {#if drugsComNdcUrl(item.ndc)}
+                        <p class="pill-links">
+                              Drugs.com:
+                              <a href={drugsComNdcUrl(item.ndc)} target="_blank" rel="noopener noreferrer">this NDC</a>
+                              {#each [...new Set((d?.spl?.appearances ?? [])
+                                    .map((a) => a.imprint)
+                                    .filter((x) => !!x))] as imprint (imprint)}
+                                    · <a href={drugsComImprintUrl(imprint)} target="_blank" rel="noopener noreferrer"
+                              >pill identifier “{imprintFaces(imprint).join(' ')}”</a
+                              >
+                              {/each}
+                        </p>
+                  {/if}
+      </section>
+      {/if}
+
       <section>
             <h4>Package</h4>
             <dl>
                   <dt>NDC</dt>
-                  <dd class="mono">{item.ndc}</dd>
+                  <dd>
+                        <span class="mono">{formatNdc(item.ndc)}</span>
+                  </dd>
                   <dt>Product NDC</dt>
                   <dd>
                         <span class="mono">{item.productCode ?? '—'}</span>{@render edit(['productCode'], 'product NDC', 'ndc')}
@@ -435,11 +651,17 @@
                               ? 'Exact NDC found'
                               : item.listed === false
                                     ? 'No exact NDC entry found'
-                                    : 'Unknown'}{@render edit(['listed'], 'FDA NDC directory', 'ndc')}
+                                    : 'Unknown'}{#if item.listed !== true && d?.product}
+                              <span class="muted">· product found via {d.packaging?.siblings.length
+                                    ? `sibling NDC${d.packaging.siblings.length === 1 ? '' : 's'} ${d.packaging.siblings.map((s) => s.ndc).join(', ')}`
+                                    : `product code ${item.productCode ?? item.ndc.slice(0, 9)}`}</span>
+                        {/if}{@render edit(['listed'], 'FDA NDC directory', 'ndc')}
                   </dd>
                   <dt>DailyMed SPL</dt>
                   <dd>
-                        {@render ok(item.splPresent === true)}{flag(item.splPresent, 'Found', 'Not found')}{@render edit(['splPresent'], 'DailyMed SPL', 'spl')}
+                        {@render ok(item.splPresent === true || Boolean(d?.spl?.siblingNdc))}{d?.spl?.siblingNdc && item.splPresent !== true
+                              ? `Found via sibling NDC ${d.spl.siblingNdc}`
+                              : flag(item.splPresent, 'Found', 'Not found')}{@render edit(['splPresent'], 'DailyMed SPL', 'spl')}
                   </dd>
                   <dt>Catalog eligibility</dt>
                   <dd class:bad={item.exclusionReason} class:warn={discontinuing}>
@@ -451,7 +673,16 @@
                         {/if}{@render src('catalog')}
                   </dd>
                   <dt>Formulary</dt>
-                  <dd>{@render ok(item.loaded)}{item.loaded ? 'Loaded' : 'Not loaded'}{@render src('catalog')}</dd>
+                  <dd>
+                        {#if formularyItems}
+                              {@render ok(formularyItems.length > 0)}{#if formularyItems.length}On formulary as
+                                    {#each formularyItems as formularyItem, index (formularyItem.id)}{index ? ', ' : ''}<a
+                                          href={resolve('/formulary/items/[id]', {id: formularyItem.id})}
+                                    >{formularyItem.displayName}</a>{/each}{:else}Not on formulary{/if}
+                        {:else}
+                              {@render ok(item.loaded)}{item.loaded ? 'Loaded as its own item' : 'Not loaded as its own item'}
+                        {/if}{@render src('catalog')}
+                  </dd>
                   {#if item.splInactivated != null}
                         <dt>SPL inactivated</dt>
                         <dd>{@render ok(item.splInactivated === false)}{item.splInactivated ? 'Yes' : 'No'}{@render src('spl')}</dd>
@@ -493,7 +724,7 @@
                   </dd>
                   {#if d?.product?.rxcuis.length}
                         <dt>openFDA RxCUIs</dt>
-                        <dd class="mono">{d.product.rxcuis.join(', ')}{@render src('ndc')}</dd>
+                        <dd>{#each d.product.rxcuis as id, i (id)}{i ? '; ' : ''}<RxCui rxcui={id} />{/each}{@render src('ndc')}</dd>
                   {/if}
                   {#if d?.product?.uniis.length}
                         <dt>UNIIs</dt>
@@ -506,68 +737,113 @@
             </dl>
       </section>
 
-      {#if d?.product?.pharmClasses.length}
-            <section>
-                  <h4>Pharmacologic class{@render src('ndc')}</h4>
-                  <div class="pharm-classes">
-                        {#each d.product.pharmClasses as pharmClass, i (i)}
-                              {@const classType = /\[(.*)]$/.exec(pharmClass)?.[1] ?? ''}
-                              <div class="pharm-class">
-                                    {#if classType}<span class="class-type mono">{classType}</span>{/if}
-                                    <span>{pharmClass.replace(/\s*\[.*]$/, '')}</span>
-                              </div>
-                        {/each}
-                  </div>
-            </section>
-      {/if}
-
-      {#if d?.packaging?.siblings.length}
-            <section>
-                  <h4>Sibling packages{@render src('ndc')}</h4>
-                  <div class="table-wrap mini-wrap">
-                        <table class="data-table mini-table">
-                              <thead>
-                              <tr>
-                                    <th scope="col">Pkg</th>
-                                    <th scope="col">Description</th>
-                              </tr>
-                              </thead>
-                              <tbody>
-                              {#each [...d.packaging.siblings, {
-                                    ndc: item.ndc,
-                                    description: item.description
-                              }].sort((a, b) => a.ndc.localeCompare(b.ndc)) as sibling (sibling.ndc)}
-                                    {@const current = sibling.ndc === item.ndc}
-                                    <tr class:current>
-                                          <td>
-                                                {#if current}
-										<span class="mono sib-code disabled" aria-current="page"
-                                                                  title="This package"
-                                                            >-{sibling.ndc.slice(-2)}</span
-                                                            >
-                                                {:else}
-                                                      <a
-                                                            class="mono sib-code"
-                                                            href={resolve('/formulary/ndc/[ndc]', { ndc: sibling.ndc })}
-                                                      >-{sibling.ndc.slice(-2)}</a
-                                                      >
-                                                {/if}
-                                          </td>
-                                          <td>
-                                                {(sibling.description ?? '')
-                                                      .replace(/\s*\(\d{4,5}-\d{3,4}-\d{1,2}\)\s*/g, ' ')
-                                                      .replace(/\s+/g, ' ')
-                                                      .trim()}
-                                          </td>
-                                    </tr>
+      {#if d?.product?.pharmClasses.length || hiddenClasses.length || canAssignClass || d?.packaging?.siblings.length}
+            <div class="stack">
+            {#if d?.product?.pharmClasses.length || hiddenClasses.length || canAssignClass}
+                  <section>
+                        <div class="pharm-head">
+                              <h4>Pharmacologic class{@render src('ndc')}</h4>
+                              {#if canAssignClass}
+                                    <div class="pharm-menu">
+                                          <button
+                                                class="row-menu-trigger"
+                                                type="button"
+                                                aria-label="Pharmacologic class actions"
+                                                aria-haspopup="menu"
+                                                aria-expanded={rowMenu === 'pharm-class'}
+                                                onclick={() => (rowMenu = rowMenu === 'pharm-class' ? null : 'pharm-class')}>
+                                                ⋯
+                                          </button>
+                                          {#if rowMenu === 'pharm-class'}
+                                                <div class="row-menu" role="menu">
+                                                      <button
+                                                            type="button"
+                                                            role="menuitem"
+                                                            onclick={() => {
+                                                                  rowMenu = null;
+                                                                  onassignclass?.();
+                                                            }}>Assign class…
+                                                      </button>
+                                                </div>
+                                          {/if}
+                                    </div>
+                              {/if}
+                        </div>
+                        {#if !d?.product?.pharmClasses.length && !hiddenClasses.length}
+                              <p class="pharm-empty">No pharmacologic class</p>
+                        {/if}
+                        <div class="pharm-classes">
+                              {#each d?.product?.pharmClasses ?? [] as pharmClass, i (i)}
+                                    {@const classType = /\[(.*)]$/.exec(pharmClass)?.[1] ?? ''}
+                                    <div class="pharm-class">
+                                          {#if classType}<span class="class-type mono">{classType}</span>{/if}
+                                          <span>{pharmClass.replace(/\s*\[.*]$/, '')}</span>
+                                          {#if isRuleClass(pharmClass)}<span class="class-tag" title="Added by a pharmacologic class rule">rule</span>{/if}
+                                          {#if !/\[(?:EPC|MoA|PE|CS)]$/.test(pharmClass)}<span class="class-tag" title="Not an openFDA class">custom</span>{/if}
+                                    </div>
                               {/each}
-                              </tbody>
-                        </table>
-                  </div>
-            </section>
+                        </div>
+                        {#if hiddenClasses.length}
+                              <details class="hidden-classes">
+                                    <summary>Hidden by rule ({hiddenClasses.length})</summary>
+                                    <ul>
+                                          {#each hiddenClasses as pharmClass (pharmClass)}<li>{pharmClass}</li>{/each}
+                                    </ul>
+                              </details>
+                        {/if}
+                  </section>
+            {/if}
+
+            {#if d?.packaging?.siblings.length}
+                  <section>
+                        <h4>Sibling packages{@render src('ndc')}</h4>
+                        <div class="table-wrap mini-wrap">
+                              <table class="data-table mini-table">
+                                    <thead>
+                                    <tr>
+                                          <th scope="col">Pkg</th>
+                                          <th scope="col">Description</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {#each [...d.packaging.siblings, {
+                                          ndc: item.ndc,
+                                          description: item.description
+                                    }].sort((a, b) => a.ndc.localeCompare(b.ndc)) as sibling (sibling.ndc)}
+                                          {@const current = sibling.ndc === item.ndc}
+                                          <tr class:current>
+                                                <td>
+                                                      {#if current}
+      										<span class="mono sib-code disabled" aria-current="page"
+                                                                        title="This package"
+                                                                  >-{sibling.ndc.slice(-2)}</span
+                                                                  >
+                                                      {:else}
+                                                            <a
+                                                                  class="mono sib-code"
+                                                                  href={resolve('/formulary/ndc/[ndc]', { ndc: sibling.ndc })}
+                                                            >-{sibling.ndc.slice(-2)}</a
+                                                            >
+                                                      {/if}
+                                                </td>
+                                                <td>
+                                                      {(sibling.description ?? '')
+                                                            .replace(/\s*\(\d{4,5}-\d{3,4}-\d{1,2}\)\s*/g, ' ')
+                                                            .replace(/\s+/g, ' ')
+                                                            .trim()}
+                                                </td>
+                                          </tr>
+                                    {/each}
+                                    </tbody>
+                              </table>
+                        </div>
+                  </section>
+            {/if}
+            </div>
       {/if}
 
-      {#if volume || item.reconstitution.length || editing}
+      <!-- A tablet or capsule has nothing to reconstitute; offer the section only to forms that might. -->
+      {#if volume || item.reconstitution.length || (editing && !isSolidDoseForm(item.doseForm))}
             <section class="wide">
                   <h4>Reconstitution, concentration and volume{@render src('spl')}</h4>
                   {#if volume}
@@ -762,20 +1038,27 @@
                                     <th>Strength</th>
                                     <th>Basis</th>
                                     <th
-                                    >Moieties / sources
+                                    >Moieties / ions
                                     </th
                                     >
                               </tr
                               >
                               </thead>
                               <tbody>
-                              {#each [...active, ...inactive, ...ionic] as ingredient, i (i)}
-                                    <tr class:muted={ingredient.kind !== 'active'}>
-                                          <td>{ingredient.kind}</td>
+                              {#each ingredientRows as ingredient, i (i)}
+                                    <tr class:muted={ingredient.kind !== 'active'} class:ion-row={ingredient.kind === 'ionic'}>
+                                          <td>{ingredient.kind === 'ionic' ? 'ion constituent' : ingredient.kind}</td>
                                           <td
-                                          >{ingredient.kind === 'active'
+                                          >{#if ingredient.kind === 'ionic'}<span class="ion-of" aria-hidden="true">↳ </span
+                                                >{ionDisplayName(ingredient.ionicContent?.element ?? ingredient.name)}
+                                                {#if ingredient.ionicContent?.sourceIngredients.length}<div class="muted">
+                                                      constituent of {ingredient.ionicContent.sourceIngredients
+                                                            .map((name) => substance(name))
+                                                            .join(' + ')}
+                                                </div>{/if}
+                                          {:else}{ingredient.kind === 'active'
                                                 ? substance(ingredient.name)
-                                                : ingredient.name}
+                                                : ingredient.name}{/if}
                                                 {#if ingredient.part}
                                                       <div class="muted">
                                                             in {ingredient.part.replace(/^[^(]+/, (name) => name.toLowerCase())}
@@ -791,27 +1074,49 @@
                                                 {/if}
                                           </td>
                                           <td
-                                          >{ingredient.strength ?? '—'}
+                                          >{ingredient.strength ? strengthText(ingredient.strength) : '—'}
                                                 {#if ingredient.strengthNotes?.length}<sup
                                                       title={ingredient.strengthNotes.join('\n')}
                                                 >{ingredient.strengthNotes.map(noteMark).join(',')}</sup
                                                 >{/if}{@render edit(
-                                                      [`details.spl.ingredients.${splIndex(ingredient)}.strength`],
+                                                      [
+                                                            `details.spl.ingredients.${splIndex(ingredient)}.strength`,
+                                                            ...(item.propertyOverrides?.[ingredientCorrectionKey(splIndex(ingredient))]
+                                                                  ? [ingredientCorrectionKey(splIndex(ingredient))]
+                                                                  : [])
+                                                      ],
                                                       `${ingredient.name} strength`
-                                                )}</td
+                                                )}
+                                                {#if item.propertyOverrides?.[ingredientCorrectionKey(splIndex(ingredient))]}<span
+                                                      class="corrected" title="Replaced by an ingredient correction">corrected</span
+                                                >{/if}
+</td
                                           >
                                           <td>{ingredient.basis ?? '—'}</td>
-                                          <td>
-                                                {ingredient.ionicContent?.sourceIngredients.join(', ') ?? ''}
-                                                {#if !ingredient.ionicContent?.sourceIngredients.length}
+                                          <td class="row-end">
+                                                {#if ingredient.kind === 'ionic'}—
+                                                {:else}
                                                       {#each ingredient.moieties as moiety, m (m)}{m ? ', ' : ''}
                                                             {#if moiety.unii}<a
                                                                   href={resolve('/formulary/unii/[unii]', { unii: moiety.unii })}
-                                                            >{moiety.name}</a
-                                                            >{:else}{moiety.name}{/if}
+                                                            >{constituentName(moiety.name)}</a
+                                                            >{:else}{constituentName(moiety.name)}{/if}
                                                       {:else}—
                                                       {/each}
                                                 {/if}
+                                          
+                                                {#if editing && ingredient.kind === 'active'}<button
+                                                      class="edit correct"
+                                                      type="button"
+                                                      title={`Correct ${ingredient.name}…`}
+                                                      aria-label={`Correct ${ingredient.name}`}
+                                                      onclick={() => oncorrect?.(splIndex(ingredient))}
+                                                ><svg viewBox="0 0 16 16" aria-hidden="true"
+                                                ><path d="M3 5.5h8.5M9.5 3 12 5.5 9.5 8M13 10.5H4.5M6.5 8 4 10.5 6.5 13"
+                                                       fill="none" stroke="currentColor" stroke-width="1.3"
+                                                       stroke-linecap="round" stroke-linejoin="round"/></svg
+                                                ></button
+                                                >{/if}
                                           </td>
                                     </tr>
                               {/each}
@@ -827,78 +1132,21 @@
                   {/if}
                   {#if ionic.length}
                         <p class="muted">
-                              Ionic totals are label-declared counterion content from the listed salt ingredients; they
-                              are not additional active ingredients.
+                              Ion constituents (↳) are the label-declared total of an ion supplied by the salt ingredients
+                              they are listed under. They are part of those ingredients, not additional ingredients, and
+                              are not added to their strengths.
                         </p>
                   {/if}
             {:else if item.ingredients.length}
                   <ul>
                         {#each item.ingredients as ingredient (ingredient.name)}
                               <li>
-                                    {substance(ingredient.name)}{ingredient.strength ? ` — ${ingredient.strength}` : ''}
+                                    {substance(ingredient.name)}{ingredient.strength ? ` — ${strengthText(ingredient.strength)}` : ''}
                               </li>
                         {/each}
                   </ul>
             {:else}
                   <p class="muted">No ingredient data returned.</p>
-            {/if}
-            {#if appearances.length}
-                  <p>
-                        <strong>Appearance:</strong>
-                        {appearances.map(appearanceText).join(' · ')}{@render edit(
-                        appearances.flatMap((_, i) => [
-                              ...['colors', 'shape', 'sizeMm', 'score', 'profile', 'imprint'].map(
-                                    (field) => `details.spl.appearances.${i}.${field}`
-                              ),
-                              pillIlnKey(i)
-                        ]),
-                        'pill appearance',
-                        'spl'
-                  )}
-                  </p>
-                  {#if isSolidDoseForm(item.doseForm)}
-                        <div class="pill-mockups">
-                              {#await pillMedia}
-                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
-                                          <PillMockup {appearance} doseForm={item.doseForm}/>
-                                    {/each}
-                              {:then media}
-                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
-                                          {@const photo = media?.photos[i] ?? labelPhotoOf(appearance)}
-                                          <PillMockup
-                                                {appearance}
-                                                doseForm={item.doseForm}
-                                                layout={photo
-									? (media?.layouts[pillImageKey(photo.setId, photo.image)] ?? null)
-									: null}
-                                                photoUrl={photo ? pillPhotoUrl(photo) : null}
-                                          />
-                                    {/each}
-                              {:catch}
-                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
-                                          {@const photo = labelPhotoOf(appearance)}
-                                          <PillMockup
-                                                {appearance}
-                                                doseForm={item.doseForm}
-                                                photoUrl={photo ? pillPhotoUrl(photo) : null}
-                                          />
-                                    {/each}
-                              {/await}
-                        </div>
-                  {/if}
-                  {#if drugsComNdcUrl(item.ndc)}
-                        <p class="pill-links">
-                              Drugs.com:
-                              <a href={drugsComNdcUrl(item.ndc)} target="_blank" rel="noopener noreferrer">this NDC</a>
-                              {#each [...new Set((d?.spl?.appearances ?? [])
-                                    .map((a) => a.imprint)
-                                    .filter((x) => !!x))] as imprint (imprint)}
-                                    · <a href={drugsComImprintUrl(imprint)} target="_blank" rel="noopener noreferrer"
-                              >pill identifier “{imprintFaces(imprint).join(' ')}”</a
-                              >
-                              {/each}
-                        </p>
-                  {/if}
             {/if}
       </section>
 
@@ -915,6 +1163,7 @@
                               >
                               {#if d?.spl?.version}· v{d.spl.version}{/if}
                               {#if d?.spl?.publishedDate}· published {d.spl.publishedDate}{/if}
+                              {#if d?.spl?.siblingNdc}· via sibling NDC {d.spl.siblingNdc}{/if}
                         {:else}
                               {flag(item.splPresent, 'Present', 'None found')}
                         {/if}{@render src('spl')}
@@ -934,10 +1183,16 @@
                   {#if item.labelIngredients.length}
                         <dt>Label ingredients</dt>
                         <dd>
+                              {#if !active.length && !inactive.length && d?.spl?.siblingNdc}
+                                    <div class="muted">
+                                          Every product on this label, not only this one: the label does not list
+                                          this package.
+                                    </div>
+                              {/if}
                               {#each ['active', 'inactive', null] as kind}
                                     {@const names = item.labelIngredients.filter((ingredient) => ingredient.kind === kind)}
                                     {#if names.length}
-                                          <div><span class="muted">{kind === 'active' ? 'Active' : kind === 'inactive' ? 'Inactive' : 'Listed'}:</span>
+                                          <div><span class="muted">{kind === 'active' ? 'Active' : kind === 'inactive' ? 'Excipient' : 'Listed'}:</span>
                                                 {names.map((ingredient) => ingredient.name).join('; ')}</div>
                                     {/if}
                               {/each}{@render src('label')}
@@ -968,7 +1223,7 @@
                         <dt>Concept</dt>
                         <dd>
                               {d.rxnav.conceptName ? timeReleaseAfterRelease(d.rxnav.conceptName) : '—'}
-                              {#if d.rxnav.rxcui}<span class="mono">({d.rxnav.rxcui})</span>{/if}
+                              {#if d.rxnav.rxcui}(<RxCui rxcui={d.rxnav.rxcui} name={d.rxnav.conceptName} />){/if}
                               {d.rxnav.conceptStatus ?? ''}{@render src('rxnav')}
                         </dd>
                         {#if d.rxnav.status}
@@ -1010,8 +1265,8 @@
                                     <tbody>
                                     {#each d.rxnav.history as row, i (i)}
                                           <tr>
-                                                <td class="mono">{row.activeRxcui ?? '—'}</td>
-                                                <td class="mono">{row.originalRxcui ?? '—'}</td>
+                                                <td><RxCui rxcui={row.activeRxcui} /></td>
+                                                <td><RxCui rxcui={row.originalRxcui} /></td>
                                                 <td>{row.start ?? '—'}</td>
                                                 <td>{row.end ?? '—'}</td>
                                           </tr>
@@ -1020,27 +1275,19 @@
                               </table>
                         </div>
                   {/if}
-                  {#if editing}
-                        <button
-                              class="add-row"
-                              type="button"
-                              onclick={() => onedit?.([`reconstitution.${nextAddedRowId(item)}.diluentMl`])}
-                        >+ Add reconstitution row
-                        </button
-                        >
-                  {/if}
             </section>
       {/if}
       {#if otherRxnavProps.length}
-            <section class="wide">
-                  <h4>RxNav NDC properties{@render src('rxnav')}</h4>
+            <!-- The same facts as above, as RxNav states them: for checking, not reading. -->
+            <details class="wide source-data">
+                  <summary>Source data: RxNav NDC properties ({otherRxnavProps.length}){@render src('rxnav')}</summary>
                   <dl>
                         {#each otherRxnavProps as prop, i (i)}
-                              <dt>{prop.name}</dt>
-                              <dd>{prop.value}</dd>
+                              <dt title={prop.name}>{rxnavLabel(prop.name)}</dt>
+                              <dd>{rxnavValue(prop.name, prop.value)}</dd>
                         {/each}
                   </dl>
-            </section>
+            </details>
       {/if}
       {#if corrections.length}
             <footer class="wide citations">
@@ -1063,7 +1310,11 @@
             </footer>
       {/if}
       <footer class="wide citations">
-            <h4>Sources</h4>
+            <h4>
+                  Sources
+                  <button class="link-button" type="button" aria-pressed={showSources} onclick={() => (showSources = !showSources)}
+                  >{showSources ? 'Hide' : 'Show'} source marks on every value</button>
+            </h4>
             <ol>
                   {#each sources as source, i (source.id)}
                         <li id={`${uid}-source-${i + 1}`}>
@@ -1089,9 +1340,11 @@
                                     {/if}
                                     —
                                     <OverrideCitation {override}/>
+                                    {@render deleteButton(key, overrideFields.find((field) => field.key === key)?.label ?? key)}
                               </li>
                         {/each}
                   </ol>
+                  {#if deleteMessage}<p class="delete-error">{deleteMessage}</p>{/if}
             </footer>
       {/if}
 </div>
@@ -1113,6 +1366,26 @@
             color: #5c6777;
             font-size: 0.78rem;
             line-height: 1.45;
+      }
+
+      .delete {
+            margin-left: 0.4rem;
+            padding: 0 0.4rem;
+            border: 1px solid #f0c4c4;
+            border-radius: 4px;
+            background: #fff;
+            color: #b42318;
+            font-size: 0.75rem;
+            cursor: pointer;
+      }
+
+      .delete:disabled {
+            opacity: 0.6;
+            cursor: default;
+      }
+
+      .delete-error {
+            color: #b42318;
       }
 
       .ambiguity-tag {
@@ -1201,6 +1474,12 @@
             grid-column: 1 / -1;
       }
 
+      .stack {
+            display: grid;
+            gap: 1rem;
+            align-content: start;
+      }
+
       h4 {
             margin: 0 0 0.4rem;
             color: #3464a5;
@@ -1253,6 +1532,46 @@
       .class-type {
             flex: 0 0 auto;
             color: #5c6777;
+      }
+
+      .pharm-empty {
+            margin: 0;
+            color: #5c6777;
+            font-size: 0.85rem;
+      }
+
+      .pharm-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+      }
+
+      .pharm-menu {
+            position: relative;
+      }
+
+      section:hover .pharm-menu .row-menu-trigger {
+            opacity: 1;
+      }
+
+      .class-tag {
+            flex: 0 0 auto;
+            padding: 0 0.35rem;
+            border: 1px solid #c9d6e8;
+            border-radius: 999px;
+            color: #3464a5;
+            font-size: 0.7rem;
+      }
+
+      .hidden-classes {
+            margin-top: 0.4rem;
+            color: #5c6777;
+            font-size: 0.85rem;
+      }
+
+      .hidden-classes ul {
+            margin: 0.2rem 0 0;
+            padding-left: 1.2rem;
       }
 
       @media (max-width: 420px) {
@@ -1370,6 +1689,12 @@
       }
 
       .ing-table td:nth-child(2),
+      .ing-table tr.ion-row td:nth-child(2) {
+            padding-left: 1.25rem;
+      }
+      .ing-table .ion-of {
+            margin-left: -0.9rem;
+      }
       .ing-table td:nth-child(6) {
             overflow-wrap: anywhere;
       }
@@ -1467,6 +1792,29 @@
             overflow: hidden;
             clip-path: inset(50%);
             white-space: nowrap;
+      }
+
+      .corrected {
+            margin-left: 0.4rem;
+            padding: 0 0.4rem;
+            border-radius: 999px;
+            background: #eef3fa;
+            color: #3464a5;
+            font-size: 0.72rem;
+            font-weight: 650;
+      }
+
+      .ing-table td.row-end {
+            position: relative;
+            padding-right: 2rem;
+      }
+
+      .edit.correct {
+            position: absolute;
+            top: 50%;
+            right: 0.35rem;
+            margin: 0;
+            transform: translateY(-50%);
       }
 
       .edit {
@@ -1601,5 +1949,46 @@
             flex-wrap: wrap;
             gap: 1rem;
             margin: 0.25rem 0 0.75rem;
+      }
+
+      /* Provider marks stay out of the way until a value is hovered or they are asked for. */
+      .cite.source {
+            visibility: hidden;
+      }
+
+      dd:hover .cite.source,
+      h4:hover .cite.source,
+      summary:hover .cite.source,
+      .show-sources .cite.source {
+            visibility: visible;
+      }
+
+      .link-button {
+            margin-left: 0.5rem;
+            border: 0;
+            background: none;
+            padding: 0;
+            color: #3464a5;
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: normal;
+            text-transform: none;
+            text-decoration: underline;
+            cursor: pointer;
+      }
+
+      .source-data {
+            color: #5c6777;
+            font-size: 0.85rem;
+      }
+
+      .source-data summary {
+            cursor: pointer;
+            font-weight: 650;
+      }
+
+      .source-data dl {
+            margin-top: 0.5rem;
       }
 </style>

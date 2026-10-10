@@ -184,7 +184,10 @@ export type LoadedItem = {
 	target: LoadTarget;
 	/** RxNorm term type of a concept load (SCD, SBD, GPCK…), when the catalog knows it. */
 	tty: string | null;
+	/** Packages the formulary shows for the item: the same set its hierarchy and item page list. */
 	packages: number;
+	/** Packages the load linked that the catalog excludes (veterinary, ineligible), so never shown. */
+	excludedPackages: number;
 	loadedAt: Date;
 };
 
@@ -215,7 +218,16 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 							id: true,
 							displayName: true,
 							releaseAbbreviation: true,
-							_count: { select: { formularyItemPackages: { where: { validTo: null } } } }
+							_count: {
+								select: {
+									formularyItemPackages: {
+										where: {
+											validTo: null,
+											package: { entity: { status: { not: 'catalog-excluded' } } }
+										}
+									}
+								}
+							}
 						}
 					}
 				}
@@ -238,6 +250,16 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 			})
 		: [];
 	const tty = new Map(concepts.map((row) => [row.normalizedValue, row.entity.clinicalDrug?.tty]));
+	const excluded = await db.formularyItemPackage.groupBy({
+		by: ['formularyItemId'],
+		where: {
+			validTo: null,
+			formularyItem: { scopeId },
+			package: { entity: { status: 'catalog-excluded' } }
+		},
+		_count: true
+	});
+	const excludedBy = new Map(excluded.map((row) => [row.formularyItemId, row._count]));
 	return items.map(({ target, item, loadedAt }) => ({
 		formularyItemId: item.id,
 		displayName: quantifiedScdName(item.displayName),
@@ -246,6 +268,7 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 		target,
 		tty: target.kind === 'concept' ? (tty.get(target.rxcui) ?? null) : null,
 		packages: item._count.formularyItemPackages,
+		excludedPackages: excludedBy.get(item.id) ?? 0,
 		loadedAt
 	}));
 }

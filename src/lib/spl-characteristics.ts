@@ -1,4 +1,5 @@
 import type { SplCharacteristic, SplProduct } from './spl-ingredients';
+import { roundCorners } from './round-corners';
 
 // ── What the pill in the bottle looks like ───────────────────────────────────
 // The decoding half of the `<characteristic>` observations $lib/spl-ingredients.ts
@@ -296,7 +297,7 @@ const PALETTE: Record<string, string> = {
 	pink: '#f0aeba',
 	red: '#d97a7a',
 	purple: '#b49ad4',
-	brown: '#b08a6a'
+	brown: '#dcbc9f'
 };
 
 /** The swatch a bare colour name renders as; unknown names read as neutral. */
@@ -411,7 +412,86 @@ const darken = (hex: string): string =>
 		.map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * DARKEN).toString(16).padStart(2, '0'))
 		.join('');
 
+/**
+ * A distinct swatch for every colour word, so navy isn't blue and peach isn't
+ * orange. `colorTerm` still buckets these into SPL's vocabulary for matching;
+ * this table is only for drawing.
+ */
+export const NAMED_SWATCHES: Record<string, string> = {
+	white: '#f7f7f4',
+	'off-white': '#ebe5d3',
+	ivory: '#f6edc4',
+	cream: '#ebd29c',
+	beige: '#d6c3a8',
+	buff: '#e2b874',
+	tan: '#c9a77c',
+	caramel: '#b77a3c',
+	brown: '#d2a982',
+	chocolate: '#5e3a24',
+	black: '#3a3a3a',
+	silver: '#c9d2dc',
+	gray: '#b0b3b8',
+	lemon: '#f7ee86',
+	yellow: '#f2d94e',
+	gold: '#d9a62e',
+	mustard: '#b3962c',
+	amber: '#e8961c',
+	orange: '#f07c2e',
+	apricot: '#f4ad72',
+	peach: '#f8cfb0',
+	coral: '#ef7f6c',
+	rust: '#b4542a',
+	salmon: '#f39a85',
+	pink: '#f2a9c0',
+	rose: '#e07a97',
+	red: '#d64545',
+	scarlet: '#e8301f',
+	crimson: '#b81c3a',
+	maroon: '#7a2433',
+	burgundy: '#6a1d3c',
+	mauve: '#b88aa6',
+	lilac: '#dc9fd8',
+	lavender: '#b4b8f2',
+	violet: '#7f5ad6',
+	purple: '#9a6fcf',
+	plum: '#7d3f72',
+	navy: '#2c3e74',
+	blue: '#5f93e0',
+	cyan: '#4fcde8',
+	aqua: '#8ee0e0',
+	turquoise: '#3fbfb0',
+	teal: '#2a8a86',
+	mint: '#b2e8c8',
+	green: '#5fae6e',
+	olive: '#86863a'
+};
+const SWATCH_ALIASES: Record<string, string> = { grey: 'gray', offwhite: 'off-white', 'cream-colored': 'off-white' };
+
+/** How far `light` moves a swatch toward white. */
+const LIGHTEN = 0.45;
+const lighten = (hex: string): string =>
+	'#' +
+	[1, 3, 5]
+		.map((i) => {
+			const v = parseInt(hex.slice(i, i + 2), 16);
+			return Math.round(v + (255 - v) * LIGHTEN).toString(16).padStart(2, '0');
+		})
+		.join('');
+
+/** `light navy`, `dark peach`, `teal` → its own swatch; null when the phrase isn't one word with an optional shade. */
+function namedSwatch(color: string): string | null {
+	const m = /^(?:(light|pale|dark|deep)\s+)?([a-z-]+)$/.exec(color.toLowerCase().trim().replace(/\s+/g, ' '));
+	if (!m) return null;
+	const swatch = NAMED_SWATCHES[SWATCH_ALIASES[m[2]] ?? m[2]];
+	if (!swatch) return null;
+	if (m[1] === 'light' || m[1] === 'pale') return lighten(swatch);
+	if (m[1] === 'dark' || m[1] === 'deep') return darken(swatch);
+	return swatch;
+}
+
 export const swatchOf = (color: string): string => {
+	const named = namedSwatch(color);
+	if (named) return named;
 	const term = colorTerm(color) ?? '';
 	const swatch = PALETTE[baseColor(term)];
 	if (!swatch) return '#dcdcd6';
@@ -475,6 +555,11 @@ const ellipse = (w: number, h: number): string => {
  * rather than a misleading empty drawing.
  */
 export function shapeGeometry(shape: string | null): ShapeGeometry {
+	const geometry = rawShapeGeometry(shape);
+	return { ...geometry, path: roundCorners(geometry.path) };
+}
+
+function rawShapeGeometry(shape: string | null): ShapeGeometry {
 	const term = (shapeTerm(null, shape) ?? '').replace(/[^A-Z]/g, '');
 	// A letter-shaped through-hole: VDONUT, KDONUT, ADONUT ...
 	const letterHole = /^([A-Z])DONUT$/.exec(term);
@@ -522,7 +607,7 @@ export function shapeGeometry(shape: string | null): ShapeGeometry {
 		case 'TEAR':
 		case 'TEARDROP':
 			return {
-				path: 'M50,7C50,7 84,42 84,64A34,34 0 1 1 16,64C16,42 50,7 50,7z',
+				path: 'M50,8C50,8 84,40 84,58A34,34 0 1 1 16,58C16,40 50,8 50,8z',
 				width: 68,
 				height: 84
 			};

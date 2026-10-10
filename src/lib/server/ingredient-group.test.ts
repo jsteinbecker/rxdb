@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ingredientGroup } from '../ingredient-group';
+import { ingredientGroup, racemicDisplayName } from '../ingredient-group';
 import { buildTree, comboKey, type FormularyRow } from '../formulary-hierarchy';
 import { parseSettings } from '../settings';
 
@@ -151,4 +151,21 @@ test('combo dose settings saved under salt names still apply', () => {
 	assert.deepEqual(settings.comboDoseDisplay, {
 		'Piperacillin / Tazobactam': { mode: 'single', ingredient: 'Piperacillin' }
 	});
+});
+
+test('an explicit racemic marker groups with the plain name and displays as (D,L)-', () => {
+	for (const name of [
+		'AMPHETAMINE DL-ASPARTATE',
+		'AMPHETAMINE D,L-ASPARTATE',
+		'Amphetamine (D,L)-Aspartate',
+		'AMPHETAMINE (±)-ASPARTATE MONOHYDRATE',
+		'AMPHETAMINE ASPARTATE'
+	])
+		assert.equal(ingredientGroup(name).toUpperCase(), 'AMPHETAMINE ASPARTATE', name);
+	assert.equal(racemicDisplayName('AMPHETAMINE DL-ASPARTATE'), 'AMPHETAMINE (D,L)-ASPARTATE');
+	assert.equal(racemicDisplayName('amphetamine rac-aspartate'), 'amphetamine (D,L)-aspartate');
+	assert.equal(racemicDisplayName('AMPHETAMINE ASPARTATE'), 'AMPHETAMINE ASPARTATE');
+	// A single enantiomer is its own substance.
+	assert.equal(ingredientGroup('DEXTROAMPHETAMINE SULFATE'), 'DEXTROAMPHETAMINE');
+	assert.equal(ingredientGroup('L-GLUTAMINE'), 'L-GLUTAMINE');
 });

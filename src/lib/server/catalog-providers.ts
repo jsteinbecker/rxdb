@@ -1,3 +1,5 @@
+import { loggedFetch } from './log';
+import { balanceIon, ionDisplayName } from '../ions';
 import { naturalCompare } from '../natural-sort';
 import { type PackageFacts, parsePackageFacts } from './catalog-facts';
 import type { PropertyOverride } from '../property-override-fields';
@@ -103,13 +105,13 @@ export type PackageDetails = {
 		listingExpirationDate: string | null;
 		finished: boolean | null;
 		pharmClasses: string[];
-		rxcuis: string[];
-		uniis: string[];
 		/** Read-side only: set when pharm-class rules were applied to `pharmClasses`. */
 		pharmClassResolution?: {
 			source: string[];
 			applied: { ruleId: string; mode: string; classes: string[] }[];
 		};
+		rxcuis: string[];
+		uniis: string[];
 		manufacturers: string[];
 		splId: string | null;
 	} | null;
@@ -123,6 +125,8 @@ export type PackageDetails = {
 		effectiveTime: string | null;
 		version: string | null;
 		setId: string | null;
+		/** Set when the label was found through a sibling package's NDC. */
+		siblingNdc?: string | null;
 		/** `blocks` is the SPL's own structure for the section; `text` is openFDA's flattening. */
 		sections: { key: string; title: string; text: string; blocks?: LabelBlock[] }[];
 	} | null;
@@ -133,6 +137,8 @@ export type PackageDetails = {
 		ingredients: LabelIngredient[];
 		appearances: PillAppearance[];
 		otherLabels: { setId: string; title: string | null }[];
+		/** Set when this NDC has no SPL of its own and a sibling package's was used. */
+		siblingNdc?: string | null;
 	} | null;
 	rxnav: {
 		status: string | null;
@@ -344,10 +350,18 @@ function normalizeRoutes(values: string[]): string[] {
 /** Only use an SPL product form when its product or package identifiers name
  * this NDC. Some DailyMed search hits are multi-product SPLs with no package
  * match; borrowing their first form assigns a sibling's form to this NDC. */
+/**
+ * The SPL products that are this NDC: those listing the package itself, else those
+ * with its product code. A label often lists only some package sizes of a product,
+ * and the unlisted ones are still that product, not every product on the label.
+ */
 function splProductsForNdc(products: ReturnType<typeof parseSplIngredients>, ndc: string) {
-	return products.filter((item) =>
+	const listed = products.filter((item) =>
 		[item.productCode, ...item.packageCodes].some((code) => code && toNdc11(code) === ndc)
 	);
+	if (listed.length) return listed;
+	const codes = productCodesOf(ndc);
+	return products.filter((item) => item.productCode && codes.includes(item.productCode));
 }
 
 function labelIngredientOf(
@@ -428,6 +442,9 @@ function splDocumentTitle(xml: string | null): string | null {
 	return text || null;
 }
 
+/** GSRS's SODIUM CATION. */
+const SODIUM_ION_UNII = 'LYR4M0NH37';
+
 /** Extract a label-stated total sodium amount for the exact package NDC. */
 function sodiumContentFromLabel(
 	text: string | null,
@@ -442,8 +459,9 @@ function sodiumContentFromLabel(
 		.replace(/&nbsp;/gi, ' ')
 		.replace(/&amp;/gi, '&')
 		.replace(/\s+/g, ' ');
+	// "contains 2.5 mEq (57.5 mg) of sodium" or "contains 57.5 mg (2.5 mEq) of sodium".
 	const declarations =
-		/(?:contains|provides)\s+([\d,.]+)\s*mEq\s*\(\s*([\d,.]+)\s*mg\s*\)\s*of\s+sodium\b/gi;
+		/(?:contains|provides)\s+(?:([\d,.]+)\s*mEq\s*\(\s*([\d,.]+)\s*mg\s*\)|([\d,.]+)\s*mg\s*\(\s*([\d,.]+)\s*mEq\s*\))\s*(?:of\s+)?sodium\b/gi;
 	const matches = [...plain.matchAll(declarations)];
 	for (let index = 0; index < matches.length; index++) {
 		const match = matches[index];
@@ -451,17 +469,25 @@ function sodiumContentFromLabel(
 		const end = Math.min(matches[index + 1]?.index ?? start + 240, start + 240);
 		const ndcMatch = plain.slice(start, end).match(/\bNDC\s*[:#]?\s*([\d-]{10,})/i);
 		if (!ndcMatch || toNdc11(ndcMatch[1]) !== ndc) continue;
-		const mEq = Number(match[1].replaceAll(',', ''));
-		const massMg = Number(match[2].replaceAll(',', ''));
+		const mEq = Number((match[1] ?? match[4]).replaceAll(',', ''));
+		const massMg = Number((match[2] ?? match[3]).replaceAll(',', ''));
 		if (!Number.isFinite(mEq) || mEq <= 0 || !Number.isFinite(massMg) || massMg <= 0) continue;
+		const balance = balanceIon('sodium', massMg, mEq);
 		return {
-			name: 'SODIUM (combined counterion)',
-			unii: null,
+			name: ionDisplayName('sodium'),
+			unii: SODIUM_ION_UNII,
 			kind: 'ionic',
-			basis: 'counterion total',
-			strength: `${massMg} mg; ${mEq} mEq`,
+			basis: 'ion constituent (label total)',
+			strength: `${massMg} mg (${mEq} mEq)`,
 			moieties: [],
 			productCode: null,
+			...(balance && !balance.balanced
+				? {
+						strengthNotes: [
+							`The label states ${massMg} mg and ${mEq} mEq of sodium, which disagree: ${massMg} mg is ${balance.expectedMEq} mEq`
+						]
+					}
+				: {}),
 			ionicContent: {
 				element: 'sodium',
 				massMg,
@@ -484,23 +510,77 @@ class ProviderHttpError extends Error {
 	}
 }
 
-async function getJson(url: string, emptyOn404 = false): Promise<unknown> {
-	const response = await fetch(url, {
-		headers: { Accept: 'application/json' },
-		signal: AbortSignal.timeout(12_000)
-	});
-	if (response.status === 404 && emptyOn404) return { results: [] };
-	if (!response.ok) throw new ProviderHttpError(url, response.status);
-	return response.json();
+// ── Shared provider responses ────────────────────────────────────────────────
+// Packages of one product, and products of one labeler, ask the providers the
+// same questions: the same SPL document, label, labeler query and RxNav
+// relations. Each URL is fetched once and its promise shared for a short while,
+// across NDCs, batches and requests. Keyed by the fetch in use, so a test that
+// swaps `globalThis.fetch` starts with an empty cache.
+const RESPONSE_TTL_MS = 10 * 60 * 1000;
+// A concept's relations and properties change only with an RxNorm release.
+const RXNAV_CONCEPT_TTL_MS = 6 * 60 * 60 * 1000;
+const ttlOf = (url: string) =>
+	/\/REST\/rxcui\/\d+\/(related|properties|allProperties)\.json/.test(url)
+		? RXNAV_CONCEPT_TTL_MS
+		: RESPONSE_TTL_MS;
+const RESPONSE_LIMIT = 600;
+type CachedResponse = { at: number; ttl: number; value: Promise<unknown> };
+const responseCaches = new WeakMap<typeof fetch, Map<string, CachedResponse>>();
+let responsesNotBefore = 0;
+
+function responseCache(): Map<string, CachedResponse> {
+	let cache = responseCaches.get(globalThis.fetch);
+	if (!cache) responseCaches.set(globalThis.fetch, (cache = new Map()));
+	return cache;
 }
 
-async function getText(url: string): Promise<string> {
-	const response = await fetch(url, {
-		headers: { Accept: '*/*' },
-		signal: AbortSignal.timeout(12_000)
+/** Forced refreshes must reach the providers: ignore responses cached before now. */
+export function expireProviderResponses(now = Date.now()) {
+	responsesNotBefore = now;
+}
+
+function shared<T>(key: string, ttl: number, load: () => Promise<T>): Promise<T> {
+	const cache = responseCache();
+	const now = Date.now();
+	const hit = cache.get(key);
+	if (hit && hit.at >= responsesNotBefore && now - hit.at < hit.ttl) return hit.value as Promise<T>;
+	cache.delete(key);
+	if (cache.size >= RESPONSE_LIMIT) {
+		for (const [entry, value] of cache) {
+			if (cache.size < RESPONSE_LIMIT && now - value.at < value.ttl) break;
+			cache.delete(entry);
+		}
+	}
+	const value = load();
+	cache.set(key, { at: now, ttl, value });
+	// A failure is not an answer; the next caller asks again.
+	value.catch(() => {
+		if (cache.get(key)?.value === value) cache.delete(key);
 	});
-	if (!response.ok) throw new ProviderHttpError(url, response.status);
-	return response.text();
+	return value;
+}
+
+function getJson(url: string, emptyOn404 = false): Promise<unknown> {
+	return shared(`json:${emptyOn404 ? '404:' : ''}${url}`, ttlOf(url), async () => {
+		const response = await loggedFetch(url, {
+			headers: { Accept: 'application/json' },
+			signal: AbortSignal.timeout(12_000)
+		});
+		if (response.status === 404 && emptyOn404) return { results: [] };
+		if (!response.ok) throw new ProviderHttpError(url, response.status);
+		return response.json();
+	});
+}
+
+function getText(url: string): Promise<string> {
+	return shared(`text:${url}`, RESPONSE_TTL_MS, async () => {
+		const response = await loggedFetch(url, {
+			headers: { Accept: '*/*' },
+			signal: AbortSignal.timeout(12_000)
+		});
+		if (!response.ok) throw new ProviderHttpError(url, response.status);
+		return response.text();
+	});
 }
 
 /** One failed provider per source, so the page can say which facts are missing and why. */
@@ -553,11 +633,66 @@ export async function discoverRxNav(query: string): Promise<RxConcept[]> {
 	return (await discoverRxNavPage(query)).concepts;
 }
 
-/** One ranked page of RxNav concepts; `total` counts every discovered root. */
+// The ranked graph behind a query, so later pages fetch only their own NDCs.
+const RANKING_TTL_MS = 60 * 60 * 1000;
+const rankings = new Map<string, { at: number; ranking: Promise<RxRanking> }>();
+type RxRanking = Awaited<ReturnType<typeof rankRxNav>>;
+
+function rankingOf(query: string): Promise<RxRanking> {
+	const key = query.trim().toLocaleLowerCase();
+	const now = Date.now();
+	const hit = rankings.get(key);
+	if (hit && now - hit.at < RANKING_TTL_MS && hit.at >= responsesNotBefore) return hit.ranking;
+	for (const [entry, value] of rankings)
+		if (now - value.at >= RANKING_TTL_MS) rankings.delete(entry);
+	if (rankings.size >= 64) rankings.delete(rankings.keys().next().value!);
+	const ranking = rankRxNav(query);
+	rankings.set(key, { at: now, ranking });
+	ranking.catch(() => {
+		if (rankings.get(key)?.ranking === ranking) rankings.delete(key);
+	});
+	return ranking;
+}
+
+/** What the catalog already knows about a concept from an earlier search. */
+export type StoredConcept = { concept: RxConcept; fresh: boolean };
+
+/** A concept with nothing a formulary could load: veterinary only, or no NDCs. */
+const isEmptyConcept = (concept: Pick<RxConcept, 'vetOnly' | 'ndcs'>) =>
+	concept.vetOnly === true || !concept.ndcs.length;
+
+/**
+ * One ranked page of RxNav concepts; `total` counts every discovered root.
+ *
+ * `stored` looks up concepts staged by earlier searches, at no provider cost. Those
+ * known to have nothing to load rank below the rest before paging, and a fresh one
+ * on the page is used as stored instead of being fetched again (`reused` lists them,
+ * so the caller does not stage them as new).
+ */
 export async function discoverRxNavPage(
 	query: string,
-	offset = 0
-): Promise<{ concepts: RxConcept[]; total: number }> {
+	offset = 0,
+	stored?: (rxcuis: string[]) => Promise<Map<string, StoredConcept>>
+): Promise<{ concepts: RxConcept[]; total: number; reused: string[] }> {
+	const ranking = await rankingOf(query);
+	const known = stored ? await stored(ranking.roots.map((root) => root.rxcui)) : new Map<string, StoredConcept>();
+	const empty = (rxcui: string) => {
+		const entry = known.get(rxcui);
+		return entry && isEmptyConcept(entry.concept) ? 1 : 0;
+	};
+	// Stable: the ranking's own order holds within each group.
+	const roots = [...ranking.roots].sort((a, b) => empty(a.rxcui) - empty(b.rxcui));
+	const reuse = new Map([...known].flatMap(([rxcui, entry]) => (entry.fresh ? [[rxcui, entry.concept] as const] : [])));
+	const page = await pageOfRanking(offset, { ...ranking, roots }, reuse);
+	return {
+		...page,
+		// Within the page too, anything with nothing to load goes last.
+		concepts: [...page.concepts].sort((a, b) => Number(isEmptyConcept(a)) - Number(isEmptyConcept(b))),
+		reused: page.concepts.filter((concept) => reuse.has(concept.rxcui)).map((concept) => concept.rxcui)
+	};
+}
+
+async function rankRxNav(query: string) {
 	const ndc = toNdc11(query);
 	const numeric = /^\d[\d-]*$/.test(query);
 	const rxcuiQuery = /^\d{1,7}$/.test(query);
@@ -720,6 +855,32 @@ export async function discoverRxNavPage(
 			const i = x.findIndex((value, index) => value !== y[index]);
 			return i >= 0 ? x[i] - y[i] : naturalCompare(a.name, b.name);
 		});
+	return { roots, members, concepts, parentsOf, counterpartsOf, evidence, related };
+}
+
+type RankedConcept = { rxcui: string; name: string; tty: string | null };
+
+async function pageOfRanking(
+	offset: number,
+	{
+		roots,
+		members,
+		concepts,
+		parentsOf,
+		counterpartsOf,
+		evidence,
+		related
+	}: {
+		roots: RankedConcept[];
+		members: Map<string, RankedConcept[]>;
+		concepts: Map<string, RankedConcept>;
+		parentsOf: Map<string, Set<string>>;
+		counterpartsOf: Map<string, RankedConcept[]>;
+		evidence: SourcePayload[];
+		related: (rxcui: string, values: string[], parameter?: string) => Promise<RankedConcept[]>;
+	},
+	reuse = new Map<string, RxConcept>()
+): Promise<{ concepts: RxConcept[]; total: number }> {
 	const isVetOnly = async (rxcui: string) => {
 		const url = `${RXNAV}/rxcui/${encodeURIComponent(rxcui)}/allProperties.json?prop=attributes`;
 		const payload = (await getJson(url).catch(() => null)) as {
@@ -741,6 +902,9 @@ export async function discoverRxNavPage(
 		];
 	};
 	const page = await mapLimit(roots.slice(offset, offset + MAX_CONCEPTS), 4, async (drug) => {
+		// Staged by an earlier search and still fresh: nothing to ask RxNav again.
+		const reused = reuse.get(drug.rxcui);
+		if (reused) return { ...reused, evidence: [] };
 		// A brand's three lookups are independent, so they run together; brands go
 		// one at a time to keep RxNav concurrency where it was.
 		const brandedProducts = await mapLimit(members.get(drug.rxcui) ?? [], 1, async (brand) => {
@@ -874,596 +1038,707 @@ export type LabelIngredientName = { name: string; kind: IngredientKind | null };
 
 export type SplPreference = { prefer?: string | null; avoid?: string[] };
 
+/** What a caller already knows about a batch's NDCs, so enrichment need not ask again. */
+export type PackageHints = {
+	/** RxNorm's dose form for the concept the NDCs belong to (DF, else DFG). */
+	doseForm?: string | null;
+	/** Every active moiety of a UNII per GSRS; completes a label missing one of a salt's ions. */
+	moietiesOf?: (unii: string) => Promise<{ unii: string; name: string }[] | null>;
+};
+
+/**
+ * Adds the moieties a label left out of a salt. Nephron's sodium chloride
+ * lists only CHLORIDE ION; GSRS knows SODIUM CATION too. Only when every
+ * moiety the label did list is one GSRS agrees with, so a label that names a
+ * different moiety is left as written. Mutates `products`.
+ */
+export async function completeMoieties(
+	products: { ingredients: SplIngredient[] }[],
+	moietiesOf: NonNullable<PackageHints['moietiesOf']>
+): Promise<void> {
+	const ingredients = products
+		.flatMap((product) => product.ingredients)
+		.filter((ingredient) => ingredient.kind === 'active' && ingredient.unii && ingredient.moieties.length);
+	const known = new Map<string, Promise<{ unii: string; name: string }[] | null>>();
+	for (const ingredient of ingredients) {
+		const unii = ingredient.unii!;
+		if (!known.has(unii)) known.set(unii, moietiesOf(unii).catch(() => null));
+		const gsrs = (await known.get(unii)) ?? [];
+		const listed = new Set(ingredient.moieties.map((moiety) => moiety.unii));
+		if (gsrs.length <= listed.size || ![...listed].every((unii) => gsrs.some((m) => m.unii === unii)))
+			continue;
+		for (const moiety of gsrs)
+			if (!listed.has(moiety.unii)) ingredient.moieties.push({ ...moiety, source: 'gsrs' });
+	}
+}
+
+/** The labeled product codes an 11-digit NDC's first nine digits could stand for. */
+function productCodesOf(ndc: string): string[] {
+	const labeler = ndc.slice(0, 5);
+	const product = ndc.slice(5, 9);
+	return [
+		...new Set([
+			`${labeler}-${product}`,
+			...(labeler.startsWith('0') ? [`${labeler.slice(1)}-${product}`] : []),
+			...(product.startsWith('0') ? [`${labeler}-${product.slice(1)}`] : [])
+		])
+	];
+}
+
+// A labeler's name outlives any one product; keep it for the process.
+const LABELER_TTL_MS = 24 * 60 * 60 * 1000;
+const labelerNames = new Map<string, { at: number; name: Promise<string | null> }>();
+
+function labelerNameOf(labelerCode: string, apiKey?: string): Promise<string | null> {
+	const hit = labelerNames.get(labelerCode);
+	if (hit && Date.now() - hit.at < LABELER_TTL_MS) return hit.name;
+	const url = fdaUrl(
+		OPENFDA_NDC,
+		labelerCandidates(labelerCode)
+			.map((code) => `product_ndc:${code}-*`)
+			.join(' OR '),
+		apiKey
+	);
+	const name = (getJson(url, true) as Promise<{ results?: FdaProduct[] }>).then(
+		(payload) => payload.results?.find((row) => row.labeler_name)?.labeler_name ?? null
+	);
+	labelerNames.set(labelerCode, { at: Date.now(), name });
+	name.then(
+		(value) => {
+			// An empty answer may be an indexing gap; let the next package ask again.
+			if (value === null) labelerNames.delete(labelerCode);
+		},
+		() => labelerNames.delete(labelerCode)
+	);
+	return name;
+}
+
 export async function enrichPackages(
 	ndcs: string[],
 	apiKey?: string,
-	splPreferences: Map<string, SplPreference> = new Map()
+	splPreferences: Map<string, SplPreference> = new Map(),
+	hints: PackageHints = {}
 ): Promise<ExternalPackage[]> {
-	return mapLimit(
-		[...new Set(ndcs.map(toNdc11).filter((ndc): ndc is string => ndc !== null))],
-		3,
-		async (ndc) => {
-			const candidates = hyphenCandidates(ndc);
-			const search = (field: string) =>
-				candidates.map((value) => `${field}:"${value}"`).join(' OR ');
-			const ndcUrl = fdaUrl(OPENFDA_NDC, search('packaging.package_ndc'), apiKey);
-			const labelUrl = fdaUrl(OPENFDA_LABEL, search('openfda.package_ndc'), apiKey);
-			const statusUrl = `${RXNAV}/ndcstatus.json?ndc=${encodeURIComponent(ndc)}`;
-			let splUrl = `${DAILYMED_SPL}?ndc=${encodeURIComponent(candidates[0] ?? ndc)}`;
-			const speciesUrl = `${RXNAV}/ndcproperties.json?id=${encodeURIComponent(ndc)}`;
-			const [fda, label, status, spl, species] = await Promise.allSettled([
-				getJson(ndcUrl, true),
-				getJson(labelUrl, true),
-				getJson(statusUrl),
-				// DailyMed matches only the labeled hyphenation, so try each one.
-				(async () => {
-					let failure: unknown = null;
-					let empty: unknown = null;
-					for (const candidate of candidates) {
-						const url = `${DAILYMED_SPL}?ndc=${encodeURIComponent(candidate)}`;
-						try {
-							const payload = (await getJson(url)) as { data?: unknown[] };
-							if (payload.data?.length) {
-								splUrl = url;
-								return payload;
-							}
-							empty ??= payload;
-						} catch (error) {
-							failure ??= error;
+	const unique = [...new Set(ndcs.map(toNdc11).filter((ndc): ndc is string => ndc !== null))];
+	// One package of each product goes first: its openFDA product, label and SPL
+	// answers are cached, so its siblings then reuse them instead of racing it.
+	const leaders = new Map<string, string>();
+	for (const ndc of unique) if (!leaders.has(ndc.slice(0, 9))) leaders.set(ndc.slice(0, 9), ndc);
+	const batch = unique;
+	const enrichOne = async (ndc: string) => {
+		const candidates = hyphenCandidates(ndc);
+		const search = (field: string) => candidates.map((value) => `${field}:"${value}"`).join(' OR ');
+		// Product level, so every package of the product shares one answer.
+		const productCodes = productCodesOf(ndc);
+		const productUrl = fdaUrl(
+			OPENFDA_NDC,
+			productCodes.map((value) => `product_ndc:"${value}"`).join(' OR '),
+			apiKey
+		);
+		const labelUrl = fdaUrl(OPENFDA_LABEL, search('openfda.package_ndc'), apiKey);
+		const statusUrl = `${RXNAV}/ndcstatus.json?ndc=${encodeURIComponent(ndc)}`;
+		let splUrl = `${DAILYMED_SPL}?ndc=${encodeURIComponent(candidates[0] ?? ndc)}`;
+		const speciesUrl = `${RXNAV}/ndcproperties.json?id=${encodeURIComponent(ndc)}`;
+		const [fda, label, status, spl, species] = await Promise.allSettled([
+			getJson(productUrl, true),
+			getJson(labelUrl, true),
+			getJson(statusUrl),
+			// DailyMed matches only the labeled hyphenation, so try each one.
+			(async () => {
+				let failure: unknown = null;
+				let empty: unknown = null;
+				for (const candidate of candidates) {
+					const url = `${DAILYMED_SPL}?ndc=${encodeURIComponent(candidate)}`;
+					try {
+						const payload = (await getJson(url)) as { data?: unknown[] };
+						if (payload.data?.length) {
+							splUrl = url;
+							return payload;
 						}
+						empty ??= payload;
+					} catch (error) {
+						failure ??= error;
 					}
-					if (failure) throw failure;
-					return empty ?? { data: [] };
-				})(),
-				getJson(speciesUrl)
-			]);
+				}
+				if (failure) throw failure;
+				return empty ?? { data: [] };
+			})(),
+			getJson(speciesUrl)
+		]);
 
-			let fdaPayload =
-				fda.status === 'fulfilled' ? (fda.value as { results?: FdaProduct[] }) : undefined;
-			let effectiveNdcUrl = ndcUrl;
-			let product = fdaPayload?.results?.find((product) =>
-				product.packaging?.some((item) => toNdc11(item.package_ndc ?? '') === ndc)
-			);
-			// Package-level queries can miss when FDA has the product but indexes its
-			// package under a different labeled NDC spelling. Retry at product level;
-			// this still supplies useful identity, ingredient, route, and label facts.
-			if (!product && fda.status === 'fulfilled') {
-				const productCodes = [
-					...new Set(candidates.map((candidate) => candidate.split('-').slice(0, 2).join('-')))
-				];
-				const productSearch = productCodes.map((value) => `product_ndc:"${value}"`).join(' OR ');
-				effectiveNdcUrl = fdaUrl(OPENFDA_NDC, productSearch, apiKey);
-				try {
-					const fallback = (await getJson(effectiveNdcUrl, true)) as { results?: FdaProduct[] };
-					const fallbackProduct = fallback.results?.find((row) =>
-						productCodes.some((code) => row.product_ndc === code)
-					);
-					if (fallbackProduct) {
-						fdaPayload = fallback;
-						product = fallbackProduct;
-					}
-				} catch {
-					// Keep the successful package query and other provider evidence.
+		let fdaPayload =
+			fda.status === 'fulfilled' ? (fda.value as { results?: FdaProduct[] }) : undefined;
+		let effectiveNdcUrl = productUrl;
+		const listsPackage = (row: FdaProduct) =>
+			row.packaging?.some((item) => toNdc11(item.package_ndc ?? '') === ndc) ?? false;
+		let product =
+			fdaPayload?.results?.find(listsPackage) ??
+			fdaPayload?.results?.find((row) => productCodes.includes(row.product_ndc ?? ''));
+		// openFDA occasionally files a package under a product row whose
+		// product_ndc spelling differs; the package-level search still finds it.
+		if (fdaPayload?.results?.length && !(product && listsPackage(product))) {
+			const ndcUrl = fdaUrl(OPENFDA_NDC, search('packaging.package_ndc'), apiKey);
+			try {
+				const byPackage = (await getJson(ndcUrl, true)) as { results?: FdaProduct[] };
+				const packageProduct = byPackage.results?.find(listsPackage);
+				if (packageProduct) {
+					fdaPayload = byPackage;
+					product = packageProduct;
+					effectiveNdcUrl = ndcUrl;
+				}
+			} catch {
+				// Keep the product-level answer.
+			}
+		}
+		const labelPayload = label.status === 'fulfilled' ? label.value : null;
+		let matchedLabel =
+			(
+				labelPayload as {
+					results?: (Record<string, unknown> & { openfda?: { package_ndc?: string[] } })[];
+				} | null
+			)?.results?.find((row) =>
+				row.openfda?.package_ndc?.some((value) => toNdc11(value) === ndc)
+			) ?? null;
+		const statusPayload =
+			status.status === 'fulfilled' ? (status.value as { ndcStatus?: NdcStatusPayload }) : null;
+		const splPayload =
+			spl.status === 'fulfilled'
+				? (spl.value as {
+						data?: {
+							setid?: string;
+							title?: string;
+							spl_version?: number | string;
+							published_date?: string;
+						}[];
+					})
+				: null;
+		// Prefer the label whose product data actually lists this package.
+		const preference = splPreferences.get(ndc);
+		let splRows = splPayload?.data ?? [];
+		// Packages of the same product share its label. When neither DailyMed nor
+		// openFDA links this NDC itself, borrow the SPL a sibling package resolves to.
+		const siblingNdcs = [
+			...new Set([
+				...(product?.packaging ?? []).flatMap((item) =>
+					item.package_ndc && toNdc11(item.package_ndc) !== ndc ? [item.package_ndc] : []
+				),
+				...batch
+					.filter((other) => other !== ndc && other.slice(0, 9) === ndc.slice(0, 9))
+					.flatMap((other) => hyphenCandidates(other))
+			])
+		];
+		let splSiblingNdc: string | null = null;
+		if (!splRows.length && !preference?.prefer && !matchedLabel) {
+			for (const sibling of siblingNdcs.slice(0, 6)) {
+				const url = `${DAILYMED_SPL}?ndc=${encodeURIComponent(sibling)}`;
+				const payload = (await getJson(url).catch(() => null)) as typeof splPayload;
+				if (payload?.data?.length) {
+					splRows = payload.data;
+					splSiblingNdc = toNdc11(sibling);
+					break;
 				}
 			}
-			const labelPayload = label.status === 'fulfilled' ? label.value : null;
-			let matchedLabel =
-				(
-					labelPayload as {
-						results?: (Record<string, unknown> & { openfda?: { package_ndc?: string[] } })[];
-					} | null
-				)?.results?.find((row) =>
-					row.openfda?.package_ndc?.some((value) => toNdc11(value) === ndc)
+		}
+		const splHit = preference?.prefer
+			? (splRows.find((row) => row.setid === preference.prefer) ?? { setid: preference.prefer })
+			: (splRows.find((row) => !preference?.avoid?.includes(row.setid ?? '')) ??
+				(preference?.avoid?.length ? undefined : splRows[0]));
+		const documentUrl = splHit?.setid
+			? `${DAILYMED_DOCUMENT}/${encodeURIComponent(splHit.setid)}.xml`
+			: null;
+		const xml = documentUrl ? await getText(documentUrl).catch(() => null) : null;
+		// Biologics (BLA) carry an empty `openfda` block, so the package_ndc
+		// search misses their label — Anavip 66621-0790. Fall back to the SPL's
+		// set id, which openFDA indexes for every label.
+		if (!matchedLabel && splHit?.setid) {
+			const bySetId = (await getJson(
+				fdaUrl(OPENFDA_LABEL, `set_id:"${splHit.setid}"`, apiKey),
+				true
+			).catch(() => null)) as { results?: Record<string, unknown>[] } | null;
+			matchedLabel = bySetId?.results?.find((row) => row.set_id === splHit.setid) ?? null;
+		}
+		let labelSiblingNdc: string | null = null;
+		if (!matchedLabel && !splHit?.setid && siblingNdcs.length) {
+			const siblingLabel = (await getJson(
+				fdaUrl(
+					OPENFDA_LABEL,
+					siblingNdcs
+						.slice(0, 6)
+						.map((value) => `openfda.package_ndc:"${value}"`)
+						.join(' OR '),
+					apiKey
+				),
+				true
+			).catch(() => null)) as {
+				results?: (Record<string, unknown> & { openfda?: { package_ndc?: string[] } })[];
+			} | null;
+			matchedLabel = siblingLabel?.results?.[0] ?? null;
+			labelSiblingNdc =
+				toNdc11(
+					matchedLabel?.openfda?.package_ndc?.find((value) =>
+						siblingNdcs.some((sibling) => toNdc11(sibling) === toNdc11(value))
+					) ?? ''
 				) ?? null;
-			const statusPayload =
-				status.status === 'fulfilled' ? (status.value as { ndcStatus?: NdcStatusPayload }) : null;
-			const splPayload =
-				spl.status === 'fulfilled'
-					? (spl.value as {
-							data?: {
-								setid?: string;
-								title?: string;
-								spl_version?: number | string;
-								published_date?: string;
-							}[];
-						})
-					: null;
-			// Prefer the label whose product data actually lists this package.
-			const preference = splPreferences.get(ndc);
-			const splRows = splPayload?.data ?? [];
-			const splHit = preference?.prefer
-				? (splRows.find((row) => row.setid === preference.prefer) ?? { setid: preference.prefer })
-				: (splRows.find((row) => !preference?.avoid?.includes(row.setid ?? '')) ??
-					(preference?.avoid?.length ? undefined : splRows[0]));
-			const documentUrl = splHit?.setid
-				? `${DAILYMED_DOCUMENT}/${encodeURIComponent(splHit.setid)}.xml`
-				: null;
-			const xml = documentUrl ? await getText(documentUrl).catch(() => null) : null;
-			// Biologics (BLA) carry an empty `openfda` block, so the package_ndc
-			// search misses their label — Anavip 66621-0790. Fall back to the SPL's
-			// set id, which openFDA indexes for every label.
-			if (!matchedLabel && splHit?.setid) {
-				const bySetId = (await getJson(
-					fdaUrl(OPENFDA_LABEL, `set_id:"${splHit.setid}"`, apiKey),
-					true
-				).catch(() => null)) as { results?: Record<string, unknown>[] } | null;
-				matchedLabel = bySetId?.results?.find((row) => row.set_id === splHit.setid) ?? null;
-			}
-			const labelerCode = ndc.slice(0, 5);
-			const labelerUrl = labelerCode
-				? fdaUrl(
-						OPENFDA_NDC,
-						labelerCandidates(labelerCode)
-							.map((code) => `product_ndc:${code}-*`)
-							.join(' OR '),
-						apiKey
-					)
-				: null;
-			const labelerPayload =
-				!product?.labeler_name && labelerUrl
-					? await getJson(labelerUrl, true).catch(() => null)
-					: null;
-			const labelerName =
-				product?.labeler_name ??
-				(labelerPayload as { results?: FdaProduct[] } | null)?.results?.[0]?.labeler_name ??
-				null;
-			const packaging = product?.packaging?.find((item) => toNdc11(item.package_ndc ?? '') === ndc);
+		}
+		const labelerName =
+			product?.labeler_name ?? (await labelerNameOf(ndc.slice(0, 5), apiKey).catch(() => null));
+		const packaging = product?.packaging?.find((item) => toNdc11(item.package_ndc ?? '') === ndc);
 
-			const sourceIngredients = (product?.active_ingredients ?? []).flatMap((ingredient) =>
-				ingredient.name
-					? [{ name: withoutUnspecified(ingredient.name), strength: ingredient.strength ?? null }]
-					: []
-			);
-			const speciesPayload =
-				species.status === 'fulfilled'
-					? (species.value as {
-							ndcPropertyList?: {
-								ndcProperty?: {
-									propertyConceptList?: {
-										propertyConcept?: { propName: string; propValue: string }[];
-									};
-								}[];
-							};
-						})
-					: null;
-			const ndcProperty = speciesPayload?.ndcPropertyList?.ndcProperty?.[0] as
-				NdcPropertyRow | undefined;
-			const packageDescription =
-				packaging?.description ??
-				ndcProperty?.packagingList?.packaging?.find((value) => value.trim()) ??
-				null;
-			const labelTypes = (speciesPayload?.ndcPropertyList?.ndcProperty ?? [])
-				.flatMap((row) => row.propertyConceptList?.propertyConcept ?? [])
-				.filter((p) => p.propName === 'LABEL_TYPE')
-				.map((p) => p.propValue);
-			if (product?.product_type) labelTypes.push(product.product_type);
-			const listed = packaging
-				? true
-				: !product && fdaPayload?.results?.length === 0
+		const sourceIngredients = (product?.active_ingredients ?? []).flatMap((ingredient) =>
+			ingredient.name
+				? [{ name: withoutUnspecified(ingredient.name), strength: ingredient.strength ?? null }]
+				: []
+		);
+		const speciesPayload =
+			species.status === 'fulfilled'
+				? (species.value as {
+						ndcPropertyList?: {
+							ndcProperty?: {
+								propertyConceptList?: {
+									propertyConcept?: { propName: string; propValue: string }[];
+								};
+							}[];
+						};
+					})
+				: null;
+		const ndcProperty = speciesPayload?.ndcPropertyList?.ndcProperty?.[0] as
+			NdcPropertyRow | undefined;
+		const packageDescription =
+			packaging?.description ??
+			ndcProperty?.packagingList?.packaging?.find((value) => value.trim()) ??
+			null;
+		const labelTypes = (speciesPayload?.ndcPropertyList?.ndcProperty ?? [])
+			.flatMap((row) => row.propertyConceptList?.propertyConcept ?? [])
+			.filter((p) => p.propName === 'LABEL_TYPE')
+			.map((p) => p.propValue);
+		if (product?.product_type) labelTypes.push(product.product_type);
+		const listed = packaging ? true : !product && fdaPayload?.results?.length === 0 ? false : null;
+		const splPresent =
+			splPayload && Array.isArray(splPayload.data) ? splPayload.data.length > 0 : null;
+		const listedByFDA = listed === true;
+		const presentInSPL = splPresent === true;
+		// Only unlisted NDCs can be compliance-inactivated, so skip the page otherwise.
+		const splInactivated =
+			splHit?.setid && listed !== true
+				? await getText(`${DAILYMED_INFO}?setid=${encodeURIComponent(splHit.setid)}`)
+						.then((html) => inactivatedOnDailyMed(html, candidates))
+						.catch(() => null)
+				: listed === true
 					? false
 					: null;
-			const splPresent =
-				splPayload && Array.isArray(splPayload.data) ? splPayload.data.length > 0 : null;
-			const listedByFDA = listed === true;
-			const presentInSPL = splPresent === true;
-			// Only unlisted NDCs can be compliance-inactivated, so skip the page otherwise.
-			const splInactivated =
-				splHit?.setid && listed !== true
-					? await getText(`${DAILYMED_INFO}?setid=${encodeURIComponent(splHit.setid)}`)
-							.then((html) => inactivatedOnDailyMed(html, candidates))
-							.catch(() => null)
-					: listed === true
-						? false
-						: null;
-			const splProducts = xml ? parseSplIngredients(xml) : [];
-			const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
-			const hyphenated = new Set(candidates);
-			const ownProducts = splProductsForNdc(splProducts, ndc);
-			const labelRow = matchedLabel as
-				| (Record<string, unknown> & { effective_time?: string; version?: string; set_id?: string })
-				| null;
-			const labelText = (key: string) => strings(labelRow?.[key]).join('\n') || null;
-			// A kit's parts for this NDC: its drug and its diluent, and only this
-			// carton's when the SPL lists a sibling size's parts under it too.
-			const kitParts = kitComposition(ownProducts, ndc, {
-				howSupplied: labelText('how_supplied'),
-				description: packageDescription
-			});
-			// An NDC that is itself a kit's part (Wilshire's 52536-096-05 powder
-			// bottle) is listed nowhere but inside its kit's carton.
-			const partOf = ownProducts.find(
-				(item) =>
-					item.part &&
-					item.packageCodes.some(
-						(code) => toNdc11(code) === ndc && code.startsWith(`${item.productCode}-`)
-					)
-			);
-			const kit: KitComposition | null = kitParts
-				? {
-						...kitParts,
-						...(partOf
-							? {
-									partOf: partOf.packageCodes.filter(
-										(code) => !code.startsWith(`${partOf.productCode}-`)
-									)
-								}
-							: {})
-					}
-				: null;
-			const labelProducts = kit ? productsOfComposition(ownProducts, kit) : ownProducts;
-			const appearances = [...appearancesByPackage(labelProducts)].flatMap(([code, list]) =>
-				hyphenated.has(code) || toNdc11(code) === ndc || !ownProducts.length ? list : []
-			);
-			// RxNorm exposes normalized route and dose form properties on an NDC
-			// mapping even when the FDA product row is missing those fields.
-			const rxPropertyValues = (name: string) =>
-				(speciesPayload?.ndcPropertyList?.ndcProperty ?? [])
-					.flatMap((row) => row.propertyConceptList?.propertyConcept ?? [])
-					.filter((property) => property.propName.toUpperCase() === name.toUpperCase())
-					.map((property) => property.propValue.trim());
-			const rxRoutes = [...new Set(rxPropertyValues('ROUTE').filter(Boolean))];
-			const statusRow = statusPayload?.ndcStatus;
-			const openfda = product?.openfda ?? {};
-			// Route statements commonly live in dosage/administration or dosage-form
-			// sections, rather than on the principal display panel. The openFDA label
-			// row is already matched to this package NDC above.
-			const labelRouteText = [
-				labelText('package_label_principal_display_panel'),
-				labelText('dosage_and_administration'),
-				labelText('dosage_forms_and_strengths'),
-				labelText('how_supplied')
-			]
-				.filter((text): text is string => Boolean(text))
-				.join('\n');
-			const rxNormForm = ndcProperty?.rxcui
+		const splProducts = xml ? parseSplIngredients(xml) : [];
+		if (hints.moietiesOf) await completeMoieties(splProducts, hints.moietiesOf);
+		const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
+		const hyphenated = new Set(candidates);
+		const ownProducts = splProductsForNdc(splProducts, ndc);
+		const labelRow = matchedLabel as
+			| (Record<string, unknown> & { effective_time?: string; version?: string; set_id?: string })
+			| null;
+		const labelText = (key: string) => strings(labelRow?.[key]).join('\n') || null;
+		// A kit's parts for this NDC: its drug and its diluent, and only this
+		// carton's when the SPL lists a sibling size's parts under it too.
+		const kitParts = kitComposition(ownProducts, ndc, {
+			howSupplied: labelText('how_supplied'),
+			description: packageDescription
+		});
+		// An NDC that is itself a kit's part (Wilshire's 52536-096-05 powder
+		// bottle) is listed nowhere but inside its kit's carton.
+		const partOf = ownProducts.find(
+			(item) =>
+				item.part &&
+				item.packageCodes.some(
+					(code) => toNdc11(code) === ndc && code.startsWith(`${item.productCode}-`)
+				)
+		);
+		const kit: KitComposition | null = kitParts
+			? {
+					...kitParts,
+					...(partOf
+						? {
+								partOf: partOf.packageCodes.filter(
+									(code) => !code.startsWith(`${partOf.productCode}-`)
+								)
+							}
+						: {})
+				}
+			: null;
+		const labelProducts = kit ? productsOfComposition(ownProducts, kit) : ownProducts;
+		const appearances = [...appearancesByPackage(labelProducts)].flatMap(([code, list]) =>
+			hyphenated.has(code) || toNdc11(code) === ndc || !ownProducts.length ? list : []
+		);
+		// RxNorm exposes normalized route and dose form properties on an NDC
+		// mapping even when the FDA product row is missing those fields.
+		const rxPropertyValues = (name: string) =>
+			(speciesPayload?.ndcPropertyList?.ndcProperty ?? [])
+				.flatMap((row) => row.propertyConceptList?.propertyConcept ?? [])
+				.filter((property) => property.propName.toUpperCase() === name.toUpperCase())
+				.map((property) => property.propValue.trim());
+		const rxRoutes = [...new Set(rxPropertyValues('ROUTE').filter(Boolean))];
+		const statusRow = statusPayload?.ndcStatus;
+		const openfda = product?.openfda ?? {};
+		// Route statements commonly live in dosage/administration or dosage-form
+		// sections, rather than on the principal display panel. The openFDA label
+		// row is already matched to this package NDC above.
+		const labelRouteText = [
+			labelText('package_label_principal_display_panel'),
+			labelText('dosage_and_administration'),
+			labelText('dosage_forms_and_strengths'),
+			labelText('how_supplied')
+		]
+			.filter((text): text is string => Boolean(text))
+			.join('\n');
+		const rxNormForm =
+			hints.doseForm === undefined && ndcProperty?.rxcui
 				? ((await getJson(
 						`${RXNAV}/rxcui/${encodeURIComponent(ndcProperty.rxcui)}/related.json?tty=DF%20DFG`
 					).catch(() => null)) as {
 						relatedGroup?: { conceptGroup?: { conceptProperties?: { name?: string }[] }[] };
 					} | null)
 				: null;
-			const rxNormDoseForm =
-				rxNormForm?.relatedGroup?.conceptGroup
-					?.flatMap((group) => group.conceptProperties ?? [])
-					.find((concept) => concept.name)?.name ?? null;
-			const rxNormTitle = statusRow?.conceptName ?? null;
-			const productRouteText = [
-				rxNormTitle,
-				rxNormDoseForm,
-				splHit?.title,
-				ownProducts.find((item) => item.doseForm)?.doseForm ?? null,
-				product?.dosage_form ?? null,
-				labelText('package_label_principal_display_panel'),
-				labelText('dosage_forms_and_strengths')
-			]
-				.filter((text): text is string => Boolean(text))
-				.join('\n');
-			const structuredRoutes = [...(product?.route ?? []), ...rxRoutes];
-			const labelRoutes = [
-				...routesFromProductText(productRouteText),
-				...routesFromLabelText(labelRouteText)
-			];
-			const doseFormCorrection = correctDoseForm({
-				doseForm: product?.dosage_form ?? null,
-				identity: {
-					generic_name: product?.generic_name,
-					brand_name: product?.brand_name,
-					spl_title: splHit?.title,
-					// The document's own heading names the article even when every coded
-					// field calls it the liquid: Amneal's vancomycin 69238-2261 is coded
-					// SOLUTION, titled "Vancomycin Hydrochloride for Oral Solution, USP".
-					spl_document_title: splDocumentTitle(xml),
-					package_label_principal_display_panel: labelText('package_label_principal_display_panel'),
-					dosage_forms_and_strengths: labelText('dosage_forms_and_strengths')
-				},
-				instructions: Object.fromEntries(
-					[
-						'dosage_and_administration',
-						'how_supplied',
-						'storage_and_handling',
-						'instructions_for_use'
-					].map((key) => [key, labelText(key)])
-				),
-				reconstitutionRows: labelRow ? reconstitutionFromLabel(labelRow).length : 0,
-				siblingForms: splProducts
-					.filter((item) => !ownProducts.includes(item))
-					.map((item) => item.doseForm)
-			});
-			const doseForm =
-				doseFormCorrection?.to ??
-				product?.dosage_form ??
-				ownProducts.find((item) => item.doseForm)?.doseForm ??
-				rxNormDoseForm ??
-				null;
-			const activeKitProducts = kit
-				? labelProducts.filter(
-						(item) =>
-							item.part && item.ingredients.some((ingredient) => ingredient.kind === 'active')
-					)
-				: [];
-			const dryFill =
-				isDryFillForm(doseForm ?? '') ||
-				activeKitProducts.some((item) => isDryFillForm(item.doseForm ?? ''));
-			// A kit part is described by its own SPL packaging when the directory
-			// has no row for it: "7.5 g in 1 BOTTLE (52536-096-05)".
-			const partCode = partOf?.packageCodes.find((code) => toNdc11(code) === ndc);
-			const description =
-				packageDescription ??
-				(partOf?.presentation?.amount != null && partOf.presentation.amountUnit
-					? `${partOf.presentation.amount} ${partOf.presentation.amountUnit} in 1 ${partOf.presentation.form ?? 'BOTTLE'}${partCode ? ` (${partCode})` : ''}`
-					: null);
-			const unitSize = description && !kit ? parseUnitOfUse(description) : null;
-			const fillVolumeMl =
-				unitSize?.kind === 'volume' ? unitSize.value * (unitSize.unit === 'L' ? 1000 : 1) : null;
-			const bulkFillMl = pharmacyBulkFillMl(description, fillVolumeMl);
-			// The directory lists no ingredients for a kit; its drug part's content
-			// stands in, so the kit has a mass to match the label's rows against.
-			// A kit with more than one drug part (a pen and its alcohol pad) has no
-			// single content to stand in, and keeps the directory's empty list.
-			const kitIngredients =
-				sourceIngredients.length || activeKitProducts.length !== 1
-					? []
-					: activeKitProducts.flatMap((item) => {
-							const checked = checkProductStrengths(item, { rxNormName: rxNormTitle });
-							return item.ingredients.flatMap((ingredient, index) => {
-								if (ingredient.kind !== 'active') return [];
-								const content = partContent(checked[index], item.part);
-								return [
-									{
-										name: ingredient.name,
-										strength: content
-											? `${content.value} ${content.unit}`
-											: strengthText(checked[index])
-									}
-								];
-							});
-						});
-			const ingredients = [...sourceIngredients, ...kitIngredients].map((ingredient) => ({
-				...ingredient,
-				strength: dryFill
-					? dryFillStrength(ingredient.strength, doseForm, bulkFillMl, fillVolumeMl)
-					: ingredient.strength
-			}));
-			const saltIngredients = [
-				...new Set(
-					labelProducts
-						.flatMap((item) => item.ingredients)
-						.filter(
-							(ingredient) => ingredient.kind === 'active' && /\bsodium\b/i.test(ingredient.name)
-						)
-						.map((ingredient) => ingredient.name)
+		const rxNormDoseForm =
+			hints.doseForm ??
+			rxNormForm?.relatedGroup?.conceptGroup
+				?.flatMap((group) => group.conceptProperties ?? [])
+				.find((concept) => concept.name)?.name ??
+			null;
+		const rxNormTitle = statusRow?.conceptName ?? null;
+		const productRouteText = [
+			rxNormTitle,
+			rxNormDoseForm,
+			splHit?.title,
+			ownProducts.find((item) => item.doseForm)?.doseForm ?? null,
+			product?.dosage_form ?? null,
+			labelText('package_label_principal_display_panel'),
+			labelText('dosage_forms_and_strengths')
+		]
+			.filter((text): text is string => Boolean(text))
+			.join('\n');
+		const structuredRoutes = [...(product?.route ?? []), ...rxRoutes];
+		const labelRoutes = [
+			...routesFromProductText(productRouteText),
+			...routesFromLabelText(labelRouteText)
+		];
+		const doseFormCorrection = correctDoseForm({
+			doseForm: product?.dosage_form ?? null,
+			identity: {
+				generic_name: product?.generic_name,
+				brand_name: product?.brand_name,
+				spl_title: splHit?.title,
+				// The document's own heading names the article even when every coded
+				// field calls it the liquid: Amneal's vancomycin 69238-2261 is coded
+				// SOLUTION, titled "Vancomycin Hydrochloride for Oral Solution, USP".
+				spl_document_title: splDocumentTitle(xml),
+				package_label_principal_display_panel: labelText('package_label_principal_display_panel'),
+				dosage_forms_and_strengths: labelText('dosage_forms_and_strengths')
+			},
+			instructions: Object.fromEntries(
+				[
+					'dosage_and_administration',
+					'how_supplied',
+					'storage_and_handling',
+					'instructions_for_use'
+				].map((key) => [key, labelText(key)])
+			),
+			reconstitutionRows: labelRow ? reconstitutionFromLabel(labelRow).length : 0,
+			siblingForms: splProducts
+				.filter((item) => !ownProducts.includes(item))
+				.map((item) => item.doseForm)
+		});
+		const doseForm =
+			doseFormCorrection?.to ??
+			product?.dosage_form ??
+			ownProducts.find((item) => item.doseForm)?.doseForm ??
+			rxNormDoseForm ??
+			null;
+		const activeKitProducts = kit
+			? labelProducts.filter(
+					(item) => item.part && item.ingredients.some((ingredient) => ingredient.kind === 'active')
 				)
-			];
-			const ionicContent = sodiumContentFromLabel(labelText('how_supplied'), ndc, saltIngredients);
-			const hasProductFacts = Boolean(
-				product || rxRoutes.length || labelRoutes.length || doseForm || openfda.rxcui || rxNormTitle
-			);
-			const details: PackageDetails = {
-				product: hasProductFacts
+			: [];
+		const dryFill =
+			isDryFillForm(doseForm ?? '') ||
+			activeKitProducts.some((item) => isDryFillForm(item.doseForm ?? ''));
+		// A kit part is described by its own SPL packaging when the directory
+		// has no row for it: "7.5 g in 1 BOTTLE (52536-096-05)".
+		const partCode = partOf?.packageCodes.find((code) => toNdc11(code) === ndc);
+		const description =
+			packageDescription ??
+			(partOf?.presentation?.amount != null && partOf.presentation.amountUnit
+				? `${partOf.presentation.amount} ${partOf.presentation.amountUnit} in 1 ${partOf.presentation.form ?? 'BOTTLE'}${partCode ? ` (${partCode})` : ''}`
+				: null);
+		const unitSize = description && !kit ? parseUnitOfUse(description) : null;
+		const fillVolumeMl =
+			unitSize?.kind === 'volume' ? unitSize.value * (unitSize.unit === 'L' ? 1000 : 1) : null;
+		const bulkFillMl = pharmacyBulkFillMl(description, fillVolumeMl);
+		// The directory lists no ingredients for a kit; its drug part's content
+		// stands in, so the kit has a mass to match the label's rows against.
+		// A kit with more than one drug part (a pen and its alcohol pad) has no
+		// single content to stand in, and keeps the directory's empty list.
+		const kitIngredients =
+			sourceIngredients.length || activeKitProducts.length !== 1
+				? []
+				: activeKitProducts.flatMap((item) => {
+						const checked = checkProductStrengths(item, { rxNormName: rxNormTitle });
+						return item.ingredients.flatMap((ingredient, index) => {
+							if (ingredient.kind !== 'active') return [];
+							const content = partContent(checked[index], item.part);
+							return [
+								{
+									name: ingredient.name,
+									strength: content
+										? `${content.value} ${content.unit}`
+										: strengthText(checked[index])
+								}
+							];
+						});
+					});
+		const ingredients = [...sourceIngredients, ...kitIngredients].map((ingredient) => ({
+			...ingredient,
+			strength: dryFill
+				? dryFillStrength(ingredient.strength, doseForm, bulkFillMl, fillVolumeMl)
+				: ingredient.strength
+		}));
+		const saltIngredients = [
+			...new Set(
+				labelProducts
+					.flatMap((item) => item.ingredients)
+					.filter(
+						(ingredient) => ingredient.kind === 'active' && /\bsodium\b/i.test(ingredient.name)
+					)
+					.map((ingredient) => ingredient.name)
+			)
+		];
+		const ionicContent = sodiumContentFromLabel(labelText('how_supplied'), ndc, saltIngredients);
+		const hasProductFacts = Boolean(
+			product || rxRoutes.length || labelRoutes.length || doseForm || openfda.rxcui || rxNormTitle
+		);
+		const details: PackageDetails = {
+			product: hasProductFacts
+				? {
+						productType: product?.product_type ?? null,
+						// Structured routes are authoritative; label prose only fills a gap.
+						// Metoprolol tartrate tablet labels describe IV dosing of the
+						// separate injection, which would otherwise read as INTRAVENOUS.
+						routes: normalizeRoutes(structuredRoutes.length ? structuredRoutes : labelRoutes),
+						marketingCategory: product?.marketing_category ?? null,
+						applicationNumber: product?.application_number ?? null,
+						deaSchedule: product?.dea_schedule ?? null,
+						marketingStartDate: product?.marketing_start_date ?? null,
+						listingExpirationDate: product?.listing_expiration_date ?? null,
+						finished: product?.finished ?? null,
+						pharmClasses: [
+							...new Set([
+								...(product?.pharm_class ?? []),
+								...strings(openfda.pharm_class_epc),
+								...strings(openfda.pharm_class_moa),
+								...strings(openfda.pharm_class_pe),
+								...strings(openfda.pharm_class_cs)
+							])
+						],
+						rxcuis: strings(openfda.rxcui),
+						uniis: strings(openfda.unii),
+						manufacturers: strings(openfda.manufacturer_name),
+						splId: product?.spl_id ?? null
+					}
+				: null,
+			packaging: product
+				? {
+						marketingStartDate: packaging?.marketing_start_date ?? null,
+						sample: packaging?.sample ?? null,
+						siblings: (product?.packaging ?? []).flatMap((item) => {
+							const sibling = toNdc11(item.package_ndc ?? '');
+							return sibling && sibling !== ndc
+								? [{ ndc: sibling, description: item.description ?? null }]
+								: [];
+						})
+					}
+				: null,
+			label: labelRow
+				? {
+						effectiveTime: labelRow.effective_time ?? null,
+						version: labelRow.version ?? null,
+						setId: labelRow.set_id ?? null,
+						siblingNdc: labelSiblingNdc ?? splSiblingNdc,
+						sections: LABEL_SECTIONS.flatMap(([key, title]) => {
+							const text = strings(labelRow[key]).join('\n\n').trim();
+							const blocks = sectionBlocks[key];
+							return text || blocks ? [{ key, title, text, ...(blocks ? { blocks } : {}) }] : [];
+						})
+					}
+				: null,
+			spl: splHit
+				? {
+						version: splHit.spl_version != null ? String(splHit.spl_version) : null,
+						publishedDate: splHit.published_date ?? null,
+						doseForm: ownProducts.find((item) => item.doseForm)?.doseForm ?? null,
+						ingredients: [
+							...labelProducts.flatMap((item) => {
+								const checked = checkProductStrengths(item, { rxNormName: rxNormTitle });
+								return item.ingredients.map((ingredient, index) =>
+									labelIngredientOf(
+										ingredient,
+										checked[index],
+										item,
+										doseForm,
+										dryFill,
+										fillVolumeMl,
+										bulkFillMl
+									)
+								);
+							}),
+							...(ionicContent ? [ionicContent] : [])
+						],
+						appearances,
+						siblingNdc: splSiblingNdc,
+						otherLabels: splRows
+							.slice(1)
+							.flatMap((row) => (row.setid ? [{ setId: row.setid, title: row.title ?? null }] : []))
+					}
+				: null,
+			rxnav:
+				statusRow || ndcProperty
 					? {
-							productType: product?.product_type ?? null,
-							// Structured routes are authoritative; label prose only fills a gap.
-							// Metoprolol tartrate tablet labels describe IV dosing of the
-							// separate injection, which would otherwise read as INTRAVENOUS.
-							routes: normalizeRoutes(structuredRoutes.length ? structuredRoutes : labelRoutes),
-							marketingCategory: product?.marketing_category ?? null,
-							applicationNumber: product?.application_number ?? null,
-							deaSchedule: product?.dea_schedule ?? null,
-							marketingStartDate: product?.marketing_start_date ?? null,
-							listingExpirationDate: product?.listing_expiration_date ?? null,
-							finished: product?.finished ?? null,
-							pharmClasses: [
-								...new Set([
-									...(product?.pharm_class ?? []),
-									...strings(openfda.pharm_class_epc),
-									...strings(openfda.pharm_class_moa),
-									...strings(openfda.pharm_class_pe),
-									...strings(openfda.pharm_class_cs)
-								])
-							],
-							rxcuis: strings(openfda.rxcui),
-							uniis: strings(openfda.unii),
-							manufacturers: strings(openfda.manufacturer_name),
-							splId: product?.spl_id ?? null
+							status: statusRow?.status ?? null,
+							rxcui: statusRow?.rxcui ?? ndcProperty?.rxcui ?? null,
+							conceptName: statusRow?.conceptName ?? null,
+							conceptStatus: statusRow?.conceptStatus ?? null,
+							history: (statusRow?.ndcHistory ?? []).map((row) => ({
+								activeRxcui: row.activeRxcui || null,
+								originalRxcui: row.originalRxcui || null,
+								start: row.startDate || null,
+								end: row.endDate || null
+							})),
+							properties: (ndcProperty?.propertyConceptList?.propertyConcept ?? []).map((p) => ({
+								name: p.propName,
+								value: p.propValue
+							})),
+							packaging: ndcProperty?.packagingList?.packaging ?? []
 						}
-					: null,
-				packaging: product
-					? {
-							marketingStartDate: packaging?.marketing_start_date ?? null,
-							sample: packaging?.sample ?? null,
-							siblings: (product?.packaging ?? []).flatMap((item) => {
-								const sibling = toNdc11(item.package_ndc ?? '');
-								return sibling && sibling !== ndc
-									? [{ ndc: sibling, description: item.description ?? null }]
-									: [];
-							})
-						}
-					: null,
-				label: labelRow
-					? {
-							effectiveTime: labelRow.effective_time ?? null,
-							version: labelRow.version ?? null,
-							setId: labelRow.set_id ?? null,
-							sections: LABEL_SECTIONS.flatMap(([key, title]) => {
-								const text = strings(labelRow[key]).join('\n\n').trim();
-								const blocks = sectionBlocks[key];
-								return text || blocks ? [{ key, title, text, ...(blocks ? { blocks } : {}) }] : [];
-							})
-						}
-					: null,
-				spl: splHit
-					? {
-							version: splHit.spl_version != null ? String(splHit.spl_version) : null,
-							publishedDate: splHit.published_date ?? null,
-							doseForm: ownProducts.find((item) => item.doseForm)?.doseForm ?? null,
-							ingredients: [
-								...labelProducts.flatMap((item) => {
-									const checked = checkProductStrengths(item, { rxNormName: rxNormTitle });
-									return item.ingredients.map((ingredient, index) =>
-										labelIngredientOf(
-											ingredient,
-											checked[index],
-											item,
-											doseForm,
-											dryFill,
-											fillVolumeMl,
-											bulkFillMl
-										)
-									);
-								}),
-								...(ionicContent ? [ionicContent] : [])
-							],
-							appearances,
-							otherLabels: (splPayload?.data ?? [])
-								.slice(1)
-								.flatMap((row) =>
-									row.setid ? [{ setId: row.setid, title: row.title ?? null }] : []
-								)
-						}
-					: null,
-				rxnav:
-					statusRow || ndcProperty
-						? {
-								status: statusRow?.status ?? null,
-								rxcui: statusRow?.rxcui ?? ndcProperty?.rxcui ?? null,
-								conceptName: statusRow?.conceptName ?? null,
-								conceptStatus: statusRow?.conceptStatus ?? null,
-								history: (statusRow?.ndcHistory ?? []).map((row) => ({
-									activeRxcui: row.activeRxcui || null,
-									originalRxcui: row.originalRxcui || null,
-									start: row.startDate || null,
-									end: row.endDate || null
-								})),
-								properties: (ndcProperty?.propertyConceptList?.propertyConcept ?? []).map((p) => ({
-									name: p.propName,
-									value: p.propValue
-								})),
-								packaging: ndcProperty?.packagingList?.packaging ?? []
+					: null
+		};
+		const facts = parsePackageFacts(
+			ndc,
+			description,
+			doseForm,
+			ingredients,
+			matchedLabel,
+			xml,
+			rxNormTitle,
+			kit
+		);
+		return {
+			...facts,
+			listed,
+			marketingEndDate: packaging?.marketing_end_date ?? product?.marketing_end_date ?? null,
+			splPresent,
+			splInactivated,
+			isVeterinary: labelTypes.length ? labelTypes.some((value) => /ANIMAL/i.test(value)) : null,
+			complete:
+				listed !== null &&
+				splPresent !== null &&
+				statusPayload?.ndcStatus !== undefined &&
+				speciesPayload?.ndcPropertyList !== undefined &&
+				Array.isArray((labelPayload as { results?: unknown[] } | null)?.results) &&
+				[fda, label, status, spl, species].every((result) => result.status === 'fulfilled') &&
+				(!documentUrl || xml !== null) &&
+				// A successful empty response is not a resolved package. Keep sparse,
+				// unlisted NDCs on the short retry TTL unless a matched product or
+				// package-specific label evidence supplied usable product facts.
+				(Boolean(packaging) ||
+					Boolean(matchedLabel) ||
+					Boolean(ownProducts.length) ||
+					Boolean(labelProducts.length)),
+			providerErrors: providerFailures([
+				['openFDA', fda],
+				['openFDA', label],
+				['DailyMed', spl],
+				['RxNav', status],
+				['RxNav', species]
+			]),
+			ndc,
+			// Stated as the salt's mass, restated as the moiety's; see `unitOfUseCorrection`.
+			description: facts.unitOfUseCorrection?.description ?? description,
+			doseForm,
+			doseFormCorrection,
+			brandName: product?.brand_name ?? null,
+			genericName: product?.generic_name ?? null,
+			labelerName,
+			labelerCode: ndc.slice(0, 5),
+			productCode: product?.product_ndc ?? null,
+			// A kit's are its drug part's content; the directory lists none.
+			ingredients: [...sourceIngredients, ...kitIngredients],
+			rxcuiStatus: statusPayload?.ndcStatus?.status ?? null,
+			splSetId: splHit?.setid ?? null,
+			splTitle: splHit?.title ?? null,
+			splXml: xml,
+			labelIngredients: labelIngredientsOf(splProducts, ownProducts),
+			details,
+			evidence: [
+				...(speciesPayload
+					? [
+							{
+								source: 'rxnav',
+								nativeId: `ndcspecies:${ndc}`,
+								url: speciesUrl,
+								payload: speciesPayload
 							}
-						: null
-			};
-			const facts = parsePackageFacts(
-				ndc,
-				description,
-				doseForm,
-				ingredients,
-				matchedLabel,
-				xml,
-				rxNormTitle,
-				kit
-			);
-			return {
-				...facts,
-				listed,
-				marketingEndDate: packaging?.marketing_end_date ?? product?.marketing_end_date ?? null,
-				splPresent,
-				splInactivated,
-				isVeterinary: labelTypes.length ? labelTypes.some((value) => /ANIMAL/i.test(value)) : null,
-				complete:
-					listed !== null &&
-					splPresent !== null &&
-					statusPayload?.ndcStatus !== undefined &&
-					speciesPayload?.ndcPropertyList !== undefined &&
-					Array.isArray((labelPayload as { results?: unknown[] } | null)?.results) &&
-					[fda, label, status, spl, species].every((result) => result.status === 'fulfilled') &&
-					(!documentUrl || xml !== null) &&
-					// A successful empty response is not a resolved package. Keep sparse,
-					// unlisted NDCs on the short retry TTL unless a matched product or
-					// package-specific label evidence supplied usable product facts.
-					(Boolean(packaging) ||
-						Boolean(matchedLabel) ||
-						Boolean(ownProducts.length) ||
-						Boolean(labelProducts.length)),
-				providerErrors: providerFailures([
-					['openFDA', fda],
-					['openFDA', label],
-					['DailyMed', spl],
-					['RxNav', status],
-					['RxNav', species]
-				]),
-				ndc,
-				// Stated as the salt's mass, restated as the moiety's; see `unitOfUseCorrection`.
-				description: facts.unitOfUseCorrection?.description ?? description,
-				doseForm,
-				doseFormCorrection,
-				brandName: product?.brand_name ?? null,
-				genericName: product?.generic_name ?? null,
-				labelerName,
-				labelerCode,
-				productCode: product?.product_ndc ?? null,
-				// A kit's are its drug part's content; the directory lists none.
-				ingredients: [...sourceIngredients, ...kitIngredients],
-				rxcuiStatus: statusPayload?.ndcStatus?.status ?? null,
-				splSetId: splHit?.setid ?? null,
-				splTitle: splHit?.title ?? null,
-				splXml: xml,
-				labelIngredients: labelIngredientsOf(splProducts, ownProducts),
-				details,
-				evidence: [
-					...(speciesPayload
-						? [
-								{
-									source: 'rxnav',
-									nativeId: `ndcspecies:${ndc}`,
-									url: speciesUrl,
-									payload: speciesPayload
-								}
-							]
-						: []),
-					...(fda.status === 'fulfilled'
-						? [
-								{
-									source: 'openfda-ndc',
-									nativeId: ndc,
-									url: effectiveNdcUrl,
-									payload: fdaPayload ?? fda.value
-								}
-							]
-						: []),
-					...(label.status === 'fulfilled'
-						? [{ source: 'openfda-label', nativeId: ndc, url: labelUrl, payload: labelPayload }]
-						: []),
-					...(status.status === 'fulfilled'
-						? [
-								{
-									source: 'rxnav',
-									nativeId: `ndcstatus:${ndc}`,
-									url: statusUrl,
-									payload: status.value
-								}
-							]
-						: []),
-					...(spl.status === 'fulfilled'
-						? [{ source: 'dailymed-spl', nativeId: ndc, url: splUrl, payload: spl.value }]
-						: []),
-					...(xml && documentUrl
-						? [
-								{
-									source: 'dailymed-spl',
-									nativeId: `xml:${splHit?.setid}`,
-									url: documentUrl,
-									payload: xml
-								}
-							]
-						: []),
-					...(labelerPayload && labelerUrl
-						? [
-								{
-									source: 'openfda-labeler',
-									nativeId: labelerCode!,
-									url: labelerUrl,
-									payload: labelerPayload
-								}
-							]
-						: [])
-				].map((item) => {
-					const url = new URL(item.url);
-					url.searchParams.delete('api_key');
-					return { ...item, url: url.href };
-				})
-			};
-		}
+						]
+					: []),
+				...(fda.status === 'fulfilled'
+					? [
+							{
+								source: 'openfda-ndc',
+								nativeId: ndc,
+								url: effectiveNdcUrl,
+								payload: fdaPayload ?? fda.value
+							}
+						]
+					: []),
+				...(label.status === 'fulfilled'
+					? [{ source: 'openfda-label', nativeId: ndc, url: labelUrl, payload: labelPayload }]
+					: []),
+				...(status.status === 'fulfilled'
+					? [
+							{
+								source: 'rxnav',
+								nativeId: `ndcstatus:${ndc}`,
+								url: statusUrl,
+								payload: status.value
+							}
+						]
+					: []),
+				...(spl.status === 'fulfilled'
+					? [{ source: 'dailymed-spl', nativeId: ndc, url: splUrl, payload: spl.value }]
+					: []),
+				...(xml && documentUrl
+					? [
+							{
+								source: 'dailymed-spl',
+								nativeId: `xml:${splHit?.setid}`,
+								url: documentUrl,
+								payload: xml
+							}
+						]
+					: [])
+			].map((item) => {
+				const url = new URL(item.url);
+				url.searchParams.delete('api_key');
+				return { ...item, url: url.href };
+			})
+		};
+	};
+	const leading = new Set(leaders.values());
+	const first = await mapLimit([...leading], 3, enrichOne);
+	const rest = await mapLimit(
+		batch.filter((ndc) => !leading.has(ndc)),
+		3,
+		enrichOne
 	);
+	const byNdc = new Map([...first, ...rest].map((item) => [item.ndc, item]));
+	return batch.flatMap((ndc) => {
+		const item = byNdc.get(ndc);
+		return item ? [item] : [];
+	});
 }
 
 type NdcStatusPayload = {

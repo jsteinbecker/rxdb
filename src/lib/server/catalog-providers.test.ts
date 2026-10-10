@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { hyphenCandidates, toNdc11 } from '../ndc';
 import type { SplProduct } from '../spl-ingredients';
 import {
+	completeMoieties,
 	discoverRxNav,
 	enrichPackages,
 	labelIngredientsOf,
@@ -97,7 +98,9 @@ test('FDA enrichment matches labeled NDCs and tolerates unavailable label provid
 		assert.equal(packages[0].description, 'One vial');
 		assert.equal(packages[0].ndc, '25021032104');
 		assert.equal(packages[0].splXml, null);
-		assert.ok(searches[0].includes('25021-321-04'));
+		// Asked once, at product level, so sibling packages share the answer.
+		assert.ok(searches[0].includes('product_ndc:"25021-321"'));
+		assert.equal(searches.length, 1);
 		assert.ok(packages[0].evidence.some((item) => item.source === 'openfda-ndc'));
 	} finally {
 		globalThis.fetch = original;
@@ -529,4 +532,69 @@ test('an openFDA rate limit is reported on the package instead of read as unlist
 	} finally {
 		globalThis.fetch = original;
 	}
+});
+
+test('sibling packages of one product share provider answers', async () => {
+	const original = globalThis.fetch;
+	const calls = new Map<string, number>();
+	globalThis.fetch = async (input) => {
+		const url = new URL(String(input));
+		const key =
+			url.pathname === '/drug/ndc.json' ? `ndc:${url.searchParams.get('search')}` : url.pathname;
+		calls.set(key, (calls.get(key) ?? 0) + 1);
+		if (url.pathname === '/drug/ndc.json')
+			return Response.json({
+				results: [
+					{
+						product_ndc: '25021-321',
+						labeler_name: 'Example',
+						packaging: [
+							{ package_ndc: '25021-321-04', description: 'One vial' },
+							{ package_ndc: '25021-321-10', description: 'Ten vials' }
+						]
+					}
+				]
+			});
+		return new Response('', { status: 503 });
+	};
+	try {
+		const packages = await enrichPackages(['25021032104', '25021032110']);
+		assert.deepEqual(
+			packages.map((item) => item.description),
+			['One vial', 'Ten vials']
+		);
+		const productSearches = [...calls].filter(([key]) => key.includes('product_ndc'));
+		assert.equal(productSearches.length, 1);
+		assert.equal(productSearches[0][1], 1);
+	} finally {
+		globalThis.fetch = original;
+	}
+});
+
+test('a salt label missing one of its ions is completed from GSRS', async () => {
+	const ingredient = (moieties: { name: string; unii: string }[]) => ({
+		name: 'SODIUM CHLORIDE',
+		unii: '451W47IQ8X',
+		kind: 'active' as const,
+		basis: 'ingredient' as const,
+		strength: 9,
+		strengthUnit: 'mg',
+		per: 1,
+		perUnit: 'mL',
+		moieties,
+		sequence: 0
+	});
+	const chloride = { name: 'CHLORIDE ION', unii: 'Q32ZN48698' };
+	const sodium = { name: 'SODIUM CATION', unii: 'LYR4M0NH37' };
+	const partial = ingredient([chloride]);
+	const unrelated = ingredient([{ name: 'SOMETHING ELSE', unii: 'ZZZZZZZZZZ' }]);
+	let calls = 0;
+	await completeMoieties([{ ingredients: [partial, unrelated] }], async () => {
+		calls++;
+		return [chloride, sodium];
+	});
+	assert.deepEqual(partial.moieties, [chloride, { ...sodium, source: 'gsrs' }]);
+	// A label naming a moiety GSRS does not list is left as written.
+	assert.equal(unrelated.moieties.length, 1);
+	assert.equal(calls, 1);
 });

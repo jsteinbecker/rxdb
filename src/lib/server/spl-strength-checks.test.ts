@@ -84,10 +84,10 @@ test('a plausible mass-in-mass strength and an unmatched RxNorm name are left al
 
 test('RxNorm names split into per-component strengths', () => {
 	assert.deepEqual(rxNormStrengths('amoxicillin 250 MG / clavulanate 62.5 MG Oral Tablet [Augmentin]'), [
-		{ name: 'amoxicillin', value: 250, unit: 'MG', perUnit: null },
-		{ name: 'clavulanate', value: 62.5, unit: 'MG', perUnit: null }
+		{ name: 'amoxicillin', value: 250, unit: 'MG', per: 1, perUnit: null },
+		{ name: 'clavulanate', value: 62.5, unit: 'MG', per: 1, perUnit: null }
 	]);
 	assert.deepEqual(rxNormStrengths('lidocaine hydrochloride 10 MG/ML Injectable Solution'), [
-		{ name: 'lidocaine hydrochloride', value: 10, unit: 'MG', perUnit: 'ML' }
+		{ name: 'lidocaine hydrochloride', value: 10, unit: 'MG', per: 1, perUnit: 'ML' }
 	]);
 });

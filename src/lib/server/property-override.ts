@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { gsrsMoieties, prismaSubstanceTable } from './unii-substance-store';
 import { prisma } from './prisma';
 import {
 	type CacheRecord,
@@ -6,15 +7,10 @@ import {
 	loadPackageSnapshots,
 	stageCollection
 } from './catalog-store';
-import {
-	type EquivalentPackage,
-	equivalentValues,
-	isProductLevelKey,
-	type PropertyOverride
-} from '$lib/property-override-fields';
+import { type EquivalentPackage, equivalentValues } from '$lib/property-override-fields';
 import { CACHE_SOURCE, mergePackage, readSnapshot } from './catalog-cache';
 import { enrichPackages, type ExternalPackage } from './catalog-providers';
-import { applyPropertyOverrides } from './apply-property-overrides';
+import { productSiblings, stageWithSiblings } from './override-propagation';
 import {
 	buildAmbiguityOverrides,
 	citeOverride,
@@ -75,24 +71,6 @@ export async function findEquivalentPackages(item: Package): Promise<EquivalentP
 		.sort((a, b) => (a.relation === b.relation ? 0 : a.relation === 'sibling' ? -1 : 1));
 }
 
-/** Stages `overrides` (by field) onto the package, recording each as evidence. */
-async function stageOverrides(
-	current: ExternalPackage,
-	overrides: Record<string, PropertyOverride>
-) {
-	const item = {
-		...current,
-		propertyOverrides: { ...current.propertyOverrides, ...overrides },
-		evidence: Object.entries(overrides).map(([key, override]) => ({
-			source: 'user-override',
-			nativeId: `${current.ndc}:${key}:${override.createdAt}`,
-			url: `urn:rxdb:override:ndc:${current.ndc}`,
-			payload: { key, ...override }
-		}))
-	};
-	await stageCollection(prisma, [], [applyPropertyOverrides(item)]);
-}
-
 export async function savePropertyOverride(
 	ndc: string,
 	key: string,
@@ -107,44 +85,7 @@ export async function savePropertyOverride(
 	const overrides = ambiguity
 		? buildAmbiguityOverrides(current, key, value, ambiguity.kind, ambiguity.note, citation)
 		: { [key]: citeOverride(current, key, value, citation, equivalents) };
-	await stageOverrides(current, overrides);
-	await propagateToSiblings(current, overrides);
-}
-
-/** Cached packages of the same product as `item` (same product NDC). */
-async function productSiblings(item: Package): Promise<ExternalPackage[]> {
-	const ndcs = item.details?.packaging?.siblings.map((sibling) => sibling.ndc) ?? [];
-	if (!ndcs.length) return [];
-	const snapshots = await loadPackageSnapshots(prisma, ndcs);
-	return ndcs.flatMap((ndc) => {
-		const sibling = snapshots.get(ndc)?.item;
-		return sibling && (!item.productCode || sibling.productCode === item.productCode)
-			? [sibling]
-			: [];
-	});
-}
-
-/**
- * Copies product-level overrides onto the other packages of the product. A
- * sibling's own correction is kept; one copied from another package is replaced.
- */
-async function propagateToSiblings(
-	current: ExternalPackage,
-	overrides: Record<string, PropertyOverride>
-) {
-	const productLevel = Object.entries(overrides).filter(([key]) => isProductLevelKey(key));
-	if (!productLevel.length) return;
-	for (const sibling of await productSiblings(current)) {
-		const copies = Object.fromEntries(
-			productLevel
-				.filter(([key]) => {
-					const existing = sibling.propertyOverrides?.[key];
-					return !existing || existing.propagatedFrom;
-				})
-				.map(([key, override]) => [key, { ...override, propagatedFrom: current.ndc }])
-		);
-		if (Object.keys(copies).length) await stageOverrides(sibling, copies);
-	}
+	await stageWithSiblings(prisma, current, overrides);
 }
 
 /**
@@ -153,19 +94,6 @@ async function propagateToSiblings(
  * re-applied on top. The removal is recorded as evidence.
  */
 export async function removePropertyOverrides(ndc: string, keys: string[]) {
-	const current = await removeOwnOverrides(ndc, keys);
-	// Copies this package made onto its siblings go with it.
-	const productLevel = keys.filter(isProductLevelKey);
-	if (!productLevel.length) return;
-	for (const sibling of await productSiblings(current)) {
-		const copied = productLevel.filter(
-			(key) => sibling.propertyOverrides?.[key]?.propagatedFrom === ndc
-		);
-		if (copied.length) await removeOwnOverrides(sibling.ndc, copied);
-	}
-}
-
-async function removeOwnOverrides(ndc: string, keys: string[]) {
 	const current = (await loadPackageSnapshots(prisma, [ndc])).get(ndc)?.item;
 	if (!current) throw new Error('No staged data for this NDC.');
 	const removed = keys.filter((key) => current.propertyOverrides?.[key]);
@@ -183,22 +111,47 @@ async function removeOwnOverrides(ndc: string, keys: string[]) {
 					...current,
 					manualExclusion: null,
 					propertyOverrides: Object.keys(remaining).length ? remaining : undefined,
-					evidence: [
-						{
-							source: 'user-override-removal',
-							nativeId: `${ndc}:${new Date().toISOString()}`,
-							url: `urn:rxdb:override:ndc:${ndc}`,
-							payload: { keys: removed }
-						}
-					]
+					evidence: [removalEvidence(ndc, removed)]
 				}
 			]
 		);
-		return current;
+		return;
 	}
-	const [fresh] = await enrichPackages([ndc], env.OPENFDA_API_KEY);
-	if (!fresh?.complete)
+	// Copies this package made onto its siblings go with it.
+	const removals = [
+		{ item: current, keys: removed },
+		...(await productSiblings(prisma, current)).flatMap((sibling) => {
+			const copied = removed.filter(
+				(key) => sibling.propertyOverrides?.[key]?.propagatedFrom === ndc
+			);
+			return copied.length ? [{ item: sibling, keys: copied }] : [];
+		})
+	];
+	const fresh = new Map(
+		(
+			await enrichPackages(
+				removals.map(({ item }) => item.ndc),
+				env.OPENFDA_API_KEY,
+				undefined,
+				{ moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma)) }
+			)
+		).map((item) => [item.ndc, item])
+	);
+	if (!fresh.get(ndc)?.complete)
 		throw new Error('Providers did not answer, so the original values could not be restored.');
+	// A sibling the providers did not answer for keeps its copy until removed there.
+	await stageCollection(
+		prisma,
+		[],
+		removals.flatMap(({ item, keys }) => {
+			const provided = fresh.get(item.ndc);
+			return provided?.complete ? [restoreWithout(item, provided, keys)] : [];
+		})
+	);
+}
+
+/** `current` re-read from `fresh`, with every override but `removed` re-applied. */
+function restoreWithout(current: ExternalPackage, fresh: ExternalPackage, removed: string[]) {
 	const remaining = Object.fromEntries(
 		Object.entries(current.propertyOverrides ?? {}).filter(([key]) => !removed.includes(key))
 	);
@@ -207,15 +160,13 @@ async function removeOwnOverrides(ndc: string, keys: string[]) {
 		{ ...fresh, propertyOverrides: undefined }
 	);
 	restored.propertyOverrides = Object.keys(remaining).length ? remaining : undefined;
-	restored.evidence = [
-		...fresh.evidence,
-		{
-			source: 'user-override-removal',
-			nativeId: `${ndc}:${new Date().toISOString()}`,
-			url: `urn:rxdb:override:ndc:${ndc}`,
-			payload: { keys: removed }
-		}
-	];
-	await stageCollection(prisma, [], [restored]);
-	return current;
+	restored.evidence = [...fresh.evidence, removalEvidence(current.ndc, removed)];
+	return restored;
 }
+
+const removalEvidence = (ndc: string, keys: string[]) => ({
+	source: 'user-override-removal',
+	nativeId: `${ndc}:${new Date().toISOString()}`,
+	url: `urn:rxdb:override:ndc:${ndc}`,
+	payload: { keys }
+});

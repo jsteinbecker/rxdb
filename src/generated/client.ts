@@ -10,13 +10,15 @@
  * 🟢 You can import this file directly.
  */
 
+import * as process from 'node:process'
 import * as path from 'node:path'
-import {fileURLToPath} from 'node:url'
+import { fileURLToPath } from 'node:url'
+globalThis['__dirname'] = path.dirname(fileURLToPath(import.meta.url))
+
 import * as runtime from "@prisma/client/runtime/client"
+import * as $Enums from "./enums.ts"
 import * as $Class from "./internal/class.ts"
 import * as Prisma from "./internal/prismaNamespace.ts"
-
-globalThis['__dirname'] = path.dirname(fileURLToPath(import.meta.url))
 
 export * as $Enums from './enums.ts'
 export * from "./enums.ts"
@@ -341,3 +343,16 @@ export type PillImageLayout = Prisma.PillImageLayoutModel
  * image records that nothing was found, and is looked up again later.
  */
 export type PillPhoto = Prisma.PillPhotoModel
+/**
+ * Model UniiSubstance
+ * What FDA's GSRS says about one UNII: the molecular weight and active moiety
+ * the ingredient correction wizard converts strengths with. `mw` is null for
+ * substances without a structure (proteins, mixtures); `notFound` caches a
+ * UNII GSRS does not know. `raw` is the trimmed response the row was read from.
+ */
+export type UniiSubstance = Prisma.UniiSubstanceModel
+/**
+ * Model PharmClassRule
+ * 
+ */
+export type PharmClassRule = Prisma.PharmClassRuleModel

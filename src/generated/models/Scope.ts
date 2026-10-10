@@ -202,6 +202,7 @@ export type ScopeWhereInput = {
   optimizerProfiles?: Prisma.OptimizerProfileListRelationFilter
   buildPlans?: Prisma.BuildPlanListRelationFilter
   openComponents?: Prisma.OpenComponentListRelationFilter
+  pharmClassRules?: Prisma.PharmClassRuleListRelationFilter
 }
 
 export type ScopeOrderByWithRelationInput = {
@@ -234,6 +235,7 @@ export type ScopeOrderByWithRelationInput = {
   optimizerProfiles?: Prisma.OptimizerProfileOrderByRelationAggregateInput
   buildPlans?: Prisma.BuildPlanOrderByRelationAggregateInput
   openComponents?: Prisma.OpenComponentOrderByRelationAggregateInput
+  pharmClassRules?: Prisma.PharmClassRuleOrderByRelationAggregateInput
 }
 
 export type ScopeWhereUniqueInput = Prisma.AtLeast<{
@@ -269,6 +271,7 @@ export type ScopeWhereUniqueInput = Prisma.AtLeast<{
   optimizerProfiles?: Prisma.OptimizerProfileListRelationFilter
   buildPlans?: Prisma.BuildPlanListRelationFilter
   openComponents?: Prisma.OpenComponentListRelationFilter
+  pharmClassRules?: Prisma.PharmClassRuleListRelationFilter
 }, "id">
 
 export type ScopeOrderByWithAggregationInput = {
@@ -322,6 +325,7 @@ export type ScopeCreateInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateInput = {
@@ -353,6 +357,7 @@ export type ScopeUncheckedCreateInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUpdateInput = {
@@ -384,6 +389,7 @@ export type ScopeUpdateInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateInput = {
@@ -415,6 +421,7 @@ export type ScopeUncheckedUpdateInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateManyInput = {
@@ -860,6 +867,20 @@ export type ScopeUpdateOneRequiredWithoutOpenComponentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ScopeUpdateToOneWithWhereWithoutOpenComponentsInput, Prisma.ScopeUpdateWithoutOpenComponentsInput>, Prisma.ScopeUncheckedUpdateWithoutOpenComponentsInput>
 }
 
+export type ScopeCreateNestedOneWithoutPharmClassRulesInput = {
+  create?: Prisma.XOR<Prisma.ScopeCreateWithoutPharmClassRulesInput, Prisma.ScopeUncheckedCreateWithoutPharmClassRulesInput>
+  connectOrCreate?: Prisma.ScopeCreateOrConnectWithoutPharmClassRulesInput
+  connect?: Prisma.ScopeWhereUniqueInput
+}
+
+export type ScopeUpdateOneRequiredWithoutPharmClassRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.ScopeCreateWithoutPharmClassRulesInput, Prisma.ScopeUncheckedCreateWithoutPharmClassRulesInput>
+  connectOrCreate?: Prisma.ScopeCreateOrConnectWithoutPharmClassRulesInput
+  upsert?: Prisma.ScopeUpsertWithoutPharmClassRulesInput
+  connect?: Prisma.ScopeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ScopeUpdateToOneWithWhereWithoutPharmClassRulesInput, Prisma.ScopeUpdateWithoutPharmClassRulesInput>, Prisma.ScopeUncheckedUpdateWithoutPharmClassRulesInput>
+}
+
 export type ScopeCreateWithoutChildrenInput = {
   id?: string
   kind: $Enums.ScopeKind
@@ -888,6 +909,7 @@ export type ScopeCreateWithoutChildrenInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutChildrenInput = {
@@ -918,6 +940,7 @@ export type ScopeUncheckedCreateWithoutChildrenInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutChildrenInput = {
@@ -953,6 +976,7 @@ export type ScopeCreateWithoutParentInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutParentInput = {
@@ -983,6 +1007,7 @@ export type ScopeUncheckedCreateWithoutParentInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutParentInput = {
@@ -1034,6 +1059,7 @@ export type ScopeUpdateWithoutChildrenInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutChildrenInput = {
@@ -1064,6 +1090,7 @@ export type ScopeUncheckedUpdateWithoutChildrenInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUpsertWithWhereUniqueWithoutParentInput = {
@@ -1121,6 +1148,7 @@ export type ScopeCreateWithoutFormularyItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutFormularyItemsInput = {
@@ -1151,6 +1179,7 @@ export type ScopeUncheckedCreateWithoutFormularyItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutFormularyItemsInput = {
@@ -1197,6 +1226,7 @@ export type ScopeUpdateWithoutFormularyItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutFormularyItemsInput = {
@@ -1227,6 +1257,7 @@ export type ScopeUncheckedUpdateWithoutFormularyItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutFactAssertionsInput = {
@@ -1257,6 +1288,7 @@ export type ScopeCreateWithoutFactAssertionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutFactAssertionsInput = {
@@ -1287,6 +1319,7 @@ export type ScopeUncheckedCreateWithoutFactAssertionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutFactAssertionsInput = {
@@ -1333,6 +1366,7 @@ export type ScopeUpdateWithoutFactAssertionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutFactAssertionsInput = {
@@ -1363,6 +1397,7 @@ export type ScopeUncheckedUpdateWithoutFactAssertionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutResolutionPoliciesInput = {
@@ -1393,6 +1428,7 @@ export type ScopeCreateWithoutResolutionPoliciesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutResolutionPoliciesInput = {
@@ -1423,6 +1459,7 @@ export type ScopeUncheckedCreateWithoutResolutionPoliciesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutResolutionPoliciesInput = {
@@ -1469,6 +1506,7 @@ export type ScopeUpdateWithoutResolutionPoliciesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutResolutionPoliciesInput = {
@@ -1499,6 +1537,7 @@ export type ScopeUncheckedUpdateWithoutResolutionPoliciesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutPropertyValuesInput = {
@@ -1529,6 +1568,7 @@ export type ScopeCreateWithoutPropertyValuesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutPropertyValuesInput = {
@@ -1559,6 +1599,7 @@ export type ScopeUncheckedCreateWithoutPropertyValuesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutPropertyValuesInput = {
@@ -1605,6 +1646,7 @@ export type ScopeUpdateWithoutPropertyValuesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutPropertyValuesInput = {
@@ -1635,6 +1677,7 @@ export type ScopeUncheckedUpdateWithoutPropertyValuesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutEntityMappingsInput = {
@@ -1665,6 +1708,7 @@ export type ScopeCreateWithoutEntityMappingsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutEntityMappingsInput = {
@@ -1695,6 +1739,7 @@ export type ScopeUncheckedCreateWithoutEntityMappingsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutEntityMappingsInput = {
@@ -1741,6 +1786,7 @@ export type ScopeUpdateWithoutEntityMappingsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutEntityMappingsInput = {
@@ -1771,6 +1817,7 @@ export type ScopeUncheckedUpdateWithoutEntityMappingsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutReviewItemsInput = {
@@ -1801,6 +1848,7 @@ export type ScopeCreateWithoutReviewItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutReviewItemsInput = {
@@ -1831,6 +1879,7 @@ export type ScopeUncheckedCreateWithoutReviewItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutReviewItemsInput = {
@@ -1877,6 +1926,7 @@ export type ScopeUpdateWithoutReviewItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutReviewItemsInput = {
@@ -1907,6 +1957,7 @@ export type ScopeUncheckedUpdateWithoutReviewItemsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutDerivationDirtiesInput = {
@@ -1937,6 +1988,7 @@ export type ScopeCreateWithoutDerivationDirtiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutDerivationDirtiesInput = {
@@ -1967,6 +2019,7 @@ export type ScopeUncheckedCreateWithoutDerivationDirtiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutDerivationDirtiesInput = {
@@ -2013,6 +2066,7 @@ export type ScopeUpdateWithoutDerivationDirtiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutDerivationDirtiesInput = {
@@ -2043,6 +2097,7 @@ export type ScopeUncheckedUpdateWithoutDerivationDirtiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutPropertyGroupIndexesInput = {
@@ -2073,6 +2128,7 @@ export type ScopeCreateWithoutPropertyGroupIndexesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutPropertyGroupIndexesInput = {
@@ -2103,6 +2159,7 @@ export type ScopeUncheckedCreateWithoutPropertyGroupIndexesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutPropertyGroupIndexesInput = {
@@ -2149,6 +2206,7 @@ export type ScopeUpdateWithoutPropertyGroupIndexesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutPropertyGroupIndexesInput = {
@@ -2179,6 +2237,7 @@ export type ScopeUncheckedUpdateWithoutPropertyGroupIndexesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutPackageCatalogProjectionsInput = {
@@ -2209,6 +2268,7 @@ export type ScopeCreateWithoutPackageCatalogProjectionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutPackageCatalogProjectionsInput = {
@@ -2239,6 +2299,7 @@ export type ScopeUncheckedCreateWithoutPackageCatalogProjectionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutPackageCatalogProjectionsInput = {
@@ -2285,6 +2346,7 @@ export type ScopeUpdateWithoutPackageCatalogProjectionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutPackageCatalogProjectionsInput = {
@@ -2315,6 +2377,7 @@ export type ScopeUncheckedUpdateWithoutPackageCatalogProjectionsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutCatalogViewsInput = {
@@ -2345,6 +2408,7 @@ export type ScopeCreateWithoutCatalogViewsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutCatalogViewsInput = {
@@ -2375,6 +2439,7 @@ export type ScopeUncheckedCreateWithoutCatalogViewsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutCatalogViewsInput = {
@@ -2421,6 +2486,7 @@ export type ScopeUpdateWithoutCatalogViewsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutCatalogViewsInput = {
@@ -2451,6 +2517,7 @@ export type ScopeUncheckedUpdateWithoutCatalogViewsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutTermMembershipsInput = {
@@ -2481,6 +2548,7 @@ export type ScopeCreateWithoutTermMembershipsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutTermMembershipsInput = {
@@ -2511,6 +2579,7 @@ export type ScopeUncheckedCreateWithoutTermMembershipsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutTermMembershipsInput = {
@@ -2557,6 +2626,7 @@ export type ScopeUpdateWithoutTermMembershipsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutTermMembershipsInput = {
@@ -2587,6 +2657,7 @@ export type ScopeUncheckedUpdateWithoutTermMembershipsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutCompoundingRulesInput = {
@@ -2617,6 +2688,7 @@ export type ScopeCreateWithoutCompoundingRulesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutCompoundingRulesInput = {
@@ -2647,6 +2719,7 @@ export type ScopeUncheckedCreateWithoutCompoundingRulesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutCompoundingRulesInput = {
@@ -2693,6 +2766,7 @@ export type ScopeUpdateWithoutCompoundingRulesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutCompoundingRulesInput = {
@@ -2723,6 +2797,7 @@ export type ScopeUncheckedUpdateWithoutCompoundingRulesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutBudRegulatoryLimitsInput = {
@@ -2753,6 +2828,7 @@ export type ScopeCreateWithoutBudRegulatoryLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutBudRegulatoryLimitsInput = {
@@ -2783,6 +2859,7 @@ export type ScopeUncheckedCreateWithoutBudRegulatoryLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutBudRegulatoryLimitsInput = {
@@ -2829,6 +2906,7 @@ export type ScopeUpdateWithoutBudRegulatoryLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutBudRegulatoryLimitsInput = {
@@ -2859,6 +2937,7 @@ export type ScopeUncheckedUpdateWithoutBudRegulatoryLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutStabilityCellsInput = {
@@ -2889,6 +2968,7 @@ export type ScopeCreateWithoutStabilityCellsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutStabilityCellsInput = {
@@ -2919,6 +2999,7 @@ export type ScopeUncheckedCreateWithoutStabilityCellsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutStabilityCellsInput = {
@@ -2965,6 +3046,7 @@ export type ScopeUpdateWithoutStabilityCellsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutStabilityCellsInput = {
@@ -2995,6 +3077,7 @@ export type ScopeUncheckedUpdateWithoutStabilityCellsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutComponentInUseLimitsInput = {
@@ -3025,6 +3108,7 @@ export type ScopeCreateWithoutComponentInUseLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutComponentInUseLimitsInput = {
@@ -3055,6 +3139,7 @@ export type ScopeUncheckedCreateWithoutComponentInUseLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutComponentInUseLimitsInput = {
@@ -3101,6 +3186,7 @@ export type ScopeUpdateWithoutComponentInUseLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutComponentInUseLimitsInput = {
@@ -3131,6 +3217,7 @@ export type ScopeUncheckedUpdateWithoutComponentInUseLimitsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutPreparationSpecsInput = {
@@ -3161,6 +3248,7 @@ export type ScopeCreateWithoutPreparationSpecsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutPreparationSpecsInput = {
@@ -3191,6 +3279,7 @@ export type ScopeUncheckedCreateWithoutPreparationSpecsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutPreparationSpecsInput = {
@@ -3237,6 +3326,7 @@ export type ScopeUpdateWithoutPreparationSpecsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutPreparationSpecsInput = {
@@ -3267,6 +3357,7 @@ export type ScopeUncheckedUpdateWithoutPreparationSpecsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutCompoundFormulasInput = {
@@ -3297,6 +3388,7 @@ export type ScopeCreateWithoutCompoundFormulasInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutCompoundFormulasInput = {
@@ -3327,6 +3419,7 @@ export type ScopeUncheckedCreateWithoutCompoundFormulasInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutCompoundFormulasInput = {
@@ -3373,6 +3466,7 @@ export type ScopeUpdateWithoutCompoundFormulasInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutCompoundFormulasInput = {
@@ -3403,6 +3497,7 @@ export type ScopeUncheckedUpdateWithoutCompoundFormulasInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutComponentCostsInput = {
@@ -3433,6 +3528,7 @@ export type ScopeCreateWithoutComponentCostsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutComponentCostsInput = {
@@ -3463,6 +3559,7 @@ export type ScopeUncheckedCreateWithoutComponentCostsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutComponentCostsInput = {
@@ -3509,6 +3606,7 @@ export type ScopeUpdateWithoutComponentCostsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutComponentCostsInput = {
@@ -3539,6 +3637,7 @@ export type ScopeUncheckedUpdateWithoutComponentCostsInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutComponentAvailabilitiesInput = {
@@ -3569,6 +3668,7 @@ export type ScopeCreateWithoutComponentAvailabilitiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutComponentAvailabilitiesInput = {
@@ -3599,6 +3699,7 @@ export type ScopeUncheckedCreateWithoutComponentAvailabilitiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutComponentAvailabilitiesInput = {
@@ -3645,6 +3746,7 @@ export type ScopeUpdateWithoutComponentAvailabilitiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutComponentAvailabilitiesInput = {
@@ -3675,6 +3777,7 @@ export type ScopeUncheckedUpdateWithoutComponentAvailabilitiesInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutOptimizerProfilesInput = {
@@ -3705,6 +3808,7 @@ export type ScopeCreateWithoutOptimizerProfilesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutOptimizerProfilesInput = {
@@ -3735,6 +3839,7 @@ export type ScopeUncheckedCreateWithoutOptimizerProfilesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutOptimizerProfilesInput = {
@@ -3781,6 +3886,7 @@ export type ScopeUpdateWithoutOptimizerProfilesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutOptimizerProfilesInput = {
@@ -3811,6 +3917,7 @@ export type ScopeUncheckedUpdateWithoutOptimizerProfilesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutBuildPlansInput = {
@@ -3841,6 +3948,7 @@ export type ScopeCreateWithoutBuildPlansInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutScopeInput
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutBuildPlansInput = {
@@ -3871,6 +3979,7 @@ export type ScopeUncheckedCreateWithoutBuildPlansInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutScopeInput
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutBuildPlansInput = {
@@ -3917,6 +4026,7 @@ export type ScopeUpdateWithoutBuildPlansInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutScopeNestedInput
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutBuildPlansInput = {
@@ -3947,6 +4057,7 @@ export type ScopeUncheckedUpdateWithoutBuildPlansInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutScopeNestedInput
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateWithoutOpenComponentsInput = {
@@ -3977,6 +4088,7 @@ export type ScopeCreateWithoutOpenComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutScopeInput
   optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeUncheckedCreateWithoutOpenComponentsInput = {
@@ -4007,6 +4119,7 @@ export type ScopeUncheckedCreateWithoutOpenComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutScopeInput
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedCreateNestedManyWithoutScopeInput
 }
 
 export type ScopeCreateOrConnectWithoutOpenComponentsInput = {
@@ -4053,6 +4166,7 @@ export type ScopeUpdateWithoutOpenComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutScopeNestedInput
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutOpenComponentsInput = {
@@ -4083,6 +4197,147 @@ export type ScopeUncheckedUpdateWithoutOpenComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutScopeNestedInput
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
+}
+
+export type ScopeCreateWithoutPharmClassRulesInput = {
+  id?: string
+  kind: $Enums.ScopeKind
+  name: string
+  settings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  parent?: Prisma.ScopeCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ScopeCreateNestedManyWithoutParentInput
+  formularyItems?: Prisma.FormularyItemCreateNestedManyWithoutScopeInput
+  factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutScopeInput
+  resolutionPolicies?: Prisma.ResolutionPolicyCreateNestedManyWithoutScopeInput
+  propertyValues?: Prisma.PropertyValueCreateNestedManyWithoutScopeInput
+  entityMappings?: Prisma.EntityMappingCreateNestedManyWithoutScopeInput
+  reviewItems?: Prisma.ReviewItemCreateNestedManyWithoutScopeInput
+  derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutScopeInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutScopeInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionCreateNestedManyWithoutScopeInput
+  catalogViews?: Prisma.CatalogViewCreateNestedManyWithoutScopeInput
+  termMemberships?: Prisma.TermMembershipCreateNestedManyWithoutScopeInput
+  compoundingRules?: Prisma.CompoundingRuleCreateNestedManyWithoutScopeInput
+  budRegulatoryLimits?: Prisma.BudRegulatoryLimitCreateNestedManyWithoutScopeInput
+  stabilityCells?: Prisma.StabilityCellCreateNestedManyWithoutScopeInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitCreateNestedManyWithoutScopeInput
+  preparationSpecs?: Prisma.PreparationSpecCreateNestedManyWithoutScopeInput
+  compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutScopeInput
+  componentCosts?: Prisma.ComponentCostCreateNestedManyWithoutScopeInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutScopeInput
+  optimizerProfiles?: Prisma.OptimizerProfileCreateNestedManyWithoutScopeInput
+  buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutScopeInput
+  openComponents?: Prisma.OpenComponentCreateNestedManyWithoutScopeInput
+}
+
+export type ScopeUncheckedCreateWithoutPharmClassRulesInput = {
+  id?: string
+  kind: $Enums.ScopeKind
+  parentId?: string | null
+  name: string
+  settings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  children?: Prisma.ScopeUncheckedCreateNestedManyWithoutParentInput
+  formularyItems?: Prisma.FormularyItemUncheckedCreateNestedManyWithoutScopeInput
+  factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutScopeInput
+  resolutionPolicies?: Prisma.ResolutionPolicyUncheckedCreateNestedManyWithoutScopeInput
+  propertyValues?: Prisma.PropertyValueUncheckedCreateNestedManyWithoutScopeInput
+  entityMappings?: Prisma.EntityMappingUncheckedCreateNestedManyWithoutScopeInput
+  reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutScopeInput
+  derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutScopeInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutScopeInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUncheckedCreateNestedManyWithoutScopeInput
+  catalogViews?: Prisma.CatalogViewUncheckedCreateNestedManyWithoutScopeInput
+  termMemberships?: Prisma.TermMembershipUncheckedCreateNestedManyWithoutScopeInput
+  compoundingRules?: Prisma.CompoundingRuleUncheckedCreateNestedManyWithoutScopeInput
+  budRegulatoryLimits?: Prisma.BudRegulatoryLimitUncheckedCreateNestedManyWithoutScopeInput
+  stabilityCells?: Prisma.StabilityCellUncheckedCreateNestedManyWithoutScopeInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUncheckedCreateNestedManyWithoutScopeInput
+  preparationSpecs?: Prisma.PreparationSpecUncheckedCreateNestedManyWithoutScopeInput
+  compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutScopeInput
+  componentCosts?: Prisma.ComponentCostUncheckedCreateNestedManyWithoutScopeInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutScopeInput
+  optimizerProfiles?: Prisma.OptimizerProfileUncheckedCreateNestedManyWithoutScopeInput
+  buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutScopeInput
+  openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutScopeInput
+}
+
+export type ScopeCreateOrConnectWithoutPharmClassRulesInput = {
+  where: Prisma.ScopeWhereUniqueInput
+  create: Prisma.XOR<Prisma.ScopeCreateWithoutPharmClassRulesInput, Prisma.ScopeUncheckedCreateWithoutPharmClassRulesInput>
+}
+
+export type ScopeUpsertWithoutPharmClassRulesInput = {
+  update: Prisma.XOR<Prisma.ScopeUpdateWithoutPharmClassRulesInput, Prisma.ScopeUncheckedUpdateWithoutPharmClassRulesInput>
+  create: Prisma.XOR<Prisma.ScopeCreateWithoutPharmClassRulesInput, Prisma.ScopeUncheckedCreateWithoutPharmClassRulesInput>
+  where?: Prisma.ScopeWhereInput
+}
+
+export type ScopeUpdateToOneWithWhereWithoutPharmClassRulesInput = {
+  where?: Prisma.ScopeWhereInput
+  data: Prisma.XOR<Prisma.ScopeUpdateWithoutPharmClassRulesInput, Prisma.ScopeUncheckedUpdateWithoutPharmClassRulesInput>
+}
+
+export type ScopeUpdateWithoutPharmClassRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScopeKindFieldUpdateOperationsInput | $Enums.ScopeKind
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  settings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  parent?: Prisma.ScopeUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ScopeUpdateManyWithoutParentNestedInput
+  formularyItems?: Prisma.FormularyItemUpdateManyWithoutScopeNestedInput
+  factAssertions?: Prisma.FactAssertionUpdateManyWithoutScopeNestedInput
+  resolutionPolicies?: Prisma.ResolutionPolicyUpdateManyWithoutScopeNestedInput
+  propertyValues?: Prisma.PropertyValueUpdateManyWithoutScopeNestedInput
+  entityMappings?: Prisma.EntityMappingUpdateManyWithoutScopeNestedInput
+  reviewItems?: Prisma.ReviewItemUpdateManyWithoutScopeNestedInput
+  derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutScopeNestedInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutScopeNestedInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUpdateManyWithoutScopeNestedInput
+  catalogViews?: Prisma.CatalogViewUpdateManyWithoutScopeNestedInput
+  termMemberships?: Prisma.TermMembershipUpdateManyWithoutScopeNestedInput
+  compoundingRules?: Prisma.CompoundingRuleUpdateManyWithoutScopeNestedInput
+  budRegulatoryLimits?: Prisma.BudRegulatoryLimitUpdateManyWithoutScopeNestedInput
+  stabilityCells?: Prisma.StabilityCellUpdateManyWithoutScopeNestedInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUpdateManyWithoutScopeNestedInput
+  preparationSpecs?: Prisma.PreparationSpecUpdateManyWithoutScopeNestedInput
+  compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutScopeNestedInput
+  componentCosts?: Prisma.ComponentCostUpdateManyWithoutScopeNestedInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutScopeNestedInput
+  optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
+  buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
+  openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+}
+
+export type ScopeUncheckedUpdateWithoutPharmClassRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScopeKindFieldUpdateOperationsInput | $Enums.ScopeKind
+  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  settings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  children?: Prisma.ScopeUncheckedUpdateManyWithoutParentNestedInput
+  formularyItems?: Prisma.FormularyItemUncheckedUpdateManyWithoutScopeNestedInput
+  factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutScopeNestedInput
+  resolutionPolicies?: Prisma.ResolutionPolicyUncheckedUpdateManyWithoutScopeNestedInput
+  propertyValues?: Prisma.PropertyValueUncheckedUpdateManyWithoutScopeNestedInput
+  entityMappings?: Prisma.EntityMappingUncheckedUpdateManyWithoutScopeNestedInput
+  reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutScopeNestedInput
+  derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutScopeNestedInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutScopeNestedInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUncheckedUpdateManyWithoutScopeNestedInput
+  catalogViews?: Prisma.CatalogViewUncheckedUpdateManyWithoutScopeNestedInput
+  termMemberships?: Prisma.TermMembershipUncheckedUpdateManyWithoutScopeNestedInput
+  compoundingRules?: Prisma.CompoundingRuleUncheckedUpdateManyWithoutScopeNestedInput
+  budRegulatoryLimits?: Prisma.BudRegulatoryLimitUncheckedUpdateManyWithoutScopeNestedInput
+  stabilityCells?: Prisma.StabilityCellUncheckedUpdateManyWithoutScopeNestedInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUncheckedUpdateManyWithoutScopeNestedInput
+  preparationSpecs?: Prisma.PreparationSpecUncheckedUpdateManyWithoutScopeNestedInput
+  compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutScopeNestedInput
+  componentCosts?: Prisma.ComponentCostUncheckedUpdateManyWithoutScopeNestedInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutScopeNestedInput
+  optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
+  buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
+  openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeCreateManyParentInput = {
@@ -4120,6 +4375,7 @@ export type ScopeUpdateWithoutParentInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateWithoutParentInput = {
@@ -4150,6 +4406,7 @@ export type ScopeUncheckedUpdateWithoutParentInput = {
   optimizerProfiles?: Prisma.OptimizerProfileUncheckedUpdateManyWithoutScopeNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutScopeNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutScopeNestedInput
+  pharmClassRules?: Prisma.PharmClassRuleUncheckedUpdateManyWithoutScopeNestedInput
 }
 
 export type ScopeUncheckedUpdateManyWithoutParentInput = {
@@ -4188,6 +4445,7 @@ export type ScopeCountOutputType = {
   optimizerProfiles: number
   buildPlans: number
   openComponents: number
+  pharmClassRules: number
 }
 
 export type ScopeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4214,6 +4472,7 @@ export type ScopeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.
   optimizerProfiles?: boolean | ScopeCountOutputTypeCountOptimizerProfilesArgs
   buildPlans?: boolean | ScopeCountOutputTypeCountBuildPlansArgs
   openComponents?: boolean | ScopeCountOutputTypeCountOpenComponentsArgs
+  pharmClassRules?: boolean | ScopeCountOutputTypeCountPharmClassRulesArgs
 }
 
 /**
@@ -4387,6 +4646,13 @@ export type ScopeCountOutputTypeCountOpenComponentsArgs<ExtArgs extends runtime.
   where?: Prisma.OpenComponentWhereInput
 }
 
+/**
+ * ScopeCountOutputType without action
+ */
+export type ScopeCountOutputTypeCountPharmClassRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PharmClassRuleWhereInput
+}
+
 
 export type ScopeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -4418,6 +4684,7 @@ export type ScopeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   optimizerProfiles?: boolean | Prisma.Scope$optimizerProfilesArgs<ExtArgs>
   buildPlans?: boolean | Prisma.Scope$buildPlansArgs<ExtArgs>
   openComponents?: boolean | Prisma.Scope$openComponentsArgs<ExtArgs>
+  pharmClassRules?: boolean | Prisma.Scope$pharmClassRulesArgs<ExtArgs>
   _count?: boolean | Prisma.ScopeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["scope"]>
 
@@ -4473,6 +4740,7 @@ export type ScopeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   optimizerProfiles?: boolean | Prisma.Scope$optimizerProfilesArgs<ExtArgs>
   buildPlans?: boolean | Prisma.Scope$buildPlansArgs<ExtArgs>
   openComponents?: boolean | Prisma.Scope$openComponentsArgs<ExtArgs>
+  pharmClassRules?: boolean | Prisma.Scope$pharmClassRulesArgs<ExtArgs>
   _count?: boolean | Prisma.ScopeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ScopeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4509,6 +4777,7 @@ export type $ScopePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     optimizerProfiles: Prisma.$OptimizerProfilePayload<ExtArgs>[]
     buildPlans: Prisma.$BuildPlanPayload<ExtArgs>[]
     openComponents: Prisma.$OpenComponentPayload<ExtArgs>[]
+    pharmClassRules: Prisma.$PharmClassRulePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4937,6 +5206,7 @@ export interface Prisma__ScopeClient<T, Null = never, ExtArgs extends runtime.Ty
   optimizerProfiles<T extends Prisma.Scope$optimizerProfilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scope$optimizerProfilesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OptimizerProfilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   buildPlans<T extends Prisma.Scope$buildPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scope$buildPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BuildPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   openComponents<T extends Prisma.Scope$openComponentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scope$openComponentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OpenComponentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pharmClassRules<T extends Prisma.Scope$pharmClassRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scope$pharmClassRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PharmClassRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5940,6 +6210,30 @@ export type Scope$openComponentsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.OpenComponentScalarFieldEnum | Prisma.OpenComponentScalarFieldEnum[]
+}
+
+/**
+ * Scope.pharmClassRules
+ */
+export type Scope$pharmClassRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PharmClassRule
+   */
+  select?: Prisma.PharmClassRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PharmClassRule
+   */
+  omit?: Prisma.PharmClassRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PharmClassRuleInclude<ExtArgs> | null
+  where?: Prisma.PharmClassRuleWhereInput
+  orderBy?: Prisma.PharmClassRuleOrderByWithRelationInput | Prisma.PharmClassRuleOrderByWithRelationInput[]
+  cursor?: Prisma.PharmClassRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PharmClassRuleScalarFieldEnum | Prisma.PharmClassRuleScalarFieldEnum[]
 }
 
 /**

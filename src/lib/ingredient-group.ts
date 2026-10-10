@@ -260,6 +260,30 @@ const HYDRATE = /hydrate$|^anhydrous$/;
 const SOLVATE =
 	/(?:\s+(?:propylene|glycol|ethanol|methanol|isopropanol|acetone|dimethyl|sulfoxide|dmso|water))*\s+solvate$|\s+(?:ethanolate|methanolate)$/i;
 
+// ── Explicit racemates ───────────────────────────────────────────────────────
+// A label may spell out that a racemic part is racemic — `AMPHETAMINE
+// DL-ASPARTATE`, `(±)-`, `rac-` — where another names the same substance plainly
+// (`AMPHETAMINE ASPARTATE`). The marker adds nothing to identity, so grouping
+// ignores it. A single enantiomer (`D-`, `L-`, `levo`, `dextro`) is a different
+// substance and is left alone.
+
+/** An explicit racemic prefix on a word: `DL-`, `D,L-`, `(D,L)-`, `(DL)-`, `(±)-`, `(+/-)-`, `(RS)-`, `rac-`. */
+const RACEMIC = /(^|[\s,])(?:\(\s*(?:d\s*,?\s*l|±|\+\s*\/\s*-|r\s*,?\s*s)\s*\)|d\s*,\s*l|dl|±|rac)-(?=[a-z])/gi;
+
+/** `name` with any explicit racemic marker dropped: `AMPHETAMINE DL-ASPARTATE` → `AMPHETAMINE ASPARTATE`. */
+export function withoutRacemicMarker(name: string): string {
+	return name.replace(RACEMIC, '$1');
+}
+
+/**
+ * `name` with an explicit racemic marker written one way, `(D,L)-`, so a label's
+ * optical rotation is shown rather than lost: `AMPHETAMINE DL-ASPARTATE` →
+ * `AMPHETAMINE (D,L)-ASPARTATE`. Names without a marker come back unchanged.
+ */
+export function racemicDisplayName(name: string): string {
+	return name.replace(RACEMIC, '$1(D,L)-');
+}
+
 /**
  * The name to group an active ingredient under, in its source casing:
  * `CEFEPIME HYDROCHLORIDE` → `CEFEPIME`, `Metoprolol Succinate` unchanged,
@@ -268,7 +292,7 @@ const SOLVATE =
  * → `CLAVULANATE`, `ARGIPRESSIN` → `VASOPRESSIN`.
  */
 export function ingredientGroup(name: string): string {
-	const words = name
+	const words = withoutRacemicMarker(name)
 		.trim()
 		.replace(SOLVATE, '')
 		.split(/[\s,]+/)

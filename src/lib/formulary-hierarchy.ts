@@ -10,6 +10,7 @@ import { ingredientGroup } from './ingredient-group';
 import { labelerGroup } from './labeler-group';
 import { naturalCompare } from './natural-sort';
 import { mgPer } from './units';
+import { canonicalSplForm } from './concept-fill';
 
 export type FormularyRow = {
 	packageId: string;
@@ -38,6 +39,10 @@ export type FormularyRow = {
 	status: string;
 	/** How a combination product's dose reads; attached from the formulary settings. */
 	doseDisplay?: ComboDoseDisplay;
+	/** Whether provider data has been fetched for the package; false means catalog facts only. */
+	enriched?: boolean;
+	/** Facts filled from the formulary concept because the package never stated them. */
+	inferred?: { ingredients?: boolean; doseForm?: boolean };
 };
 
 /**
@@ -138,17 +143,11 @@ const routeLabel = (route: string) => `${titleCase(route)} route`;
 /**
  * Collapse terminology variants that do not change the useful hierarchy split.
  * Lyophilized describes how a powder for solution is manufactured; it still
- * belongs with the corresponding powder-for-solution dose form here.
+ * belongs with the corresponding powder-for-solution dose form here, as the
+ * legacy `FOR SUSPENSION` belongs with `POWDER, FOR SUSPENSION`.
  */
 export function hierarchyDoseForm(doseForm: string): string {
-	const normalized = doseForm
-		.replace(/\bLYOPHILIZED\b/gi, '')
-		.replace(/\s*,\s*/g, ', ')
-		.replace(/,\s*,/g, ',')
-		.replace(/\s+/g, ' ')
-		.replace(/\s*,\s*$/, '')
-		.trim();
-	return titleCase(normalized);
+	return titleCase(canonicalSplForm(doseForm));
 }
 
 const routeForm = (doseForm: string) => (route: string) => titleCase(`${route} ${doseForm}`.trim());

@@ -30,20 +30,54 @@ export type CacheRecord = { sourceNativeId: string; payload: unknown };
 
 /**
  * The newest completed cache snapshot for each native ID. Prisma's `distinct`
- * fetches every historical row and dedupes in memory, so this is DISTINCT ON.
+ * fetches every historical row and dedupes in memory, so this is DISTINCT ON,
+ * over ids only: payloads are large, and are read just for the winning rows.
+ * `withoutLabel` drops the label text (~95% of a package snapshot) in the
+ * database, for bulk readers that never show it.
  */
 export function latestCacheRecords(
 	db: Pick<PrismaClient, '$queryRaw'>,
-	nativeIds: string[]
+	nativeIds: string[],
+	{ withoutLabel = false }: { withoutLabel?: boolean } = {}
 ): Promise<CacheRecord[]> {
 	if (!nativeIds.length) return Promise.resolve([]);
 	return db.$queryRaw<CacheRecord[]>`
-    SELECT DISTINCT ON (r.source_native_id) r.source_native_id AS "sourceNativeId", r.payload
-    FROM source_record r
-    JOIN ingestion_run run ON run.id = r.ingestion_run_id
-    WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
-      AND r.source_native_id = ANY(${nativeIds}::text[])
-    ORDER BY r.source_native_id, r.observed_at DESC`;
+    WITH latest AS (
+      SELECT DISTINCT ON (r.source_native_id) r.id
+      FROM source_record r
+      JOIN ingestion_run run ON run.id = r.ingestion_run_id
+      WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
+        AND r.source_native_id = ANY(${nativeIds}::text[])
+      ORDER BY r.source_native_id, r.observed_at DESC
+    )
+    SELECT r.source_native_id AS "sourceNativeId",
+      CASE WHEN ${withoutLabel} THEN r.payload #- '{item,details,label}' ELSE r.payload END AS payload
+    FROM source_record r JOIN latest ON latest.id = r.id`;
+}
+
+/**
+ * Concepts staged by earlier searches, each marked fresh while its snapshot has
+ * not reached its refresh time. Stale ones still say whether a concept has NDCs.
+ */
+export async function loadStoredConcepts(
+	db: PrismaClient,
+	rxcuis: string[],
+	now = Date.now()
+): Promise<Map<string, { concept: RxConcept; fresh: boolean }>> {
+	const records = await latestCacheRecords(db, rxcuis.map(conceptKey));
+	return new Map(
+		records.flatMap((record) => {
+			const snapshot = record.payload as ConceptSnapshot | null;
+			return snapshot?.version === CATALOG_VERSION && snapshot.concept?.rxcui
+				? [
+						[
+							snapshot.concept.rxcui,
+							{ concept: snapshot.concept, fresh: Date.parse(snapshot.refreshAt) > now }
+						] as const
+					]
+				: [];
+		})
+	);
 }
 
 /** Fetched concepts are staged as provenance until someone loads them. */
@@ -98,11 +132,16 @@ export async function stageCollection(
 	await db.$transaction((tx) => recordEvidence(tx, unique), { timeout: 60_000 });
 }
 
+/**
+ * `withoutLabel` leaves out `details.label`; only for read-only views, since a
+ * snapshot written back without it would lose the label text.
+ */
 export async function loadPackageSnapshots(
 	db: PrismaClient,
-	ndcs: string[]
+	ndcs: string[],
+	options: { withoutLabel?: boolean } = {}
 ): Promise<Map<string, PackageSnapshot>> {
-	const records = await latestCacheRecords(db, ndcs);
+	const records = await latestCacheRecords(db, ndcs, options);
 	return new Map(
 		records.flatMap((record) => {
 			const snapshot = readSnapshot(record.payload);

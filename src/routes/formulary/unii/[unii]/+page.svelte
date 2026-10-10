@@ -1,14 +1,16 @@
 <script lang="ts">
-      import {resolve} from '$app/paths';
+	import { isIonName } from '$lib/ions';
+import {resolve} from '$app/paths';
 
-      let { data } = $props();
+let { data } = $props();
 
-	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
-	const counts = $derived({
-		active: data.usages.filter((u) => u.roles.some((r) => r.kind === 'active')).length,
-		inactive: data.usages.filter((u) => u.roles.some((r) => r.kind === 'inactive')).length,
-		moiety: data.usages.filter((u) => u.roles.some((r) => r.kind === 'moiety')).length
-	});
+const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
+
+const counts = $derived({
+      active: data.usages.filter((u) => u.roles.some((r) => r.kind === 'active')).length,
+      inactive: data.usages.filter((u) => u.roles.some((r) => r.kind === 'inactive')).length,
+      moiety: data.usages.filter((u) => u.roles.some((r) => r.kind === 'moiety')).length
+});
 </script>
 
 <svelte:head>
@@ -33,66 +35,59 @@
 	</header>
 
 	<dl class="stats">
-		<div>
-			<dt>Packages</dt>
-			<dd>{data.usages.length}</dd>
-		</div>
-		<div>
-			<dt>As active</dt>
-			<dd>{counts.active}</dd>
-		</div>
-		<div>
-			<dt>As inactive</dt>
-			<dd>{counts.inactive}</dd>
-		</div>
-		<div>
-			<dt>As moiety</dt>
-			<dd>{counts.moiety}</dd>
-		</div>
+		<div><dt>Packages</dt><dd>{data.usages.length}</dd></div>
+		<div><dt>As active</dt><dd>{counts.active}</dd></div>
+		<div><dt>As excipient</dt><dd>{counts.inactive}</dd></div>
+		<div><dt>As moiety</dt><dd>{counts.moiety}</dd></div>
 	</dl>
 
 	{#if data.usages.length}
 		<table>
-			<thead>
-				<tr><th>NDC</th><th>Package</th><th>Labeler</th><th>Appears as</th></tr>
-			</thead>
+			<thead><tr><th>NDC</th><th>Package</th><th>Labeler</th><th>Appears as</th></tr></thead>
 			<tbody>
 				{#each data.usages as usage (usage.ndc)}
-					<tr>
-						<td class="mono">
-							<a href={resolve('/formulary/ndc/[ndc]', { ndc: usage.ndc })}
-								>{formatNdc(usage.ndc)}</a
-							>
-						</td>
-						<td>
-							<div class="product-name">
-								{usage.brandName ?? usage.genericName ?? 'Unknown product'}
-								{#each usage.roles.filter((role) => 'strength' in role && role.strength) as role, i (i)}
-									<span class="muted"> · {role.strength}</span>
-								{/each}
-							</div>
-							<div class="package-detail">
-								{usage.description ?? usage.doseForm ?? 'Package details unavailable'}
-								{#if usage.description && usage.doseForm && !usage.description.toUpperCase().includes(usage.doseForm.toUpperCase())}
-									<span class="muted"> · {usage.doseForm}</span>
-								{/if}
-							</div>
-						</td>
-						<td>
-							{#if usage.labelerName}<a href={resolve('/formulary/labeler/[code]', { code: usage.ndc.slice(0, 5) })}
-									>{usage.labelerName}</a
-								>{:else}—{/if}
-						</td>
-						<td>
-							{#each usage.roles as role, i (i)}
-								<span class="role {role.kind}">
-									{#if role.kind === 'moiety'}moiety of {role.of}
-									{:else if role.kind === 'openfda'}openFDA UNII
-									{:else}{role.kind}{role.strength ? ` · ${role.strength}` : ''}{/if}
-								</span>
-							{/each}
-						</td>
-					</tr>
+                        <tr>
+                              <td class="mono">
+                                    <a href={resolve('/formulary/ndc/[ndc]', { ndc: usage.ndc })}>{formatNdc(usage.ndc)}</a>
+                              </td>
+                              <td>
+                                    <div class="product-name">
+                                          {usage.brandName ?? usage.genericName ?? 'Unknown product'}
+                                          {#each usage.roles as role, i (i)}
+                                                {#if 'strength' in role && role.strength}
+                                                      <span class="muted"> · {role.strength}</span>
+                                                {/if}
+                                          {/each}
+                                    </div>
+                                    <div class="package-detail">
+                                          {usage.description ?? usage.doseForm ?? 'Package details unavailable'}
+                                          {#if usage.description && usage.doseForm && !usage.description.toUpperCase().includes(usage.doseForm.toUpperCase())}
+                                                <span class="muted"> · {usage.doseForm}</span>
+                                          {/if}
+                                    </div>
+                              </td>
+                              <td>
+                              {#if usage.labelerName}
+                              <a href={resolve('/formulary/labeler/[code]', { code: usage.ndc.slice(0, 5) })}>
+                                    {usage.labelerName}
+                              </a>{:else}—{/if}
+                              </td>
+                              <td>
+                              {#each usage.roles as role, i (i)}
+                                    <span class="role {role.kind}">
+                                          {#if role.kind === 'moiety'}{isIonName(role.name) ? 'ion constituent' : 'moiety'} of {role.of}
+                                          {:else if role.kind === 'openfda'}openFDA UNII
+                                          {:else}
+                                                {#if role.kind == 'inactive'} Excipient
+                                                {:else if role.kind === 'ionic'} Ion constituent (label total)
+                                                {:else} {role.kind}
+                                                {/if}
+                                                {role.strength ? ` · ${role.strength}` : ''}
+                                          {/if}
+                                    </span>
+                              {/each}
+                              </td>
+                        </tr>
 				{/each}
 			</tbody>
 		</table>
@@ -104,122 +99,29 @@
 </main>
 
 <style>
-	:global(body) {
-		margin: 0;
-		background: #f7f8fa;
-		color: #18212f;
-		font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-	}
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 2.5rem 1.5rem 4rem;
-	}
-	a {
-		color: #3464a5;
-	}
-	.back {
-		display: inline-flex;
-		gap: 0.4rem;
-		font-weight: 650;
-		text-decoration: none;
-	}
-	header {
-		margin: 1.5rem 0 1.25rem;
-	}
-	h1 {
-		margin: 0;
-		font-size: 1.6rem;
-		line-height: 1.25;
-	}
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-	.sub,
-	.muted {
-		color: #5c6777;
-	}
-	.sub {
-		margin: 0.4rem 0 0;
-	}
-	.external {
-		margin: 0.5rem 0 0;
-		font-size: 0.875rem;
-	}
-	.stats {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin: 0 0 1.25rem;
-	}
-	.stats div {
-		background: #fff;
-		border: 1px solid #e3e8ee;
-		border-radius: 8px;
-		padding: 0.5rem 0.9rem;
-	}
-	.stats dt {
-		color: #5c6777;
-		font-size: 0.75rem;
-	}
-	.stats dd {
-		margin: 0;
-		font-size: 1.2rem;
-		font-weight: 700;
-	}
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		background: #fff;
-		font-size: 0.875rem;
-	}
-	th,
-	td {
-		border-bottom: 1px solid #e3e8ee;
-		padding: 0.45rem 0.6rem;
-		text-align: left;
-		vertical-align: top;
-	}
-	th {
-		color: #5c6777;
-		font-weight: 650;
-	}
-	.mono {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-		white-space: nowrap;
-	}
-	.product-name {
-		font-weight: 650;
-	}
-	.package-detail {
-		margin-top: 0.15rem;
-		color: #5c6777;
-	}
-	.role {
-		display: inline-block;
-		margin: 0 0.25rem 0.15rem 0;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
-		font-size: 0.75rem;
-		background: #eef1f5;
-		color: #3a4556;
-	}
-	.role.active {
-		background: #e4ecf8;
-		color: #26508a;
-	}
+	main {max-width: 1040px;margin: 0 auto;padding: 2.5rem 1.5rem 4rem;}
+	a {color: #3464a5;}
+	.back {display: inline-flex;gap: 0.4rem;font-weight: 650;text-decoration: none;}
+	header {margin: 1.5rem 0 1.25rem;}
+	h1 {margin: 0;font-size: 1.6rem;line-height: 1.25;}
+	.eyebrow {margin: 0 0 0.5rem;color: #3464a5;font-size: 0.8rem;font-weight: 750;letter-spacing: 0.12em;text-transform: uppercase;}
+	.sub, .muted {color: #5c6777;}
+	.sub {margin: 0.4rem 0 0;}
+	.external {margin: 0.5rem 0 0;font-size: 0.875rem;}
+	.stats {display: flex;flex-wrap: wrap;gap: 0.75rem;margin: 0 0 1.25rem;}
+	.stats div {background: #fff;border: 1px solid #e3e8ee;border-radius: 8px;padding: 0.5rem 0.9rem;}
+	.stats dt {color: #5c6777;font-size: 0.75rem;}
+	.stats dd {margin: 0;font-size: 1.2rem;font-weight: 700;}
+	table {width: 100%;border-collapse: collapse;background: #fff;font-size: 0.875rem;}
+	th, td {border-bottom: 1px solid #e3e8ee;padding: 0.45rem 0.6rem;text-align: left;vertical-align: top;}
+	th {color: #5c6777;font-weight: 650;}
+	.mono {font-family: ui-monospace, SFMono-Regular, Menlo, monospace;white-space: nowrap;}
+	.product-name {font-weight: 650;}
+	.package-detail {margin-top: 0.15rem;color: #5c6777;}
+	.role {display: inline-block;margin: 0 0.25rem 0.15rem 0;border-radius: 999px;padding: 0.05rem 0.5rem;font-size: 0.75rem;background: #eef1f5;color: #3a4556;}
+	.role.active {background: #e4ecf8;color: #26508a;}
 	@media (max-width: 640px) {
-		main {
-			padding: 1.5rem 1rem 3rem;
-		}
-		table {
-			display: block;
-			overflow-x: auto;
-		}
+		main {padding: 1.5rem 1rem 3rem;}
+		table {display: block;overflow-x: auto;}
 	}
 </style>

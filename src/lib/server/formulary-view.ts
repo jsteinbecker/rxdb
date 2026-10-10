@@ -4,6 +4,7 @@ import type {FormularyRow} from '../formulary-hierarchy';
 import {loadPackageSnapshots} from './catalog-store';
 import {correctedIngredients, packageDisplayTitle} from '../package-title';
 import {PACKAGE_PSEUDO_SCD} from './pseudo-scd-store';
+import {fillFromConcept} from '../concept-fill';
 
 /**
  * Every package currently linked into a formulary scope, flattened with the
@@ -63,13 +64,19 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
   const ndcs = links.flatMap(
     (link) => link.package.entity.externalIdentifiers[0]?.normalizedValue ?? []
   );
-  const snapshots = await loadPackageSnapshots(db, ndcs);
+  const snapshots = await loadPackageSnapshots(db, ndcs, { withoutLabel: true });
+  const directory = await productDirectory(db);
 
-  return links.flatMap((link) => {
+  // Packages never enriched are placed by their concept rather than left "Not specified".
+  return fillFromConcept(links.flatMap((link) => {
     const ndc = link.package.entity.externalIdentifiers[0]?.normalizedValue;
     if (!ndc) return [];
     const item = snapshots.get(ndc)?.item;
-    const product = link.package.components[0]?.childProduct;
+    // A package whose linked product is missing or a placeholder is still named by its
+    // product NDC, or at least its labeler code.
+    const linked = link.package.components[0]?.childProduct;
+    const listed = directory.products.get(ndc.slice(0, 9));
+    const known = (name: string | undefined) => (name && !PLACEHOLDER_LABELER.test(name) ? name : null);
     const doseType = link.package.containerSpecs[0]?.doseType;
     const pseudo = link.package.entity.relationshipsFrom[0]?.toEntity.clinicalDrug;
     // The snapshot's facts, falling back to the catalog's; the title and the
@@ -77,10 +84,16 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
     const facts = {
       ...item,
       description: item?.description ?? link.package.description,
-      doseForm: item?.doseForm ?? item?.details?.spl?.doseForm ?? product?.doseForm ?? null,
-      brandName: item?.brandName ?? product?.proprietaryName ?? null,
+      doseForm:
+        item?.doseForm ?? item?.details?.spl?.doseForm ?? linked?.doseForm ?? listed?.doseForm ?? null,
+      brandName: item?.brandName ?? linked?.proprietaryName ?? listed?.proprietaryName ?? null,
       genericName: item?.genericName ?? null,
-      labelerName: item?.labelerName ?? product?.labeler.name ?? null,
+      labelerName:
+        item?.labelerName ??
+        known(linked?.labeler.name) ??
+        known(listed?.labeler.name) ??
+        directory.labelers.get(ndc.slice(0, 5)) ??
+        null,
       size: item?.size ?? null,
       isMultiDose: item?.isMultiDose ?? (doseType ? doseType === 'multi-dose' : null)
     };
@@ -102,8 +115,44 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
         isMultiDose: facts.isMultiDose,
         kit: item?.kit ?? null,
         preferenceRank: link.preferenceRank,
-        status: link.package.entity.status
+        status: link.package.entity.status,
+        enriched: Boolean(item)
       }
     ];
+  }));
+}
+
+/** The catalog's stand-in for a product whose labeler was never known. */
+const PLACEHOLDER_LABELER = /^unknown labeler$/i;
+
+type DirectoryProduct = { proprietaryName: string | null; doseForm: string | null; labeler: { name: string } };
+
+/**
+ * Every catalog product by its 9-digit product NDC, and a labeler name for each
+ * 5-digit labeler code: one local query that names packages no product was linked to.
+ */
+async function productDirectory(db: PrismaClient) {
+  const rows = await db.externalIdentifier.findMany({
+    where: { namespace: 'openfda_product_ndc', validTo: null },
+    select: {
+      normalizedValue: true,
+      entity: {
+        select: {
+          product: {
+            select: { proprietaryName: true, doseForm: true, labeler: { select: { name: true } } }
+          }
+        }
+      }
+    }
   });
+  const products = new Map<string, DirectoryProduct>();
+  const labelers = new Map<string, string>();
+  for (const row of rows) {
+    const product = row.entity.product;
+    if (!product) continue;
+    products.set(row.normalizedValue, product);
+    if (PLACEHOLDER_LABELER.test(product.labeler.name)) continue;
+    if (!labelers.has(row.normalizedValue.slice(0, 5))) labelers.set(row.normalizedValue.slice(0, 5), product.labeler.name);
+  }
+  return { products, labelers };
 }

@@ -1,0 +1,43 @@
+{
+ "uuid": "0bd750cf-b57c-48ad-b547-fa48f6589099",
+ "substanceClass": "chemical",
+ "approvalID": "XLJ4VSY381",
+ "_name": "Cefazolin sodium pentahydrate",
+ "names": [
+  {
+   "name": "Cefazolin sodium pentahydrate",
+   "displayName": true
+  }
+ ],
+ "relationships": [
+  {
+   "type": "ACTIVE MOIETY",
+   "relatedSubstance": {
+    "name": "Cefazolin",
+    "approvalID": "IHS69L0Y4T"
+   }
+  }
+ ],
+ "structure": {
+  "formula": "C14H13N8O4S3.Na.5H2O",
+  "mwt": 566.5692,
+  "count": 1
+ },
+ "moieties": [
+  {
+   "formula": "H2O",
+   "mwt": 18.0153,
+   "count": 5
+  },
+  {
+   "formula": "Na",
+   "mwt": 22.9898,
+   "count": 1
+  },
+  {
+   "formula": "C14H13N8O4S3",
+   "mwt": 453.503,
+   "count": 1
+  }
+ ]
+}

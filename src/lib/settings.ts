@@ -12,22 +12,42 @@ import {
 
 export type ExpandDepth = 'none' | 'first' | 'all';
 
+/** A named hierarchy, built in Settings and picked on the formulary. */
+export type FormularyView = { name: string; levels: string[] };
+
+/** Views a formulary starts with before any are saved. */
+export const BUILT_IN_VIEWS: FormularyView[] = [
+	{ name: 'Route → form → item', levels: DEFAULT_LEVELS },
+	{ name: 'Ingredient → strength → size', levels: ['ingredient', 'doseForm', 'strength', 'packageSize'] },
+	{ name: 'Labeler → item', levels: ['labeler', 'formularyItem'] },
+	{ name: 'Flat list', levels: [] }
+];
+
 export type FormularySettings = {
 	/** Hierarchy used when the formulary is opened without `?levels=`. */
 	defaultLevels: string[];
+	/** Saved views offered on the formulary, in order. */
+	views: FormularyView[];
+	/** Name of the view the formulary opens with; null falls back to `defaultLevels`. */
+	defaultView: string | null;
 	/** How much of the tree is open when the formulary first renders. */
 	expandDepth: ExpandDepth;
 	/** Ask before removing a single loaded item. */
 	confirmRemove: boolean;
 	/** Dose display per combination, keyed by `comboKey`; missing means each separately. */
 	comboDoseDisplay: Record<string, ComboDoseDisplay>;
+	/** Pill drawings give every imprint string on a face one size unless ILN sizes it explicitly. */
+	uniformImprintSize: boolean;
 };
 
 export const DEFAULT_SETTINGS: FormularySettings = {
 	defaultLevels: DEFAULT_LEVELS,
+	views: BUILT_IN_VIEWS,
+	defaultView: BUILT_IN_VIEWS[0].name,
 	expandDepth: 'none',
 	confirmRemove: true,
-	comboDoseDisplay: {}
+	comboDoseDisplay: {},
+	uniformImprintSize: false
 };
 
 export function parseComboDoseDisplay(value: unknown): ComboDoseDisplay | null {
@@ -47,24 +67,55 @@ function canonicalComboKey(key: string): string {
 
 const EXPAND_DEPTHS: ExpandDepth[] = ['none', 'first', 'all'];
 
+function validLevels(value: unknown): string[] | null {
+	if (!Array.isArray(value)) return null;
+	return [
+		...new Set(
+			value.filter((key): key is string => typeof key === 'string' && DIMENSION_BY_KEY.has(key))
+		)
+	];
+}
+
+function parseViews(value: unknown): FormularyView[] {
+	if (!Array.isArray(value)) return DEFAULT_SETTINGS.views;
+	const seen = new Set<string>();
+	return value.flatMap((view) => {
+		if (!view || typeof view !== 'object') return [];
+		const raw = view as Record<string, unknown>;
+		const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+		const levels = validLevels(raw.levels);
+		if (!name || !levels || seen.has(name)) return [];
+		seen.add(name);
+		return [{ name, levels }];
+	});
+}
+
 export function parseSettings(value: unknown): FormularySettings {
 	const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
-	const levels = Array.isArray(raw.defaultLevels)
-		? [
-				...new Set(
-					raw.defaultLevels.filter(
-						(key): key is string => typeof key === 'string' && DIMENSION_BY_KEY.has(key)
-					)
-				)
-			]
-		: DEFAULT_SETTINGS.defaultLevels;
+	const views = parseViews(raw.views);
+	const defaultView =
+		typeof raw.defaultView === 'string' && views.some((view) => view.name === raw.defaultView)
+			? raw.defaultView
+			: raw.views === undefined && raw.defaultLevels === undefined
+				? DEFAULT_SETTINGS.defaultView
+				: null;
+	const levels =
+		views.find((view) => view.name === defaultView)?.levels ??
+		validLevels(raw.defaultLevels) ??
+		DEFAULT_SETTINGS.defaultLevels;
 	return {
 		defaultLevels: levels,
+		views,
+		defaultView,
 		expandDepth: EXPAND_DEPTHS.includes(raw.expandDepth as ExpandDepth)
 			? (raw.expandDepth as ExpandDepth)
 			: DEFAULT_SETTINGS.expandDepth,
 		confirmRemove:
 			typeof raw.confirmRemove === 'boolean' ? raw.confirmRemove : DEFAULT_SETTINGS.confirmRemove,
+		uniformImprintSize:
+			typeof raw.uniformImprintSize === 'boolean'
+				? raw.uniformImprintSize
+				: DEFAULT_SETTINGS.uniformImprintSize,
 		comboDoseDisplay: Object.fromEntries(
 			Object.entries(
 				raw.comboDoseDisplay && typeof raw.comboDoseDisplay === 'object' ? raw.comboDoseDisplay : {}

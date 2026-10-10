@@ -1,6 +1,15 @@
 import type {ExternalPackage} from '$lib/server/catalog-providers';
 import type {AmbiguityTag} from './labeler-ambiguity';
 import {RECONSTITUTION_ROUTES, type ReconstitutionRoute} from './reconstitution-terms';
+import {
+  applyIngredientCorrection,
+  ingredientAsCorrection,
+  INGREDIENT_CORRECTION_KEY,
+  ingredientCorrectionKey,
+  parseIngredientCorrection,
+  sameIngredientRow,
+  serializeIngredientCorrection
+} from './ingredient-correction';
 import {guessIln} from './imprints/spl-to-iln';
 import {validateIln} from './imprints/iln-parse';
 import {toSplAppearance} from './imprints/iln-render';
@@ -68,6 +77,36 @@ export const isProductLevelKey = (key: string): boolean =>
   key.startsWith('details.product.') ||
   key.startsWith('details.spl.appearances.') ||
   key.startsWith('details.spl.ingredients.');
+
+/**
+ * Fields that describe the unit of use (the vial, not the carton or tray of
+ * vials), so a correction applies to every package of the product holding the
+ * same unit: its fill, container, reconstitution and resulting volume.
+ */
+export const isUnitOfUseKey = (key: string): boolean =>
+  ['size.kind', 'size.value', 'size.unit', 'size.container'].includes(key) ||
+  key.startsWith('reconstitution.') ||
+  key.startsWith('resolvedVolume.');
+
+const SIZE_FIELDS = ['kind', 'value', 'unit', 'container'] as const;
+
+/**
+ * Whether two packages hold the same unit of use, by fill and container. A
+ * field `a` corrected by hand is left out, since `b` may still show the value
+ * the correction replaced.
+ */
+export function sameUnitOfUse(
+  a: Pick<ExternalPackage, 'size' | 'propertyOverrides'>,
+  b: Pick<ExternalPackage, 'size'>
+): boolean {
+  if (!a.size || !b.size) return false;
+  const norm = (value: unknown) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value;
+  return SIZE_FIELDS.every((field) => {
+    const own = a.propertyOverrides?.[`size.${field}`];
+    return (own && !own.propagatedFrom) || norm(a.size![field]) === norm(b.size![field]);
+  });
+}
 
 /** An NDC whose values may stand in for this one's, with each overridable value it has. */
 export type EquivalentPackage = {
@@ -305,7 +344,15 @@ export function overrideTargets(
             {
               key: `details.spl.ingredients.${index}.strength`,
               label: `${ingredient.name} (${ingredient.kind}): strength`
-            }
+            },
+            ...(ingredient.kind === 'active'
+              ? [
+                  {
+                    key: ingredientCorrectionKey(index),
+                    label: `${ingredient.name}: ingredient correction`
+                  }
+                ]
+              : [])
           ]
     )
   ];
@@ -338,6 +385,10 @@ export type OverrideField = {
   affectsVolume?: boolean;
   /** Replaces what a salt-to-moiety unit-of-use correction restated. */
   replacesCorrection?: boolean;
+  /** Applies after the other overrides, so it wins over them on what they share. */
+  appliesLast?: boolean;
+  /** Whether an equivalent NDC's value stands for `corrected`, where it need not be identical. */
+  matches?: (equivalent: string, corrected: string) => boolean;
   /** Corrects the resolved volume itself, so it applies after that is worked out. */
   correctsVolume?: boolean;
 };
@@ -599,6 +650,32 @@ function resolveField(key: string): OverrideField | null {
         target.strength = value;
       },
       affectsVolume: true
+    });
+  }
+
+  const correction = INGREDIENT_CORRECTION_KEY.exec(key);
+  if (correction) {
+    const index = Number(correction[1]);
+    return field({
+      valid: (value) => value.length <= 4000 && parseIngredientCorrection(value) !== null,
+      // The row as it reads now, in the correction's shape.
+      get: (item) => {
+        const row = item.details?.spl?.ingredients[index];
+        const read = row && ingredientAsCorrection(row);
+        return read ? serializeIngredientCorrection(read) : null;
+      },
+      set: (item, value) => {
+        const target = item.details?.spl?.ingredients[index];
+        const parsed = parseIngredientCorrection(value);
+        if (target && parsed) applyIngredientCorrection(target, item.ingredients, parsed);
+      },
+      matches: (equivalent, corrected) => {
+        const a = parseIngredientCorrection(equivalent);
+        const b = parseIngredientCorrection(corrected);
+        return !!a && !!b && sameIngredientRow(a, b);
+      },
+      affectsVolume: true,
+      appliesLast: true
     });
   }
 

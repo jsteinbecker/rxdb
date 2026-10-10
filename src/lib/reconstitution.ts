@@ -58,9 +58,12 @@ const normalizeQuantity = (text: string) =>
     .replace(/milligrams?/gi, 'mg')
     .replace(/micrograms?/gi, 'mcg')
     .replace(/grams?/gi, 'g')
-    .replace(/millilit(?:er|re)s?/gi, 'mL');
+    .replace(/millilit(?:er|re)s?/gi, 'mL')
+    // Footnote markers trailing a cell: ceftazidime's "10.8*" and "11.5**".
+    .replace(/\s*[*†‡§¶]+\s*$/, '');
 
-const MASS = /^\s*([\d.]+)\s*(mcg|ug|mg|gm|g)\s*$/i;
+// A trailing "vial" is allowed: ceftazidime's stub reads "1 gram vial".
+const MASS = /^\s*([\d.]+)\s*(mcg|ug|mg|gm|g)(?:\s+(?:single[- ]dose\s+)?vials?)?\s*$/i;
 const VOLUME = /^\s*([\d.]+)\s*(m[Ll]|milliliters?)\s*$/;
 // A header like "250 mg/mL" naming the concentration this column produces.
 const CONCENTRATION = /([\d.]+)\s*(mcg|ug|mg|gm|g)\s*(?:\/|per)\s*(?:([\d.]+)\s*)?mL\b/i;
@@ -307,6 +310,9 @@ export function parseReconstitutionTable(
       if (
         r > 0 &&
         !row[column]?.trim() &&
+        // Never into a route divider: ceftazidime's blank "Intravenous" row
+        // would gain a cell and stop reading as one.
+        !sectionRoutes(row) &&
         parseConcentrationMgPerMl(body[r - 1][column] ?? '') !== null
       )
         row[column] = body[r - 1][column];

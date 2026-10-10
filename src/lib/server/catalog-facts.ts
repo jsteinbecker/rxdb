@@ -1,26 +1,41 @@
-import {classifyMultiDose, parseUnitOfUse, restateUnitOfUse, type UnitOfUseSize} from '../ndc-packaging';
-import {multiDoseFromLabel} from '../label-multidose';
-import {isDryFillForm, isOralDryFillForm, parseIngredientMassMg} from '../ingredient-content';
-import type {KitComposition} from '../kit-parts';
 import {
-    dedupeProseReconstitutions,
-    fromBottleRows,
-    fromReconstitutionRows,
-    parseBottleProse,
-    parseReconstitutionProse,
-    type ProseReconstitution,
-    resolveBottleVolume,
-    type ResolvedDryFillVolume,
-    resolveDryFillVolume,
-    rowsForVial,
-    statedReconstitutedConcentrations,
-    withLabelConcentrations,
-    withRowIds
+	classifyMultiDose,
+	parseUnitOfUse,
+	restateUnitOfUse,
+	type UnitOfUseSize
+} from '../ndc-packaging';
+import { multiDoseFromLabel } from '../label-multidose';
+import {
+	ingredientMassMg,
+	isDryFillForm,
+	isOralDryFillForm,
+	isOralSolidForm,
+	parseIngredientMassMg
+} from '../ingredient-content';
+import type { KitComposition } from '../kit-parts';
+import {
+	dedupeProseReconstitutions,
+	fromBottleRows,
+	fromReconstitutionRows,
+	parseBottleProse,
+	parseReconstitutionProse,
+	type ProseReconstitution,
+	resolveBottleVolume,
+	type ResolvedDryFillVolume,
+	resolveDryFillVolume,
+	rowsForVial,
+	statedReconstitutedConcentrations,
+	withLabelConcentrations,
+	withRowIds
 } from '../dry-fill-volume';
-import {type LabelBlock, labelSectionBlocks} from '../spl-sections';
-import {bottleReconstitutionFromLabel, parseConcentrationMgPerMl, reconstitutionFromLabel} from '../reconstitution';
-import {rxNormStrengths} from '../spl-strength-checks';
-import {mgPer, mlPer, toMg} from '../units';
+import { type LabelBlock, labelSectionBlocks } from '../spl-sections';
+import {
+	bottleReconstitutionFromLabel,
+	parseConcentrationMgPerMl,
+	reconstitutionFromLabel
+} from '../reconstitution';
+import { rxNormStrengths } from '../spl-strength-checks';
+import { mgPer, mlPer, toMg } from '../units';
 
 /**
  * A unit of use the directory states as the salt's mass, restated as the
@@ -107,8 +122,10 @@ export function parsePackageFacts(
 		.concat(sections.flatMap((key) => prose(splSections[key] ?? [])))
 		.join('\n');
 	const tables = { ...label, spl_tables_table: splXml ? [splXml] : [] };
+	// An oral solid is taken as it is: no diluent, no constituted volume.
+	const oralSolid = isOralSolidForm(doseForm);
 	const parsedRows =
-		label || splXml
+		!oralSolid && (label || splXml)
 			? dedupeProseReconstitutions([
 					...parseReconstitutionProse(text),
 					...fromReconstitutionRows(reconstitutionFromLabel(tables)),
@@ -123,8 +140,28 @@ export function parsePackageFacts(
 		parsedRows.some(
 			(row) => row.bottle && row.finalVolumeMl != null && nearVolume(row.finalVolumeMl, labeledMl)
 		);
+	// A shared label can list one bottle size at several strengths (Teva's
+	// amoxicillin/clavulanate: 100 mL of 200/28.5 takes 92 mL, of 400/57 takes
+	// 87 mL). A row stating a concentration that is not this package's — as
+	// the sum of its ingredients or any one of them — is a sibling product.
+	const ingredientMgPerMl = ingredients.flatMap((ingredient) => {
+		const mgPerMl = parseConcentrationMgPerMl(ingredient.strength ?? '');
+		return mgPerMl === null ? [] : [mgPerMl];
+	});
+	const packageMgPerMl =
+		ingredientMgPerMl.length === ingredients.length && ingredientMgPerMl.length
+			? [...ingredientMgPerMl, ingredientMgPerMl.reduce((sum, mgPerMl) => sum + mgPerMl, 0)]
+			: [];
+	const ownStrength = (row: (typeof parsedRows)[number]) =>
+		!row.concentrations.length ||
+		!packageMgPerMl.length ||
+		row.concentrations.some((c) =>
+			packageMgPerMl.some((mgPerMl) => nearVolume(c.mgPerMl, mgPerMl))
+		);
 	const allRows = ownBottle
-		? parsedRows.filter((row) => !row.bottle || nearVolume(row.finalVolumeMl ?? 0, labeledMl!))
+		? parsedRows.filter(
+				(row) => !row.bottle || (nearVolume(row.finalVolumeMl ?? 0, labeledMl!) && ownStrength(row))
+			)
 		: parsedRows;
 	// Shared labels tabulate every vial size; keep this package's. Without a
 	// complete ingredient mass there is no vial size to match, so keep all.
@@ -224,14 +261,10 @@ export function parsePackageFacts(
 			classifyMultiDose(description ?? '', doseForm ?? '') ??
 			(text ? multiDoseFromLabel(text, ndc) : null),
 		isDryFill,
-		reconstitution: volumeRows,
-		resolvedVolume: resolvePackageVolume(
-			isDryFill,
-			normalizedSize,
-			ingredients,
-			volumeRows,
-			moietyMasses
-		),
+		reconstitution: oralSolid ? [] : volumeRows,
+		resolvedVolume: oralSolid
+			? null
+			: resolvePackageVolume(isDryFill, normalizedSize, ingredients, volumeRows, moietyMasses),
 		kit: kitParts
 	};
 }
@@ -279,7 +312,7 @@ function withRxNormConcentration<T extends { concentrations: { mgPerMl: number }
 	const stated = new Set(rows.flatMap((row) => row.concentrations.map((c) => c.mgPerMl)));
 	if (stated.size < 2) return rows;
 	const perMl = rxNormStrengths(rxNormName).filter((entry) => /^ml$/i.test(entry.perUnit ?? ''));
-	const mg = perMl.length === 1 ? toMg(perMl[0].value, perMl[0].unit) : null;
+	const mg = perMl.length === 1 ? toMg(perMl[0].value / perMl[0].per, perMl[0].unit) : null;
 	if (mg === null) return rows;
 	const matched = rows.filter((row) => row.concentrations.some((c) => nearVolume(c.mgPerMl, mg)));
 	return matched.length ? matched : rows;
@@ -388,7 +421,7 @@ function totalIngredientMg(
 ): number | null {
 	const masses = ingredients.map((item) => {
 		const perMl = constitutedMl === null ? null : parseConcentrationMgPerMl(item.strength ?? '');
-		return perMl !== null ? perMl * constitutedMl! : parseIngredientMassMg(item.strength ?? '');
+		return perMl !== null ? perMl * constitutedMl! : ingredientMassMg(item.strength, constitutedMl);
 	});
 	if (!masses.length || masses.some((mass) => mass === null)) return null;
 	return (masses as number[]).reduce((sum, mg) => sum + mg, 0);
@@ -401,11 +434,12 @@ export function resolvePackageVolume(
 	reconstitution: ProseReconstitution[],
 	moietyMasses: ReadonlyMap<string, number> | null = null
 ): ResolvedDryFillVolume | null {
+	const volumeMl = size?.kind === 'volume' && size.unit === 'mL' ? size.value : null;
 	const masses = ingredients.map(
 		(item) =>
 			[
 				item.name,
-				moietyMasses?.get(item.name) ?? parseIngredientMassMg(item.strength ?? '')
+				moietyMasses?.get(item.name) ?? ingredientMassMg(item.strength, volumeMl)
 			] as const
 	);
 	// An incomplete ingredient mass list cannot establish a combination vial's total.

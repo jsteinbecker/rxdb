@@ -64,6 +64,21 @@
 </div>
 
 <style>
+	/*
+	 * Every page is styled for a light background, so the shell pins it: without this a page
+	 * that sets no background shows the browser's dark canvas under dark-mode OS settings.
+	 */
+	:global(:root) {
+		color-scheme: light;
+	}
+
+	:global(body) {
+		margin: 0;
+		background: #f7f8fa;
+		color: #18212f;
+		font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+	}
+
 	* {
 		font-family: 'Inter', sans-serif;
 	}

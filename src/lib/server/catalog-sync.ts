@@ -1,11 +1,14 @@
 import { env } from '$env/dynamic/private';
+import { gsrsMoieties, prismaSubstanceTable } from './unii-substance-store';
 import { prisma } from '$lib/server/prisma';
 import { toNdc11 } from '../ndc';
 import {
 	discoverRxNav,
 	discoverRxNavPage,
 	enrichPackages,
+	expireProviderResponses,
 	type ExternalPackage,
+	type PackageHints,
 	type RxConcept
 } from './catalog-providers';
 import { collectPackages } from './catalog-collection';
@@ -13,6 +16,7 @@ import { exclusionReason } from './catalog-facts';
 import {
 	loadConceptSnapshots,
 	loadPackageSnapshots,
+	loadStoredConcepts,
 	refreshPackageEligibility,
 	stageCollection
 } from './catalog-store';
@@ -43,12 +47,19 @@ export type SyncSummary = {
 
 /** Read-through package collection shared by search and package detail. Fetched
  * data is staged as provenance; nothing enters the catalog until it is loaded. */
-export async function syncExternalPackages(ndcs: string[], { force = false } = {}) {
+export async function syncExternalPackages(
+	ndcs: string[],
+	{ force = false, hints = {} }: { force?: boolean; hints?: PackageHints } = {}
+) {
+	if (force) expireProviderResponses();
 	const packages = await collectPackages(
 		ndcs,
 		{
 			load: (ndcs) => loadPackageSnapshots(prisma, ndcs),
-			fetch: (ndcs) => enrichPackages(ndcs, env.OPENFDA_API_KEY),
+			fetch: (ndcs) => enrichPackages(ndcs, env.OPENFDA_API_KEY2, undefined, {
+					...hints,
+					moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma))
+				}),
 			save: (items) => stageCollection(prisma, [], items)
 		},
 		new Date(),
@@ -66,16 +77,23 @@ async function runExternalSearchSync(query: string, offset: number): Promise<Syn
 	// endpoint produces unrelated lexical matches (including botanical terms).
 	const isBeyondUseDateQuery = /^B\.?U\.?D\.?$/i.test(query.trim());
 	let discoveryFailed = false;
-	const { concepts, total } = isBeyondUseDateQuery
-		? { concepts: [], total: 0 }
-		: await discoverRxNavPage(query, offset).catch((error) => {
-				if (!directNdc) throw error;
-				discoveryFailed = true;
-				return { concepts: [], total: 0 };
-			});
+	const { concepts, total, reused } = isBeyondUseDateQuery
+		? { concepts: [], total: 0, reused: [] as string[] }
+		: await discoverRxNavPage(query, offset, (rxcuis) => loadStoredConcepts(prisma, rxcuis)).catch(
+				(error) => {
+					if (!directNdc) throw error;
+					discoveryFailed = true;
+					return { concepts: [], total: 0, reused: [] as string[] };
+				}
+			);
 	// Later pages list only RxNav concepts; a direct NDC hit belongs to page one.
 	const includeDirect = directNdc && offset === 0;
-	await stageCollection(prisma, concepts, []);
+	// Reused snapshots are not restaged: that would renew their freshness without a fetch.
+	await stageCollection(
+		prisma,
+		concepts.filter((concept) => !reused.includes(concept.rxcui)),
+		[]
+	);
 	// Concept packages are the slow part (several providers per NDC), so the
 	// search returns without them; they are warmed in rank order meanwhile.
 	warmConceptPackages(concepts);
@@ -102,15 +120,24 @@ const inflightPackages = new Map<string, Promise<ExternalPackage[]>>();
 
 /** A concept's packages, sharing one in-flight collection between the warm-up,
  * an expanded search row and a load. Settled work is served by the snapshot cache. */
-export function conceptPackages(concept: Pick<RxConcept, 'rxcui' | 'ndcs'>) {
+export function conceptPackages(concept: Pick<RxConcept, 'rxcui' | 'ndcs' | 'details'>) {
 	let pending = inflightPackages.get(concept.rxcui);
 	if (!pending) {
-		pending = syncExternalPackages(concept.ndcs).finally(() =>
+		pending = syncExternalPackages(concept.ndcs, { hints: conceptHints(concept) }).finally(() =>
 			inflightPackages.delete(concept.rxcui)
 		);
 		inflightPackages.set(concept.rxcui, pending);
 	}
 	return pending;
+}
+
+/** What discovery already learned about a concept's NDCs. */
+function conceptHints(concept: Pick<RxConcept, 'details'>): PackageHints {
+	const forms = concept.details?.doseForms;
+	// Concepts staged before details existed carry no forms; let enrichment ask.
+	if (!forms) return {};
+	const form = forms.find((item) => item.tty === 'DF') ?? forms.find((item) => item.tty === 'DFG');
+	return form ? { doseForm: form.name } : {};
 }
 
 /** Fire-and-forget, one concept at a time so an expanded row is not starved. */

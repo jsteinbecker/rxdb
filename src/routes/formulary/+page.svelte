@@ -1,6 +1,6 @@
 <script lang="ts">
       import {page} from '$app/state';
-      import {untrack} from 'svelte';
+      import {onMount, untrack} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {resolve} from '$app/paths';
       import {SvelteSet} from 'svelte/reactivity';
@@ -9,7 +9,6 @@
             type ComboDoseDisplay,
             comboKey,
             DIMENSION_BY_KEY,
-            DIMENSIONS,
             type FormularyRow,
             packageSize,
             parseLevels,
@@ -30,19 +29,6 @@
 		}
 	};
 
-	const PRESETS: { label: string; levels: string[] }[] = [
-		{
-			label: 'Route → form → item',
-			levels: ['routeClass', 'routeForm', 'formularyItem', 'packaging']
-		},
-		{
-			label: 'Ingredient → strength → size',
-			levels: ['ingredient', 'doseForm', 'strength', 'packageSize']
-		},
-		{ label: 'Labeler → item', levels: ['labeler', 'formularyItem'] },
-		{ label: 'Flat list', levels: [] }
-	];
-
 	let levels = $state(
 		parseLevels(
 			page.url.searchParams.get('levels'),
@@ -50,25 +36,12 @@
 		)
 	);
 	let filter = $state('');
-	/** Chip being dragged, and where it came from (a hierarchy index or the palette). */
-	let dragging: { key: string; from: number | null } | null = $state(null);
-	let dropAt: number | null = $state(null);
 	const expanded = new SvelteSet<string>();
 
-	const available = $derived(
-		DIMENSIONS.filter(
-			(dimension) =>
-				!dimension.variant?.hidden &&
-				!levels.includes(dimension.key) &&
-				!(dimension.variant && levels.includes(dimension.variant.key))
-		)
+	/** The saved view the current hierarchy matches, if any. */
+	const activeView = $derived(
+		data.settings.views.find((view) => view.levels.join() === levels.join()) ?? null
 	);
-
-	/** Swap a chip for its variant in place, e.g. separated ↔ combined ingredients. */
-	function switchVariant(key: string) {
-		const variant = DIMENSION_BY_KEY.get(key)?.variant;
-		if (variant) levels = levels.map((level) => (level === key ? variant.key : level));
-	}
 
 	/** Dose display per combination, updated optimistically and saved to the scope. */
 	let comboDoseDisplay: Record<string, ComboDoseDisplay> = $state(
@@ -83,7 +56,6 @@
 	);
 
 	let saveError: string | null = $state(null);
-
 	/** Tree node whose options menu is open; one at a time. */
 	let menuFor: string | null = $state(null);
 
@@ -175,59 +147,10 @@
 		if (url.search !== page.url.search) replaceState(resolve(`/formulary?${url.searchParams}`), {});
 	});
 
-	function place(key: string, index: number) {
-		const next = levels.filter((level) => level !== key);
-		const from = levels.indexOf(key);
-		// Removing the chip first shifts every later slot left by one.
-		next.splice(from !== -1 && from < index ? index - 1 : index, 0, key);
-		levels = next;
-	}
-
-	const remove = (key: string) => (levels = levels.filter((level) => level !== key));
-
-	function move(index: number, delta: number) {
-		const target = index + delta;
-		if (target < 0 || target >= levels.length) return;
-		const next = [...levels];
-		[next[index], next[target]] = [next[target], next[index]];
-		levels = next;
-	}
-
-	function startDrag(event: DragEvent, key: string, from: number | null) {
-		dragging = { key, from };
-		event.dataTransfer?.setData('text/plain', key);
-		if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-	}
-
-	function endDrag() {
-		dragging = null;
-		dropAt = null;
-	}
-
-	function over(event: DragEvent, index: number) {
-		if (!dragging) return;
-		event.preventDefault();
-		dropAt = index;
-	}
-
-	/** Which gap a pointer over a chip means: before it or after it. */
-	function overChip(event: DragEvent, index: number) {
-		if (!dragging) return;
-		const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
-		over(event, event.clientX < box.left + box.width / 2 ? index : index + 1);
-	}
-
-	function drop(event: DragEvent) {
-		event.preventDefault();
-		if (dragging && dropAt !== null) place(dragging.key, dropAt);
-		endDrag();
-	}
-
-	function dropOnPalette(event: DragEvent) {
-		event.preventDefault();
-		if (dragging?.from !== null && dragging) remove(dragging.key);
-		endDrag();
-	}
+      onMount(() => {
+            const snapshotValue = history.state?.formularySnapshot;
+            if (snapshotValue) snapshot.restore(snapshotValue);
+      });
 
 	function walk(nodes: TreeNode[], visit: (node: TreeNode) => void) {
 		for (const node of nodes) {
@@ -284,6 +207,7 @@
 			<li class:excluded={row.status !== 'active'}>
 				<a
 					class="package"
+                              onmousedown={() => snapshot.capture()}
 					href={resolve('/formulary/ndc/[ndc]', { ndc: row.ndc })}
 					data-nav-title={row.displayTitle ?? row.brandName ?? row.genericName ?? row.description ?? row.formularyItem}
 				>
@@ -399,107 +323,32 @@
 			{plural(data.rows.length, 'package')} across {plural(
 				new Set(data.rows.map((row: FormularyRow) => row.formularyItemId)).size,
 				'formulary item'
-			)}. Drag attributes into the hierarchy to decide how the formulary splits; each one nests
-			under the one before it.
+			)}. Pick a view to choose how the formulary splits; build new views in Settings.
 		</p>
 	</header>
 
-	<section class="builder" aria-label="Hierarchy builder">
+	<section class="builder" aria-label="View">
 		<div class="builder-head">
-			<h2>Hierarchy</h2>
+			<h2>View as</h2>
 			<div class="presets">
-				{#each PRESETS as preset (preset.label)}
+				{#each data.settings.views as view (view.name)}
 					<button
 						class="ghost"
-						class:active={preset.levels.join() === levels.join()}
-						onclick={() => (levels = [...preset.levels])}>{preset.label}</button
+						class:active={activeView?.name === view.name}
+						title={view.levels.map((key) => DIMENSION_BY_KEY.get(key)?.label).join(' → ') ||
+							'Flat package list'}
+						onclick={() => (levels = [...view.levels])}>{view.name}</button
 					>
 				{/each}
+				<a class="manage" href={resolve('/settings')}>Manage views →</a>
 			</div>
 		</div>
-
-		<ol
-			class="levels"
-			class:dragging={!!dragging}
-			ondragover={(event) => over(event, levels.length)}
-			ondrop={drop}
-			ondragleave={(event) => {
-				if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node))
-					dropAt = null;
-			}}
-		>
-			{#each levels as key, index (key)}
-				{#if dropAt === index}<li class="gap" aria-hidden="true"></li>{/if}
-				<li
-					class="chip level"
-					class:lifted={dragging?.key === key}
-					draggable="true"
-					style:--depth={index}
-					ondragstart={(event) => startDrag(event, key, index)}
-					ondragend={endDrag}
-					ondragover={(event) => {
-						event.stopPropagation();
-						overChip(event, index);
-					}}
-				>
-					<span class="step">{index + 1}</span>
-					<span class="chip-label">{DIMENSION_BY_KEY.get(key)?.label}</span>
-					{#if DIMENSION_BY_KEY.get(key)?.variant}
-						{@const variant = DIMENSION_BY_KEY.get(key)?.variant}
-						<button
-							class="mode"
-							title="Toggle separated ingredients vs combinations"
-							onclick={() => switchVariant(key)}>⇄ {variant?.mode}</button
-						>
-					{/if}
-					<span class="chip-actions">
-						<button
-							class="icon"
-							aria-label="Move {DIMENSION_BY_KEY.get(key)?.label} up a level"
-							disabled={index === 0}
-							onclick={() => move(index, -1)}>←</button
-						>
-						<button
-							class="icon"
-							aria-label="Move {DIMENSION_BY_KEY.get(key)?.label} down a level"
-							disabled={index === levels.length - 1}
-							onclick={() => move(index, 1)}>→</button
-						>
-						<button
-							class="icon"
-							aria-label="Remove {DIMENSION_BY_KEY.get(key)?.label}"
-							onclick={() => remove(key)}>×</button
-						>
-					</span>
-				</li>
-			{/each}
-			{#if dropAt === levels.length}<li class="gap" aria-hidden="true"></li>{/if}
-			<li class="leaf-level">NDCs</li>
-		</ol>
-
-		<div
-			class="palette"
-			role="group"
-			aria-label="Available attributes"
-			ondragover={(event) => dragging?.from !== null && dragging && event.preventDefault()}
-			ondrop={dropOnPalette}
-		>
-			{#each available as dimension (dimension.key)}
-				<button
-					class="chip"
-					draggable="true"
-					title={dimension.hint}
-					ondragstart={(event) => startDrag(event, dimension.key, null)}
-					ondragend={endDrag}
-					onclick={() => place(dimension.key, levels.length)}
-				>
-					<span aria-hidden="true">+</span>
-					{dimension.label}
-				</button>
-			{:else}
-				<p class="small">Every attribute is in use.</p>
-			{/each}
-		</div>
+		{#if !activeView}
+			<p class="small custom">
+				Custom: {levels.map((key) => DIMENSION_BY_KEY.get(key)?.label).join(' → ') ||
+					'Flat package list'}
+			</p>
+		{/if}
 	</section>
 
 	<section class="results">
@@ -530,13 +379,6 @@
 </main>
 
 <style>
-	:global(body) {
-		margin: 0;
-		background: #f7f8fa;
-		color: #18212f;
-		font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-	}
-
 	main {
 		max-width: 1040px;
 		margin: 0 auto;
@@ -624,105 +466,18 @@
 		gap: 0.4rem;
 	}
 
-	.levels {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.5rem;
-		min-height: 3rem;
-		margin: 1rem 0;
-		padding: 0.75rem;
-		border: 2px dashed #dbe1e8;
-		border-radius: 0.75rem;
-		list-style: none;
-		background: #fbfcfd;
-	}
-
-	.levels.dragging {
-		border-color: #8fb3e6;
-		background: #f2f7fe;
-	}
-
-	.chip {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		border: 1px solid #cdd6e1;
-		border-radius: 999px;
-		background: white;
-		color: #18212f;
-		padding: 0.35rem 0.75rem;
-		font-size: 0.875rem;
+	.manage {
+		align-self: center;
+		margin-left: 0.4rem;
+		color: #3464a5;
+		font-size: 0.85rem;
 		font-weight: 600;
-		cursor: grab;
-		user-select: none;
 	}
 
-	.chip.level {
-		border-color: #3464a5;
-		background: #e8f0fb;
-		padding-right: 0.3rem;
-	}
-
-	.chip.lifted {
-		opacity: 0.4;
-	}
-
-	.step {
-		display: inline-grid;
-		place-items: center;
-		width: 1.25rem;
-		height: 1.25rem;
-		border-radius: 50%;
-		background: #204f91;
-		color: white;
-		font-size: 0.7rem;
-	}
-
-	.mode {
-		font-size: 0.75rem;
-		padding: 0.1rem 0.4rem;
-		border-radius: 999px;
-	}
-
-	.chip-actions {
-		display: inline-flex;
-	}
-
-	.icon {
-		background: none;
-		color: #3464a5;
-		padding: 0.1rem 0.35rem;
-		font-size: 0.9rem;
-	}
-
-	.gap {
-		width: 0.3rem;
-		height: 1.9rem;
-		border-radius: 1rem;
-		background: #3464a5;
-	}
-
-	.leaf-level {
+	.custom {
+		margin: 0.75rem 0 0;
 		color: #7a8594;
-		font-size: 0.8rem;
-		font-weight: 650;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-	}
-
-	.leaf-level::before {
-		content: '› ';
-	}
-
-	.palette {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-	}
-
-	.palette .chip {
-		color: #3464a5;
+		font-size: 0.85rem;
 	}
 
 	.toolbar {

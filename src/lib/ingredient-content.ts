@@ -20,6 +20,25 @@ export function parseIngredientMassMg(strength: string): number | null {
 	return value * scale;
 }
 
+// `1%`, `0.9 % w/v`: grams per 100 mL, the only percent that is a mass per volume.
+const PERCENT_WV = /^\s*([\d.]+)\s*%\s*(?:\(?\s*w\s*\/\s*v\s*\)?)?\s*$/i;
+
+/**
+ * An ingredient's mass in mg, calculated where its strength allows: a plain
+ * mass as stated, or a w/v percent multiplied out over the container volume
+ * (1% in 20 mL is 10 mg/mL × 20 mL = 200 mg). Null when no mass can be worked
+ * out — an IU potency, a percent with no volume — never zero.
+ */
+export function ingredientMassMg(strength: string | null, volumeMl: number | null = null): number | null {
+	if (!strength) return null;
+	const stated = parseIngredientMassMg(strength);
+	if (stated !== null) return stated;
+	const percent = PERCENT_WV.exec(strength);
+	if (!percent || volumeMl === null || !(volumeMl > 0)) return null;
+	const value = Number(percent[1]);
+	return Number.isFinite(value) && value > 0 ? value * 10 * volumeMl : null;
+}
+
 // Matches openFDA `dosage_form` values where the numerator is a fixed fill
 // content rather than a true concentration: any lyophilized product, and any
 // powder that must be reconstituted before use. A plain "POWDER" with no
@@ -83,6 +102,15 @@ export function absoluteFillStrength(
  */
 export const isOralDryFillForm = (dosageForm: string | null | undefined): boolean =>
 	isDryFillForm(dosageForm ?? '') && !/\bINJECT/i.test(dosageForm ?? '');
+
+/**
+ * A tablet, capsule or other solid swallowed (or dissolved in the mouth) as
+ * is. It is never constituted, so any dilution or volume a label seems to
+ * offer for it belongs to a sibling product and is discarded.
+ */
+export const isOralSolidForm = (dosageForm: string | null | undefined): boolean =>
+	/\b(?:TABLET|CAPSULE|CAPLET|LOZENGE|TROCHE|PASTILLE|PELLET|WAFER|GUM)S?\b/i.test(dosageForm ?? '') &&
+	!/\bINJECT/i.test(dosageForm ?? '');
 
 /**
  * The strength a dry-fill package should carry. An oral powder's per-volume

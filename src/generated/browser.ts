@@ -14,7 +14,6 @@
  */
 
 import * as Prisma from './internal/prismaNamespaceBrowser.ts'
-
 export { Prisma }
 export * as $Enums from './enums.ts'
 export * from './enums.ts';
@@ -320,3 +319,16 @@ export type PillImageLayout = Prisma.PillImageLayoutModel
  * image records that nothing was found, and is looked up again later.
  */
 export type PillPhoto = Prisma.PillPhotoModel
+/**
+ * Model UniiSubstance
+ * What FDA's GSRS says about one UNII: the molecular weight and active moiety
+ * the ingredient correction wizard converts strengths with. `mw` is null for
+ * substances without a structure (proteins, mixtures); `notFound` caches a
+ * UNII GSRS does not know. `raw` is the trimmed response the row was read from.
+ */
+export type UniiSubstance = Prisma.UniiSubstanceModel
+/**
+ * Model PharmClassRule
+ * 
+ */
+export type PharmClassRule = Prisma.PharmClassRuleModel

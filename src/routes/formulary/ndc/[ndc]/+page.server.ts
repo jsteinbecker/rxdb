@@ -209,7 +209,8 @@ export const actions: Actions = {
 			await saveDosingMeasure(
 				item,
 				String(form.get('mode') ?? ''),
-				form.get('ingredient') ? String(form.get('ingredient')) : null
+				form.get('ingredient') ? String(form.get('ingredient')) : null,
+				form.getAll('ingredients').map(String)
 			);
 			return { dosingMeasureSaved: true };
 		} catch (cause) {

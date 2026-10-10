@@ -1,0 +1,38 @@
+{
+ "uuid": "70d72341-2415-4a75-a68e-df8db5a853dd",
+ "substanceClass": "chemical",
+ "approvalID": "M98T69Q7HP",
+ "_name": "Piperacillin Sodium",
+ "names": [
+  {
+   "name": "Piperacillin Sodium",
+   "displayName": true
+  }
+ ],
+ "relationships": [
+  {
+   "type": "ACTIVE MOIETY",
+   "relatedSubstance": {
+    "name": "Piperacillin anhydrous",
+    "approvalID": "9I628532GX"
+   }
+  }
+ ],
+ "structure": {
+  "formula": "C23H26N5O7S.Na",
+  "mwt": 539.5386,
+  "count": 1
+ },
+ "moieties": [
+  {
+   "formula": "C23H26N5O7S",
+   "mwt": 516.5488,
+   "count": 1
+  },
+  {
+   "formula": "Na",
+   "mwt": 22.9898,
+   "count": 1
+  }
+ ]
+}

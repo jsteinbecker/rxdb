@@ -12,6 +12,12 @@
       import {toSplAppearance} from '$lib/imprints/iln-render';
       import type {PillMedia} from '$lib/pill-image-layout';
       import {type Quantity, quantityDecimal} from '$lib/quantity';
+      import {
+            describeCorrection,
+            INGREDIENT_CORRECTION_KEY,
+            ingredientCorrectionKey,
+            parseIngredientCorrection
+      } from '$lib/ingredient-correction';
       import {AMBIGUITY_KINDS, type AmbiguityKind, ambiguityKindsFor} from '$lib/labeler-ambiguity';
       import {
             type EquivalentPackage,
@@ -19,6 +25,7 @@
             overrideCurrentValue,
             overrideQuantity,
             overrideSeparator,
+            INGREDIENT_STRENGTH_KEY,
             overrideTargets,
             PILL_ILN_KEY,
             splitMulti
@@ -29,8 +36,11 @@
             keys,
             equivalents = [],
             pillMedia = null,
+            oncorrect,
             onclose
       }: {
+            /** Opens the ingredient correction wizard on the ingredient at this index. */
+            oncorrect?: (index: number) => void;
             /** The photos' measured layouts, offered as a starting point for a pill's ILN. */
             pillMedia?: Promise<PillMedia> | PillMedia | null;
             item: StagedPackage;
@@ -125,6 +135,24 @@
                   }
             );
       });
+      // An ingredient correction is made in its own wizard; here it is only summarized.
+      const correctionIndex = $derived(INGREDIENT_CORRECTION_KEY.exec(overrideKey)?.[1]);
+      const correctionSummary = $derived.by(() => {
+            if (correctionIndex === undefined || !existing) return null;
+            const parsed = parseIngredientCorrection(existing.value);
+            const name = item.details?.spl?.ingredients[Number(correctionIndex)]?.name ?? 'ingredient';
+            return parsed ? describeCorrection(parsed, name) : existing.value;
+      });
+      const describeJson = (value: string | null) => {
+            const parsed = parseIngredientCorrection(value ?? '');
+            const name = item.details?.spl?.ingredients[Number(correctionIndex)]?.name ?? 'ingredient';
+            return parsed ? describeCorrection(parsed, name) : '—';
+      };
+      // A correction on the same row wins over a strength override.
+      const supersededBy = $derived.by(() => {
+            const row = INGREDIENT_STRENGTH_KEY.exec(overrideKey)?.[1];
+            return row !== undefined && !!item.propertyOverrides?.[ingredientCorrectionKey(Number(row))];
+      });
       const quantitySpec = $derived(overrideQuantity(overrideKey, item));
       let quantity = $state<Quantity | null>(null);
       // Numbers are stored as decimals in the field's unit, however they were typed.
@@ -190,6 +218,8 @@
       let removing = $state(false);
 
       async function removeOverride() {
+            if (!confirm(`Delete the override and citation for ${overrideKey}? The provider value will be restored.`))
+                  return;
             removing = true;
             overrideMessage = '';
             const form = new FormData();
@@ -274,15 +304,30 @@
             <dt>Field</dt>
             <dd class="mono">{overrideKey}</dd>
             <dt>Current value</dt>
-            <dd>{current ?? '—'}</dd>
+            <dd>{correctionIndex !== undefined ? describeJson(current) : (current ?? '—')}</dd>
             {#if existing}
                   <dt>Overridden</dt>
                   <dd>
-                        {existing.value}
+                        {correctionIndex !== undefined ? (correctionSummary ?? existing.value) : existing.value}
                         <span class="quote"><OverrideCitation override={existing}/></span>
                   </dd>
             {/if}
       </dl>
+      {#if correctionSummary !== null}
+            <p class="hint">Made in the ingredient correction wizard: {correctionSummary}</p>
+            {#if overrideMessage}<p class="error">{overrideMessage}</p>{/if}
+            <div class="actions">
+                  <button class="remove" type="button" disabled={removing} onclick={removeOverride}
+                  >{removing ? 'Removing…' : 'Remove'}</button
+                  >
+                  <button class="primary" type="button" onclick={() => oncorrect?.(Number(correctionIndex))}
+                  >Edit</button
+                  >
+            </div>
+      {:else}
+      {#if supersededBy}
+            <p class="hint">Superseded by an ingredient correction on this row. Removing the correction restores this override.</p>
+      {/if}
       {#if separator && choices}
             <fieldset class="multi" disabled={source === 'ndc'}>
                   <legend>Correct value <span class="optional">(choose any)</span></legend>
@@ -559,6 +604,7 @@
                   type="button">{savingOverride ? 'Saving…' : 'Save override'}</button
             >
       </div>
+      {/if}
 </aside>
 
 <style>

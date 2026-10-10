@@ -343,3 +343,12 @@ test('a row that names no vial mass takes the package ingredient strength as its
 	assert.equal(facts.reconstitution.length, 1);
 	assert.equal(facts.reconstitution[0].vialMassMg, 120);
 });
+
+test('a w/v percent is worked into a mass over the container volume', async () => {
+	const { ingredientMassMg } = await import('../ingredient-content');
+	assert.equal(ingredientMassMg('1 %', 20), 200);
+	assert.equal(ingredientMassMg('0.5% w/v', 10), 50);
+	assert.equal(ingredientMassMg('12 g/60mL', null), 12000);
+	assert.equal(ingredientMassMg('1 %', null), null);
+	assert.equal(ingredientMassMg('100 [iU]', 10), null);
+});

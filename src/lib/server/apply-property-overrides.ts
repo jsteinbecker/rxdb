@@ -18,10 +18,13 @@ export function applyPropertyOverrides(item: ExternalPackage): ExternalPackage {
         concentrations: []
       });
   }
-  const overrides = entries.flatMap(([key, { value }]) => {
-    const field = overrideField(key);
-    return field ? [{ field, value }] : [];
-  });
+  const overrides = entries
+    .flatMap(([key, { value }]) => {
+      const field = overrideField(key);
+      return field ? [{ field, value }] : [];
+    })
+    // A stable sort: those that win over others on what they share go last.
+    .sort((a, b) => Number(!!a.field.appliesLast) - Number(!!b.field.appliesLast));
   const removed = new Set<ExternalPackage['reconstitution'][number]>();
   for (const { field, value } of overrides)
     if (!field.correctsVolume) field.set(result, value, removed);

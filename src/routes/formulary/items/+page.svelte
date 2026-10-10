@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RxCui from '$lib/components/RxCui.svelte';
       import {enhance} from '$app/forms';
       import {naturalCompare} from '$lib/natural-sort';
       import type {LoadedItem} from '$lib/server/catalog-formulary';
@@ -9,6 +10,15 @@
 	let level = $state<'all' | 'concept' | 'package'>('all');
 	let pending = $state<{ id: string; action: 'update' | 'remove' } | null>(null);
 	let reloadingAll = $state(false);
+
+	// Keep the filter when returning from an item's page.
+	export const snapshot = {
+		capture: () => ({ filter, level }),
+		restore: (value: { filter: string; level: typeof level }) => {
+			filter = value.filter;
+			level = value.level;
+		}
+	};
 
 	const levelOf = (item: LoadedItem) =>
 		item.target.kind === 'concept' ? (item.tty ?? 'Concept') : 'NDC';
@@ -78,7 +88,15 @@
 		<form
 			method="POST"
 			action="?/reloadAll"
-			use:enhance={() => {
+			use:enhance={({ cancel }) => {
+				// Every package is fetched again from every provider: slow, and thousands of requests.
+				const packages = data.items.reduce((sum, item) => sum + item.packages, 0);
+				if (
+					!confirm(
+						`Refresh all ${data.items.length} items? This fetches all ${packages} packages again from every source and can take a long time.`
+					)
+				)
+					return cancel();
 				reloadingAll = true;
 				return async ({ update }) => {
 					try {
@@ -90,7 +108,7 @@
 			}}
 		>
 			<button class="reload-all" disabled={!data.items.length || reloadingAll || pending !== null}>
-				{reloadingAll ? 'Reloading…' : 'Reload All'}
+				{reloadingAll ? 'Refreshing all…' : 'Refresh all'}
 			</button>
 		</form>
 	</div>
@@ -109,9 +127,10 @@
 					<span class="desc">
 						<a href="/formulary/items/{item.formularyItemId}">{item.displayName}</a>
 						<span class="small mono">
-							{item.target.kind === 'concept'
-								? `RxCUI ${item.target.rxcui}`
-								: `NDC ${formatNdc(item.target.ndc)}`} · {plural(item.packages, 'package')} · loaded
+							{#if item.target.kind === 'concept'}RxCUI <RxCui rxcui={item.target.rxcui} />{:else}NDC {formatNdc(item.target.ndc)}{/if}· {plural(item.packages, 'package')}{#if item.excludedPackages}<span
+								title="Linked by the load but excluded from the catalog (veterinary or ineligible), so never listed"
+							>{" "}(+{item.excludedPackages} excluded)</span
+							>{/if} · loaded
 							{new Date(item.loadedAt).toLocaleDateString()}
 						</span>
 					</span>
@@ -135,8 +154,8 @@
 						/>
 						<button disabled={reloadingAll || pending?.id === item.formularyItemId}>
 							{pending?.id === item.formularyItemId && pending.action === 'update'
-								? 'Updating…'
-								: 'Update'}
+								? 'Refreshing…'
+								: 'Refresh'}
 						</button>
 					</form>
 					<form
@@ -145,7 +164,7 @@
 						use:enhance={({ cancel }) => {
 							const scope =
 								item.target.kind === 'concept'
-									? `${levelOf(item)} "${item.displayName}" and its ${plural(item.packages, 'package')}`
+									? `${levelOf(item)} "${item.displayName}" and its ${plural(item.packages + item.excludedPackages, 'package')}`
 									: `NDC ${formatNdc(item.target.ndc)}`;
 							if (data.settings.confirmRemove && !confirm(`Remove ${scope} from the formulary?`))
 								return cancel();

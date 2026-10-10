@@ -1,5 +1,7 @@
 import { toNdc11 } from '$lib/ndc';
 import { naturalCompare } from '$lib/natural-sort';
+import { hierarchyDoseForm, labelerLabel } from '$lib/formulary-hierarchy';
+import { ttyLabel } from '$lib/rxnorm-tty';
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { stagedTree, syncExternalSearch } from '$lib/server/catalog-sync';
@@ -21,7 +23,24 @@ export type SearchResult = {
 	detail: string | null;
 	matchedOn: 'name' | 'ingredient' | 'identifier' | 'description';
 	identifiers: string[];
+	/** The page that shows it, when one does. */
+	href?: string | null;
 };
+
+const amount = (value: unknown) => String(Number(Number(value).toPrecision(6)));
+/** `500 mg`, `25 mg/mL`, `100 mg/4 mL`: a stored strength as a reader says it. */
+function strengthText(row: {
+	strengthNumMag: unknown;
+	strengthNumUom: string;
+	strengthDenMag: unknown;
+	strengthDenUom: string;
+}) {
+	const den = Number(row.strengthDenMag);
+	// "per 1 capsule" or "per 1 {tablet}" says nothing; a volume or mass denominator does.
+	const perUnit = den === 1 && !/^(?:m?l|g|mg|kg)$/i.test(row.strengthDenUom);
+	const per = perUnit ? '' : `/${den === 1 ? '' : `${amount(den)} `}${row.strengthDenUom}`;
+	return `${amount(row.strengthNumMag)} ${row.strengthNumUom}${per}`;
+}
 
 /** Rules only change what is displayed, so a failed lookup must not discard a successful search. */
 async function stagedWithRules(tree: Awaited<ReturnType<typeof stagedTree>>) {
@@ -148,12 +167,19 @@ export const GET: RequestHandler = async ({ url }) => {
 					doseForm: true,
 					labeler: { select: { name: true } },
 					productIngredients: {
-						where: { ingredient: { name: { contains: query, mode: 'insensitive' } } },
-						select: { ingredient: { select: { name: true } } },
-						take: 1
+						where: { isActive: true, validTo: null },
+						orderBy: { ordinal: 'asc' },
+						select: {
+							ingredient: { select: { name: true } },
+							strengthNumMag: true,
+							strengthNumUom: true,
+							strengthDenMag: true,
+							strengthDenUom: true
+						}
 					}
 				},
-				take: limit
+				// Grouped below by name, form and strength, so fetch enough to fill the groups.
+				take: limit * 4
 			}),
 			prisma.package.findMany({
 				where: {
@@ -179,6 +205,11 @@ export const GET: RequestHandler = async ({ url }) => {
 					containerType: true,
 					entity: {
 						select: {
+							externalIdentifiers: {
+								where: { namespace: 'ndc11', validTo: null },
+								select: { normalizedValue: true },
+								take: 1
+							},
 							relationshipsFrom: {
 								where: { relationshipType: 'package_clinical_drug', validTo: null },
 								select: { toEntity: { select: { clinicalDrug: { select: { name: true } } } } },
@@ -240,7 +271,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			id: row.id,
 			kind: 'clinical_drug',
 			name: row.name,
-			detail: row.tty,
+			detail: ttyLabel(row.tty),
 			matchedOn: 'name',
 			identifiers: identifiersByEntity.get(row.id) ?? []
 		});
@@ -255,26 +286,59 @@ export const GET: RequestHandler = async ({ url }) => {
 			identifiers: identifiersByEntity.get(row.id) ?? []
 		});
 	}
+	// The same drug from many repackagers reads as one row: name, form and strength,
+	// with how many labelers sell it.
+	const productGroups = new Map<
+		string,
+		{ row: (typeof products)[number]; name: string; strength: string; doseForm: string; labelers: Set<string>; matched: boolean }
+	>();
 	for (const row of products) {
-		const matchedIngredient = row.productIngredients[0]?.ingredient.name;
+		const needle = query.toLocaleLowerCase();
+		const matchedIngredient = row.productIngredients.find((item) =>
+			item.ingredient.name.toLocaleLowerCase().includes(needle)
+		)?.ingredient.name;
+		const name = row.proprietaryName ?? matchedIngredient ?? row.productIngredients[0]?.ingredient.name ?? 'Unnamed product';
+		const strength = row.productIngredients.map(strengthText).join(' / ');
+		// One spelling per form and per company, as the formulary uses.
+		const doseForm = row.doseForm ? hierarchyDoseForm(row.doseForm) : '';
+		const key = [name.toLocaleLowerCase(), doseForm, strength].join('|');
+		const group = productGroups.get(key) ?? {
+			row,
+			name,
+			strength,
+			doseForm,
+			labelers: new Set<string>(),
+			matched: Boolean(matchedIngredient && !row.proprietaryName?.toLocaleLowerCase().includes(needle))
+		};
+		group.labelers.add(labelerLabel(row.labeler.name));
+		productGroups.set(key, group);
+	}
+	for (const { row, name, strength, doseForm, labelers, matched } of [...productGroups.values()].slice(0, limit)) {
+		const names = [...labelers];
 		add({
 			id: row.id,
 			kind: 'product',
-			name: row.proprietaryName ?? matchedIngredient ?? 'Unnamed product',
-			detail: [row.labeler.name, row.doseForm].filter(Boolean).join(' · ') || null,
-			matchedOn:
-				matchedIngredient &&
-				!row.proprietaryName?.toLocaleLowerCase().includes(query.toLocaleLowerCase())
-					? 'ingredient'
-					: 'name',
+			name: [name, strength].filter(Boolean).join(' '),
+			detail:
+				[
+					doseForm,
+					names.length === 1
+						? names[0]
+						: `${names.length} labelers (${names.slice(0, 3).join(', ')}${names.length > 3 ? ', …' : ''})`
+				]
+					.filter(Boolean)
+					.join(' · ') || null,
+			matchedOn: matched ? 'ingredient' : 'name',
 			identifiers: identifiersByEntity.get(row.id) ?? []
 		});
 	}
 	for (const row of packages) {
 		const matchedDrug = row.entity.relationshipsFrom[0]?.toEntity.clinicalDrug?.name;
+		const ndc = row.entity.externalIdentifiers[0]?.normalizedValue;
 		add({
 			id: row.id,
 			kind: 'package',
+			href: ndc ? `/formulary/ndc/${ndc}` : null,
 			name: row.description ?? 'Unnamed package',
 			detail: [row.containerType, matchedDrug].filter(Boolean).join(' · ') || null,
 			matchedOn: row.description?.toLocaleLowerCase().includes(query.toLocaleLowerCase())
@@ -288,7 +352,8 @@ export const GET: RequestHandler = async ({ url }) => {
 			id: row.id,
 			kind: 'formulary_item',
 			name: row.displayName,
-			detail: [row.kind, row.scope.name].filter(Boolean).join(' · ') || null,
+			detail: `On ${row.scope.name}`,
+			href: `/formulary/items/${row.id}`,
 			matchedOn: 'name',
 			identifiers: identifiersByEntity.get(row.id) ?? []
 		});
@@ -331,7 +396,7 @@ export const GET: RequestHandler = async ({ url }) => {
 					id: entity.id,
 					kind: 'clinical_drug',
 					name: entity.clinicalDrug.name,
-					detail: entity.clinicalDrug.tty,
+					detail: ttyLabel(entity.clinicalDrug.tty),
 					matchedOn: 'identifier',
 					identifiers
 				});
@@ -369,10 +434,8 @@ export const GET: RequestHandler = async ({ url }) => {
 					id: entity.id,
 					kind: 'formulary_item',
 					name: entity.formularyItem.displayName,
-					detail:
-						[entity.formularyItem.kind, entity.formularyItem.scope.name]
-							.filter(Boolean)
-							.join(' · ') || null,
+					detail: `On ${entity.formularyItem.scope.name}`,
+					href: `/formulary/items/${entity.id}`,
 					matchedOn: 'identifier',
 					identifiers
 				});

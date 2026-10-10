@@ -50,10 +50,12 @@ const MAX_SALT_RATIO = 1.3;
 const MIN_SALT_RATIO = 1.005;
 
 /** One `name value UNIT[/UNIT]` component of an RxNorm clinical drug name. */
-interface RxStrength {
+export interface RxStrength {
   name: string;
   value: number;
   unit: string;
+  /** The denominator's amount: 100 in `900 MG/100ML`, 1 when unstated. */
+  per: number;
   perUnit: string | null;
 }
 
@@ -65,11 +67,13 @@ export function rxNormStrengths(name: string | null | undefined): RxStrength[] {
   if (!name) return [];
   const out: RxStrength[] = [];
   for (const part of name.replace(/\[[^\]]*\]/g, '').split(/\s+\/\s+/)) {
-    const match = part.match(/^\s*(.+?)\s+([\d.]+)\s*([A-Za-z]+)(?:\/([A-Za-z]+))?\b/);
+    const match = part.match(/^\s*(.+?)\s+([\d.]+)\s*([A-Za-z]+)(?:\/([\d.]*)\s*([A-Za-z]+))?\b/);
     if (!match) continue;
     const value = Number(match[2]);
     if (!Number.isFinite(value)) continue;
-    out.push({ name: match[1].trim(), value, unit: match[3], perUnit: match[4] ?? null });
+    const per = match[4] ? Number(match[4]) : 1;
+    if (!Number.isFinite(per) || per <= 0) continue;
+    out.push({ name: match[1].trim(), value, unit: match[3], per, perUnit: match[5] ?? null });
   }
   return out;
 }
@@ -165,7 +169,7 @@ function correctSaltAsMoiety(
     // strength, its per-unit against a per-unit (or per-container) one.
     const labelPerVolume = VOLUME.test(row.perUnit ?? '');
     if (reference.perUnit) {
-      if (!labelPerVolume || row.per !== 1 || !sameName(reference.perUnit, row.perUnit!)) return;
+      if (reference.per !== 1 || !labelPerVolume || row.per !== 1 || !sameName(reference.perUnit, row.perUnit!)) return;
     } else if (labelPerVolume || isMass(row.perUnit)) return;
 
     const labelMg = massMg(row.strength, row.strengthUnit);

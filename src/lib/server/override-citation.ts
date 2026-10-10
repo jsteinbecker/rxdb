@@ -1,5 +1,6 @@
 import {
 	type EquivalentPackage,
+	overrideField,
 	overrideTargets,
 	type PropertyOverride,
 	validOverrideValue
@@ -111,7 +112,9 @@ export function citeOverride(
 	if (citation.source === 'ndc') {
 		const equivalent = equivalents.find((candidate) => candidate.ndc === citation.ndc);
 		if (!equivalent) throw new Error('Choose an NDC equivalent to this one.');
-		if (equivalent.values[key] !== corrected)
+		const theirs = equivalent.values[key];
+		const same = overrideField(key)?.matches ?? ((a: string, b: string) => a === b);
+		if (theirs === undefined || !same(theirs, corrected))
 			throw new Error(`NDC ${equivalent.ndc} does not list this value for the property.`);
 		return {
 			value: corrected,

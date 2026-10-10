@@ -4,6 +4,7 @@
       import {enhance} from '$app/forms';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
       import ReinterpretDialog from '$lib/components/ReinterpretDialog.svelte';
+      import IngredientCorrectionDialog from '$lib/components/IngredientCorrectionDialog.svelte';
       import DosingMeasureForm from '$lib/components/DosingMeasureForm.svelte';
       import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
       import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
@@ -13,9 +14,11 @@
 
       let fromFormulary = $state(false);
       let reinterpret: ReinterpretDialog;
+      let correction: IngredientCorrectionDialog;
       let pharmClassRule: PharmClassRuleDialog;
       let editKeys = $state<string[]>([]);
       let excludeDialog: HTMLDialogElement;
+      let actionsMenu: HTMLElement;
 
       afterNavigate(({from}) => (fromFormulary = from?.url.pathname === '/formulary'));
 
@@ -48,9 +51,10 @@
                   <p class="sub">
                         On formulary as
                         {#each data.formularyItems as formularyItem, index (formularyItem.id)}
-                              {index ? ', ' : ''}<a href={resolve('/formulary/items/[id]', {id: formularyItem.id})}
-                                    >{formularyItem.displayName}</a
-                              >
+                              {index ? ', ' : ''}
+                              <a href={resolve('/formulary/items/[id]', {id: formularyItem.id})}>
+                                    {formularyItem.displayName}
+                              </a>
                         {/each}
                   </p>
             {/if}
@@ -59,14 +63,20 @@
                         <span class="excluded">Excluded from formulary:</span> {item.manualExclusion}
                         <button class="link" type="submit">Include again</button>
                   </form>
-            {:else}
-                  <button class="link exclude" onclick={() => excludeDialog.showModal()} type="button">
-                        Exclude from formulary…
-                  </button>
             {/if}
-            <button class="action" onclick={() => reinterpret.open()} type="button">
-                  Reload &amp; Reinterpret Results
-            </button>
+            <div class="menu">
+                  <button class="ellipsis" popovertarget="ndc-actions" type="button" aria-label="More actions" title="More actions">⋯</button>
+                  <div id="ndc-actions" class="menu-popover" popover bind:this={actionsMenu} role="menu">
+                        <button role="menuitem" type="button" onclick={() => { actionsMenu.hidePopover(); reinterpret.open(); }}>
+                              Reload &amp; Reinterpret Results
+                        </button>
+                        {#if !item.manualExclusion}
+                              <button class="danger" role="menuitem" type="button" onclick={() => { actionsMenu.hidePopover(); excludeDialog.showModal(); }}>
+                                    Exclude from formulary…
+                              </button>
+                        {/if}
+                  </div>
+            </div>
       </header>
       <dialog bind:this={excludeDialog}>
             <form
@@ -93,7 +103,7 @@
       </dialog>
       <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.message ?? null}/>
       <div class="body" class:with-panel={editKeys.length}>
-            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)}/>
+            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }}/>
             {#if editKeys.length}
                   {#key editKeys}
                         <div class="panel-slot">
@@ -102,6 +112,7 @@
                                     keys={editKeys}
                                     equivalents={data.equivalents}
                                     pillMedia={data.pillMedia}
+                                    oncorrect={(index) => { editKeys = []; correction.open(index); }}
                                     onclose={() => (editKeys = [])}
                               />
                         </div>
@@ -110,6 +121,7 @@
       </div>
       <PharmClassRuleDialog bind:this={pharmClassRule} rules={data.pharmClassRules} confirmRemove={data.confirmRemove} message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete' ? form.message : null}/>
       <ReinterpretDialog bind:this={reinterpret} {item}/>
+      <IngredientCorrectionDialog bind:this={correction} {item} equivalents={data.equivalents}/>
 </main>
 
 <svelte:window
@@ -119,13 +131,6 @@
 />
 
 <style>
-      :global(body) {
-            margin: 0;
-            background: #f7f8fa;
-            color: #18212f;
-            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-      }
-
       main {
             max-width: 1040px;
             margin: 0 auto;
@@ -147,26 +152,67 @@
       header {
             position: relative;
             margin: 1.5rem 0 1.25rem;
-            padding-right: 15rem;
+            padding-right: 3rem;
       }
 
-      .action {
+      .menu {
             position: absolute;
             top: 0;
             right: 0;
-            padding: 0.45rem 0.9rem;
-            border: 1px solid #3464a5;
+      }
+
+      .ellipsis {
+            anchor-name: --ndc-actions;
+            width: 2.2rem;
+            height: 2.2rem;
+            border: 1px solid #c9d6e8;
             border-radius: 7px;
             background: #fff;
             color: #3464a5;
             font: inherit;
-            font-size: 0.85rem;
-            font-weight: 650;
+            font-size: 1.2rem;
+            line-height: 1;
             cursor: pointer;
       }
 
-      .action:hover {
+      .ellipsis:hover {
             background: #eef3fa;
+      }
+
+      .menu-popover {
+            position-anchor: --ndc-actions;
+            inset: auto;
+            top: anchor(bottom);
+            right: anchor(right);
+            margin: 0.3rem 0 0;
+            padding: 0.3rem;
+            min-width: 14rem;
+            border: 1px solid #c9d6e8;
+            border-radius: 0.55rem;
+            background: #fff;
+            box-shadow: 0 8px 24px rgb(24 33 47 / 0.12);
+      }
+
+      .menu-popover button {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.7rem;
+            border: 0;
+            border-radius: 5px;
+            background: none;
+            color: #18212f;
+            font: inherit;
+            font-size: 0.85rem;
+            text-align: left;
+            cursor: pointer;
+      }
+
+      .menu-popover button:hover {
+            background: #eef3fa;
+      }
+
+      .menu-popover .danger {
+            color: #a4461a;
       }
 
       main:has(.with-panel) {
@@ -198,13 +244,9 @@
       }
 
       @media (max-width: 640px) {
-            header {
-                  padding-right: 0;
-            }
 
-            .action {
-                  position: static;
-                  margin-top: 0.8rem;
+            .menu {
+                  top: 0;
             }
       }
 
@@ -240,11 +282,6 @@
 
       .link:hover {
             text-decoration: underline;
-      }
-
-      .exclude {
-            margin-top: 0.4rem;
-            color: #a4461a;
       }
 
       .exclusion .link {

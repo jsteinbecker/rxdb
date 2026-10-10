@@ -1,6 +1,10 @@
 <script lang="ts">
+	import RxCui from '$lib/components/RxCui.svelte';
       import {resolve} from '$app/paths';
-      import {onDestroy} from 'svelte';
+      import {onDestroy, onMount} from 'svelte';
+      import {replaceState} from '$app/navigation';
+      import {page} from '$app/state';
+      import {ttyLabel, ttyTitle} from '$lib/rxnorm-tty';
       import {SvelteMap, SvelteSet} from 'svelte/reactivity';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
       import {packageDisplayTitle} from '$lib/package-title';
@@ -13,6 +17,7 @@
 		detail: string | null;
 		matchedOn: string;
 		identifiers: string[];
+		href?: string | null;
 	};
 
 	type SyncSummary = {
@@ -30,6 +35,15 @@
 		scope: { id: string; name: string } | null;
 		concepts: StagedConcept[];
 		packages: StagedPackage[];
+	};
+
+	const KIND_LABELS: Record<string, string> = {
+		clinical_drug: 'RxNorm drug',
+		ingredient: 'Ingredient',
+		product: 'Product',
+		package: 'Package',
+		formulary_item: 'Formulary item',
+		labeler: 'Labeler'
 	};
 
 	const EMPTY_MESSAGE =
@@ -55,10 +69,55 @@
 	let controller: AbortController | undefined;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
+	type Snapshot = {
+		query: string;
+		results: Result[];
+		staged: Staged | null;
+		sync: SyncSummary | null;
+		message: string;
+		hideExcluded: boolean;
+		open: string[];
+		loaded: [string, PackageState][];
+	};
+
+	// Keep the search, its results and expanded rows when coming back from a detail
+	// page, rather than re-running the local + live search. Only settled package
+	// fetches are kept; in-flight ones are refetched when their row is reopened.
+	export const snapshot = {
+		capture: (): Snapshot => ({
+			query,
+			results,
+			staged,
+			sync,
+			message,
+			hideExcluded,
+			open: [...open],
+			loaded: [...packageState].filter(([, state]) => state.status === 'loaded')
+		}),
+		restore: (value: Snapshot) => {
+			query = value.query;
+			results = value.results;
+			staged = value.staged;
+			sync = value.sync;
+			message = value.message;
+			hideExcluded = value.hideExcluded;
+			open.clear();
+			for (const key of value.open) open.add(key);
+			packageState.clear();
+			for (const [rxcui, state] of value.loaded) packageState.set(rxcui, state);
+			for (const key of value.open) {
+				if (!key.startsWith('c:')) continue;
+				const concept = staged?.concepts.find((c) => `c:${c.rxcui}` === key);
+				if (concept) void loadPackages(concept);
+			}
+		}
+	};
+
 	function scheduleSearch() {
 		clearTimeout(timer);
 		const term = query.trim();
 		if (!term) {
+			rememberQuery('');
 			controller?.abort();
 			results = [];
 			staged = null;
@@ -75,8 +134,17 @@
 		timer = setTimeout(() => void search(term), 350);
 	}
 
+	/** The search lives in the URL, so it can be shared, bookmarked and reopened. */
+	function rememberQuery(term: string) {
+		const url = new URL(page.url);
+		if (term) url.searchParams.set('q', term);
+		else url.searchParams.delete('q');
+		if (url.search !== page.url.search) replaceState(url, page.state);
+	}
+
 	async function search(term = query.trim()) {
 		if (!term) return;
+		rememberQuery(term);
 		controller?.abort();
 		const request = new AbortController();
 		controller = request;
@@ -297,6 +365,20 @@
 
 	const visible = (items: StagedPackage[]) =>
 		hideExcluded ? items.filter((item) => !item.exclusionReason) : items;
+	/** Veterinary-only, or no NDCs in RxNorm: nothing a formulary could add. */
+	const addable = (concept: StagedConcept) => !concept.vetOnly && concept.ndcs.length > 0;
+	const shownConcepts = $derived.by(() => {
+		const all = (staged as Staged | null)?.concepts ?? [];
+		return hideExcluded ? all.filter(addable) : all;
+	});
+	const hiddenConcepts = $derived(
+		((staged as Staged | null)?.concepts.length ?? 0) - shownConcepts.length
+	);
+	/** Counterparts not already listed as branded products. */
+	const otherCounterparts = (details: NonNullable<StagedConcept['details']>) =>
+		details.counterparts.filter(
+			(counterpart) => !details.brandedProducts.some((brand) => brand.rxcui === counterpart.rxcui)
+		);
 
 	const packageTitle = (item: StagedPackage) =>
 		packageDisplayTitle(item) ??
@@ -304,6 +386,17 @@
 		item.genericName ??
 		item.brandName ??
 		`NDC ${item.ndc}`;
+
+	onMount(() => {
+		const linked = page.url.searchParams.get('q')?.trim();
+		// After a snapshot restore the results are already back; only a fresh visit searches.
+		setTimeout(() => {
+			if (linked && !query.trim()) {
+				query = linked;
+				void search(linked);
+			}
+		});
+	});
 
 	onDestroy(() => {
 		clearTimeout(timer);
@@ -326,8 +419,8 @@
 		</p>
 		<h1>Search and import medications</h1>
 		<p>
-			Search RxNav, openFDA, and DailyMed. Fetched concepts and packages are staged for review; load
-			a concept or package to add it to RxDB's catalog and formulary.
+			Search RxNav, openFDA, and DailyMed. Results are only for review until you add a drug or a
+			package to the formulary.
 		</p>
 	</header>
 
@@ -356,16 +449,20 @@
 	{#if message}<p class="status" aria-live="polite">{message}</p>{/if}
 
 	{#if sync}
+		<!-- Counts follow the list below: the concepts on screen and the total the pager walks. -->
+		{@const shown = shownConcepts.length}
 		<section class:warning={sync.partial} class="import-status" aria-live="polite">
 			<strong
-				>Fetched {sync.concepts} clinical concept{sync.concepts === 1 ? '' : 's'} listing {sync.ndcs}
+				>Found {sync.total} clinical concept{sync.total === 1 ? '' : 's'}{shown < sync.total
+					? ` · showing ${shown}`
+					: ''}, listing {sync.ndcs}
 				NDC{sync.ndcs === 1 ? '' : 's'}{sync.packages
 					? ` and ${sync.packages} package${sync.packages === 1 ? '' : 's'}`
 					: ''}</strong
 			>
 			<span
 				>from RxNav, openFDA, and DailyMed. Expand a concept to fetch its packages. Nothing is added
-				to the formulary until you load a node.</span
+				to the formulary until you choose Add to formulary.</span
 			>
 			{#if sync.excluded}<span
 					>{sync.excluded} ineligible package{sync.excluded === 1 ? '' : 's'} found.</span
@@ -378,11 +475,13 @@
 		<div class="section-head">
 			<h2 class="section-title">Fetched from sources</h2>
 			<label class="toggle"
-				><input bind:checked={hideExcluded} type="checkbox" /> Hide ineligible packages</label
+				><input bind:checked={hideExcluded} type="checkbox" /> Hide what can't be added{hiddenConcepts
+					? ` (${hiddenConcepts} concept${hiddenConcepts === 1 ? '' : 's'} hidden)`
+					: ''}</label
 			>
 		</div>
 		<ul class="tree">
-			{#each staged.concepts as concept (concept.rxcui)}
+			{#each shownConcepts as concept (concept.rxcui)}
 				{@const key = `c:${concept.rxcui}`}
 				{@const packages = visible(concept.packages)}
 				{@const fetched = packageState.get(concept.rxcui)}
@@ -398,10 +497,10 @@
 							type="button">{open.has(key) ? '▾' : '▸'}</button
 						>
 						<div class="node-title">
-							<span class="kind">{concept.tty ?? 'concept'}</span>
+							<span class="kind" title={ttyTitle(concept.tty)}>{ttyLabel(concept.tty)}</span>
 							<h3>{concept.name}</h3>
 							<p class="meta">
-								RxCUI <span class="mono">{concept.rxcui}</span> · {fetched?.status === 'loaded'
+                                                RxCUI <RxCui rxcui={concept.rxcui} name={concept.name} />· {fetched?.status === 'loaded'
 									? `${packages.length} package${packages.length === 1 ? '' : 's'}`
 									: `${concept.ndcs.length} NDC${concept.ndcs.length === 1 ? '' : 's'}`}{concept.details && concept.details.ndcCount > concept.ndcs.length
 									? ` (of ${concept.details.ndcCount} in RxNorm)`
@@ -416,11 +515,12 @@
 							disabled={pending.has(key) || !!concept.vetOnly}
 							onclick={() => void load(key, { rxcui: concept.rxcui })}
 							type="button"
+							title={concept.loaded ? 'Fetch its packages again and update the formulary item' : undefined}
 							>{pending.has(key)
-								? 'Loading…'
+								? 'Adding…'
 								: concept.loaded
-									? 'Reload to formulary'
-									: 'Load to formulary'}</button
+									? 'Refresh'
+									: 'Add to formulary'}</button
 						>
 					</div>
 					{#if notices[key]}<p class:warning-text={!notices[key].ok} class="notice">
@@ -445,19 +545,19 @@
 									<dd>
 										{#each cd.brandedProducts as brand, i (brand.rxcui)}{i ? '; ' : ''}{brand.name}
 											<span class="mono small"
-												>{brand.tty}
-												{brand.rxcui} · {brand.ndcs.length} NDC{brand.ndcs.length === 1
+												><span title={ttyTitle(brand.tty)}>{ttyLabel(brand.tty)}</span>
+												<RxCui rxcui={brand.rxcui} name={brand.name} /> · {brand.ndcs.length} NDC{brand.ndcs.length === 1
 													? ''
 													: 's'}</span
 											>{/each}
 									</dd>
 								{/if}
-								{#each [['Ingredients', cd.ingredients], ['Brand names', cd.brands], ['Dose forms', cd.doseForms], ['Reached through', cd.parents], ['Counterparts', cd.counterparts]] as const as [label, list] (label)}
+								{#each [['Ingredients', cd.ingredients], ['Brand names', cd.brands], ['Dose forms', cd.doseForms], ['Reached through', cd.parents], ['Counterparts', otherCounterparts(cd)]] as const as [label, list] (label)}
 									{#if list.length}
 										<dt>{label}</dt>
 										<dd>
 											{#each list as rel, i (rel.rxcui)}{i ? '; ' : ''}{rel.name}
-												<span class="mono small">{rel.tty} {rel.rxcui}</span>{/each}
+												<span class="mono small"><span title={ttyTitle(rel.tty)}>{ttyLabel(rel.tty)}</span> <RxCui rxcui={rel.rxcui} name={rel.name} /></span>{/each}
 										</dd>
 									{/if}
 								{/each}
@@ -516,8 +616,8 @@
 			{#each results as result (result.id)}
 				<li>
 					<div>
-						<span class="kind">{result.kind.replace('_', ' ')}</span>
-						<h2>{result.name}</h2>
+						<span class="kind">{KIND_LABELS[result.kind] ?? result.kind.replace('_', ' ')}</span>
+						<h2>{#if result.href}<a href={result.href}>{result.name}</a>{:else}{result.name}{/if}</h2>
 					</div>
 					{#if result.detail}<p>{result.detail}</p>{/if}
 					{#if result.identifiers.length}<p class="identifiers">
@@ -569,7 +669,7 @@
 				onclick={() => void load(key, { ndc: item.ndc })}
 				title={item.exclusionReason ? `Ineligible: ${item.exclusionReason}` : undefined}
 				type="button"
-				>{pending.has(key) ? 'Loading…' : item.loaded ? 'Reload' : 'Load to formulary'}</button
+				>{pending.has(key) ? 'Adding…' : item.loaded ? 'Refresh' : 'Add to formulary'}</button
 			>
 		</div>
 		{#if notices[key]}<p class:warning-text={!notices[key].ok} class="notice">
@@ -580,13 +680,6 @@
 {/snippet}
 
 <style>
-	:global(body) {
-		margin: 0;
-		background: #f7f8fa;
-		color: #18212f;
-		font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-	}
-
 	main {
 		max-width: 1040px;
 		margin: 0 auto;

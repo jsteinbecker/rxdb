@@ -1,0 +1,24 @@
+{
+ "uuid": "6fc74751-dcd7-4fc0-b933-0864a5ed5205",
+ "substanceClass": "protein",
+ "approvalID": "1Y17CTI5SR",
+ "_name": "INSULIN HUMAN",
+ "names": [
+  {
+   "name": "INSULIN HUMAN",
+   "displayName": true
+  }
+ ],
+ "relationships": [
+  {
+   "type": "ACTIVE MOIETY",
+   "relatedSubstance": {
+    "name": "INSULIN HUMAN",
+    "approvalID": "1Y17CTI5SR"
+   }
+  }
+ ],
+ "protein": {
+  "subunits": 2
+ }
+}

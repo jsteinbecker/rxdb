@@ -13,6 +13,7 @@
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
         "lint": "prettier --check . && eslint .",
         "format": "prettier --write .",
+        "pass-along-overrides": "node scripts/pass-along-overrides.ts",
         "db:generate": "prisma generate",
         "db:migrate": "prisma migrate dev",
         "db:studio": "prisma studio",

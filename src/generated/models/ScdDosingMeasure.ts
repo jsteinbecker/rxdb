@@ -43,6 +43,7 @@ export type ScdDosingMeasureCountAggregateOutputType = {
   conceptKey: number
   mode: number
   ingredient: number
+  ingredients: number
   updatedAt: number
   _all: number
 }
@@ -66,6 +67,7 @@ export type ScdDosingMeasureCountAggregateInputType = {
   conceptKey?: true
   mode?: true
   ingredient?: true
+  ingredients?: true
   updatedAt?: true
   _all?: true
 }
@@ -146,6 +148,7 @@ export type ScdDosingMeasureGroupByOutputType = {
   conceptKey: string
   mode: string
   ingredient: string | null
+  ingredients: string[]
   updatedAt: Date
   _count: ScdDosingMeasureCountAggregateOutputType | null
   _min: ScdDosingMeasureMinAggregateOutputType | null
@@ -174,6 +177,7 @@ export type ScdDosingMeasureWhereInput = {
   conceptKey?: Prisma.StringFilter<"ScdDosingMeasure"> | string
   mode?: Prisma.StringFilter<"ScdDosingMeasure"> | string
   ingredient?: Prisma.StringNullableFilter<"ScdDosingMeasure"> | string | null
+  ingredients?: Prisma.StringNullableListFilter<"ScdDosingMeasure">
   updatedAt?: Prisma.DateTimeFilter<"ScdDosingMeasure"> | Date | string
 }
 
@@ -181,6 +185,7 @@ export type ScdDosingMeasureOrderByWithRelationInput = {
   conceptKey?: Prisma.SortOrder
   mode?: Prisma.SortOrder
   ingredient?: Prisma.SortOrderInput | Prisma.SortOrder
+  ingredients?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -191,6 +196,7 @@ export type ScdDosingMeasureWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ScdDosingMeasureWhereInput | Prisma.ScdDosingMeasureWhereInput[]
   mode?: Prisma.StringFilter<"ScdDosingMeasure"> | string
   ingredient?: Prisma.StringNullableFilter<"ScdDosingMeasure"> | string | null
+  ingredients?: Prisma.StringNullableListFilter<"ScdDosingMeasure">
   updatedAt?: Prisma.DateTimeFilter<"ScdDosingMeasure"> | Date | string
 }, "conceptKey">
 
@@ -198,6 +204,7 @@ export type ScdDosingMeasureOrderByWithAggregationInput = {
   conceptKey?: Prisma.SortOrder
   mode?: Prisma.SortOrder
   ingredient?: Prisma.SortOrderInput | Prisma.SortOrder
+  ingredients?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ScdDosingMeasureCountOrderByAggregateInput
   _max?: Prisma.ScdDosingMeasureMaxOrderByAggregateInput
@@ -211,6 +218,7 @@ export type ScdDosingMeasureScalarWhereWithAggregatesInput = {
   conceptKey?: Prisma.StringWithAggregatesFilter<"ScdDosingMeasure"> | string
   mode?: Prisma.StringWithAggregatesFilter<"ScdDosingMeasure"> | string
   ingredient?: Prisma.StringNullableWithAggregatesFilter<"ScdDosingMeasure"> | string | null
+  ingredients?: Prisma.StringNullableListFilter<"ScdDosingMeasure">
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ScdDosingMeasure"> | Date | string
 }
 
@@ -218,6 +226,7 @@ export type ScdDosingMeasureCreateInput = {
   conceptKey: string
   mode: string
   ingredient?: string | null
+  ingredients?: Prisma.ScdDosingMeasureCreateingredientsInput | string[]
   updatedAt?: Date | string
 }
 
@@ -225,6 +234,7 @@ export type ScdDosingMeasureUncheckedCreateInput = {
   conceptKey: string
   mode: string
   ingredient?: string | null
+  ingredients?: Prisma.ScdDosingMeasureCreateingredientsInput | string[]
   updatedAt?: Date | string
 }
 
@@ -232,6 +242,7 @@ export type ScdDosingMeasureUpdateInput = {
   conceptKey?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   ingredient?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredients?: Prisma.ScdDosingMeasureUpdateingredientsInput | string[]
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -239,6 +250,7 @@ export type ScdDosingMeasureUncheckedUpdateInput = {
   conceptKey?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   ingredient?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredients?: Prisma.ScdDosingMeasureUpdateingredientsInput | string[]
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -246,6 +258,7 @@ export type ScdDosingMeasureCreateManyInput = {
   conceptKey: string
   mode: string
   ingredient?: string | null
+  ingredients?: Prisma.ScdDosingMeasureCreateingredientsInput | string[]
   updatedAt?: Date | string
 }
 
@@ -253,6 +266,7 @@ export type ScdDosingMeasureUpdateManyMutationInput = {
   conceptKey?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   ingredient?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredients?: Prisma.ScdDosingMeasureUpdateingredientsInput | string[]
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -260,6 +274,7 @@ export type ScdDosingMeasureUncheckedUpdateManyInput = {
   conceptKey?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   ingredient?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredients?: Prisma.ScdDosingMeasureUpdateingredientsInput | string[]
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -267,6 +282,7 @@ export type ScdDosingMeasureCountOrderByAggregateInput = {
   conceptKey?: Prisma.SortOrder
   mode?: Prisma.SortOrder
   ingredient?: Prisma.SortOrder
+  ingredients?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -284,12 +300,22 @@ export type ScdDosingMeasureMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type ScdDosingMeasureCreateingredientsInput = {
+  set: string[]
+}
+
+export type ScdDosingMeasureUpdateingredientsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
 
 
 export type ScdDosingMeasureSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   conceptKey?: boolean
   mode?: boolean
   ingredient?: boolean
+  ingredients?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["scdDosingMeasure"]>
 
@@ -297,6 +323,7 @@ export type ScdDosingMeasureSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   conceptKey?: boolean
   mode?: boolean
   ingredient?: boolean
+  ingredients?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["scdDosingMeasure"]>
 
@@ -304,6 +331,7 @@ export type ScdDosingMeasureSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   conceptKey?: boolean
   mode?: boolean
   ingredient?: boolean
+  ingredients?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["scdDosingMeasure"]>
 
@@ -311,10 +339,11 @@ export type ScdDosingMeasureSelectScalar = {
   conceptKey?: boolean
   mode?: boolean
   ingredient?: boolean
+  ingredients?: boolean
   updatedAt?: boolean
 }
 
-export type ScdDosingMeasureOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"conceptKey" | "mode" | "ingredient" | "updatedAt", ExtArgs["result"]["scdDosingMeasure"]>
+export type ScdDosingMeasureOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"conceptKey" | "mode" | "ingredient" | "ingredients" | "updatedAt", ExtArgs["result"]["scdDosingMeasure"]>
 
 export type $ScdDosingMeasurePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ScdDosingMeasure"
@@ -323,6 +352,10 @@ export type $ScdDosingMeasurePayload<ExtArgs extends runtime.Types.Extensions.In
     conceptKey: string
     mode: string
     ingredient: string | null
+    /**
+     * For `sum`: the moiety groups summed; empty sums every ingredient.
+     */
+    ingredients: string[]
     updatedAt: Date
   }, ExtArgs["result"]["scdDosingMeasure"]>
   composites: {}
@@ -750,6 +783,7 @@ export interface ScdDosingMeasureFieldRefs {
   readonly conceptKey: Prisma.FieldRef<"ScdDosingMeasure", 'String'>
   readonly mode: Prisma.FieldRef<"ScdDosingMeasure", 'String'>
   readonly ingredient: Prisma.FieldRef<"ScdDosingMeasure", 'String'>
+  readonly ingredients: Prisma.FieldRef<"ScdDosingMeasure", 'String[]'>
   readonly updatedAt: Prisma.FieldRef<"ScdDosingMeasure", 'DateTime'>
 }
     

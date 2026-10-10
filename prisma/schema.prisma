@@ -1461,6 +1461,8 @@ model ScdDosingMeasure {
       conceptKey String   @id @map("concept_key")
       mode       String
       ingredient String?
+      /// For `sum`: the moiety groups summed; empty sums every ingredient.
+      ingredients String[] @default([])
       updatedAt  DateTime @updatedAt @map("updated_at")
 
       @@map("scd_dosing_measure")
@@ -1500,6 +1502,25 @@ model PillPhoto {
       @@map("pill_photo")
 }
 
+/// What FDA's GSRS says about one UNII: the molecular weight and active moiety
+/// the ingredient correction wizard converts strengths with. `mw` is null for
+/// substances without a structure (proteins, mixtures); `notFound` caches a
+/// UNII GSRS does not know. `raw` is the trimmed response the row was read from.
+model UniiSubstance {
+      unii        String   @id
+      name        String?
+      formula     String?
+      mw          Float?
+      moietyUnii  String?  @map("moiety_unii")
+      moietyName  String?  @map("moiety_name")
+      moietyCount Int?     @map("moiety_count")
+      notFound    Boolean  @default(false) @map("not_found")
+      raw         Json?
+      fetchedAt   DateTime @default(now()) @map("fetched_at") @db.Timestamptz(6)
+
+      @@map("unii_substance")
+}
+
 model PharmClassRule {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   scopeId       String   @map("scope_id") @db.Uuid
@@ -1516,7 +1537,7 @@ model PharmClassRule {
 
   scope Scope @relation(fields: [scopeId], references: [id])
 
-  @@index([scopeId, moietyKey])
   @@unique([scopeId, moietyKey, doseFormGroup, route, strengthKey], map: "pharm_class_rule_key")
+  @@index([scopeId, moietyKey])
   @@map("pharm_class_rule")
 }

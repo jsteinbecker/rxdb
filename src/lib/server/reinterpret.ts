@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { gsrsMoieties, prismaSubstanceTable } from './unii-substance-store';
 import { env } from '$env/dynamic/private';
 import { prisma } from '$lib/server/prisma';
 import {
@@ -54,7 +55,9 @@ export async function previewReinterpret(ndc: string, request: ReviewRequest) {
 		prefer: request.preferredSetId.trim() || null,
 		avoid: splDoubted && current.splSetId ? [current.splSetId] : []
 	};
-	const [fresh] = await enrichPackages([ndc], env.OPENFDA_API_KEY, new Map([[ndc, preference]]));
+	const [fresh] = await enrichPackages([ndc], env.OPENFDA_API_KEY, new Map([[ndc, preference]]), {
+		moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma))
+	});
 	if (!fresh) throw new Error('The sources returned nothing for this NDC.');
 
 	const merged: ExternalPackage = structuredClone({ ...current, evidence: [], splXml: null });

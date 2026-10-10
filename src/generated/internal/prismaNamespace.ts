@@ -17,7 +17,7 @@
 
 import * as runtime from "@prisma/client/runtime/client"
 import type * as Prisma from "../models.ts"
-import {type PrismaClient} from "./class.ts"
+import { type PrismaClient } from "./class.ts"
 
 export type * from '../models.ts'
 
@@ -455,7 +455,9 @@ export const ModelName = {
   OpenComponent: 'OpenComponent',
   ScdDosingMeasure: 'ScdDosingMeasure',
   PillImageLayout: 'PillImageLayout',
-  PillPhoto: 'PillPhoto'
+  PillPhoto: 'PillPhoto',
+  UniiSubstance: 'UniiSubstance',
+  PharmClassRule: 'PharmClassRule'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -471,7 +473,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4841,6 +4843,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    UniiSubstance: {
+      payload: Prisma.$UniiSubstancePayload<ExtArgs>
+      fields: Prisma.UniiSubstanceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UniiSubstanceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UniiSubstanceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>
+        }
+        findFirst: {
+          args: Prisma.UniiSubstanceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UniiSubstanceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>
+        }
+        findMany: {
+          args: Prisma.UniiSubstanceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>[]
+        }
+        create: {
+          args: Prisma.UniiSubstanceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>
+        }
+        createMany: {
+          args: Prisma.UniiSubstanceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UniiSubstanceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>[]
+        }
+        delete: {
+          args: Prisma.UniiSubstanceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>
+        }
+        update: {
+          args: Prisma.UniiSubstanceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>
+        }
+        deleteMany: {
+          args: Prisma.UniiSubstanceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UniiSubstanceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UniiSubstanceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>[]
+        }
+        upsert: {
+          args: Prisma.UniiSubstanceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UniiSubstancePayload>
+        }
+        aggregate: {
+          args: Prisma.UniiSubstanceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUniiSubstance>
+        }
+        groupBy: {
+          args: Prisma.UniiSubstanceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UniiSubstanceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UniiSubstanceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UniiSubstanceCountAggregateOutputType> | number
+        }
+      }
+    }
+    PharmClassRule: {
+      payload: Prisma.$PharmClassRulePayload<ExtArgs>
+      fields: Prisma.PharmClassRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PharmClassRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PharmClassRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>
+        }
+        findFirst: {
+          args: Prisma.PharmClassRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PharmClassRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>
+        }
+        findMany: {
+          args: Prisma.PharmClassRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>[]
+        }
+        create: {
+          args: Prisma.PharmClassRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>
+        }
+        createMany: {
+          args: Prisma.PharmClassRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PharmClassRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>[]
+        }
+        delete: {
+          args: Prisma.PharmClassRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>
+        }
+        update: {
+          args: Prisma.PharmClassRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.PharmClassRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PharmClassRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PharmClassRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.PharmClassRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PharmClassRulePayload>
+        }
+        aggregate: {
+          args: Prisma.PharmClassRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePharmClassRule>
+        }
+        groupBy: {
+          args: Prisma.PharmClassRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PharmClassRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PharmClassRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PharmClassRuleCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -5763,6 +5913,7 @@ export const ScdDosingMeasureScalarFieldEnum = {
   conceptKey: 'conceptKey',
   mode: 'mode',
   ingredient: 'ingredient',
+  ingredients: 'ingredients',
   updatedAt: 'updatedAt'
 } as const
 
@@ -5792,6 +5943,40 @@ export const PillPhotoScalarFieldEnum = {
 } as const
 
 export type PillPhotoScalarFieldEnum = (typeof PillPhotoScalarFieldEnum)[keyof typeof PillPhotoScalarFieldEnum]
+
+
+export const UniiSubstanceScalarFieldEnum = {
+  unii: 'unii',
+  name: 'name',
+  formula: 'formula',
+  mw: 'mw',
+  moietyUnii: 'moietyUnii',
+  moietyName: 'moietyName',
+  moietyCount: 'moietyCount',
+  notFound: 'notFound',
+  raw: 'raw',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type UniiSubstanceScalarFieldEnum = (typeof UniiSubstanceScalarFieldEnum)[keyof typeof UniiSubstanceScalarFieldEnum]
+
+
+export const PharmClassRuleScalarFieldEnum = {
+  id: 'id',
+  scopeId: 'scopeId',
+  moietyKey: 'moietyKey',
+  moietyNames: 'moietyNames',
+  doseFormGroup: 'doseFormGroup',
+  route: 'route',
+  strengthKey: 'strengthKey',
+  mode: 'mode',
+  classes: 'classes',
+  note: 'note',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PharmClassRuleScalarFieldEnum = (typeof PharmClassRuleScalarFieldEnum)[keyof typeof PharmClassRuleScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -6358,6 +6543,8 @@ export type GlobalOmitConfig = {
   scdDosingMeasure?: Prisma.ScdDosingMeasureOmit
   pillImageLayout?: Prisma.PillImageLayoutOmit
   pillPhoto?: Prisma.PillPhotoOmit
+  uniiSubstance?: Prisma.UniiSubstanceOmit
+  pharmClassRule?: Prisma.PharmClassRuleOmit
 }
 
 /* Types for Logging */

@@ -109,7 +109,9 @@ export const ModelName = {
   OpenComponent: 'OpenComponent',
   ScdDosingMeasure: 'ScdDosingMeasure',
   PillImageLayout: 'PillImageLayout',
-  PillPhoto: 'PillPhoto'
+  PillPhoto: 'PillPhoto',
+  UniiSubstance: 'UniiSubstance',
+  PharmClassRule: 'PharmClassRule'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1007,6 +1009,7 @@ export const ScdDosingMeasureScalarFieldEnum = {
   conceptKey: 'conceptKey',
   mode: 'mode',
   ingredient: 'ingredient',
+  ingredients: 'ingredients',
   updatedAt: 'updatedAt'
 } as const
 
@@ -1036,6 +1039,40 @@ export const PillPhotoScalarFieldEnum = {
 } as const
 
 export type PillPhotoScalarFieldEnum = (typeof PillPhotoScalarFieldEnum)[keyof typeof PillPhotoScalarFieldEnum]
+
+
+export const UniiSubstanceScalarFieldEnum = {
+  unii: 'unii',
+  name: 'name',
+  formula: 'formula',
+  mw: 'mw',
+  moietyUnii: 'moietyUnii',
+  moietyName: 'moietyName',
+  moietyCount: 'moietyCount',
+  notFound: 'notFound',
+  raw: 'raw',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type UniiSubstanceScalarFieldEnum = (typeof UniiSubstanceScalarFieldEnum)[keyof typeof UniiSubstanceScalarFieldEnum]
+
+
+export const PharmClassRuleScalarFieldEnum = {
+  id: 'id',
+  scopeId: 'scopeId',
+  moietyKey: 'moietyKey',
+  moietyNames: 'moietyNames',
+  doseFormGroup: 'doseFormGroup',
+  route: 'route',
+  strengthKey: 'strengthKey',
+  mode: 'mode',
+  classes: 'classes',
+  note: 'note',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PharmClassRuleScalarFieldEnum = (typeof PharmClassRuleScalarFieldEnum)[keyof typeof PharmClassRuleScalarFieldEnum]
 
 
 export const SortOrder = {

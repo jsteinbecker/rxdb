@@ -59,6 +59,8 @@ export interface SplSubstance {
 	name: string;
 	/** Null when the label named a substance it did not code, which happens. */
 	unii: string | null;
+	/** Set when the label omitted this moiety and GSRS supplied it. */
+	source?: 'gsrs';
 }
 
 /** One `<ingredient>` element, flattened. */
