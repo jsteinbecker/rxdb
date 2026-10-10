@@ -1,8 +1,9 @@
 import { fail } from '@sveltejs/kit';
+import { isUuid } from '$lib/pharm-class-rule-input';
 import { prisma } from '$lib/server/prisma';
 import { defaultScope } from '$lib/server/catalog-formulary';
 import {
-	countMatches,
+	countMatchesForRules,
 	deleteRule,
 	knownClasses,
 	listRules,
@@ -27,7 +28,9 @@ export const load: PageServerLoad = async () => {
 			note: rule.note
 		})),
 		// Streamed: counting matches scans the cached snapshots, so the table renders without it.
-		matches: Promise.all(rules.map((rule) => countMatches(prisma, rule))),
+		matches: countMatchesForRules(prisma, rules).then((counts) =>
+			rules.map((rule) => counts.get(rule.id) ?? { count: 0, capped: false })
+		),
 		known: knownClasses(prisma)
 	};
 };
@@ -38,6 +41,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const id = String(form.get('id') ?? '');
 		if (!id) return fail(400, { message: 'No rule chosen.' });
+		if (!isUuid(id)) return fail(404, { message: 'Rule not found.' });
 		const mode = String(form.get('mode') ?? '');
 		if (mode !== 'replace' && mode !== 'add' && mode !== 'suppress')
 			return fail(400, { message: 'Choose replace, add or hide.' });

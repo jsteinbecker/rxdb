@@ -15,3 +15,8 @@ export function normalizeRuleClasses(classes: string[], mode: string): string[] 
 /** The moiety UNIIs in a rule's `|`-joined key. */
 export const moietyUniis = (moietyKey: string): string[] =>
 	[...new Set(moietyKey.split('|').filter(Boolean))];
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Postgres rejects a malformed uuid with an error; check first so a bad id is a 404, not a 500. */
+export const isUuid = (id: string): boolean => UUID.test(id);
