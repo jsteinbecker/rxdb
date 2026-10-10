@@ -163,7 +163,7 @@
 	>
 		<h2>{editing ? 'Edit rule' : 'Assign class'}</h2>
 		<p>
-			For {editing ? editing.title : (loaded?.classKey.moietyNames ?? 'this package')}. Applies at
+			For {editing ? editing.title : (loaded?.classKey.moietyNames || 'this package')}. Applies at
 			display time; the source data is untouched.
 		</p>
 		{#if loading}

@@ -69,13 +69,14 @@ const ROUTE_GROUPS: [RegExp, string][] = [
   [/^(?:INTRAVESICAL|DENTAL|PERIODONTAL|URETERAL|URETHRAL)/i, 'other']
 ];
 
-const routeGroup = (routes: string[]): string | null => {
-  for (const route of routes) {
-    const hit = ROUTE_GROUPS.find(([pattern]) => pattern.test(route.trim()));
-    if (hit) return hit[1];
-  }
-  return null;
+/** The groups of every route, in `ROUTE_GROUPS` priority order (so the result does not depend on route order). */
+const routeGroups = (routes: string[]): string[] => {
+  const found = new Set(
+    routes.flatMap((route) => ROUTE_GROUPS.filter(([pattern]) => pattern.test(route.trim())).slice(0, 1).map(([, group]) => group))
+  );
+  return ROUTE_GROUPS.map(([, group]) => group).filter((group, i, all) => found.has(group) && all.indexOf(group) === i);
 };
+const routeGroup = (routes: string[]): string | null => routeGroups(routes)[0] ?? null;
 
 /** RxNorm-DFG-like group for an SPL dose form; the route breaks ties for forms that name no site. */
 export function doseFormGroup(doseForm: string | null, routes: string[]): string {
@@ -89,10 +90,19 @@ export function doseFormGroup(doseForm: string | null, routes: string[]): string
       // A solid dosed by another site follows that site; an injectable route for a solid (a pellet) is `other`.
       if (byRoute === null || byRoute === 'oral-liquid') return 'oral-solid';
       return byRoute === 'injectable' ? 'other' : byRoute;
-    case 'suppository':
-      return byRoute === 'vaginal' ? 'vaginal' : 'rectal';
+    case 'suppository': {
+      // Rectal when the route is rectal or unstated, vaginal by vaginal route; urethral and the like are `other`.
+      const groups = routeGroups(routes);
+      if (groups.includes('vaginal')) return 'vaginal';
+      return !groups.length || groups.includes('rectal') ? 'rectal' : 'other';
+    }
     case 'kit':
-      return byRoute && byRoute !== 'oral-liquid' ? byRoute : 'other';
+      // An injectable route wins, else the first topical-type site (not oral or unplaced), else `other`.
+      return (
+        routeGroups(routes).find((g) => g === 'injectable') ??
+        routeGroups(routes).find((g) => g !== 'oral-liquid' && g !== 'other') ??
+        'other'
+      );
     case null:
       // An oral gel/cream is not a liquid; leave it ungrouped.
       if (byRoute === 'oral-liquid' && CREAMY.test(doseForm ?? '')) return 'other';
@@ -178,10 +188,20 @@ export function packageClassKey(
   item: Pick<ExternalPackage, 'doseForm' | 'details'>
 ): PackageClassKey {
   const routes = item.details?.product?.routes ?? [];
-  const names = actives(item.details).map((ingredient) => ingredient.moieties[0]?.name ?? ingredient.name);
+  const moietyKey = moietyKeyOf(item.details);
+  // Names follow the moiety-UNII order of `moietyKey` and of the combination `strengthKey`, so a label can pair them.
+  const nameOf = new Map<string, string>();
+  for (const ingredient of actives(item.details)) {
+    const unii = moietyOf(ingredient);
+    if (unii && !nameOf.has(unii)) nameOf.set(unii, ingredient.moieties[0]?.name ?? ingredient.name);
+  }
+  const names = moietyKey
+    .split('|')
+    .filter(Boolean)
+    .map((unii) => nameOf.get(unii) ?? unii);
   return {
-    moietyKey: moietyKeyOf(item.details),
-    moietyNames: [...new Set(names)].sort().join(' / '),
+    moietyKey,
+    moietyNames: names.join(' / '),
     doseFormGroup: doseFormGroup(item.doseForm, routes),
     routes,
     strengthKey: strengthKey(

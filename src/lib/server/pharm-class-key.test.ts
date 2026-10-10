@@ -175,3 +175,30 @@ test('packageClassKey carries routes and strengths of actives', () => {
   assert.equal(key.doseFormGroup, 'injectable');
   assert.equal(key.strengthKey, '20/1 mg/mL');
 });
+
+test('doseFormGroup: urethral suppositories are not rectal', () => {
+  assert.equal(doseFormGroup('SUPPOSITORY', ['URETHRAL']), 'other');
+  assert.equal(doseFormGroup('SUPPOSITORY', ['URETHRAL', 'RECTAL']), 'rectal');
+  assert.equal(doseFormGroup('SUPPOSITORY', ['RECTAL', 'VAGINAL']), 'vaginal');
+});
+
+test('doseFormGroup: a kit does not depend on route order', () => {
+  assert.equal(doseFormGroup('KIT', ['ORAL', 'INTRAVENOUS']), 'injectable');
+  assert.equal(doseFormGroup('KIT', ['INTRAVENOUS', 'ORAL']), 'injectable');
+  assert.equal(doseFormGroup('KIT', ['TOPICAL', 'INTRAMUSCULAR']), 'injectable');
+  assert.equal(doseFormGroup('KIT', ['ORAL', 'TOPICAL']), 'topical');
+  assert.equal(doseFormGroup('KIT', ['TOPICAL', 'ORAL']), 'topical');
+  assert.equal(doseFormGroup('KIT', ['ORAL', 'DENTAL']), 'other');
+});
+
+test('moietyNames: follows moiety-UNII order and falls back to the UNIIs', () => {
+  const key = packageClassKey(
+    item([
+      { name: 'ALPHA', unii: 'U2', kind: 'active' },
+      { name: 'ZETA', unii: 'U1', kind: 'active' }
+    ])
+  );
+  assert.equal(key.moietyNames, 'ZETA / ALPHA');
+  assert.equal(packageClassKey(item(null, { uniis: ['U2', 'U1'] })).moietyNames, 'U1 / U2');
+  assert.equal(packageClassKey(item(null)).moietyNames, '');
+});

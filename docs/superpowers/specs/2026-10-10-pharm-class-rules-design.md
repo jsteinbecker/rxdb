@@ -21,10 +21,10 @@ later, with no per-NDC edits.
 ## Match key (computed per package, pure)
 | Facet | Computed from | On the rule |
 |---|---|---|
-| `moietyKey` | Active ingredients in `details.spl.ingredients` (`kind === 'active'`). Each one contributes its first moiety UNII when present, else its own UNII. The result is de-duplicated, sorted and joined with `\|`. Falls back to `details.product.uniis` when there is no SPL or it lists no active UNII. | required |
-| `doseFormGroup` | `doseFormGroup(item.doseForm, routes)`: a fixed table from SPL dose-form text to RxNorm-DFG-like groups (`injectable`, `oral-solid`, `oral-liquid`, `topical`, `ophthalmic`, `otic`, `nasal`, `inhalation`, `rectal`, `vaginal`, `transdermal`, `other`). Forms that name no site, and solids, suppositories, films and kits, take the route into account (an implant, a pellet given by injection, an oral gel, an intravesical or dental product are `other`; a suppository is `vaginal` by vaginal route, else `rectal`; a kit follows an injectable or topical-type route, else `other`; an oral film is `oral-solid`). | nullable = any |
+| `moietyKey` | Active ingredients in `details.spl.ingredients` (`kind === 'active'`). Each one contributes its first moiety UNII when present, else its own UNII. The result is de-duplicated, sorted and joined with `\|`. Falls back to `details.product.uniis` when there is no SPL or it lists no active UNII. `moietyNames` (display text) lists the moiety names in the same UNII order, falling back to the UNIIs themselves when no name is known. | required |
+| `doseFormGroup` | `doseFormGroup(item.doseForm, routes)`: a fixed table from SPL dose-form text to RxNorm-DFG-like groups (`injectable`, `oral-solid`, `oral-liquid`, `topical`, `ophthalmic`, `otic`, `nasal`, `inhalation`, `rectal`, `vaginal`, `transdermal`, `other`). Forms that name no site, and solids, suppositories, films and kits, take the route into account (an implant, a pellet given by injection, an oral gel, an intravesical or dental product are `other`; a suppository is `vaginal` if any route is vaginal, `rectal` if rectal or unstated, else `other`; a kit follows an injectable route, else the first topical-type site (any route group other than oral or unplaced), else `other`, regardless of route order; an oral film is `oral-solid`). | nullable = any |
 | `route` | `details.product.routes` (already normalized). A rule matches when its route is among the package's routes. | nullable = any |
-| `strengthKey` | Each active ingredient's `parseStrength` result, normalized (mg, mcg→mg, g→mg; per mL / per unit), reduced to an exact rational string such as `20/1 mg/mL`. A combination pairs each strength with its own moiety UNII (`MOIETY=20/1 mg/mL`), so 5/10 and 10/5 of the same pair differ; the pairs are sorted and joined with `\|`. A single active has no prefix. Null when any active strength cannot be parsed. Shown in words without the prefixes. | nullable = any |
+| `strengthKey` | Each active ingredient's `parseStrength` result, normalized (mg, mcg→mg, g→mg; per mL / per unit), reduced to an exact rational string such as `20/1 mg/mL`. A combination pairs each strength with its own moiety UNII (`MOIETY=20/1 mg/mL`), so 5/10 and 10/5 of the same pair differ; the pairs are sorted and joined with `\|`. A single active has no prefix. Null when any active strength cannot be parsed. Shown in words as `Name 5 mg + Name 10 mg`: `moietyNames` is captured in the same moiety-UNII order as the strengths, so the n-th name owns the n-th strength. | nullable = any |
 
 Salts and esters collapse because the key uses moiety UNIIs (lidocaine HCl → lidocaine). Combination products have
 their own `moietyKey`, so a single-ingredient rule never reaches a combination product.
@@ -65,9 +65,10 @@ The wrapper is split in two so the logic is testable without a database:
 - `withPharmClassRules(db, scopeId, items)` (`src/lib/server/pharm-class-view.ts`) binds it to the scope's rules, one
   query on `moiety_key IN (…)`.
 
-It is called in the two loaders that show a package's classes: the NDC page and the formulary item page. It is
-**not** applied on the root search page or `api/v1/search`, nor in `formulary-view.ts` or other API endpoints (those
-do not surface rule-resolved classes yet). It is **never** called in sync, staging, reinterpret or override paths.
+It is called in the loaders that show a package's classes (the NDC page and the formulary item page) and in the API
+responses `/api/v1/search`, `/api/v1/ndc/[ndc]` and `/api/v1/search/packages`. In `/api/v1/search` a failed rules
+lookup falls back to the source classes rather than failing the search. It is **not** applied in `formulary-view.ts`
+or other endpoints, and it is **never** called in sync, staging, reinterpret or override paths.
 
 ## UI
 - **NDC page, pharm-class block (`PackageDetail.svelte`):** each class carries a small source marker: none for a
@@ -76,10 +77,14 @@ do not surface rule-resolved classes yet). It is **never** called in sync, stagi
   - Mode: Replace / Add / Hide.
   - Classes: type-ahead over classes already seen in the cache, plus free text.
   - Scope: radio options built from this package's key (`scopeOptions`), each with a live count of matching cached
-    NDCs: *All forms* · *{form group} only* · *{form group}, {route}* · *{form group}, {route}, this strength*. Each
-    narrower option is cumulative: it keeps the facets of the one before it. The route is the package's first route
-    (the matcher accepts a rule's route when the package lists it), and the strength option needs a parseable
-    strength. The default is form group.
+    NDCs, broadest first: *All forms* · *{form group} only* · one *{form group}, {route} route only* per route the
+    package lists (`route:<ROUTE>` ids) · *{form group}[, {route}], this strength*. The strength option keeps the route
+    only when the package lists exactly one; with several routes it is "any route" (it carries no route, since the
+    matcher accepts a route-less rule and picking one would be arbitrary). It needs a parseable strength. The default
+    is form group.
+  - Known UX gap: a narrower rule made from a single-route package can also apply to a multi-route package (the
+    matcher accepts a rule's route when the package lists it) without appearing in that package's dialog, which only
+    offers its own scopes.
   - Saving upserts the rule for that exact key. When a rule for the key already exists, the dialog opens with it
     loaded, so you edit it rather than add a duplicate.
 - **`/formulary/pharm-classes`:** a table of the scope's rules (key in words, mode, classes, match count, note), with

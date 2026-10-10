@@ -23,6 +23,16 @@ export type SearchResult = {
 	identifiers: string[];
 };
 
+/** Rules only change what is displayed, so a failed lookup must not discard a successful search. */
+async function stagedWithRules(tree: Awaited<ReturnType<typeof stagedTree>>) {
+	try {
+		return await withPharmClassRulesInTree(prisma, (await defaultScope(prisma)).id, tree);
+	} catch (cause) {
+		console.error('pharm-class rules lookup failed; returning source classes', cause);
+		return tree;
+	}
+}
+
 const activeEntity = { status: 'active', retiredAt: null } as const;
 
 function requestedLimit(value: string | null): number {
@@ -83,11 +93,7 @@ export const GET: RequestHandler = async ({ url }) => {
 							: null
 					},
 					// Display classes with the scope's rules applied; staged data keeps the source's.
-					staged: await withPharmClassRulesInTree(
-						prisma,
-						(await defaultScope(prisma)).id,
-						await stagedTree(staged)
-					)
+					staged: await stagedWithRules(await stagedTree(staged))
 				}))
 				.catch((error: unknown) => ({
 					sync: {

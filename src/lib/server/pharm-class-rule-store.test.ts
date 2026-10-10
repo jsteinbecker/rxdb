@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isUuid, moietyUniis, normalizeRuleClasses, RuleInputError } from '../pharm-class-rule-input';
 import {
+	countMatches,
 	countMatchesForRules,
 	deleteRule,
 	knownClasses,
@@ -114,13 +115,18 @@ test('knownClasses shares one in-flight query and does not cache an empty result
 	resetKnownClassesCache();
 });
 
-test('countMatchesForRules scans once per distinct moiety key and counts per rule', async () => {
+test('countMatchesForRules scans once per moiety group, two at a time, and agrees with countMatches', async () => {
 	const pkg = (uniis: string[], doseForm: string) =>
 		({ ndc: '1', doseForm, details: { product: { routes: [], uniis }, spl: null } }) as never;
-	let scans = 0;
+	const scanned: string[][] = [];
+	let inFlight = 0;
+	let peak = 0;
 	const db = {
-		$queryRaw: async () => {
-			scans++;
+		$queryRaw: async (_strings: unknown, ...values: unknown[]) => {
+			scanned.push(values.find(Array.isArray) as string[]);
+			peak = Math.max(peak, ++inFlight);
+			await new Promise((resolve) => setTimeout(resolve, 5));
+			inFlight--;
 			return [
 				{ payload: { item: pkg(['A'], 'INJECTION') } },
 				{ payload: { item: pkg(['A'], 'TABLET') } }
@@ -128,12 +134,20 @@ test('countMatchesForRules scans once per distinct moiety key and counts per rul
 		}
 	};
 	const facets = { route: null, strengthKey: null };
-	const counts = await countMatchesForRules(db as never, [
+	const rules = [
 		{ id: 'r1', moietyKey: 'A', doseFormGroup: null, ...facets },
 		{ id: 'r2', moietyKey: 'A', doseFormGroup: 'injectable', ...facets },
-		{ id: 'r3', moietyKey: 'B', doseFormGroup: null, ...facets }
-	]);
-	assert.equal(scans, 2);
+		{ id: 'r3', moietyKey: 'B', doseFormGroup: null, ...facets },
+		{ id: 'r4', moietyKey: 'C|D', doseFormGroup: null, ...facets },
+		{ id: 'r5', moietyKey: 'E', doseFormGroup: null, ...facets }
+	];
+	const counts = await countMatchesForRules(db as never, rules);
+	assert.deepEqual(scanned.map((uniis) => uniis.join('|')).sort(), ['A', 'B', 'C|D', 'E']);
+	assert.ok(peak <= 2, `at most 2 scans in flight, saw ${peak}`);
 	assert.deepEqual(counts.get('r1'), { count: 2, capped: false });
 	assert.deepEqual(counts.get('r2'), { count: 1, capped: false });
+	// The mock returns moiety A packages for every scan, so a rule on another moiety matches none of them.
+	assert.deepEqual(counts.get('r3'), { count: 0, capped: false });
+	for (const rule of rules)
+		assert.deepEqual(counts.get(rule.id), await countMatches(db as never, rule), rule.id);
 });

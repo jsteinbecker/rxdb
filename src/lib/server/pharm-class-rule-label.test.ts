@@ -30,6 +30,30 @@ test('leaves out unset facets and joins combination strengths', () => {
 			route: 'ORAL',
 			strengthKey: 'UA=5/1 mg/1|UB=1/2 g/mL'
 		}),
-		'A / B · Oral solid · Oral · 5 mg + 0.5 g/mL'
+		'A / B · Oral solid · Oral · A 5 mg + B 0.5 g/mL'
+	);
+});
+
+test('pairs combination strengths with names in moiety-UNII order, not name order', () => {
+	assert.equal(
+		ruleKeyText({
+			moietyNames: 'Zeta / Alpha',
+			doseFormGroup: null,
+			route: null,
+			strengthKey: 'U1=5/1 mg/1|U2=10/1 mg/1'
+		}),
+		'Zeta / Alpha · Zeta 5 mg + Alpha 10 mg'
+	);
+});
+
+test('claims no pairing when the name count does not match', () => {
+	assert.equal(
+		ruleKeyText({
+			moietyNames: 'Only',
+			doseFormGroup: null,
+			route: null,
+			strengthKey: 'U1=5/1 mg/1|U2=10/1 mg/1'
+		}),
+		'Only · 5 mg + 10 mg'
 	);
 });
