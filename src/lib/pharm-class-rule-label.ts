@@ -5,14 +5,19 @@ type RuleKey = {
 	strengthKey: string | null;
 };
 
-/** `20/1 mg/mL` reads as `20 mg/mL`; several actives join with ` + `. */
+/**
+ * `20/1 mg/mL` reads as `20 mg/mL` and `5/1 mg/1` as `5 mg`; a combination key's `MOIETY=` prefixes are
+ * dropped and the actives join with ` + `.
+ */
 function strengthText(strengthKey: string): string {
 	return strengthKey
 		.split('|')
-		.map((part) => {
+		.map((entry) => {
+			const part = entry.replace(/^[^=]*=/, '');
 			const match = /^(\d+)\/(\d+) (.+)$/.exec(part);
 			if (!match) return part;
-			const [, num, den, unit] = match;
+			const [, num, den, rawUnit] = match;
+			const unit = rawUnit.replace(/\/1$/, '');
 			const value = Number(num) / Number(den);
 			return `${Number.isInteger(value) ? value : Number(value.toPrecision(6))} ${unit}`;
 		})

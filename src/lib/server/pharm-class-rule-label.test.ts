@@ -12,6 +12,10 @@ test('spells out each facet that is set', () => {
 		}),
 		'Lidocaine · Injectable · 20 mg/mL'
 	);
+	assert.equal(
+		ruleKeyText({ moietyNames: 'A', doseFormGroup: null, route: null, strengthKey: '1/2 mg/1' }),
+		'A · 0.5 mg'
+	);
 });
 
 test('leaves out unset facets and joins combination strengths', () => {
@@ -24,8 +28,8 @@ test('leaves out unset facets and joins combination strengths', () => {
 			moietyNames: 'A / B',
 			doseFormGroup: 'oral-solid',
 			route: 'ORAL',
-			strengthKey: '5/1 mg|1/2 g'
+			strengthKey: 'UA=5/1 mg/1|UB=1/2 g/mL'
 		}),
-		'A / B · Oral solid · Oral · 5 mg + 0.5 g'
+		'A / B · Oral solid · Oral · 5 mg + 0.5 g/mL'
 	);
 });

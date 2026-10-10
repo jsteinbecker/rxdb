@@ -21,10 +21,10 @@ later, with no per-NDC edits.
 ## Match key (computed per package, pure)
 | Facet | Computed from | On the rule |
 |---|---|---|
-| `moietyKey` | Active ingredients in `details.spl.ingredients` (`kind === 'active'`). Each one contributes its first moiety UNII when present, else its own UNII. The result is de-duplicated, sorted and joined with `\|`. Falls back to `details.product.uniis` when there is no SPL. | required |
-| `doseFormGroup` | `doseFormGroup(item.doseForm)`: a fixed table from SPL dose-form text to RxNorm-DFG-like groups (`injectable`, `oral-solid`, `oral-liquid`, `topical`, `ophthalmic`, `otic`, `nasal`, `inhalation`, `rectal`, `vaginal`, `transdermal`, `other`) | nullable = any |
+| `moietyKey` | Active ingredients in `details.spl.ingredients` (`kind === 'active'`). Each one contributes its first moiety UNII when present, else its own UNII. The result is de-duplicated, sorted and joined with `\|`. Falls back to `details.product.uniis` when there is no SPL or it lists no active UNII. | required |
+| `doseFormGroup` | `doseFormGroup(item.doseForm, routes)`: a fixed table from SPL dose-form text to RxNorm-DFG-like groups (`injectable`, `oral-solid`, `oral-liquid`, `topical`, `ophthalmic`, `otic`, `nasal`, `inhalation`, `rectal`, `vaginal`, `transdermal`, `other`). Forms that name no site, and solids, suppositories, films and kits, take the route into account (an implant, a pellet given by injection, an oral gel, an intravesical or dental product are `other`; a suppository is `vaginal` by vaginal route, else `rectal`; a kit follows an injectable or topical-type route, else `other`; an oral film is `oral-solid`). | nullable = any |
 | `route` | `details.product.routes` (already normalized). A rule matches when its route is among the package's routes. | nullable = any |
-| `strengthKey` | Each active ingredient's `parseStrength` result, normalized (mg, mcg→mg, g→mg; per mL / per unit), reduced to an exact rational string such as `20/1 mg/mL`. Per-ingredient values are sorted and joined. Null when any active strength cannot be parsed. | nullable = any |
+| `strengthKey` | Each active ingredient's `parseStrength` result, normalized (mg, mcg→mg, g→mg; per mL / per unit), reduced to an exact rational string such as `20/1 mg/mL`. A combination pairs each strength with its own moiety UNII (`MOIETY=20/1 mg/mL`), so 5/10 and 10/5 of the same pair differ; the pairs are sorted and joined with `\|`. A single active has no prefix. Null when any active strength cannot be parsed. Shown in words without the prefixes. | nullable = any |
 
 Salts and esters collapse because the key uses moiety UNIIs (lidocaine HCl → lidocaine). Combination products have
 their own `moietyKey`, so a single-ingredient rule never reaches a combination product.
@@ -35,7 +35,7 @@ A package whose `moietyKey` is empty (no active UNIIs) matches no rule.
 `pharm_class_rule`: `id`, `scope_id` (FK), `moiety_key`, `moiety_names` (display text captured when the rule was made),
 `dose_form_group` (nullable), `route` (nullable), `strength_key` (nullable), `mode` (`replace` | `add` | `suppress`),
 `classes` (text[]), `note` (nullable), `created_at`, `updated_at`.
-Unique on `(scope_id, moiety_key, dose_form_group, route, strength_key)`, which needs `NULLS NOT DISTINCT` (PG 15+;
+Rule ids are checked as UUIDs before any lookup, so a malformed id is a 404. A save that loses a race on the unique key retries once as an update of the winning row. Unique on `(scope_id, moiety_key, dose_form_group, route, strength_key)`, which needs `NULLS NOT DISTINCT` (PG 15+;
 raw SQL in the migration, because Prisma cannot express it). Indexed on `(scope_id, moiety_key)`. One migration.
 
 Class strings follow openFDA's format, `Name [EPC|MoA|PE|CS]`. A class without a suffix is stored as given and shown
@@ -90,7 +90,9 @@ do not surface rule-resolved classes yet). It is **never** called in sync, stagi
 ## Match counts
 `countMatches(db, key)` uses the cache: the latest completed snapshots that carry every UNII in the rule's key, either
 in `details.product.uniis` or as an SPL ingredient UNII or moiety UNII (`details.spl.ingredients`), are pre-filtered
-in SQL, then confirmed with the pure matcher, capped at 2000 rows. The count is a guide, not a guarantee, because NDCs not cached yet will also match later.
+in SQL, then confirmed with the pure matcher, read in NDC order and capped at 2000 rows. `capped` is true whenever that row limit was hit, and the count is then a lower bound. The count is a guide, not a guarantee, because NDCs not cached yet will also match later.
+
+The rules list uses `countMatchesForRules(db, rules)` instead: one scan per distinct moiety key (rules that share a key share the scan), two scans at a time, returning counts keyed by rule id. The NDC dialog keeps `countMatches`.
 
 ## Testing
 - `node:test` unit tests for the key functions:
@@ -105,8 +107,11 @@ in SQL, then confirmed with the pure matcher, capped at 2000 rows. The count is 
   - suppress
   - combination isolation
   - no rules → source unchanged
-- Dev-server check: create a lidocaine injectable rule, then confirm that a matching NDC and a lidocaine topical NDC
-  differ.
+- Dev-server check: pick any moiety in the cache that has both a single-ingredient product and a combination product
+  (the dev cache has no lidocaine; ampicillin has plenty of single products). Create a form-group rule for the single
+  moiety, then confirm the single product shows the rule's classes, a combination product of the same moiety does not,
+  and a product of the same moiety in another dose-form group does not. Also compare the match count on the NDC dialog
+  with the one on `/formulary/pharm-classes`; they must agree.
 
 ## Out of scope (follow-ups)
 - Suggested rules from disagreement between NDCs (a `ReviewItem` when openFDA EPC differs across one moiety key and
