@@ -1,4 +1,5 @@
 import { withoutUnspecified } from '../spl-ingredients';
+import { parseStrength } from '../strength';
 import { createHash } from 'node:crypto';
 import type { Prisma, PrismaClient } from '../../generated/client';
 import type { ExternalPackage, RxConcept, SourcePayload } from './catalog-providers';
@@ -243,28 +244,7 @@ async function namedEntity(db: Db, type: 'ingredient' | 'labeler', rawName: stri
 	return entity.id;
 }
 
-/** Reject unrecognized strength syntax rather than partially parsing it. */
-export function parseStrength(value: string | null) {
-	const match = value?.match(
-		/^\s*(\d+(?:\.\d+)?|\.\d+)\s*([a-zA-Z%][a-zA-Z0-9%]*)\s*(?:(?:\/|per)\s*(\d+(?:\.\d+)?|\.\d+)?\s*([a-zA-Z][a-zA-Z0-9]*)?)?\s*$/i
-	);
-	if (!match) return null;
-	const numerator = Number(match[1]);
-	const denominator = Number(match[3] ?? 1);
-	if (
-		!Number.isFinite(numerator) ||
-		!Number.isFinite(denominator) ||
-		!(numerator > 0) ||
-		!(denominator > 0)
-	)
-		return null;
-	return {
-		strengthNumMag: numerator,
-		strengthNumUom: match[2],
-		strengthDenMag: denominator,
-		strengthDenUom: match[4] ?? '1'
-	};
-}
+export { parseStrength };
 
 async function persistProduct(db: Db, item: ExternalPackage, existingProductId?: string) {
 	await namespace(db, 'openfda_product_ndc', 'product');
