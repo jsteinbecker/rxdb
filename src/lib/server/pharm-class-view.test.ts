@@ -53,3 +53,30 @@ test('skips the query when no item has a moiety key', async () => {
   });
   assert.deepEqual(out, [bare, noKey]);
 });
+
+test('a staged tree is resolved with one rules query and keeps its shape', async () => {
+  const { withPharmClassRulesInTree } = await import('./pharm-class-view');
+  const tree = {
+    scope: { id: 's' },
+    concepts: [
+      { rxcui: '1', packages: [item('U1', ['Old [EPC]']), item('U2', ['Keep [EPC]'])] },
+      { rxcui: '2', packages: [] as never[] }
+    ],
+    packages: [item('U1', ['Old [EPC]'])]
+  };
+  let calls = 0;
+  const out = (await withPharmClassRulesInTree({} as never, 's', tree as never, async (_db, _scope, keys) => {
+    calls++;
+    assert.deepEqual([...keys].sort(), ['U1', 'U2']);
+    return [rule];
+  })) as any;
+  assert.equal(calls, 1);
+  assert.equal(out.scope.id, 's');
+  assert.equal(out.concepts[0].rxcui, '1');
+  assert.deepEqual(out.concepts[0].packages[0].details.product.pharmClasses, ['New [EPC]']);
+  assert.deepEqual(out.concepts[0].packages[1].details.product.pharmClasses, ['Keep [EPC]']);
+  assert.equal(out.concepts[1].packages.length, 0);
+  assert.deepEqual(out.packages[0].details.product.pharmClasses, ['New [EPC]']);
+  // The input tree is not mutated.
+  assert.deepEqual((tree.packages[0] as any).details.product.pharmClasses, ['Old [EPC]']);
+});

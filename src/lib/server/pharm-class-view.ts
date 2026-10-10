@@ -16,3 +16,31 @@ export function withPharmClassRules<T extends Pick<ExternalPackage, 'doseForm' |
 ): Promise<T[]> {
   return applyPharmClassRules(items, (keys) => loadRules(db, scopeId, keys));
 }
+
+type Resolvable = Pick<ExternalPackage, 'doseForm' | 'details'>;
+
+/**
+ * `withPharmClassRules` for a staged tree (concepts holding packages, plus loose packages): every
+ * package is resolved in ONE rules query and put back where it came from. Response side only.
+ */
+export async function withPharmClassRulesInTree<
+  P extends Resolvable,
+  Tree extends { concepts: { packages: P[] }[]; packages: P[] }
+>(
+  db: PrismaClient,
+  scopeId: string,
+  tree: Tree,
+  loadRules?: (db: PrismaClient, scopeId: string, moietyKeys: string[]) => Promise<PharmClassRule[]>
+): Promise<Tree> {
+  const flat = [...tree.concepts.flatMap((concept) => concept.packages), ...tree.packages];
+  const resolved = await withPharmClassRules(db, scopeId, flat, loadRules);
+  let next = 0;
+  return {
+    ...tree,
+    concepts: tree.concepts.map((concept) => ({
+      ...concept,
+      packages: concept.packages.map(() => resolved[next++])
+    })),
+    packages: tree.packages.map(() => resolved[next++])
+  };
+}

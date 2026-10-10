@@ -3,6 +3,8 @@ import { naturalCompare } from '$lib/natural-sort';
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { stagedTree, syncExternalSearch } from '$lib/server/catalog-sync';
+import { defaultScope } from '$lib/server/catalog-formulary';
+import { withPharmClassRulesInTree } from '$lib/server/pharm-class-view';
 import type { RequestHandler } from './$types';
 
 const DEFAULT_LIMIT = 24;
@@ -80,7 +82,12 @@ export const GET: RequestHandler = async ({ url }) => {
 							? 'Some providers were unavailable; known values were preserved.'
 							: null
 					},
-					staged: await stagedTree(staged)
+					// Display classes with the scope's rules applied; staged data keeps the source's.
+					staged: await withPharmClassRulesInTree(
+						prisma,
+						(await defaultScope(prisma)).id,
+						await stagedTree(staged)
+					)
 				}))
 				.catch((error: unknown) => ({
 					sync: {
