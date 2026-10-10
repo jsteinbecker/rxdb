@@ -11,16 +11,21 @@ export type PharmClassRule = {
 };
 
 export function ruleMatches(rule: PharmClassRule, key: PackageClassKey): boolean {
-  if (rule.moietyKey !== key.moietyKey) return false;
+  if (!key.moietyKey || rule.moietyKey !== key.moietyKey) return false;
   if (rule.doseFormGroup !== null && rule.doseFormGroup !== key.doseFormGroup) return false;
   if (rule.route !== null && !key.routes.includes(rule.route)) return false;
   if (rule.strengthKey !== null && rule.strengthKey !== key.strengthKey) return false;
   return true;
 }
 
-/** strength 4 + route 2 + form 1 */
+/**
+ * Sort key: number of non-null facets first (x8), then the weighted facet sum
+ * (strength 4 + route 2 + form 1) as tie-break. The weighted sum is at most 7, so it never outranks a facet.
+ */
 export function specificity(rule: PharmClassRule): number {
-  return (rule.strengthKey !== null ? 4 : 0) + (rule.route !== null ? 2 : 0) + (rule.doseFormGroup !== null ? 1 : 0);
+  const facets = [rule.strengthKey !== null, rule.route !== null, rule.doseFormGroup !== null];
+  const count = facets.filter(Boolean).length;
+  return count * 8 + (facets[0] ? 4 : 0) + (facets[1] ? 2 : 0) + (facets[2] ? 1 : 0);
 }
 
 export function resolvePharmClasses(

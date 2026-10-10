@@ -92,3 +92,17 @@ test('a strength rule never matches a null strengthKey', () => {
   ]);
   assert.deepEqual(out.classes, ['S']);
 });
+
+test('more facets win over a heavier single facet', () => {
+  const out = resolvePharmClasses(['S'], key, [
+    rule('r', { route: 'ORAL', doseFormGroup: 'oral-solid', classes: ['RF'] }),
+    rule('s', { strengthKey: '5/1 mg/1', classes: ['ST'] })
+  ]);
+  assert.deepEqual(out.classes, ['RF']);
+});
+
+test('an empty moietyKey matches no rule', () => {
+  const out = resolvePharmClasses(['S'], { ...key, moietyKey: '' }, [rule('a', { moietyKey: '', classes: ['A'] })]);
+  assert.deepEqual(out.classes, ['S']);
+  assert.deepEqual(out.applied, []);
+});
