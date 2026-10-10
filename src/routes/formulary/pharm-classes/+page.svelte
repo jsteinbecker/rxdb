@@ -44,8 +44,10 @@
 		</p>
 	</header>
 
-	{#if form?.message}
+	{#if form?.action === 'pharmClassRuleDelete' && form.message}
 		<p class="notice error" role="alert">{form.message}</p>
+	{:else if form?.notice}
+		<p class="notice" role="status">{form.notice}</p>
 	{/if}
 
 	{#if !data.rules.length}
@@ -101,7 +103,15 @@
 								{#if menuFor === rule.id}
 									<div class="menu" role="menu">
 										<button type="button" role="menuitem" onclick={() => edit(rule)}>Edit</button>
-										<form method="POST" action="?/pharmClassRuleDelete" use:enhance>
+										<form
+											method="POST"
+											action="?/pharmClassRuleDelete"
+											use:enhance={({ cancel }) => {
+												if (data.settings.confirmRemove && !confirm('Delete this rule?'))
+													return cancel();
+												menuFor = null;
+											}}
+										>
 											<input type="hidden" name="id" value={rule.id} />
 											<button class="danger" role="menuitem">Delete</button>
 										</form>
@@ -116,7 +126,14 @@
 	{/if}
 </main>
 
-<PharmClassRuleDialog bind:this={dialog} known={data.known} message={form?.message ?? null} />
+<PharmClassRuleDialog
+	bind:this={dialog}
+	known={data.known}
+	confirmRemove={data.settings.confirmRemove}
+	message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete'
+		? form.message
+		: null}
+/>
 
 <style>
 	main {
@@ -153,6 +170,11 @@
 	.notice {
 		border-radius: 0.55rem;
 		padding: 0.6rem 0.85rem;
+	}
+
+	.notice:not(.error) {
+		background: #eef3fa;
+		color: #3464a5;
 	}
 
 	.notice.error {

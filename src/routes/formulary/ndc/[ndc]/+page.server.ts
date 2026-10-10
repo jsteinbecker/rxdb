@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, isHttpError } from '@sveltejs/kit';
 import { toNdc11 } from '$lib/ndc';
 import { prisma } from '$lib/server/prisma';
 import { quantifiedScdName } from '$lib/quantified-scd';
@@ -7,6 +7,7 @@ import { defaultScope, unlinkPackage } from '$lib/server/catalog-formulary';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
 import { packageClassKey } from '$lib/pharm-class-key';
 import { scopeOptions } from '$lib/pharm-class-scope-options';
+import { parseSettings } from '$lib/settings';
 import {
 	countMatches,
 	deleteRule,
@@ -69,10 +70,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		id: formularyItem.id,
 		displayName: quantifiedScdName(formularyItem.displayName)
 	}));
-	const scopeId = (await defaultScope(prisma)).id;
+	const scope = await defaultScope(prisma);
+	const scopeId = scope.id;
 	const [shown] = await withPharmClassRules(prisma, scopeId, packages.slice(0, 1));
 	return {
 		item: shown,
+		confirmRemove: parseSettings(scope.settings).confirmRemove,
 		// Streamed: counting matches scans the cached snapshots.
 		pharmClassRules: pharmClassRulesFor(scopeId, item),
 		equivalents,
@@ -91,13 +94,26 @@ async function pharmClassRulesFor(
 ) {
 	const classKey = packageClassKey(item);
 	const options = scopeOptions(classKey);
-	if (!options.length) return { classKey, scopes: [], known: [] };
+	if (!options.length) return { classKey, scopes: [], known: [], degraded: false };
+	// Counts and type-ahead names are conveniences: a failure falls back to empty rather than
+	// rejecting the whole stream. Only the existing-rule lookup is required.
+	let degraded = false;
+	const soft = <T>(value: Promise<T>, fallback: T) =>
+		value.catch(() => {
+			degraded = true;
+			return fallback;
+		});
 	const [rules, counts, known] = await Promise.all([
 		rulesForKeys(prisma, scopeId, [classKey.moietyKey]),
 		Promise.all(
-			options.map((option) => countMatches(prisma, { moietyKey: classKey.moietyKey, ...option }))
+			options.map((option) =>
+				soft(countMatches(prisma, { moietyKey: classKey.moietyKey, ...option }), {
+					count: 0,
+					capped: false
+				})
+			)
 		),
-		knownClasses(prisma)
+		soft(knownClasses(prisma), [] as string[])
 	]);
 	const scopes = options.map((option, index) => {
 		const rule = rules.find(
@@ -114,7 +130,7 @@ async function pharmClassRulesFor(
 				: null
 		};
 	});
-	return { classKey, scopes, known };
+	return { classKey, scopes, known, degraded };
 }
 
 async function pillMediaFor(
@@ -263,16 +279,16 @@ export const actions: Actions = {
 	/** Upserts the rule for the chosen scope of this package's own key (never a client-supplied key). */
 	pharmClassRule: async ({ params, request }) => {
 		const ndc = toNdc11(params.ndc);
-		if (!ndc) return fail(400, { message: 'Invalid NDC.' });
+		if (!ndc) return fail(400, { action: 'pharmClassRule', message: 'Invalid NDC.' });
 		const form = await request.formData();
 		const [item] = await syncExternalPackages([ndc]);
-		if (!item) return fail(404, { message: 'No package data available.' });
+		if (!item) return fail(404, { action: 'pharmClassRule', message: 'No package data available.' });
 		const classKey = packageClassKey(item);
 		const option = scopeOptions(classKey).find((candidate) => candidate.id === form.get('scope'));
-		if (!option) return fail(400, { message: 'Choose where the rule applies.' });
+		if (!option) return fail(400, { action: 'pharmClassRule', message: 'Choose where the rule applies.' });
 		const mode = String(form.get('mode') ?? '');
 		if (mode !== 'replace' && mode !== 'add' && mode !== 'suppress')
-			return fail(400, { message: 'Choose replace, add or hide.' });
+			return fail(400, { action: 'pharmClassRule', message: 'Choose replace, add or hide.' });
 		try {
 			await upsertRule(prisma, (await defaultScope(prisma)).id, {
 				moietyKey: classKey.moietyKey,
@@ -286,14 +302,22 @@ export const actions: Actions = {
 			});
 			return { pharmClassRuleSaved: true };
 		} catch (cause) {
-			if (cause instanceof RuleInputError) return fail(400, { message: cause.message });
+			if (cause instanceof RuleInputError) return fail(400, { action: 'pharmClassRule', message: cause.message });
 			throw cause;
 		}
 	},
 	pharmClassRuleDelete: async ({ request }) => {
 		const id = String((await request.formData()).get('id') ?? '');
-		if (!id) return fail(400, { message: 'No rule chosen.' });
-		await deleteRule(prisma, (await defaultScope(prisma)).id, id);
+		if (!id) return fail(400, { action: 'pharmClassRuleDelete', message: 'No rule chosen.' });
+		try {
+			await deleteRule(prisma, (await defaultScope(prisma)).id, id);
+		} catch (cause) {
+			// Unknown, malformed or other-scope ids keep their 404 status, but as a message the
+			// dialog can show, not an error page (the rule may simply have been deleted already).
+			if (isHttpError(cause, 404))
+				return fail(404, { action: 'pharmClassRuleDelete', message: 'Rule not found; it may already be deleted.' });
+			throw cause;
+		}
 		return { pharmClassRuleSaved: true };
 	},
 	apply: async ({ params, request }) => {

@@ -1,7 +1,8 @@
-import { fail } from '@sveltejs/kit';
+import { fail, isHttpError } from '@sveltejs/kit';
 import { isUuid } from '$lib/pharm-class-rule-input';
 import { prisma } from '$lib/server/prisma';
 import { defaultScope } from '$lib/server/catalog-formulary';
+import { parseSettings } from '$lib/settings';
 import {
 	countMatchesForRules,
 	deleteRule,
@@ -17,6 +18,7 @@ export const load: PageServerLoad = async () => {
 	const rules = await listRules(prisma, scope.id);
 	return {
 		scope: { id: scope.id, name: scope.name },
+		settings: parseSettings(scope.settings),
 		rules: rules.map((rule) => ({
 			id: rule.id,
 			moietyNames: rule.moietyNames,
@@ -40,14 +42,14 @@ export const actions: Actions = {
 	pharmClassRule: async ({ request }) => {
 		const form = await request.formData();
 		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { message: 'No rule chosen.' });
-		if (!isUuid(id)) return fail(404, { message: 'Rule not found.' });
+		if (!id) return fail(400, { action: 'pharmClassRule', message: 'No rule chosen.' });
+		if (!isUuid(id)) return fail(404, { action: 'pharmClassRule', message: 'Rule not found.' });
 		const mode = String(form.get('mode') ?? '');
 		if (mode !== 'replace' && mode !== 'add' && mode !== 'suppress')
-			return fail(400, { message: 'Choose replace, add or hide.' });
+			return fail(400, { action: 'pharmClassRule', message: 'Choose replace, add or hide.' });
 		const scopeId = (await defaultScope(prisma)).id;
 		const rule = await prisma.pharmClassRule.findFirst({ where: { id, scopeId } });
-		if (!rule) return fail(404, { message: 'Rule not found.' });
+		if (!rule) return fail(404, { action: 'pharmClassRule', message: 'Rule not found.' });
 		try {
 			await upsertRule(prisma, scopeId, {
 				moietyKey: rule.moietyKey,
@@ -61,14 +63,21 @@ export const actions: Actions = {
 			});
 			return { pharmClassRuleSaved: true };
 		} catch (cause) {
-			if (cause instanceof RuleInputError) return fail(400, { message: cause.message });
+			if (cause instanceof RuleInputError) return fail(400, { action: 'pharmClassRule', message: cause.message });
 			throw cause;
 		}
 	},
 	pharmClassRuleDelete: async ({ request }) => {
 		const id = String((await request.formData()).get('id') ?? '');
-		if (!id) return fail(400, { message: 'No rule chosen.' });
-		await deleteRule(prisma, (await defaultScope(prisma)).id, id);
+		if (!id) return fail(400, { action: 'pharmClassRuleDelete', message: 'No rule chosen.' });
+		try {
+			await deleteRule(prisma, (await defaultScope(prisma)).id, id);
+		} catch (cause) {
+			// A stale list (the rule is already gone) is not an error: the refreshed list shows the outcome.
+			if (isHttpError(cause, 404))
+				return { pharmClassRuleSaved: true, notice: 'That rule was already deleted.' };
+			throw cause;
+		}
 		return { pharmClassRuleSaved: true };
 	}
 };

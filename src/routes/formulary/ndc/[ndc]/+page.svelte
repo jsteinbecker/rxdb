@@ -108,7 +108,7 @@
                   {/key}
             {/if}
       </div>
-      <PharmClassRuleDialog bind:this={pharmClassRule} rules={data.pharmClassRules} message={form?.message ?? null}/>
+      <PharmClassRuleDialog bind:this={pharmClassRule} rules={data.pharmClassRules} confirmRemove={data.confirmRemove} message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete' ? form.message : null}/>
       <ReinterpretDialog bind:this={reinterpret} {item}/>
 </main>
 
