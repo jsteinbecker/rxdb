@@ -390,6 +390,7 @@
 	<header>
 		<p class="eyebrow">
 			<a href={resolve('/')}>RxDB</a> / Formulary · <a href={resolve('/formulary/items')}>Manage loaded items →</a> ·
+			<a href={resolve('/formulary/pharm-classes')}>Class rules</a> ·
 			<a href={resolve('/compounds')}>Compounds</a> ·
 			<a href={resolve('/settings')}>Settings</a>
 		</p>

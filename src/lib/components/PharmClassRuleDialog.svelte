@@ -14,10 +14,14 @@
 	};
 
 	let {
-		rules,
+		rules = null,
+		known = [],
 		message = null
 	}: {
-		rules: Promise<Rules> | Rules;
+		/** The scope choices for assigning a class; omit when only editing existing rules. */
+		rules?: Promise<Rules> | Rules | null;
+		/** Type-ahead names when there are no `rules`. */
+		known?: Promise<string[]> | string[];
 		/** A validation failure from the last form action. */
 		message?: string | null;
 	} = $props();
@@ -31,6 +35,8 @@
 	let ruleId = $state('');
 	// True while a save is in flight.
 	let pending = $state(false);
+	// Set while editing an existing rule: its key is fixed, so the scope picker is hidden.
+	let editing = $state<{ id: string; title: string } | null>(null);
 
 	function load(scopes: Scope[], id: ScopeOption['id']) {
 		scope = id;
@@ -42,8 +48,28 @@
 		note = rule.note;
 	}
 
+	/** Edit an existing rule; only its mode, classes and note can change. */
+	export function edit(rule: {
+		id: string;
+		title: string;
+		mode: 'replace' | 'add' | 'suppress';
+		classes: string[];
+		note: string | null;
+	}) {
+		editing = { id: rule.id, title: rule.title };
+		ruleId = rule.id;
+		draft = '';
+		mode = rule.mode;
+		classes = [...rule.classes];
+		note = rule.note ?? '';
+		pending = false;
+		dialog.showModal();
+	}
+
 	export async function open() {
 		const loaded = await rules;
+		if (!loaded) return;
+		editing = null;
 		draft = '';
 		classes = [];
 		note = '';
@@ -78,8 +104,11 @@
 				};
 			}}
 		>
-			<h2>Assign class</h2>
-			<p>For {loaded.classKey.moietyNames}. Applies at display time; the source data is untouched.</p>
+			<h2>{editing ? 'Edit rule' : 'Assign class'}</h2>
+			<p>
+				For {editing ? editing.title : loaded?.classKey.moietyNames}. Applies at display time; the
+				source data is untouched.
+			</p>
 			<fieldset class="modes">
 				<legend>Mode</legend>
 				<label><input type="radio" name="mode" value="replace" bind:group={mode} /> Replace</label>
@@ -119,25 +148,29 @@
 					onchange={commit}
 				/>
 				<datalist id="pharm-class-known">
-					{#each loaded.known as name (name)}<option value={name}></option>{/each}
+					{#await loaded?.known ?? known then names}
+						{#each names as name (name)}<option value={name}></option>{/each}
+					{/await}
 				</datalist>
 			</div>
-			<fieldset class="scopes">
-				<legend>Applies to</legend>
-				{#each loaded.scopes as option (option.id)}
-					<label>
-						<input
-							type="radio"
-							name="scope"
-							value={option.id}
-							checked={scope === option.id}
-							onchange={() => load(loaded.scopes, option.id)}
-						/>
-						{option.label}
-						<span class="count">{countText(option)}{option.rule ? ' · has a rule' : ''}</span>
-					</label>
-				{/each}
-			</fieldset>
+			{#if !editing && loaded}
+				<fieldset class="scopes">
+					<legend>Applies to</legend>
+					{#each loaded.scopes as option (option.id)}
+						<label>
+							<input
+								type="radio"
+								name="scope"
+								value={option.id}
+								checked={scope === option.id}
+								onchange={() => load(loaded.scopes, option.id)}
+							/>
+							{option.label}
+							<span class="count">{countText(option)}{option.rule ? ' · has a rule' : ''}</span>
+						</label>
+					{/each}
+				</fieldset>
+			{/if}
 			<div class="field">
 				<label for="pharm-class-note">Note</label>
 				<textarea id="pharm-class-note" name="note" rows="2" maxlength="500" bind:value={note}></textarea>
