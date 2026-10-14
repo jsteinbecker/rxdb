@@ -78,7 +78,11 @@ export const actions: Actions = {
 			if (refused) return fail(refused.status, { action: 'localConceptSupersede', message: refused.message });
 			const concept = concepts.find((c) => c.id === id)!;
 			if (concept.supersedes)
-				throw new LocalConceptInputError('This concept has a supersede mapping already; use Supersede again.');
+				throw new LocalConceptInputError(
+					concept.supersedes.active
+						? 'This concept is already superseding.'
+						: 'This concept superseded an RxNorm concept before; use Supersede again.'
+				);
 			const ndc = editNdc(concept.evidence.ndc);
 			if (!ndc)
 				throw new LocalConceptInputError('No evidence NDC was recorded for this concept, so its RxNorm SCD is unknown.');
