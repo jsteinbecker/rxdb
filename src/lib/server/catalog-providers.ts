@@ -3,6 +3,7 @@ import { balanceIon, ionDisplayName } from '../ions';
 import { naturalCompare } from '../natural-sort';
 import { type PackageFacts, parsePackageFacts } from './catalog-facts';
 import type { PropertyOverride } from '../property-override-fields';
+import type { LocalConceptView } from '../local-concept-view';
 import { hyphenCandidates, labelerCandidates, toNdc11 } from '../ndc';
 import {
 	ingredientKeyOf,
@@ -166,6 +167,8 @@ export type ExternalPackage = PackageFacts & {
 	propertyOverrides?: Record<string, PropertyOverride>;
 	/** Why a user kept this NDC off the formulary, set through the `manualExclusion` override. */
 	manualExclusion?: string | null;
+	/** Read-side only: the local concept superseding this package's RxNorm concept, applied at read time and never stored. */
+	localConcept?: LocalConceptView;
 	listed: boolean | null;
 	marketingEndDate: string | null;
 	splPresent: boolean | null;
