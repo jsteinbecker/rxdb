@@ -18,6 +18,7 @@
       import {nextAddedRowId, overrideTargets, pillIlnKey} from '$lib/property-override-fields';
       import {AMBIGUITY_KINDS} from '$lib/labeler-ambiguity';
       import {pseudoScdFor} from '$lib/pseudo-scd';
+      import {editActionLabel} from '$lib/local-concept-view';
       import {withBiosimilarSuffix} from '$lib/biosimilar';
       import {timeReleaseAfterRelease} from '$lib/package-title';
       import {unitOfSaleLabel, unitOfUseLabel} from '$lib/package-unit-label';
@@ -1411,11 +1412,9 @@
                                                             Define local concept…
                                                       </button>
                                                 {:else}
-                                                      {#if !item.localConcept.derived}
-                                                            <button type="button" role="menuitem" onclick={() => { rowMenu = null; onlocalconcept('edit'); }}>
-                                                                  Edit local concept…
-                                                            </button>
-                                                      {/if}
+                                                      <button type="button" role="menuitem" onclick={() => { rowMenu = null; onlocalconcept('edit'); }}>
+                                                            {editActionLabel(item.localConcept)}
+                                                      </button>
                                                       <button type="button" role="menuitem" onclick={() => { rowMenu = null; onstoplocalconcept?.(); }}>
                                                             Stop superseding…
                                                       </button>

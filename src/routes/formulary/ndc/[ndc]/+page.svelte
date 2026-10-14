@@ -29,7 +29,7 @@
       afterNavigate(({from, to}) => {
             fromFormulary = from?.url.pathname === '/formulary';
             const local = data.item.localConcept;
-            if (to?.url.searchParams.get('localConcept') === 'edit' && local && !local.derived) {
+            if (to?.url.searchParams.get('localConcept') === 'edit' && local) {
                   localConcept.open('edit');
                   // Drop the param so a reload or a non-JS post doesn't reopen the dialog.
                   const url = new URL(to.url);

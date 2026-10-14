@@ -158,7 +158,7 @@ async function localConceptEditorFor(scopeId: string, item: DraftSource & { loca
 			console.error('supersede target lookup failed', cause);
 			return { scd: null, blocked: 'Could not look up the RxNorm SCD.' };
 		}),
-		local && !local.derived
+		local
 			? prisma.localConcept.findUnique({
 					where: { id: local.id },
 					select: { evidenceSetId: true, evidenceVersion: true, evidenceNdc: true, note: true }

@@ -158,6 +158,8 @@ export async function supersede(
       }
     });
     if (open) throw already();
+    // The RxNorm concept's name at approval; drift detection compares it to the reloaded name.
+    const rxnorm = await tx.clinicalDrug.findUnique({ where: { id: target.entityId }, select: { name: true } });
     try {
       const mapping = await tx.entityMapping.create({
         data: {
@@ -166,7 +168,7 @@ export async function supersede(
           mappingType: 'supersedes',
           scopeId,
           assertedBySource: 'local',
-          supersededName: local.name,
+          supersededName: rxnorm?.name ?? null,
           approvedBy,
           approvedAt: new Date()
         }

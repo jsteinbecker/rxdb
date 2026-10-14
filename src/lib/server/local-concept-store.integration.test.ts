@@ -85,7 +85,14 @@ test(
           assert.equal(found.tty, 'SCD');
           assert.equal(found.name, 'glycine 10 MG/ML Injectable Solution');
           assert.equal(found.supersedes.mappingId, mappingId);
-          assert.equal(found.supersedes.name, found.name);
+          assert.equal(found.supersedes.name, 'wrong RxNorm concept');
+          assert.notEqual(found.supersedes.name, found.name);
+          const stored = await tx.entityMapping.findUnique({ where: { id: mappingId } });
+          assert.equal(stored?.supersededName, 'wrong RxNorm concept');
+          assert.equal(
+            (await listLocalConcepts(tx, scope.id)).find((c) => c.id === made.id)?.supersedes?.name,
+            'wrong RxNorm concept'
+          );
           assert.equal(found.ingredients[0].strengthNumMag, '10');
           assert.ok((await listLocalConcepts(tx, scope.id)).some((c) => c.id === made.id));
 

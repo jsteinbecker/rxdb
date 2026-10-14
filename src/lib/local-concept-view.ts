@@ -90,3 +90,7 @@ export async function applyLocalConcepts<T extends Resolvable>(
   });
 }
 
+
+/** The ⋯ menu's edit entry: a derived SBD view edits its underlying local SCD. */
+export const editActionLabel = (view: Pick<LocalConceptView, 'derived'>) =>
+  view.derived ? 'Edit local SCD…' : 'Edit local concept…';

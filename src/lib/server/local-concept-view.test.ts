@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   applyLocalConcepts,
+  editActionLabel,
   resolveLocal,
   type LocalConceptRecord,
   type LocalConceptView
@@ -128,5 +129,12 @@ describe('applyLocalConcepts', () => {
     });
     assert.equal(called, 0);
     assert.equal(out.length, 2);
+  });
+});
+
+describe('editActionLabel', () => {
+  it('names the SCD for a derived SBD view and the concept otherwise', () => {
+    assert.equal(editActionLabel({ derived: true }), 'Edit local SCD…');
+    assert.equal(editActionLabel({ derived: false }), 'Edit local concept…');
   });
 });
