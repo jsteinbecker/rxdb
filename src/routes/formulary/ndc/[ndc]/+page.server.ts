@@ -6,7 +6,7 @@ import { stagedTree, syncExternalPackages } from '$lib/server/catalog-sync';
 import { defaultScope, loadedItems, localNamesOf, unlinkPackage } from '$lib/server/catalog-formulary';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
 import { withLocalConcepts } from '$lib/server/local-concept-view';
-import { loadConceptSnapshots, scdsForSbds } from '$lib/server/catalog-store';
+import { supersedeTarget, type SupersedeTarget } from '$lib/server/local-concept-target';
 import {
 	createLocalConcept,
 	listLocalConcepts,
@@ -94,7 +94,12 @@ export const load: PageServerLoad = async ({ params }) => {
 	);
 	return {
 		item: shown,
-		localConceptEditor: await localConceptEditorFor(scopeId, shown),
+		// Streamed: the supersede target can scan the cached concepts, and the
+		// type-ahead list is large; only the local concept dialog needs either.
+		localConceptEditor: localConceptEditorFor(scopeId, shown).catch((cause) => {
+			console.error('local concept editor lookup failed', cause);
+			return null;
+		}),
 		confirmRemove: parseSettings(scope.settings).confirmRemove,
 		// Streamed: counting matches scans the cached snapshots.
 		pharmClassRules: pharmClassRulesFor(scopeId, item),
@@ -107,54 +112,11 @@ export const load: PageServerLoad = async ({ params }) => {
 	};
 };
 
-type SupersedeTarget = {
-	/** The RxNorm SCD this NDC's concept is, or generalizes to, when known. */
-	scd: { rxcui: string; name: string | null } | null;
-	/** Why a new local concept can't supersede `scd` here; null when it can. */
-	blocked: string | null;
-};
-
-/**
- * The SCD a local concept defined from this NDC supersedes: the NDC's own
- * RxCUI when it is an SCD, else its SCD counterpart from the concept snapshot.
- */
-async function supersedeTarget(scopeId: string, item: DraftSource): Promise<SupersedeTarget> {
-	const rxcui = item.details?.rxnav?.rxcui;
-	if (!rxcui) return { scd: null, blocked: 'This NDC has no RxCUI to supersede.' };
-	const concept = (await loadConceptSnapshots(prisma, [rxcui])).get(rxcui);
-	// Brands roll up into their generic's node, so an SBD has no snapshot of its
-	// own; its SCD is found from the SCD snapshots that list it.
-	const viaSbd = concept ? null : (await scdsForSbds(prisma, [rxcui])).get(rxcui);
-	if (!concept && !viaSbd) return { scd: null, blocked: `RxCUI ${rxcui} has no cached concept, so its SCD is unknown; search for ${rxcui} once to cache it.` };
-	const counterpart = concept?.details?.counterparts.find((c) => c.tty === 'SCD');
-	const scd = viaSbd
-		? {
-				rxcui: viaSbd.scdRxcui,
-				name: (await loadConceptSnapshots(prisma, [viaSbd.scdRxcui])).get(viaSbd.scdRxcui)?.name ?? null
-			}
-		: concept?.tty === 'SCD'
-			? { rxcui, name: concept.name }
-			: counterpart
-				? { rxcui: counterpart.rxcui, name: counterpart.name }
-				: null;
-	if (!scd) return { scd: null, blocked: `RxCUI ${rxcui} (${concept?.tty ?? 'unknown type'}) has no SCD counterpart.` };
-	const target = await prisma.externalIdentifier.findFirst({
-		where: { namespace: 'rxnorm_rxcui', normalizedValue: scd.rxcui, validTo: null },
-		select: { entityId: true }
-	});
-	if (!target) return { scd, blocked: `RxCUI ${scd.rxcui} is not in the catalog yet; load it to the formulary first.` };
-	const open = await prisma.entityMapping.findFirst({
-		where: { objectEntityId: target.entityId, scopeId, mappingType: 'supersedes', validTo: null, supersededAt: null },
-		select: { id: true }
-	});
-	return { scd, blocked: open ? `RxCUI ${scd.rxcui} is already superseded in this formulary.` : null };
-}
-
 /** What the local concept block and its "Define / Edit local concept" dialog start from. */
 async function localConceptEditorFor(scopeId: string, item: DraftSource & { localConcept?: LocalConceptView }) {
 	const local = item.localConcept;
 	const [target, stored, substances] = await Promise.all([
-		supersedeTarget(scopeId, item).catch((cause): SupersedeTarget => {
+		supersedeTarget(prisma, scopeId, item).catch((cause): SupersedeTarget => {
 			console.error('supersede target lookup failed', cause);
 			return { scd: null, blocked: 'Could not look up the RxNorm SCD.' };
 		}),
@@ -319,10 +281,10 @@ export const actions: Actions = {
 	/** Saved per SCD concept, so it reaches every NDC sharing this one's concept. */
 	setDosingMeasure: async ({ params, request }) => {
 		const ndc = toNdc11(params.ndc);
-		if (!ndc) return fail(400, { message: 'Invalid NDC.' });
+		if (!ndc) return fail(400, { action: 'dosingMeasure', message: 'Invalid NDC.' });
 		const form = await request.formData();
 		const [item] = await syncExternalPackages([ndc]);
-		if (!item) return fail(404, { message: 'No package data available.' });
+		if (!item) return fail(404, { action: 'dosingMeasure', message: 'No package data available.' });
 		try {
 			await saveDosingMeasure(
 				item,
@@ -333,15 +295,16 @@ export const actions: Actions = {
 			return { dosingMeasureSaved: true };
 		} catch (cause) {
 			return fail(400, {
+				action: 'dosingMeasure',
 				message: cause instanceof Error ? cause.message : 'Could not save dosing measure.'
 			});
 		}
 	},
 	clearDosingMeasure: async ({ params }) => {
 		const ndc = toNdc11(params.ndc);
-		if (!ndc) return fail(400, { message: 'Invalid NDC.' });
+		if (!ndc) return fail(400, { action: 'dosingMeasure', message: 'Invalid NDC.' });
 		const [item] = await syncExternalPackages([ndc]);
-		if (!item) return fail(404, { message: 'No package data available.' });
+		if (!item) return fail(404, { action: 'dosingMeasure', message: 'No package data available.' });
 		await clearDosingMeasure(item);
 		return { dosingMeasureSaved: true };
 	},
@@ -474,7 +437,7 @@ export const actions: Actions = {
 			const input = parseLocalConceptInput({ ...raw, evidenceSetId, evidenceVersion, evidenceNdc });
 			let rxcui: string | null = null;
 			if (form.get('supersede') === 'on') {
-				const target = await supersedeTarget(scopeId, item);
+				const target = await supersedeTarget(prisma, scopeId, item);
 				if (target.blocked || !target.scd)
 					throw new LocalConceptInputError(target.blocked ?? 'There is no SCD to supersede.');
 				rxcui = target.scd.rxcui;

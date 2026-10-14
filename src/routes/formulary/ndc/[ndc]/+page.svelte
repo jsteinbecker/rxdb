@@ -1,5 +1,6 @@
 <script lang="ts">
       import {resolve} from '$app/paths';
+      import {tick} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {page} from '$app/state';
       import {enhance} from '$app/forms';
@@ -18,7 +19,31 @@
       let reinterpret: ReinterpretDialog;
       let correction: IngredientCorrectionDialog;
       let pharmClassRule: PharmClassRuleDialog;
-      let localConcept: LocalConceptDialog;
+      let localConcept: LocalConceptDialog | undefined = $state();
+      // Streamed from the load; the dialog renders once it arrives. The last good value
+      // is kept while a reload's new promise is pending, so an open dialog doesn't vanish.
+      let localConceptEditor = $state<Awaited<typeof data.localConceptEditor>>(null);
+      $effect(() => {
+            let current = true;
+            data.localConceptEditor.then((editor) => {
+                  if (current && editor) localConceptEditor = editor;
+            });
+            return () => {
+                  current = false;
+            };
+      });
+
+      /** Waits for the streamed editor data, then opens the local concept dialog. */
+      async function withLocalConceptDialog(run: (dialog: LocalConceptDialog) => void) {
+            const editor = await data.localConceptEditor;
+            if (!editor) {
+                  alert('Could not load the local concept editor. Reload the page to try again.');
+                  return;
+            }
+            localConceptEditor = editor;
+            await tick();
+            if (localConcept) run(localConcept);
+      }
       let editKeys = $state<string[]>([]);
       let excludeDialog: HTMLDialogElement;
       let actionsMenu: HTMLElement;
@@ -30,7 +55,7 @@
             fromFormulary = from?.url.pathname === '/formulary';
             const local = data.item.localConcept;
             if (to?.url.searchParams.get('localConcept') === 'edit' && local) {
-                  localConcept.open('edit');
+                  void withLocalConceptDialog((dialog) => dialog.open('edit'));
                   // Drop the param so a reload or a non-JS post doesn't reopen the dialog.
                   const url = new URL(to.url);
                   url.searchParams.delete('localConcept');
@@ -127,9 +152,9 @@
                   </div>
             </form>
       </dialog>
-      <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.message ?? null}/>
+      <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.action === 'dosingMeasure' ? form.message : null}/>
       <div class="body" class:with-panel={editKeys.length}>
-            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }} localConceptScd={data.localConceptEditor.target.scd?.rxcui ?? null} onlocalconcept={(mode) => localConcept.open(mode)} onstoplocalconcept={() => localConcept.confirmStop()}/>
+            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }} localConceptScd={localConceptEditor?.target.scd?.rxcui ?? null} onlocalconcept={(mode) => withLocalConceptDialog((dialog) => dialog.open(mode))} onstoplocalconcept={() => withLocalConceptDialog((dialog) => dialog.confirmStop())}/>
             {#if editKeys.length}
                   {#key editKeys}
                         <div class="panel-slot">
@@ -146,7 +171,9 @@
             {/if}
       </div>
       <PharmClassRuleDialog bind:this={pharmClassRule} rules={data.pharmClassRules} confirmRemove={data.confirmRemove} message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete' ? form.message : null}/>
-      <LocalConceptDialog bind:this={localConcept} editor={data.localConceptEditor} localConcept={item.localConcept} rxnormName={item.details?.rxnav?.conceptName ?? null} message={form?.action === 'localConceptSave' || form?.action === 'localConceptStop' ? form.message : null}/>
+      {#if localConceptEditor}
+            <LocalConceptDialog bind:this={localConcept} editor={localConceptEditor} localConcept={item.localConcept} rxnormName={item.details?.rxnav?.conceptName ?? null} message={form?.action === 'localConceptSave' || form?.action === 'localConceptStop' ? form.message : null}/>
+      {/if}
       <ReinterpretDialog bind:this={reinterpret} {item}/>
       <IngredientCorrectionDialog bind:this={correction} {item} equivalents={data.equivalents}/>
 </main>
