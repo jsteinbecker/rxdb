@@ -11,6 +11,7 @@ import {
 	snapshotPackage
 } from './catalog-cache';
 import { exclusionReason } from './catalog-facts';
+import { parseScdName } from '../local-concept';
 import { linkPseudoScd } from './pseudo-scd-store';
 import { checkLocalConceptDrift } from './local-concept-store';
 import { logger } from './log';
@@ -136,6 +137,72 @@ export async function loadConceptSnapshots(
 				: [];
 		})
 	);
+}
+
+/**
+ * SBD rxcui -> the SCD that lists it as a counterpart, with the brand parsed
+ * from the SBD's name. Pure half of `scdsForSbds`. Brands roll up into their
+ * generic's node, so an SBD usually has no snapshot of its own; the link lives
+ * on the SCD. When two SCDs claim one SBD the first in rxcui order wins, so
+ * the answer does not depend on read order.
+ */
+export function sbdIndex(
+	concepts: RxConcept[],
+	wanted: string[]
+): Map<string, { scdRxcui: string; brand: string | null }> {
+	const want = new Set(wanted);
+	const out = new Map<string, { scdRxcui: string; brand: string | null }>();
+	const scds = concepts
+		.filter((concept) => concept.tty === 'SCD')
+		.sort((a, b) => (a.rxcui < b.rxcui ? -1 : a.rxcui > b.rxcui ? 1 : 0));
+	for (const scd of scds) {
+		for (const counterpart of scd.details?.counterparts ?? []) {
+			if (counterpart.tty !== 'SBD' || !want.has(counterpart.rxcui) || out.has(counterpart.rxcui)) continue;
+			out.set(counterpart.rxcui, {
+				scdRxcui: scd.rxcui,
+				// parseScdName gives up on names it can't split into strengths (e.g. "10 %"), but the trailing bracket is still the brand.
+				brand: parseScdName(counterpart.name)?.brand ?? counterpart.name.match(/ \[([^\]]+)\]$/)?.[1] ?? null
+			});
+		}
+	}
+	return out;
+}
+
+/**
+ * The SCD for each SBD, read from the SCD snapshots that list the SBD as a
+ * counterpart. The SQL only narrows which snapshots are read; `sbdIndex` decides.
+ */
+export async function scdsForSbds(
+	db: Pick<PrismaClient, '$queryRaw'>,
+	sbdRxcuis: string[]
+): Promise<Map<string, { scdRxcui: string; brand: string | null }>> {
+	if (!sbdRxcuis.length) return new Map();
+	const rows = await db.$queryRaw<{ payload: unknown }[]>`
+    SELECT latest.payload
+    FROM (
+      SELECT DISTINCT ON (r.source_native_id) r.source_native_id, r.payload
+      FROM source_record r
+      JOIN ingestion_run run ON run.id = r.ingestion_run_id
+      WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
+        AND r.source_native_id LIKE 'rxcui:%'
+      ORDER BY r.source_native_id, r.observed_at DESC
+    ) latest
+    WHERE latest.payload ->> 'version' = ${CATALOG_VERSION}
+      AND latest.payload #>> '{concept,tty}' = 'SCD'
+      AND EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(
+          CASE WHEN jsonb_typeof(latest.payload #> '{concept,details,counterparts}') = 'array'
+            THEN latest.payload #> '{concept,details,counterparts}' ELSE '[]'::jsonb END
+        ) e
+        WHERE e ->> 'rxcui' = ANY(${sbdRxcuis}::text[])
+      )
+    ORDER BY latest.source_native_id`;
+	const concepts = rows.flatMap((row) => {
+		const snapshot = row.payload as ConceptSnapshot | null;
+		return snapshot?.concept?.rxcui ? [snapshot.concept] : [];
+	});
+	return sbdIndex(concepts, sbdRxcuis);
 }
 
 /** Record raw evidence and cache snapshots without creating catalog entities. */

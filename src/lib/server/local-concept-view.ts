@@ -1,11 +1,11 @@
 import type { PrismaClient } from '../../generated/client';
 import { applyLocalConcepts, resolveLocal, type LocalConceptRecord, type LocalConceptView } from '../local-concept-view';
-import { loadConceptSnapshots } from './catalog-store';
-import type { ExternalPackage, RxConcept } from './catalog-providers';
+import { scdsForSbds } from './catalog-store';
+import type { ExternalPackage } from './catalog-providers';
 import { localConceptsForRxcuis } from './local-concept-store';
 
 type LoadRecords = (db: PrismaClient, scopeId: string, rxcuis: string[]) => Promise<Map<string, LocalConceptRecord>>;
-type LoadSnapshots = (db: PrismaClient, rxcuis: string[]) => Promise<Map<string, RxConcept>>;
+type LoadScds = (db: PrismaClient, sbdRxcuis: string[]) => Promise<Map<string, { scdRxcui: string; brand: string | null }>>;
 
 /**
  * rxcui -> local view for the scope: direct mappings, plus derived SBDs for
@@ -17,7 +17,7 @@ export async function localConceptsByRxcui(
   scopeId: string,
   rxcuis: string[],
   loadRecords: LoadRecords = localConceptsForRxcuis,
-  loadSnapshots: LoadSnapshots = loadConceptSnapshots
+  loadScds: LoadScds = scdsForSbds
 ): Promise<Map<string, LocalConceptView>> {
   const wanted = [...new Set(rxcuis.filter(Boolean))];
   if (!wanted.length) return new Map();
@@ -26,12 +26,9 @@ export async function localConceptsByRxcui(
   const counterparts = new Map<string, string>();
   const brands = new Map<string, string>();
   if (unmapped.length) {
-    const snapshots = await loadSnapshots(db, unmapped);
-    for (const rxcui of unmapped) {
-      const details = snapshots.get(rxcui)?.details;
-      const scd = details?.counterparts.find((c) => c.tty === 'SCD');
-      const brand = details?.brands[0]?.name;
-      if (scd) counterparts.set(rxcui, scd.rxcui);
+    const scds = await loadScds(db, unmapped);
+    for (const [rxcui, { scdRxcui, brand }] of scds) {
+      counterparts.set(rxcui, scdRxcui);
       if (brand) brands.set(rxcui, brand);
     }
     const scdKeys = [...new Set(counterparts.values())].filter((rxcui) => !byRxcui.has(rxcui));
@@ -49,11 +46,11 @@ export async function withLocalConcepts<T extends Pick<ExternalPackage, 'details
   scopeId: string,
   items: T[],
   loadRecords: LoadRecords = localConceptsForRxcuis,
-  loadSnapshots: LoadSnapshots = loadConceptSnapshots
+  loadScds: LoadScds = scdsForSbds
 ): Promise<(T & { localConcept?: LocalConceptView })[]> {
   try {
     return await applyLocalConcepts(items, (rxcuis) =>
-      localConceptsByRxcui(db, scopeId, rxcuis, loadRecords, loadSnapshots)
+      localConceptsByRxcui(db, scopeId, rxcuis, loadRecords, loadScds)
     );
   } catch (error) {
     console.error('local concept lookup failed; serving un-augmented data', error);
@@ -72,10 +69,10 @@ export async function withLocalConceptsInTree<
   scopeId: string,
   tree: Tree,
   loadRecords?: LoadRecords,
-  loadSnapshots?: LoadSnapshots
+  loadScds?: LoadScds
 ): Promise<Tree> {
   const flat = [...tree.concepts.flatMap((c) => c.packages), ...tree.packages];
-  const resolved = await withLocalConcepts(db, scopeId, flat, loadRecords, loadSnapshots);
+  const resolved = await withLocalConcepts(db, scopeId, flat, loadRecords, loadScds);
   let next = 0;
   return {
     ...tree,

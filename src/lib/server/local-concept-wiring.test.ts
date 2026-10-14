@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { itemName } from '../item-name.ts';
 import type { LocalIngredient } from '../local-concept.ts';
 import type { LocalConceptRecord } from '../local-concept-view.ts';
+import { sbdIndex } from './catalog-store.ts';
 import { localConceptsByRxcui, withLocalConcepts } from './local-concept-view.ts';
 
 const ing: LocalIngredient = {
@@ -32,21 +33,7 @@ const scd: LocalConceptRecord = {
 const db = {} as never;
 const pkg = (rxcui: string) => ({ id: rxcui, details: { rxnav: { rxcui } } });
 const snapshots = async () =>
-  new Map([
-    [
-      '1189640',
-      {
-        rxcui: '1189640',
-        details: {
-          counterparts: [
-            { rxcui: '9', name: 'x', tty: 'SBD' },
-            { rxcui: '1189639', name: 'y', tty: 'SCD' }
-          ],
-          brands: [{ rxcui: '5', name: 'TrophAmine', tty: 'BN' }]
-        }
-      }
-    ]
-  ]) as never;
+  new Map([['1189640', { scdRxcui: '1189639', brand: 'TrophAmine' }]]);
 
 describe('withLocalConcepts', () => {
   it('gives an SBD-coded package a derived view via its SCD counterpart', async () => {
@@ -79,5 +66,26 @@ describe('local name vs nameOverride', () => {
   });
   it('the override wins over the local name', () => {
     assert.equal(itemName(scd.name, naming('My name')), 'My name');
+  });
+});
+
+describe('sbdIndex', () => {
+  const scdConcept = (rxcui: string, counterparts: { rxcui: string; name: string; tty: string }[], tty = 'SCD') =>
+    ({ rxcui, tty, name: 'n', details: { counterparts } }) as never;
+  const trophamine = { rxcui: '1189640', name: 'amino acids Injectable Solution [Trophamine 10 %]', tty: 'SBD' };
+
+  it('finds the SBD through its SCD counterparts and parses the brand', () => {
+    const out = sbdIndex([scdConcept('800611', [trophamine])], ['1189640']);
+    assert.deepEqual(out.get('1189640'), { scdRxcui: '800611', brand: 'Trophamine 10 %' });
+  });
+  it('omits an SBD no SCD lists', () => {
+    assert.equal(sbdIndex([scdConcept('800611', [trophamine])], ['999']).size, 0);
+  });
+  it('keeps the first SCD by rxcui when two claim one SBD', () => {
+    const out = sbdIndex([scdConcept('900', [trophamine]), scdConcept('800', [trophamine])], ['1189640']);
+    assert.equal(out.get('1189640')?.scdRxcui, '800');
+  });
+  it('ignores non-SCD concepts', () => {
+    assert.equal(sbdIndex([scdConcept('1', [trophamine], 'SBD')], ['1189640']).size, 0);
   });
 });
