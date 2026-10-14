@@ -1,6 +1,10 @@
 import { writable, type Readable } from 'svelte/store';
 
-export type RxcuiName = { name: string | null; tty: string | null };
+export type RxcuiName = {
+	name: string | null;
+	tty: string | null;
+	local?: { code: string; name: string } | null;
+};
 
 const names = writable<Record<string, RxcuiName>>({});
 const requested = new Set<string>();
