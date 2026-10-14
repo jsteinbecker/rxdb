@@ -6,6 +6,7 @@ import {
 	countMatchesForRules,
 	deleteRule,
 	knownClasses,
+	resetScanIndex,
 	resetKnownClassesCache,
 	upsertRule,
 	type PharmClassRuleRow
@@ -115,39 +116,76 @@ test('knownClasses shares one in-flight query and does not cache an empty result
 	resetKnownClassesCache();
 });
 
-test('countMatchesForRules scans once per moiety group, two at a time, and agrees with countMatches', async () => {
-	const pkg = (uniis: string[], doseForm: string) =>
-		({ ndc: '1', doseForm, details: { product: { routes: [], uniis }, spl: null } }) as never;
-	const scanned: string[][] = [];
-	let inFlight = 0;
-	let peak = 0;
+/** A database holding the given latest snapshots; counts how many payloads each refresh fetched. */
+function snapshotDb(records: { id: string; ndc: string; observedAt: Date; item: unknown }[]) {
+	const fetched: number[] = [];
 	const db = {
-		$queryRaw: async (_strings: unknown, ...values: unknown[]) => {
-			scanned.push(values.find(Array.isArray) as string[]);
-			peak = Math.max(peak, ++inFlight);
-			await new Promise((resolve) => setTimeout(resolve, 5));
-			inFlight--;
-			return [
-				{ payload: { item: pkg(['A'], 'INJECTION') } },
-				{ payload: { item: pkg(['A'], 'TABLET') } }
-			];
+		$queryRaw: async (strings: TemplateStringsArray, ...values: unknown[]) => {
+			if (strings.join('?').includes('DISTINCT ON'))
+				return records.map(({ id, observedAt }) => ({ id, observedAt }));
+			const ids = values.find(Array.isArray) as string[];
+			fetched.push(ids.length);
+			return records
+				.filter((record) => ids.includes(record.id))
+				.map(({ id, ndc, item }) => ({ id, ndc, item }));
 		}
 	};
+	return { db, fetched };
+}
+
+test('rule counts match packages carrying every UNII, and agree between countMatches and countMatchesForRules', async () => {
+	resetScanIndex();
+	const pkg = (uniis: string[], doseForm: string, spl: unknown = null) => ({
+		doseForm,
+		details: { product: { routes: [], uniis }, spl }
+	});
+	const at = new Date(0);
+	const { db } = snapshotDb([
+		{ id: 'p1', ndc: '00000000001', observedAt: at, item: pkg(['A'], 'INJECTION') },
+		{ id: 'p2', ndc: '00000000002', observedAt: at, item: pkg(['A'], 'TABLET') },
+		// A moiety named only in the SPL still counts.
+		{
+			id: 'p3',
+			ndc: '00000000003',
+			observedAt: at,
+			item: pkg([], 'TABLET', { ingredients: [{ unii: 'X', moieties: [{ unii: 'C' }] }] })
+		},
+		{ id: 'p4', ndc: '00000000004', observedAt: at, item: pkg(['C', 'D'], 'TABLET') }
+	]);
 	const facets = { route: null, strengthKey: null };
 	const rules = [
 		{ id: 'r1', moietyKey: 'A', doseFormGroup: null, ...facets },
 		{ id: 'r2', moietyKey: 'A', doseFormGroup: 'injectable', ...facets },
 		{ id: 'r3', moietyKey: 'B', doseFormGroup: null, ...facets },
-		{ id: 'r4', moietyKey: 'C|D', doseFormGroup: null, ...facets },
-		{ id: 'r5', moietyKey: 'E', doseFormGroup: null, ...facets }
+		{ id: 'r4', moietyKey: 'C|D', doseFormGroup: null, ...facets }
 	];
 	const counts = await countMatchesForRules(db as never, rules);
-	assert.deepEqual(scanned.map((uniis) => uniis.join('|')).sort(), ['A', 'B', 'C|D', 'E']);
-	assert.ok(peak <= 2, `at most 2 scans in flight, saw ${peak}`);
 	assert.deepEqual(counts.get('r1'), { count: 2, capped: false });
 	assert.deepEqual(counts.get('r2'), { count: 1, capped: false });
-	// The mock returns moiety A packages for every scan, so a rule on another moiety matches none of them.
 	assert.deepEqual(counts.get('r3'), { count: 0, capped: false });
 	for (const rule of rules)
 		assert.deepEqual(counts.get(rule.id), await countMatches(db as never, rule), rule.id);
+	resetScanIndex();
+});
+
+test('the scan index refetches only snapshots that are new or rewritten', async () => {
+	resetScanIndex();
+	const item = { doseForm: 'TABLET', details: { product: { routes: [], uniis: ['A'] }, spl: null } };
+	const records = [
+		{ id: 'p1', ndc: '00000000001', observedAt: new Date(0), item },
+		{ id: 'p2', ndc: '00000000002', observedAt: new Date(0), item }
+	];
+	const { db, fetched } = snapshotDb(records);
+	const rule = { moietyKey: 'A', doseFormGroup: null, route: null, strengthKey: null };
+	assert.deepEqual(await countMatches(db as never, rule), { count: 2, capped: false });
+	assert.deepEqual(await countMatches(db as never, rule), { count: 2, capped: false });
+	assert.deepEqual(fetched, [2]);
+	records[1].observedAt = new Date(1);
+	records.push({ id: 'p3', ndc: '00000000003', observedAt: new Date(0), item });
+	assert.deepEqual(await countMatches(db as never, rule), { count: 3, capped: false });
+	assert.deepEqual(fetched, [2, 2]);
+	// A record superseded by a newer one drops out of the counts.
+	records.splice(0, 1);
+	assert.deepEqual(await countMatches(db as never, rule), { count: 2, capped: false });
+	resetScanIndex();
 });

@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { gsrsMoieties, prismaSubstanceTable } from './unii-substance-store';
+import { gsrsMoieties, gsrsMoietyFactor, prismaSubstanceTable } from './unii-substance-store';
 import { prisma } from './prisma';
 import {
 	type CacheRecord,
@@ -133,7 +133,10 @@ export async function removePropertyOverrides(ndc: string, keys: string[]) {
 				removals.map(({ item }) => item.ndc),
 				env.OPENFDA_API_KEY,
 				undefined,
-				{ moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma)) }
+				{
+					moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma)),
+					moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma))
+				}
 			)
 		).map((item) => [item.ndc, item])
 	);

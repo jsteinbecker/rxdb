@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PrismaClient } from '../../generated/client';
-import { packageClassKey } from '../pharm-class-key';
+import { packageClassKey, type PackageClassKey } from '../pharm-class-key';
 import { isUuid, moietyUniis, normalizeRuleClasses } from '../pharm-class-rule-input';
 import { ruleMatches, type PharmClassRule } from '../pharm-class-rules';
 import { CACHE_SOURCE } from './catalog-cache';
@@ -112,49 +112,90 @@ const SCAN_CONCURRENCY = 2;
 type RuleFacets = Pick<PharmClassRule, 'moietyKey' | 'doseFormGroup' | 'route' | 'strengthKey'>;
 type Count = { count: number; capped: boolean };
 
+/** What a rule count needs from one latest cached package: its UNIIs and its class key. */
+type ScanEntry = { observedAt: number; ndc: string; uniis: Set<string>; key: PackageClassKey };
+
 /**
- * The latest cached packages carrying every UNII, pre-filtered in SQL (a superset of the rule matches).
- * Rows come back in NDC order so the first MATCH_LIMIT are the same every time; `capped` is true whenever
- * the raw SQL limit was hit, in which case the packages are a prefix and any count over them is a lower bound.
+ * The latest package snapshots, reduced to `ScanEntry`s and kept by record id. Matching every snapshot's
+ * JSON in SQL decompresses all of them per count, so a refresh fetches only records new or rewritten since
+ * the last one (a rewrite always moves `observed_at`); concurrent counts share one refresh.
+ */
+const scanIndex = new Map<string, ScanEntry>();
+let scanRefresh: Promise<ScanEntry[]> | null = null;
+const SCAN_FETCH_BATCH = 500;
+
+/** For tests. */
+export function resetScanIndex(): void {
+	scanIndex.clear();
+	scanRefresh = null;
+}
+
+function latestScanEntries(db: Db): Promise<ScanEntry[]> {
+	scanRefresh ??= refreshScanIndex(db).finally(() => {
+		scanRefresh = null;
+	});
+	return scanRefresh;
+}
+
+async function refreshScanIndex(db: Db): Promise<ScanEntry[]> {
+	const latest = await db.$queryRaw<{ id: string; observedAt: Date }[]>`
+    SELECT DISTINCT ON (r.source_native_id) r.id, r.observed_at AS "observedAt"
+    FROM source_record r
+    JOIN ingestion_run run ON run.id = r.ingestion_run_id
+    WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
+      AND r.source_native_id ~ '^[0-9]{11}$'
+    ORDER BY r.source_native_id, r.observed_at DESC`;
+	const missing = latest.filter((row) => scanIndex.get(row.id)?.observedAt !== row.observedAt.getTime());
+	for (let start = 0; start < missing.length; start += SCAN_FETCH_BATCH) {
+		const batch = missing.slice(start, start + SCAN_FETCH_BATCH);
+		const rows = await db.$queryRaw<{ id: string; ndc: string; item: ExternalPackage | null }[]>`
+      SELECT r.id, r.source_native_id AS ndc, (r.payload #- '{item,details,label}') -> 'item' AS item
+      FROM source_record r WHERE r.id = ANY(${batch.map((row) => row.id)}::uuid[])`;
+		const observedAt = new Map(batch.map((row) => [row.id, row.observedAt.getTime()]));
+		for (const { id, ndc, item } of rows)
+			if (item) scanIndex.set(id, { observedAt: observedAt.get(id)!, ndc, uniis: packageUniis(item), key: packageClassKey(item) });
+	}
+	const current = new Set(latest.map((row) => row.id));
+	for (const id of scanIndex.keys()) if (!current.has(id)) scanIndex.delete(id);
+	// In NDC order, so the first MATCH_LIMIT matches are the same every time.
+	return latest.flatMap((row) => scanIndex.get(row.id) ?? []);
+}
+
+/** The product's UNIIs and every SPL ingredient's and moiety's: the ones a rule's moieties are matched against. */
+function packageUniis(item: ExternalPackage): Set<string> {
+	const product = item.details?.product?.uniis as unknown;
+	const uniis = new Set<string>(
+		Array.isArray(product)
+			? product.filter((unii): unii is string => typeof unii === 'string')
+			: product && typeof product === 'object'
+				? Object.keys(product)
+				: []
+	);
+	for (const ingredient of item.details?.spl?.ingredients ?? []) {
+		if (ingredient.unii) uniis.add(ingredient.unii);
+		for (const moiety of ingredient.moieties ?? []) if (moiety.unii) uniis.add(moiety.unii);
+	}
+	return uniis;
+}
+
+/**
+ * The latest cached packages carrying every UNII (a superset of the rule matches), as class keys. `capped`
+ * is true whenever MATCH_LIMIT was hit, in which case the keys are a prefix and any count over them is a
+ * lower bound.
  */
 async function scanCandidates(
 	db: Db,
 	uniis: string[]
-): Promise<{ packages: ExternalPackage[]; capped: boolean }> {
-	const rows = await db.$queryRaw<{ payload: { item?: ExternalPackage } | null }[]>`
-    WITH latest AS (
-      SELECT DISTINCT ON (r.source_native_id) r.id
-      FROM source_record r
-      JOIN ingestion_run run ON run.id = r.ingestion_run_id
-      WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
-        AND r.source_native_id ~ '^[0-9]{11}$'
-      ORDER BY r.source_native_id, r.observed_at DESC
-    )
-    SELECT r.payload #- '{item,details,label}' AS payload
-    FROM source_record r JOIN latest ON latest.id = r.id
-    WHERE NOT EXISTS (
-      SELECT 1 FROM unnest(${uniis}::text[]) AS u(unii)
-      WHERE NOT COALESCE(
-        jsonb_exists(r.payload #> '{item,details,product,uniis}', u.unii)
-        OR jsonb_path_exists(
-          r.payload,
-          '$.item.details.spl.ingredients[*] ? (@.unii == $u || @.moieties[*].unii == $u)',
-          jsonb_build_object('u', u.unii)
-        ),
-        false
-      )
-    )
-    ORDER BY r.source_native_id
-    LIMIT ${MATCH_LIMIT}`;
-	return {
-		packages: rows.flatMap(({ payload }) => (payload?.item ? [payload.item] : [])),
-		capped: rows.length >= MATCH_LIMIT
-	};
+): Promise<{ keys: PackageClassKey[]; capped: boolean }> {
+	const matches = (await latestScanEntries(db))
+		.filter((entry) => uniis.every((unii) => entry.uniis.has(unii)))
+		.slice(0, MATCH_LIMIT);
+	return { keys: matches.map((entry) => entry.key), capped: matches.length >= MATCH_LIMIT };
 }
 
-function countIn(rule: RuleFacets, packages: ExternalPackage[], capped: boolean): Count {
+function countIn(rule: RuleFacets, keys: PackageClassKey[], capped: boolean): Count {
 	const full = { id: '', mode: 'replace' as const, classes: [], ...rule };
-	return { count: packages.filter((item) => ruleMatches(full, packageClassKey(item))).length, capped };
+	return { count: keys.filter((key) => ruleMatches(full, key)).length, capped };
 }
 
 /**
@@ -164,8 +205,8 @@ function countIn(rule: RuleFacets, packages: ExternalPackage[], capped: boolean)
 export async function countMatches(db: Db, rule: RuleFacets): Promise<Count> {
 	const uniis = moietyUniis(rule.moietyKey);
 	if (!uniis.length) return { count: 0, capped: false };
-	const { packages, capped } = await scanCandidates(db, uniis);
-	return countIn(rule, packages, capped);
+	const { keys, capped } = await scanCandidates(db, uniis);
+	return countIn(rule, keys, capped);
 }
 
 /**
@@ -185,8 +226,8 @@ export async function countMatchesForRules(
 		while (next < groups.length) {
 			const [moietyKey, group] = groups[next++];
 			const uniis = moietyUniis(moietyKey);
-			const scan = uniis.length ? await scanCandidates(db, uniis) : { packages: [], capped: false };
-			for (const rule of group) counts.set(rule.id, countIn(rule, scan.packages, scan.capped));
+			const scan = uniis.length ? await scanCandidates(db, uniis) : { keys: [], capped: false };
+			for (const rule of group) counts.set(rule.id, countIn(rule, scan.keys, scan.capped));
 		}
 	};
 	await Promise.all(Array.from({ length: Math.min(SCAN_CONCURRENCY, groups.length) }, worker));

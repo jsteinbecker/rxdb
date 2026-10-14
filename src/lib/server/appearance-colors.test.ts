@@ -2,7 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseAppearanceClause } from '../spl-appearance-text';
 import { colorTerm, swatchOf } from '../spl-characteristics';
-const c = (t: string) => { const r = parseAppearanceClause(t); return { colors: r?.colors, ink: r?.ink }; };
+
+
+const c = (t: string) => {
+  const r = parseAppearanceClause(t); return { colors: r?.colors, ink: r?.ink };
+};
+
+
 test('body vs marks', () => {
   for (const [t, colors, ink] of [
     ['Opaque buff cap and opaque buff body, hard gelatin capsules. Printed black “TEVA” on cap', ['brown','brown'], 'black'],
@@ -18,6 +24,7 @@ test('body vs marks', () => {
     ['Capsules with a black print “X” and a green cap and green body', ['green','green'], 'black'],
   ] as const) assert.deepEqual(c(t), { colors: [...colors], ink }, t);
 });
+
 test('colorTerm maps free text onto the palette, never the ink', () => {
   assert.equal(colorTerm('WHITE'), 'white');
   assert.equal(colorTerm('white with black ink'), 'white');

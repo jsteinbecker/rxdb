@@ -33,26 +33,66 @@ export type CacheRecord = { sourceNativeId: string; payload: unknown };
  * fetches every historical row and dedupes in memory, so this is DISTINCT ON,
  * over ids only: payloads are large, and are read just for the winning rows.
  * `withoutLabel` drops the label text (~95% of a package snapshot) in the
- * database, for bulk readers that never show it.
+ * database, for bulk readers that never show it. A latest snapshot written by
+ * an older CATALOG_VERSION is left out here rather than shipped and parsed only
+ * for every reader to reject it.
+ *
+ * Decompressing payloads dominates a bulk read, so label-free payloads are kept
+ * in memory by record id and `observed_at`: a record's payload is only ever
+ * rewritten together with `observed_at`, so a matching pair is still current.
  */
-export function latestCacheRecords(
+export async function latestCacheRecords(
 	db: Pick<PrismaClient, '$queryRaw'>,
 	nativeIds: string[],
 	{ withoutLabel = false }: { withoutLabel?: boolean } = {}
 ): Promise<CacheRecord[]> {
-	if (!nativeIds.length) return Promise.resolve([]);
-	return db.$queryRaw<CacheRecord[]>`
-    WITH latest AS (
-      SELECT DISTINCT ON (r.source_native_id) r.id
+	if (!nativeIds.length) return [];
+	const latest = await db.$queryRaw<{ id: string; sourceNativeId: string; observedAt: Date }[]>`
+    SELECT DISTINCT ON (r.source_native_id)
+      r.id, r.source_native_id AS "sourceNativeId", r.observed_at AS "observedAt"
+    FROM source_record r
+    JOIN ingestion_run run ON run.id = r.ingestion_run_id
+    WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
+      AND r.source_native_id = ANY(${nativeIds}::text[])
+    ORDER BY r.source_native_id, r.observed_at DESC`;
+	const stamp = (row: { observedAt: Date }) => row.observedAt.getTime();
+	const cached = (row: (typeof latest)[number]) => {
+		const entry = withoutLabel ? labelFreePayloads.get(row.id) : undefined;
+		return entry?.observedAt === stamp(row) ? entry : undefined;
+	};
+	const missing = latest.filter((row) => !cached(row)).map((row) => row.id);
+	const fetched = new Map<string, unknown>();
+	if (missing.length) {
+		const rows = await db.$queryRaw<{ id: string; payload: unknown }[]>`
+      SELECT r.id,
+        CASE WHEN ${withoutLabel} THEN r.payload #- '{item,details,label}' ELSE r.payload END AS payload
       FROM source_record r
-      JOIN ingestion_run run ON run.id = r.ingestion_run_id
-      WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
-        AND r.source_native_id = ANY(${nativeIds}::text[])
-      ORDER BY r.source_native_id, r.observed_at DESC
-    )
-    SELECT r.source_native_id AS "sourceNativeId",
-      CASE WHEN ${withoutLabel} THEN r.payload #- '{item,details,label}' ELSE r.payload END AS payload
-    FROM source_record r JOIN latest ON latest.id = r.id`;
+      WHERE r.id = ANY(${missing}::uuid[]) AND r.payload ->> 'version' = ${CATALOG_VERSION}`;
+		for (const row of rows) fetched.set(row.id, row.payload);
+	}
+	return latest.flatMap((row) => {
+		let payload = cached(row)?.payload;
+		if (payload === undefined) {
+			payload = fetched.get(row.id) ?? null;
+			if (withoutLabel) rememberLabelFree(row.id, stamp(row), payload);
+		}
+		// Callers may normalize what they read in place; the cached copy stays untouched.
+		return payload === null
+			? []
+			: [{ sourceNativeId: row.sourceNativeId, payload: withoutLabel ? structuredClone(payload) : payload }];
+	});
+}
+
+/** Label-free payloads by record id; null marks a record from an older CATALOG_VERSION. */
+const labelFreePayloads = new Map<string, { observedAt: number; payload: unknown }>();
+const LABEL_FREE_LIMIT = 50_000;
+
+function rememberLabelFree(id: string, observedAt: number, payload: unknown) {
+	labelFreePayloads.delete(id);
+	labelFreePayloads.set(id, { observedAt, payload });
+	// Maps iterate in insertion order, so the first key is the least recently stored.
+	if (labelFreePayloads.size > LABEL_FREE_LIMIT)
+		labelFreePayloads.delete(labelFreePayloads.keys().next().value!);
 }
 
 /**
@@ -411,6 +451,7 @@ async function persistPackage(db: Db, item: ExternalPackage, sourceRecordId: str
 				where: { id: entityId, status: { in: ['active', 'catalog-excluded'] }, retiredAt: null },
 				data: { status: reason ? 'catalog-excluded' : 'active' }
 			});
+		if (reason) await unlinkExcluded(db, { id: entityId });
 	} else {
 		await db.package.create({ data: { id: entityId, ...data } });
 		await attachIdentifier(db, entityId, 'ndc11', item.ndc);
@@ -579,6 +620,18 @@ function canRestorePackage(item: ExternalPackage): boolean {
 	);
 }
 
+/**
+ * End-dates the formulary links of packages the catalog has excluded. The exclusion ladder
+ * only answers on positive evidence (an outage is never absence), so an obsolete or unlisted
+ * package leaves the formulary; it returns only when a load links it again.
+ */
+async function unlinkExcluded(db: Db, entity: Prisma.EntityWhereInput) {
+	await db.formularyItemPackage.updateMany({
+		where: { validTo: null, package: { entity: { ...entity, status: 'catalog-excluded' } } },
+		data: { validTo: new Date() }
+	});
+}
+
 /** Reevaluate time-dependent exclusions even when no provider refresh is needed. */
 export async function refreshPackageEligibility(db: PrismaClient, items: ExternalPackage[]) {
 	if (!items.length) return;
@@ -613,6 +666,12 @@ async function applyEligibility(db: Db, items: ExternalPackage[]) {
 			data: { status }
 		});
 	}
+	if (excluded.length)
+		await unlinkExcluded(db, {
+			externalIdentifiers: {
+				some: { namespace: 'ndc11', normalizedValue: { in: excluded }, validTo: null }
+			}
+		});
 	// A product remains searchable while any of its packages is still active.
 	const products = await db.product.findMany({
 		where: {

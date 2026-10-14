@@ -13,7 +13,7 @@ import {
 	strengthText,
 	withoutUnspecified
 } from '../spl-ingredients';
-import { type CheckedStrength, checkProductStrengths } from '../spl-strength-checks';
+import { type CheckedStrength, checkProductStrengths, type MoietyFactor } from '../spl-strength-checks';
 import { appearancesByPackage, type PillAppearance } from '../spl-characteristics';
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
@@ -1044,7 +1044,59 @@ export type PackageHints = {
 	doseForm?: string | null;
 	/** Every active moiety of a UNII per GSRS; completes a label missing one of a salt's ions. */
 	moietiesOf?: (unii: string) => Promise<{ unii: string; name: string }[] | null>;
+	/** GSRS's salt-to-moiety mass factor for a UNII; corrects a heavy salt's mass labeled as moiety. */
+	moietyFactorOf?: (unii: string) => Promise<MoietyFactor | null>;
 };
+
+/**
+ * The directory's strength for each salt the label check converted to its
+ * moiety (rule 3), scaled by the same GSRS factor and kept per the
+ * directory's own denominator: `1.2 g/100mL` lysine acetate → `0.850589 g/100mL`.
+ * Keyed by the directory's lowercased name.
+ */
+function directoryMoietyStrengths(
+	products: SplProduct[],
+	rxNormName: string | null,
+	moietyFactors: Map<string, MoietyFactor>,
+	directory: { name: string; strength: string | null }[]
+): Map<string, string> {
+	const out = new Map<string, string>();
+	if (!moietyFactors.size) return out;
+	for (const product of products) {
+		const checked = checkProductStrengths(product, { rxNormName, moietyFactors, directory });
+		product.ingredients.forEach((ingredient, index) => {
+			if (!checked[index].corrections.some((c) => c.kind === 'moiety-equivalent')) return;
+			const factor = Number(moietyFactors.get(ingredient.unii!)!.factor);
+			const listed = directory.find((entry) => entry.name.toLowerCase() === ingredient.name.toLowerCase());
+			const match = /^\s*(\d*\.?\d+)(\s*[^\d/\s]+.*)$/.exec(listed?.strength ?? '');
+			if (!listed || !match) return;
+			out.set(listed.name.toLowerCase(), `${Number((Number(match[1]) * factor).toPrecision(6))}${match[2]}`);
+		});
+	}
+	return out;
+}
+
+/** The GSRS factors for every moiety-basis salt among `products`, by the salt's UNII. */
+async function moietyFactorsOf(
+	products: { ingredients: SplIngredient[] }[],
+	moietyFactorOf: PackageHints['moietyFactorOf']
+): Promise<Map<string, MoietyFactor>> {
+	const factors = new Map<string, MoietyFactor>();
+	if (!moietyFactorOf) return factors;
+	const uniis = new Set(
+		products
+			.flatMap((product) => product.ingredients)
+			.filter((i) => i.kind === 'active' && i.basis === 'moiety' && i.unii && i.moieties.length === 1)
+			.map((i) => i.unii!)
+	);
+	await Promise.all(
+		[...uniis].map(async (unii) => {
+			const factor = await moietyFactorOf(unii).catch(() => null);
+			if (factor) factors.set(unii, factor);
+		})
+	);
+	return factors;
+}
 
 /**
  * Adds the moieties a label left out of a salt. Nephron's sodium chloride
@@ -1328,6 +1380,7 @@ export async function enrichPackages(
 					: null;
 		const splProducts = xml ? parseSplIngredients(xml) : [];
 		if (hints.moietiesOf) await completeMoieties(splProducts, hints.moietiesOf);
+		const moietyFactors = await moietyFactorsOf(splProducts, hints.moietyFactorOf);
 		const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
 		const hyphenated = new Set(candidates);
 		const ownProducts = splProductsForNdc(splProducts, ndc);
@@ -1478,7 +1531,11 @@ export async function enrichPackages(
 			sourceIngredients.length || activeKitProducts.length !== 1
 				? []
 				: activeKitProducts.flatMap((item) => {
-						const checked = checkProductStrengths(item, { rxNormName: rxNormTitle });
+						const checked = checkProductStrengths(item, {
+							rxNormName: rxNormTitle,
+							moietyFactors,
+							directory: sourceIngredients
+						});
 						return item.ingredients.flatMap((ingredient, index) => {
 							if (ingredient.kind !== 'active') return [];
 							const content = partContent(checked[index], item.part);
@@ -1492,7 +1549,19 @@ export async function enrichPackages(
 							];
 						});
 					});
-		const ingredients = [...sourceIngredients, ...kitIngredients].map((ingredient) => ({
+		// The directory names the salt at the mass the label miscoded as moiety
+		// strength; carry the label's correction over so the rows sum as moiety.
+		const moietyStrengths = directoryMoietyStrengths(
+			labelProducts,
+			rxNormTitle,
+			moietyFactors,
+			sourceIngredients
+		);
+		const listedIngredients = [...sourceIngredients, ...kitIngredients].map((ingredient) => ({
+			...ingredient,
+			strength: moietyStrengths.get(ingredient.name.toLowerCase()) ?? ingredient.strength
+		}));
+		const ingredients = listedIngredients.map((ingredient) => ({
 			...ingredient,
 			strength: dryFill
 				? dryFillStrength(ingredient.strength, doseForm, bulkFillMl, fillVolumeMl)
@@ -1573,7 +1642,11 @@ export async function enrichPackages(
 						doseForm: ownProducts.find((item) => item.doseForm)?.doseForm ?? null,
 						ingredients: [
 							...labelProducts.flatMap((item) => {
-								const checked = checkProductStrengths(item, { rxNormName: rxNormTitle });
+								const checked = checkProductStrengths(item, {
+							rxNormName: rxNormTitle,
+							moietyFactors,
+							directory: sourceIngredients
+						});
 								return item.ingredients.map((ingredient, index) =>
 									labelIngredientOf(
 										ingredient,
@@ -1666,7 +1739,7 @@ export async function enrichPackages(
 			labelerCode: ndc.slice(0, 5),
 			productCode: product?.product_ndc ?? null,
 			// A kit's are its drug part's content; the directory lists none.
-			ingredients: [...sourceIngredients, ...kitIngredients],
+			ingredients: listedIngredients,
 			rxcuiStatus: statusPayload?.ndcStatus?.status ?? null,
 			splSetId: splHit?.setid ?? null,
 			splTitle: splHit?.title ?? null,

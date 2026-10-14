@@ -5,17 +5,17 @@ export type SubstanceRef = { name: string; unii: string };
 
 /** How a strength was moved from one measured substance to another. */
 export type StrengthConversion = {
-  from: { unii: string; mw: number };
-  to: { unii: string; mw: number };
-  /** Units of `from` per `to`; 1 unless the stoichiometry says otherwise. */
-  n: number;
-  /** Exact decimal `MW(to) / (n · MW(from))`. */
-  factor: string;
-  /** The strength before conversion, as the label stated it. */
-  original: string;
-  /** When GSRS answered; null when the molecular weights were entered by hand. */
-  gsrsFetchedAt: string | null;
-  mwEdited: boolean;
+	from: { unii: string; mw: number };
+	to: { unii: string; mw: number };
+	/** Units of `from` per `to`; 1 unless the stoichiometry says otherwise. */
+	n: number;
+	/** Exact decimal `MW(to) / (n · MW(from))`. */
+	factor: string;
+	/** The strength before conversion, as the label stated it. */
+	original: string;
+	/** When GSRS answered; null when the molecular weights were entered by hand. */
+	gsrsFetchedAt: string | null;
+	mwEdited: boolean;
 };
 
 /** One ingredient row as the user says it should read. */
@@ -174,8 +174,25 @@ export function applyIngredientCorrection(
   for (const entry of listed)
     if (entry.name.toLowerCase() === previous) {
       entry.name = correction.substance?.name ?? entry.name;
-      entry.strength = strength;
+      entry.strength = listedStrength(entry.strength, correction) ?? strength;
     }
+}
+
+/**
+ * The catalog's own strength under the correction when it states a
+ * denominator the label row lacks (`.24 g/100mL` beside the label's `1.2 g`):
+ * scaled by the conversion and kept per its own volume, so the row still sums
+ * with its siblings. Null when the corrected label strength should stand.
+ */
+function listedStrength(text: string | null, correction: IngredientCorrection): string | null {
+  const { strength } = correction;
+  if (strength.per !== '1' || strength.perUnit) return null;
+  const match = /^(\d*\.?\d+)\s*([^\d/\s]+)\s*\/\s*(.+)$/.exec((text ?? '').trim());
+  if (!match) return null;
+  const factor = correction.conversion ? Number(correction.conversion.factor) : 1;
+  const value = Number(match[1]) * factor;
+  if (!(value > 0)) return null;
+  return `${Number(value.toPrecision(6))} ${match[2]}/${match[3].trim()}`;
 }
 
 /** Reads a strength string like `500 mg`, `25 mg/1 g` or `25 mg/mL`; null when it is not one. */

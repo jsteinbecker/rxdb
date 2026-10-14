@@ -91,3 +91,39 @@ test('RxNorm names split into per-component strengths', () => {
 		{ name: 'lidocaine hydrochloride', value: 10, unit: 'MG', per: 1, perUnit: 'ML' }
 	]);
 });
+
+// NDC 0264-1933 (TrophAmine 10%): lysine acetate's 1.2 g/100 mL coded ACTIM
+// as though it were lysine. RxNorm copied the number; the directory names the
+// salt at the same mass, and GSRS weights give lysine's share.
+const LYSINE_MOIETY = `<activeMoiety><activeMoiety><code code="K3Z4F929H6" codeSystem="2.16.840.1.113883.4.9"/><name>LYSINE</name></activeMoiety></activeMoiety>`;
+const perDl = (value: string) =>
+	`<quantity><numerator value="${value}" unit="g"/><denominator value="100" unit="mL"/></quantity>`;
+const TROPHAMINE = `<document><manufacturedProduct><manufacturedProduct>
+	<code code="0264-1933" codeSystem="2.16.840.1.113883.6.69"/>
+	<name>TrophAmine</name>
+	<formCode code="C42945" displayName="INJECTION, SOLUTION"/>
+	${ingredient('ACTIM', 'LYSINE ACETATE', 'TTL6G7LIWZ', perDl('1.2'), LYSINE_MOIETY)}
+</manufacturedProduct></manufacturedProduct></document>`;
+// 146.19 / 206.24
+const LYSINE_FACTOR = new Map([['TTL6G7LIWZ', { moietyUnii: 'K3Z4F929H6', factor: '0.708834367727889837' }]]);
+
+test('a heavy salt stated as moiety strength converts when the directory names the salt at that mass', () => {
+	const [product] = parseSplIngredients(TROPHAMINE);
+	const [row] = checkProductStrengths(product, {
+		rxNormName: 'lysine 1.2 MG/ML Injectable Solution',
+		moietyFactors: LYSINE_FACTOR,
+		directory: [{ name: 'LYSINE ACETATE', strength: '1.2 g/100mL' }]
+	});
+	assert.equal(strengthText(row), '0.8506 g/100 mL');
+	assert.equal(row.corrections[0].kind, 'moiety-equivalent');
+	assert.match(row.corrections[0].note, /1\.2 g, the mass of the acetate salt.*0\.8506 g lysine/);
+});
+
+test('a heavy salt is left alone without the directory agreeing on its mass', () => {
+	const [product] = parseSplIngredients(TROPHAMINE);
+	for (const directory of [[], [{ name: 'LYSINE ACETATE', strength: '1.7 g/100mL' }]]) {
+		const [row] = checkProductStrengths(product, { moietyFactors: LYSINE_FACTOR, directory });
+		assert.equal(row.strength, 1.2);
+		assert.deepEqual(row.corrections, []);
+	}
+});

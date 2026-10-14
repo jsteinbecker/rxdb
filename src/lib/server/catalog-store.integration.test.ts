@@ -179,6 +179,20 @@ test(
             (await loadPackageSnapshots(nested, [ndc])).get(ndc)?.item.description,
             'Updated description'
           );
+          const scope = await tx.scope.create({ data: { kind: 'formulary', name: fixtureName } });
+          const formularyItem = await tx.entity.create({ data: { type: 'formulary_item' } });
+          await tx.formularyItem.create({
+            data: { id: formularyItem.id, scopeId: scope.id, kind: 'package', displayName: fixtureName }
+          });
+          const link = () =>
+            tx.formularyItemPackage.create({
+              data: { formularyItemId: formularyItem.id, packageId: first.entityId }
+            });
+          const linked = () =>
+            tx.formularyItemPackage.count({
+              where: { formularyItemId: formularyItem.id, packageId: first.entityId, validTo: null }
+            });
+          await link();
           const partial = mergePackage(updated, {
             ...updated,
             description: null,
@@ -204,21 +218,28 @@ test(
             ).childProductId,
             component.childProductId
           );
+          // A provider that did not answer is no evidence; the package stays on the formulary.
+          assert.equal(await linked(), 1);
           await persistCollection(nested, [], [{ ...updated, isVeterinary: true }]);
           assert.equal(
             (await tx.entity.findUniqueOrThrow({ where: { id: first.entityId } })).status,
             'catalog-excluded'
           );
+          assert.equal(await linked(), 0);
+          await link();
           await persistCollection(nested, [], [updated]);
           assert.equal(
             (await tx.entity.findUniqueOrThrow({ where: { id: first.entityId } })).status,
             'active'
           );
+          // Restoring the package leaves the link made since in place.
+          assert.equal(await linked(), 1);
           await refreshPackageEligibility(nested, [{ ...updated, marketingEndDate: '20000101' }]);
           assert.equal(
             (await tx.entity.findUniqueOrThrow({ where: { id: first.entityId } })).status,
             'catalog-excluded'
           );
+          assert.equal(await linked(), 0);
           await refreshPackageEligibility(nested, [updated]);
           assert.equal(
             (await tx.entity.findUniqueOrThrow({ where: { id: first.entityId } })).status,

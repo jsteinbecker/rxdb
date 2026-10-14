@@ -182,7 +182,8 @@ Canonical order: location, size, repeat, side, method, ink.
 ```
 F: <logo:Pfizer>[emboss] / "VGR 100"[ink:blue] ; B: blank
 CAP(white): "LILLY"[ink:black] ; BODY(blue): ("3105" / "20 mg")[ink:white]
-``` (Hole tags on `<hole>` come before the location.)
+``` 
+(Hole tags on `<hole>` come before the location.)
 
 **`fill`** means the element is scaled up, keeping its proportions and its location code, until it takes up most of the space available to it, stopping just short of whatever it would bump into first:
 

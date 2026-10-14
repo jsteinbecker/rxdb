@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { gsrsMoieties, prismaSubstanceTable } from './unii-substance-store';
+import { gsrsMoieties, gsrsMoietyFactor, prismaSubstanceTable } from './unii-substance-store';
 import { prisma } from '$lib/server/prisma';
 import { toNdc11 } from '../ndc';
 import {
@@ -58,7 +58,8 @@ export async function syncExternalPackages(
 			load: (ndcs) => loadPackageSnapshots(prisma, ndcs),
 			fetch: (ndcs) => enrichPackages(ndcs, env.OPENFDA_API_KEY2, undefined, {
 					...hints,
-					moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma))
+					moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma)),
+					moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma))
 				}),
 			save: (items) => stageCollection(prisma, [], items)
 		},

@@ -314,6 +314,10 @@ model FormularyItem {
       displayName         String     @map("display_name")
       /// User-chosen short form for a timed release ("SR", "XR"), replacing "Extended Release (12 HR)".
       releaseAbbreviation String?    @map("release_abbreviation")
+      /// User replacement for the sourced name ("Glucose" → "Dextrose"); null shows the sourced name.
+      nameOverride        String?    @map("name_override")
+      /// Show a single amount-per-volume strength as a percentage ("12500 MG/250ML" → "5% 250ML").
+      strengthAsPercent   Boolean    @default(false) @map("strength_as_percent")
 
       entity                Entity                 @relation(fields: [id, type], references: [id, type])
       scope                 Scope                  @relation(fields: [scopeId], references: [id])
@@ -568,7 +572,8 @@ model SourceRecord {
       stabilityStudies    StabilityStudy[]
 
       @@unique([ingestionRunId, sourceNativeId])
-      @@index([sourceNativeId, observedAt(sort: Desc)])
+      /// Covers the latest-record lookup (run and id included) so it never reads the wide payload rows.
+      @@index([sourceNativeId, observedAt(sort: Desc), ingestionRunId, id])
       @@index([payloadHash])
       @@map("source_record")
 }

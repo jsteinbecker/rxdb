@@ -212,7 +212,9 @@ export const FormularyItemScalarFieldEnum = {
   scopeId: 'scopeId',
   kind: 'kind',
   displayName: 'displayName',
-  releaseAbbreviation: 'releaseAbbreviation'
+  releaseAbbreviation: 'releaseAbbreviation',
+  nameOverride: 'nameOverride',
+  strengthAsPercent: 'strengthAsPercent'
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]

@@ -22,6 +22,39 @@
   const remaining = $derived(remainingNdcs(scenarios, avoid));
   const names = $derived(new Map(scenarios.columns.map((entry) => [entry.key, entry.name])));
   const keeps = (has: string[]) => !has.some((key) => avoid.includes(key));
+
+  // Slanted labels get two lines. The header rises (from --rise's 6rem up to
+  // 9rem) until every label fits in two; past that, labels clamp with an
+  // ellipsis and carry their full name in the tooltip. Widths are estimated
+  // from glyph classes so the header lays out the same on the server.
+  const RISES = [6, 6.5, 7, 7.5, 8, 8.5, 9];
+  const glyph = (c: string) => (c === ' ' ? 0.28 : /[A-Z0-9]/.test(c) ? 0.68 : 0.55);
+  const textEm = (text: string) => [...text].reduce((sum, c) => sum + glyph(c), 0);
+  const labelText = (entry: { name: string; listed: string[] }) =>
+    entry.listed.length > 1 ? `${entry.name} +${entry.listed.length - 1}` : entry.name;
+  /** Lines a greedy wrap takes at `width` em, breaking words that overflow alone. */
+  function lineCount(text: string, width: number): number {
+    let lines = 1;
+    let used = 0;
+    for (const word of text.split(/\s+/).filter(Boolean)) {
+      const w = textEm(word);
+      const gap = used ? glyph(' ') : 0;
+      if (used + gap + w <= width) {
+        used += gap + w;
+        continue;
+      }
+      if (used) lines++;
+      lines += Math.ceil(w / width) - 1;
+      used = w % width || width;
+    }
+    return lines;
+  }
+  // .slant is rise·√2 − 0.6rem long, less its padding and the button's; in em of the 0.68rem label.
+  const labelEm = (rise: number) => (rise * Math.SQRT2 - 0.6 - 0.45 - 0.5) / 0.68;
+  const fitsAt = (text: string, rise: number) => lineCount(text, labelEm(rise)) <= 2;
+  const rise = $derived(
+    RISES.find((r) => scenarios.columns.every((entry) => fitsAt(labelText(entry), r))) ?? RISES[RISES.length - 1]
+  );
 </script>
 
 <!-- A single combination leaves nothing to choose between, so there is no table to show. -->
@@ -58,7 +91,7 @@
     {/if}
 
     <div class="scroll">
-      <table>
+      <table style:--rise="{rise}rem">
         <thead>
           <tr>
             <th class="corner">NDCs</th>
@@ -70,7 +103,7 @@
                   <button
                     type="button"
                     aria-pressed={avoid.includes(entry.key)}
-                    title="{entry.kind === 'active' ? 'Active' : 'Inactive'}{entry.listed.length > 1
+                    title="{fitsAt(labelText(entry), rise) ? '' : `${labelText(entry)} · `}{entry.kind === 'active' ? 'Active' : 'Inactive'}{entry.listed.length > 1
                       ? ` (listed as ${entry.listed.join(', ')})`
                       : ''} · avoiding it alone leaves {plural(left, 'NDC')}"
                     onclick={() => toggle(entry.key)}
@@ -91,7 +124,7 @@
             <tr class:dropped={!keeps(profile.has)}>
               <td class="ndcs">
                 <details>
-                  <summary><span class="group">{groupNames[p]}</span><span class="count">{profile.ndcs.length}</span></summary>
+                  <summary title={groupNames[p]}><span class="group">{groupNames[p]}</span><span class="count">{profile.ndcs.length}</span></summary>
                   <span class="mono small">
                     {#each profile.ndcs as ndc, i (ndc)}{#if i}{', '}{/if}<a href="/formulary/ndc/{ndc}">{formatNdc(ndc)}</a
                       >{/each}
@@ -249,6 +282,7 @@
     /* Tighter than the ~1.75rem between neighbouring slanted labels, so a
        wrapped label reads as one label, not two. */
     line-height: 1;
+    overflow-wrap: anywhere;
     font-weight: inherit;
     color: inherit;
     text-align: left;
@@ -325,14 +359,49 @@
     color: #a12622;
   }
 
+  /* A hard width: long group names ellipsize (full name in the tooltip)
+     instead of pushing under the sticky edge into the ingredient cells. */
   .ndcs {
-    max-width: 16rem;
+    width: 14rem;
+    min-width: 14rem;
+    max-width: 14rem;
+    overflow: hidden;
     vertical-align: top;
+    font-size: 0.78rem;
   }
 
   .ndcs summary {
+    display: flex;
+    align-items: baseline;
     cursor: pointer;
     white-space: nowrap;
+  }
+
+  /* display: flex drops the disclosure marker; put it back. */
+  .ndcs summary::before {
+    content: '▸';
+    flex: none;
+    margin-right: 0.3rem;
+    color: #8792a2;
+    font-size: 0.7em;
+  }
+
+  .ndcs details[open] summary::before {
+    content: '▾';
+  }
+
+  .ndcs summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .group {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .count {
+    flex: none;
   }
 
   .ndcs details[open] summary {

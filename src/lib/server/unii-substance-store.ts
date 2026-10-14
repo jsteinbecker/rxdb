@@ -1,4 +1,6 @@
 import type { PrismaClient } from '../../generated/client';
+import type { MoietyFactor } from '../spl-strength-checks';
+import { conversionFactor } from '../strength-conversion';
 import { activeMoietiesOf, type GsrsLookup, type GsrsSubstance, lookupUnii } from './gsrs';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -118,4 +120,22 @@ export const gsrsMoieties =
 	async (unii: string): Promise<{ unii: string; name: string }[] | null> => {
 		const answer = await substanceFor(table, unii);
 		return answer.status === 'ok' ? answer.substance.moieties : null;
+	};
+
+/**
+ * How a salt's mass becomes its drug moiety's, from GSRS molecular weights:
+ * `moietyCount · MW(moiety) / MW(salt)`. Null when GSRS names no single drug
+ * moiety or lacks either weight.
+ */
+export const gsrsMoietyFactor =
+	(table: SubstanceTable) =>
+	async (unii: string): Promise<MoietyFactor | null> => {
+		const salt = await substanceFor(table, unii);
+		if (salt.status !== 'ok') return null;
+		const { mw, moiety, moietyCount } = salt.substance;
+		if (!mw || !moiety || !moietyCount || moiety.unii === unii) return null;
+		const base = await substanceFor(table, moiety.unii);
+		if (base.status !== 'ok' || !base.substance.mw) return null;
+		const factor = conversionFactor(mw, base.substance.mw, 1 / moietyCount);
+		return factor ? { moietyUnii: moiety.unii, factor } : null;
 	};

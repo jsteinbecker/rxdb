@@ -255,6 +255,7 @@ export type PharmClassRuleOrderByWithRelationInput = {
 
 export type PharmClassRuleWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  scopeId_moietyKey_doseFormGroup_route_strengthKey?: Prisma.PharmClassRuleScopeIdMoietyKeyDoseFormGroupRouteStrengthKeyCompoundUniqueInput
   AND?: Prisma.PharmClassRuleWhereInput | Prisma.PharmClassRuleWhereInput[]
   OR?: Prisma.PharmClassRuleWhereInput[]
   NOT?: Prisma.PharmClassRuleWhereInput | Prisma.PharmClassRuleWhereInput[]
@@ -270,7 +271,7 @@ export type PharmClassRuleWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"PharmClassRule"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PharmClassRule"> | Date | string
   scope?: Prisma.XOR<Prisma.ScopeScalarRelationFilter, Prisma.ScopeWhereInput>
-}, "id">
+}, "id" | "scopeId_moietyKey_doseFormGroup_route_strengthKey">
 
 export type PharmClassRuleOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -420,6 +421,14 @@ export type PharmClassRuleListRelationFilter = {
 
 export type PharmClassRuleOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type PharmClassRuleScopeIdMoietyKeyDoseFormGroupRouteStrengthKeyCompoundUniqueInput = {
+  scopeId: string
+  moietyKey: string
+  doseFormGroup: string
+  route: string
+  strengthKey: string
 }
 
 export type PharmClassRuleCountOrderByAggregateInput = {

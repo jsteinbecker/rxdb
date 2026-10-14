@@ -31,6 +31,8 @@ export type FormularyItemMinAggregateOutputType = {
   kind: string | null
   displayName: string | null
   releaseAbbreviation: string | null
+  nameOverride: string | null
+  strengthAsPercent: boolean | null
 }
 
 export type FormularyItemMaxAggregateOutputType = {
@@ -40,6 +42,8 @@ export type FormularyItemMaxAggregateOutputType = {
   kind: string | null
   displayName: string | null
   releaseAbbreviation: string | null
+  nameOverride: string | null
+  strengthAsPercent: boolean | null
 }
 
 export type FormularyItemCountAggregateOutputType = {
@@ -49,6 +53,8 @@ export type FormularyItemCountAggregateOutputType = {
   kind: number
   displayName: number
   releaseAbbreviation: number
+  nameOverride: number
+  strengthAsPercent: number
   _all: number
 }
 
@@ -60,6 +66,8 @@ export type FormularyItemMinAggregateInputType = {
   kind?: true
   displayName?: true
   releaseAbbreviation?: true
+  nameOverride?: true
+  strengthAsPercent?: true
 }
 
 export type FormularyItemMaxAggregateInputType = {
@@ -69,6 +77,8 @@ export type FormularyItemMaxAggregateInputType = {
   kind?: true
   displayName?: true
   releaseAbbreviation?: true
+  nameOverride?: true
+  strengthAsPercent?: true
 }
 
 export type FormularyItemCountAggregateInputType = {
@@ -78,6 +88,8 @@ export type FormularyItemCountAggregateInputType = {
   kind?: true
   displayName?: true
   releaseAbbreviation?: true
+  nameOverride?: true
+  strengthAsPercent?: true
   _all?: true
 }
 
@@ -160,6 +172,8 @@ export type FormularyItemGroupByOutputType = {
   kind: string
   displayName: string
   releaseAbbreviation: string | null
+  nameOverride: string | null
+  strengthAsPercent: boolean
   _count: FormularyItemCountAggregateOutputType | null
   _min: FormularyItemMinAggregateOutputType | null
   _max: FormularyItemMaxAggregateOutputType | null
@@ -190,6 +204,8 @@ export type FormularyItemWhereInput = {
   kind?: Prisma.StringFilter<"FormularyItem"> | string
   displayName?: Prisma.StringFilter<"FormularyItem"> | string
   releaseAbbreviation?: Prisma.StringNullableFilter<"FormularyItem"> | string | null
+  nameOverride?: Prisma.StringNullableFilter<"FormularyItem"> | string | null
+  strengthAsPercent?: Prisma.BoolFilter<"FormularyItem"> | boolean
   entity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
   scope?: Prisma.XOR<Prisma.ScopeScalarRelationFilter, Prisma.ScopeWhereInput>
   formularyItemPackages?: Prisma.FormularyItemPackageListRelationFilter
@@ -204,6 +220,8 @@ export type FormularyItemOrderByWithRelationInput = {
   kind?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   releaseAbbreviation?: Prisma.SortOrderInput | Prisma.SortOrder
+  nameOverride?: Prisma.SortOrderInput | Prisma.SortOrder
+  strengthAsPercent?: Prisma.SortOrder
   entity?: Prisma.EntityOrderByWithRelationInput
   scope?: Prisma.ScopeOrderByWithRelationInput
   formularyItemPackages?: Prisma.FormularyItemPackageOrderByRelationAggregateInput
@@ -222,6 +240,8 @@ export type FormularyItemWhereUniqueInput = Prisma.AtLeast<{
   kind?: Prisma.StringFilter<"FormularyItem"> | string
   displayName?: Prisma.StringFilter<"FormularyItem"> | string
   releaseAbbreviation?: Prisma.StringNullableFilter<"FormularyItem"> | string | null
+  nameOverride?: Prisma.StringNullableFilter<"FormularyItem"> | string | null
+  strengthAsPercent?: Prisma.BoolFilter<"FormularyItem"> | boolean
   entity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
   scope?: Prisma.XOR<Prisma.ScopeScalarRelationFilter, Prisma.ScopeWhereInput>
   formularyItemPackages?: Prisma.FormularyItemPackageListRelationFilter
@@ -236,6 +256,8 @@ export type FormularyItemOrderByWithAggregationInput = {
   kind?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   releaseAbbreviation?: Prisma.SortOrderInput | Prisma.SortOrder
+  nameOverride?: Prisma.SortOrderInput | Prisma.SortOrder
+  strengthAsPercent?: Prisma.SortOrder
   _count?: Prisma.FormularyItemCountOrderByAggregateInput
   _max?: Prisma.FormularyItemMaxOrderByAggregateInput
   _min?: Prisma.FormularyItemMinOrderByAggregateInput
@@ -251,12 +273,16 @@ export type FormularyItemScalarWhereWithAggregatesInput = {
   kind?: Prisma.StringWithAggregatesFilter<"FormularyItem"> | string
   displayName?: Prisma.StringWithAggregatesFilter<"FormularyItem"> | string
   releaseAbbreviation?: Prisma.StringNullableWithAggregatesFilter<"FormularyItem"> | string | null
+  nameOverride?: Prisma.StringNullableWithAggregatesFilter<"FormularyItem"> | string | null
+  strengthAsPercent?: Prisma.BoolWithAggregatesFilter<"FormularyItem"> | boolean
 }
 
 export type FormularyItemCreateInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   entity: Prisma.EntityCreateNestedOneWithoutFormularyItemInput
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
@@ -271,6 +297,8 @@ export type FormularyItemUncheckedCreateInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
@@ -280,6 +308,8 @@ export type FormularyItemUpdateInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   entity?: Prisma.EntityUpdateOneRequiredWithoutFormularyItemNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
@@ -294,6 +324,8 @@ export type FormularyItemUncheckedUpdateInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
@@ -306,12 +338,16 @@ export type FormularyItemCreateManyInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
 }
 
 export type FormularyItemUpdateManyMutationInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type FormularyItemUncheckedUpdateManyInput = {
@@ -321,6 +357,8 @@ export type FormularyItemUncheckedUpdateManyInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type FormularyItemListRelationFilter = {
@@ -350,6 +388,8 @@ export type FormularyItemCountOrderByAggregateInput = {
   kind?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   releaseAbbreviation?: Prisma.SortOrder
+  nameOverride?: Prisma.SortOrder
+  strengthAsPercent?: Prisma.SortOrder
 }
 
 export type FormularyItemMaxOrderByAggregateInput = {
@@ -359,6 +399,8 @@ export type FormularyItemMaxOrderByAggregateInput = {
   kind?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   releaseAbbreviation?: Prisma.SortOrder
+  nameOverride?: Prisma.SortOrder
+  strengthAsPercent?: Prisma.SortOrder
 }
 
 export type FormularyItemMinOrderByAggregateInput = {
@@ -368,6 +410,8 @@ export type FormularyItemMinOrderByAggregateInput = {
   kind?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   releaseAbbreviation?: Prisma.SortOrder
+  nameOverride?: Prisma.SortOrder
+  strengthAsPercent?: Prisma.SortOrder
 }
 
 export type FormularyItemScalarRelationFilter = {
@@ -497,6 +541,8 @@ export type FormularyItemCreateWithoutScopeInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   entity: Prisma.EntityCreateNestedOneWithoutFormularyItemInput
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
@@ -509,6 +555,8 @@ export type FormularyItemUncheckedCreateWithoutScopeInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
@@ -550,12 +598,16 @@ export type FormularyItemScalarWhereInput = {
   kind?: Prisma.StringFilter<"FormularyItem"> | string
   displayName?: Prisma.StringFilter<"FormularyItem"> | string
   releaseAbbreviation?: Prisma.StringNullableFilter<"FormularyItem"> | string | null
+  nameOverride?: Prisma.StringNullableFilter<"FormularyItem"> | string | null
+  strengthAsPercent?: Prisma.BoolFilter<"FormularyItem"> | boolean
 }
 
 export type FormularyItemCreateWithoutEntityInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
@@ -567,6 +619,8 @@ export type FormularyItemUncheckedCreateWithoutEntityInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
@@ -592,6 +646,8 @@ export type FormularyItemUpdateWithoutEntityInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
@@ -603,6 +659,8 @@ export type FormularyItemUncheckedUpdateWithoutEntityInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
@@ -612,6 +670,8 @@ export type FormularyItemCreateWithoutBrandsInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   entity: Prisma.EntityCreateNestedOneWithoutFormularyItemInput
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
@@ -625,6 +685,8 @@ export type FormularyItemUncheckedCreateWithoutBrandsInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
 }
@@ -649,6 +711,8 @@ export type FormularyItemUpdateWithoutBrandsInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   entity?: Prisma.EntityUpdateOneRequiredWithoutFormularyItemNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
@@ -662,6 +726,8 @@ export type FormularyItemUncheckedUpdateWithoutBrandsInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
@@ -670,6 +736,8 @@ export type FormularyItemCreateWithoutFormularyItemPackagesInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   entity: Prisma.EntityCreateNestedOneWithoutFormularyItemInput
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
@@ -683,6 +751,8 @@ export type FormularyItemUncheckedCreateWithoutFormularyItemPackagesInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
 }
@@ -707,6 +777,8 @@ export type FormularyItemUpdateWithoutFormularyItemPackagesInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   entity?: Prisma.EntityUpdateOneRequiredWithoutFormularyItemNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
@@ -720,6 +792,8 @@ export type FormularyItemUncheckedUpdateWithoutFormularyItemPackagesInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
@@ -728,6 +802,8 @@ export type FormularyItemCreateWithoutCompoundFormulasInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   entity: Prisma.EntityCreateNestedOneWithoutFormularyItemInput
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
@@ -741,6 +817,8 @@ export type FormularyItemUncheckedCreateWithoutCompoundFormulasInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
 }
@@ -765,6 +843,8 @@ export type FormularyItemUpdateWithoutCompoundFormulasInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   entity?: Prisma.EntityUpdateOneRequiredWithoutFormularyItemNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
@@ -778,6 +858,8 @@ export type FormularyItemUncheckedUpdateWithoutCompoundFormulasInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
@@ -788,12 +870,16 @@ export type FormularyItemCreateManyScopeInput = {
   kind: string
   displayName: string
   releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthAsPercent?: boolean
 }
 
 export type FormularyItemUpdateWithoutScopeInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   entity?: Prisma.EntityUpdateOneRequiredWithoutFormularyItemNestedInput
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
@@ -806,6 +892,8 @@ export type FormularyItemUncheckedUpdateWithoutScopeInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
@@ -817,6 +905,8 @@ export type FormularyItemUncheckedUpdateManyWithoutScopeInput = {
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthAsPercent?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
@@ -875,6 +965,8 @@ export type FormularyItemSelect<ExtArgs extends runtime.Types.Extensions.Interna
   kind?: boolean
   displayName?: boolean
   releaseAbbreviation?: boolean
+  nameOverride?: boolean
+  strengthAsPercent?: boolean
   entity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
   formularyItemPackages?: boolean | Prisma.FormularyItem$formularyItemPackagesArgs<ExtArgs>
@@ -890,6 +982,8 @@ export type FormularyItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   kind?: boolean
   displayName?: boolean
   releaseAbbreviation?: boolean
+  nameOverride?: boolean
+  strengthAsPercent?: boolean
   entity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["formularyItem"]>
@@ -901,6 +995,8 @@ export type FormularyItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   kind?: boolean
   displayName?: boolean
   releaseAbbreviation?: boolean
+  nameOverride?: boolean
+  strengthAsPercent?: boolean
   entity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["formularyItem"]>
@@ -912,9 +1008,11 @@ export type FormularyItemSelectScalar = {
   kind?: boolean
   displayName?: boolean
   releaseAbbreviation?: boolean
+  nameOverride?: boolean
+  strengthAsPercent?: boolean
 }
 
-export type FormularyItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "scopeId" | "kind" | "displayName" | "releaseAbbreviation", ExtArgs["result"]["formularyItem"]>
+export type FormularyItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "scopeId" | "kind" | "displayName" | "releaseAbbreviation" | "nameOverride" | "strengthAsPercent", ExtArgs["result"]["formularyItem"]>
 export type FormularyItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
@@ -951,6 +1049,14 @@ export type $FormularyItemPayload<ExtArgs extends runtime.Types.Extensions.Inter
      * User-chosen short form for a timed release ("SR", "XR"), replacing "Extended Release (12 HR)".
      */
     releaseAbbreviation: string | null
+    /**
+     * User replacement for the sourced name ("Glucose" → "Dextrose"); null shows the sourced name.
+     */
+    nameOverride: string | null
+    /**
+     * Show a single amount-per-volume strength as a percentage ("12500 MG/250ML" → "5% 250ML").
+     */
+    strengthAsPercent: boolean
   }, ExtArgs["result"]["formularyItem"]>
   composites: {}
 }
@@ -1385,6 +1491,8 @@ export interface FormularyItemFieldRefs {
   readonly kind: Prisma.FieldRef<"FormularyItem", 'String'>
   readonly displayName: Prisma.FieldRef<"FormularyItem", 'String'>
   readonly releaseAbbreviation: Prisma.FieldRef<"FormularyItem", 'String'>
+  readonly nameOverride: Prisma.FieldRef<"FormularyItem", 'String'>
+  readonly strengthAsPercent: Prisma.FieldRef<"FormularyItem", 'Boolean'>
 }
     
 

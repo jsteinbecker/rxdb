@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { packageDisplayTitle } from '../package-title';
+import { labelProductName, packageDisplayTitle, rxNormPackageTitle } from '../package-title';
 
 const rxnav = (conceptName: string) => ({ rxnav: { conceptName } });
 
@@ -90,4 +90,50 @@ test('falls back to the RxNorm name without ingredients, and null without either
     'Atorvastatin 10 MG Oral Tablet [Lipitor] [Pfizer]'
   );
   assert.equal(packageDisplayTitle({ ingredients: [], brandName: 'Lipitor' }), null);
+});
+
+test('the RxNorm title leads with the clinical drug and leaves the labeler to the page', () => {
+  const crofab = {
+    description: '1 in 1 VIAL, GLASS',
+    brandName: 'CroFab',
+    genericName: 'ovine crotalidae venoms immune fab',
+    labelerName: 'BTG International Inc.',
+    ingredients: [{ name: 'CROTALUS ATROX IMMUNE FAB ANTIVENIN (OVINE)', strength: '1 g/1' }],
+    details: rxnav(
+      'Agkistrodon piscivorus antivenin 780 UNT / Crotalus adamanteus antivenin 420 UNT / Crotalus atrox antivenin 1270 UNT / Crotalus scutulatus antivenin 5570 UNT Injection [CroFab]'
+    )
+  };
+  assert.equal(
+    rxNormPackageTitle(crofab),
+    'Agkistrodon piscivorus antivenin 780 UNT / Crotalus adamanteus antivenin 420 UNT / Crotalus atrox antivenin 1270 UNT / Crotalus scutulatus antivenin 5570 UNT Injection [CroFab]'
+  );
+  assert.equal(labelProductName(crofab), 'CroFab (ovine crotalidae venoms immune fab)');
+});
+
+test('the RxNorm title restates a quantified SCD and keeps the package context', () => {
+  assert.equal(
+    rxNormPackageTitle({
+      description: '10 VIAL, SINGLE-DOSE in 1 CARTON',
+      labelerName: 'Merck',
+      details: rxnav('4 ML pembrolizumab 25 MG/ML Injection')
+    }),
+    'Pembrolizumab 100 MG/4ML Injection CARTON of 10 VIAL'
+  );
+});
+
+test('the RxNorm title falls back to the generated title without a concept', () => {
+  const item = {
+    doseForm: 'TABLET',
+    labelerName: 'Pfizer',
+    ingredients: [{ name: 'ATORVASTATIN CALCIUM', strength: '10 mg/1' }]
+  };
+  assert.equal(rxNormPackageTitle(item), packageDisplayTitle(item));
+});
+
+test('the label name is the generic alone when the brand only restates it', () => {
+  assert.equal(
+    labelProductName({ brandName: 'VANCOMYCIN HYDROCHLORIDE', genericName: 'VANCOMYCIN HYDROCHLORIDE' }),
+    'vancomycin hydrochloride'
+  );
+  assert.equal(labelProductName({}), null);
 });

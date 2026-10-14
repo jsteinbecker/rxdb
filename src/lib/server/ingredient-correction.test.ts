@@ -5,6 +5,7 @@ import { citeOverride } from './override-citation';
 import { packageFixture } from './catalog-test-fixtures';
 import { isProductLevelKey, type PropertyOverride } from '../property-override-fields';
 import {
+	applyIngredientCorrection,
 	formatStrength,
 	ingredientAsCorrection,
 	ingredientCorrectionKey,
@@ -152,4 +153,25 @@ test('a correction can cite an equivalent NDC whose row matches', () => {
 	assert.throws(() =>
 		citeOverride(current, KEY, value, { source: 'ndc', ndc: other.ndc }, [other])
 	);
+});
+
+test('a correction keeps the catalog row per its own volume when the label row has none', () => {
+	const target = { name: 'ACETYL L-TYROSINE', unii: null, basis: null, strength: '1.2 g', moieties: [] };
+	const listed = [{ name: 'ACETYL L-TYROSINE', strength: '.24 g/100mL' }];
+	applyIngredientCorrection(target, listed, {
+		basis: 'moiety',
+		moiety: { name: 'TYROSINE', unii: '42HK56048U' },
+		strength: { value: '0.974', unit: 'g', per: '1', perUnit: '' },
+		conversion: {
+			from: { unii: 'DA8G610ZO5', mw: 223.2256 },
+			to: { unii: '42HK56048U', mw: 181.1889 },
+			n: 1,
+			factor: '0.81168512930416583',
+			original: '1.2 g',
+			gsrsFetchedAt: null,
+			mwEdited: false
+		}
+	});
+	assert.equal(target.strength, '0.974 g');
+	assert.equal(listed[0].strength, '0.194804 g/100mL');
 });

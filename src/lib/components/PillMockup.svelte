@@ -1,6 +1,6 @@
 <script lang="ts">
 import type {PillAppearance} from '$lib/spl-characteristics';
-import {appearanceText} from '$lib/spl-characteristics';
+import {appearanceText, swatchOf} from '$lib/spl-characteristics';
 import {SECTION_TITLES} from '$lib/spl-appearance-text';
 import {drawPill, type ShellLook, holeBevel, holeCounter, holeStroke, markTransform, symbolPath} from '$lib/imprints/iln-render';
 import type {PillImageLayout} from '$lib/pill-image-layout';
@@ -132,6 +132,26 @@ function particles(form: ShellLook['form'], x0: number, y0: number, y1: number) 
       return out;
 }
 
+/**
+ * Surface photos, prepared by `scripts/build-pill-textures.ts`: a grey relief map (grain, specks, no
+ * colour) blended over any pill, and the photo's own colour, which only a white pill wears.
+ */
+type Texture = 'tablet' | 'coated-tablet' | 'capsule';
+const WHITE = swatchOf('white');
+/** Each white tile's mean colour, printed by the build script: what a white pill's shading is cut from. */
+const TEXTURE_WHITE: Record<Texture, string> = {tablet: '#fdf4ed', 'coated-tablet': '#f7f6f6', capsule: '#f6f6f6'};
+/** One tile in box units: about half a round tablet across, so the grain reads at its true scale. */
+const TILE = {width: 64, height: 43.2};
+
+/** Which surface a view wears: capsule gelatin, a film or sugar coat, or bare compressed powder. Softgels stay smooth. */
+const textureOf = $derived.by((): ((label: string, finish: string) => Texture | null) => {
+      const coated = /coat/i.test(`${doseForm ?? ''} ${appearance.profile ?? ''} ${appearance.shapeText ?? ''}`);
+      return (label, finish) =>
+            label.startsWith('CAPSULE') ? 'capsule' : finish === 'ink' ? null : coated ? 'coated-tablet' : 'tablet';
+});
+/** A region's paint: a white pill takes the texture's own white, every other colour stays as stated. */
+const paint = (fill: string, tex: Texture | null) => (tex && fill === WHITE ? TEXTURE_WHITE[tex] : fill);
+
 const bevelOf = (view: {width: number; height: number}) => Math.min(view.width, view.height) * 0.07;
 
 const turn = (deg: number) => (deg ? `rotate(${deg} 50 50)` : undefined);
@@ -216,9 +236,21 @@ const tooltip = $derived(
       </g>
 {/snippet}
 
-{#snippet half(x: number, fill: string, look: ShellLook | null | undefined, h: number)}
+{#snippet surface(x: number, width: number, fill: string, tex: Texture | null, id: string)}
+      {#if tex && fill === WHITE}
+            <rect {x} y="0" {width} height="100" fill={`url(#${id}-white)`}/>
+      {:else}
+            <rect {x} y="0" {width} height="100" {fill}/>
+            {#if tex}
+                  <!-- Relief only: mid-grey leaves the colour alone, lighter and darker grain lifts and sinks it. -->
+                  <rect {x} y="0" {width} height="100" fill={`url(#${id}-grain)`} class="grain"/>
+            {/if}
+      {/if}
+{/snippet}
+
+{#snippet half(x: number, fill: string, look: ShellLook | null | undefined, h: number, tex: Texture | null, id: string)}
       {#if !look}
-            <rect {x} y="0" width="50" height="100" {fill}/>
+            {@render surface(x, 50, fill, tex, id)}
       {:else}
             {@const top = 50 - h / 2}
             {@const level = top + h * (look.form === 'liquid' || look.form === 'gel' ? 0.3 : 0.4)}
@@ -253,8 +285,9 @@ const tooltip = $derived(
       <div class="views" class:compact>
             {#each drawing.views as view, v (view.label)}
                   {@const id = `${uid}-${v}`}
-                  {@const base = view.fills[0]}
                   {@const lit = relief(view.label, view.finish)}
+                  {@const tex = textureOf(view.label, view.finish)}
+                  {@const base = paint(view.fills[0], tex)}
                   {@const holes = view.marks.filter((m): m is SymbolMark => m.kind === 'symbol' && m.style === 'hole')}
                   <div class="view">
                         <svg
@@ -305,6 +338,15 @@ const tooltip = $derived(
                                                       {@render holeShape(mark, 0, '#000', 1, 0)}
                                                 {/each}
                                           </mask>
+                                    {/if}
+                                    {#if tex}
+                                          {#each ['grain', 'white'] as kind (kind)}
+                                                <pattern id={`${id}-${kind}`} patternUnits="userSpaceOnUse"
+                                                         width={TILE.width} height={TILE.height}>
+                                                      <image href={`/textures/${kind === 'grain' ? 'detail' : 'white'}/${tex}.jpg`}
+                                                             width={TILE.width} height={TILE.height} preserveAspectRatio="none"/>
+                                                </pattern>
+                                          {/each}
                                     {/if}
                                     <clipPath id={`${id}-clip`}>
                                           <path d={view.path} transform={turn(view.rotate)}/>
@@ -360,12 +402,12 @@ const tooltip = $derived(
                               <g mask={holes.length ? `url(#${id}-holes)` : undefined}>
                               <g clip-path={`url(#${id}-clip)`}>
                                     {#if view.fills.length === 2}
-                                          {@render half(0, view.fills[0], view.shells?.[0], view.height)}
-                                          {@render half(50, view.fills[1], view.shells?.[1], view.height)}
-                                          <line x1="50" y1="0" x2="50" y2="100" stroke={shade(view.fills[1], 0.3)}
+                                          {@render half(0, view.fills[0], view.shells?.[0], view.height, tex, id)}
+                                          {@render half(50, view.fills[1], view.shells?.[1], view.height, tex, id)}
+                                          <line x1="50" y1="0" x2="50" y2="100" stroke={shade(paint(view.fills[1], tex), 0.3)}
                                                 stroke-width="0.8"/>
                                     {:else}
-                                          <rect x="0" y="0" width="100" height="100" fill={base}/>
+                                          {@render surface(0, 100, view.fills[0], tex, id)}
                                     {/if}
 
                                     {#each view.marks as mark, i (i)}
@@ -421,7 +463,7 @@ const tooltip = $derived(
 
                                     {#each view.marks as mark, i (i)}
                                           {@const
-                                                fill = view.fills.length === 2 ? view.fills[(mark.kind === 'text' || mark.kind === 'symbol') && mark.x > 50 ? 1 : 0] : base}
+                                                fill = view.fills.length === 2 ? paint(view.fills[(mark.kind === 'text' || mark.kind === 'symbol') && mark.x > 50 ? 1 : 0], tex) : base}
                                           {@const finish = (mark.kind === 'score' ? undefined : mark.finish) ?? view.finish}
                                           {@const color = finish === 'ink'
                                                 ? ((mark.kind === 'score' ? undefined : mark.ink) ?? inkFor(fill))
@@ -553,6 +595,11 @@ const tooltip = $derived(
             overflow: visible;
             /* Light falls from the upper left: a soft cast shadow down-right, plus a tight contact shadow. */
             filter: drop-shadow(0.12em 0.22em 0.18em rgb(0 0 0 / 0.22)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.25));
+      }
+
+      /* The relief map is centred on mid-grey, which soft-light leaves untouched. */
+      .grain {
+            mix-blend-mode: soft-light;
       }
 
       .glyph {

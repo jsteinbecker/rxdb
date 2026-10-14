@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { findDefaultScope } from '$lib/server/catalog-formulary';
-import { formularyRows } from '$lib/server/formulary-view';
+import { formularyNdcs } from '$lib/server/formulary-view';
 import {
 	labeledFormat,
 	labelerPackages,
@@ -18,9 +18,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		labelerPackages(prisma, code),
 		findDefaultScope(prisma)
 	]);
-	const onFormulary = new Set(
-		scope ? (await formularyRows(prisma, scope.id)).map((row) => row.ndc) : []
-	);
+	const onFormulary = scope ? await formularyNdcs(prisma, scope.id) : new Set<string>();
 	// Sources disagree on casing, so tally names case-insensitively and show the
 	// most common spelling of each.
 	const names = new Map<string, Map<string, number>>();

@@ -6,6 +6,7 @@ import { addBrandTag, itemBrands, removeBrandTag, restoreBrandTag } from '$lib/s
 import { itemPackages, relatedItems } from '$lib/formulary-item';
 import { parseBrandName } from '$lib/brand-tags';
 import { parseReleaseAbbreviation } from '$lib/time-release';
+import { parseNameOverride } from '$lib/item-name';
 import { summarizeItem } from '$lib/item-summary';
 import { loadPackageSnapshots } from '$lib/server/catalog-store';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
@@ -113,6 +114,21 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
+	setName: async ({ params, request }) => {
+		const form = await request.formData();
+		const parsed = parseNameOverride(form.get('name'));
+		if ('error' in parsed) return fail(400, { nameMessage: parsed.error });
+		const { item } = await itemInScope(params.id);
+		if (!item) error(404, 'That item is not on this formulary.');
+		await prisma.formularyItem.update({
+			where: { id: params.id },
+			data: {
+				// Saving the sourced name unchanged keeps the item following its source.
+				nameOverride: parsed.name === item.sourceName ? null : parsed.name,
+				strengthAsPercent: form.get('percent') === 'on'
+			}
+		});
+	},
 	setReleaseAbbreviation: async ({ params, request }) => {
 		const parsed = parseReleaseAbbreviation((await request.formData()).get('abbreviation'));
 		if ('error' in parsed) return fail(400, { releaseMessage: parsed.error });

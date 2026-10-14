@@ -1,4 +1,4 @@
-import {quantifiedScdName} from '$lib/quantified-scd';
+import { itemName } from '$lib/item-name';
 import type {PrismaClient} from '../../generated/client';
 import type {FormularyRow} from '../formulary-hierarchy';
 import {loadPackageSnapshots} from './catalog-store';
@@ -22,7 +22,7 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
     },
     select: {
       preferenceRank: true,
-      formularyItem: { select: { id: true, displayName: true } },
+      formularyItem: { select: { id: true, displayName: true, nameOverride: true, strengthAsPercent: true } },
       package: {
         select: {
           id: true,
@@ -102,7 +102,7 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
         packageId: link.package.id,
         ndc,
         formularyItemId: link.formularyItem.id,
-        formularyItem: quantifiedScdName(pseudo?.name ?? link.formularyItem.displayName),
+        formularyItem: itemName(pseudo?.name ?? link.formularyItem.displayName, link.formularyItem),
         description: facts.description,
         displayTitle: packageDisplayTitle(facts),
         routes: item?.details?.product?.routes ?? [],
@@ -120,6 +120,33 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
       }
     ];
   }));
+}
+
+/** The NDCs `formularyRows` would list, without loading anything else about them. */
+export async function formularyNdcs(db: PrismaClient, scopeId: string): Promise<Set<string>> {
+  const links = await db.formularyItemPackage.findMany({
+    where: {
+      validTo: null,
+      formularyItem: { scopeId, entity: { retiredAt: null } },
+      package: { entity: { status: { not: 'catalog-excluded' } } }
+    },
+    select: {
+      package: {
+        select: {
+          entity: {
+            select: {
+              externalIdentifiers: {
+                where: { namespace: 'ndc11', validTo: null },
+                select: { normalizedValue: true },
+                take: 1
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  return new Set(links.flatMap((link) => link.package.entity.externalIdentifiers[0]?.normalizedValue ?? []));
 }
 
 /** The catalog's stand-in for a product whose labeler was never known. */

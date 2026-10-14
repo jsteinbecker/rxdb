@@ -1,7 +1,7 @@
 import { error, fail, isHttpError } from '@sveltejs/kit';
 import { toNdc11 } from '$lib/ndc';
 import { prisma } from '$lib/server/prisma';
-import { quantifiedScdName } from '$lib/quantified-scd';
+import { itemName } from '$lib/item-name';
 import { stagedTree, syncExternalPackages } from '$lib/server/catalog-sync';
 import { defaultScope, unlinkPackage } from '$lib/server/catalog-formulary';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
@@ -64,11 +64,11 @@ export const load: PageServerLoad = async ({ params }) => {
 				}
 			}
 		},
-		select: { formularyItem: { select: { id: true, displayName: true } } }
+		select: { formularyItem: { select: { id: true, displayName: true, nameOverride: true, strengthAsPercent: true } } }
 	});
 	const formularyItems = links.map(({ formularyItem }) => ({
 		id: formularyItem.id,
-		displayName: quantifiedScdName(formularyItem.displayName)
+		displayName: itemName(formularyItem.displayName, formularyItem)
 	}));
 	const scope = await defaultScope(prisma);
 	const scopeId = scope.id;

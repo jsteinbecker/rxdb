@@ -23,8 +23,18 @@
       import {unitOfSaleLabel, unitOfUseLabel} from '$lib/package-unit-label';
       import {toNdc11} from '$lib/ndc';
       import MixedFraction from './MixedFraction.svelte';
+      import ReconstitutionDiagram from './ReconstitutionDiagram.svelte';
+      import {mgPer, mlPer} from '$lib/units';
+      import {isOralDryFillForm} from '$lib/ingredient-content';
       import {fromNumber, toNumber} from '$lib/rational';
-      import {ingredientCorrectionKey} from '$lib/ingredient-correction';
+      import {
+            ingredientCorrectionKey,
+            INGREDIENT_CORRECTION_KEY,
+            parseIngredientCorrection,
+            describeCorrection,
+            formatStrength,
+            parseStrengthText
+      } from '$lib/ingredient-correction';
       import {packageClassKey} from '$lib/pharm-class-key';
       import {scopeOptions} from '$lib/pharm-class-scope-options';
 
@@ -60,8 +70,7 @@
             pillMedia?: PillMedia | Promise<PillMedia>;
       } = $props();
 
-      const d = $derived(item.details);
-      // The coded appearances, refined by the label's own prose in How Supplied or DF&S.
+      const d = $derived(item.details);      // The coded appearances, refined by the label's own prose in How Supplied or DF&S.
       const appearances = $derived(
             refineAppearances(d?.spl?.appearances ?? [], d?.label?.sections, {
                   ndc: item.ndc,
@@ -103,6 +112,75 @@
             ...new Set(ingredientRows.flatMap((i) => i.strengthNotes ?? []))
       ]);
       const noteMark = (note: string) => '*'.repeat(strengthNotes.indexOf(note) + 1);
+      // Manual ingredient corrections are footnoted like the automatic ones, with
+      // their own mark (§) and color so a person's edit reads apart from the rules'.
+      const manualCorrections = $derived(
+            ingredientRows.flatMap((ingredient) => {
+                  const index = d?.spl?.ingredients.indexOf(ingredient) ?? -1;
+                  const value = item.propertyOverrides?.[ingredientCorrectionKey(index)]?.value;
+                  const correction = value ? parseIngredientCorrection(value) : null;
+                  return correction ? [{ingredient, correction}] : [];
+            })
+      );
+      const manualMark = (ingredient: LabelIngredient) =>
+            '§'.repeat(manualCorrections.findIndex((c) => c.ingredient === ingredient) + 1);
+      const manualNote = ({ingredient, correction}: (typeof manualCorrections)[number]) => {
+            const to = formatStrength(correction.strength);
+            const as = correction.basis === 'ingredient' ? '' : ` ${correction.moiety?.name.toLowerCase() ?? 'moiety'}`;
+            const from = correction.conversion?.original;
+            return from
+                  ? `Strength manually corrected from stated value of ${from} to ${to}${as}`
+                  : `${substance(ingredient.name)} manually corrected to ${to}${as}`;
+      };
+      // Active ingredients that deliver the same moiety (tyrosine and acetyl
+      // tyrosine both supply tyrosine) are grouped, each group given a letter and
+      // hue. The total is only stated when every member is measured as that
+      // moiety in the same units; an ingredient-basis salt's mass is not the
+      // moiety's mass, so it is listed but not added.
+      const moietyGroups = $derived.by(() => {
+            const byMoiety = new Map<string, { name: string; members: LabelIngredient[] }>();
+            for (const ingredient of ingredientRows) {
+                  if (ingredient.kind !== 'active') continue;
+                  const moiety = ingredient.moieties[0];
+                  const unii = moiety?.unii ?? ingredient.unii;
+                  if (!unii) continue;
+                  const group = byMoiety.get(unii) ?? {name: moiety?.name ?? ingredient.name, members: []};
+                  group.members.push(ingredient);
+                  byMoiety.set(unii, group);
+            }
+            return [...byMoiety.entries()]
+                  .filter(([, group]) => group.members.length > 1)
+                  .map(([unii, group], g) => {
+                        const parts = group.members.map((ingredient) => {
+                              const asMoiety =
+                                    ingredient.basis === 'moiety' || ingredient.unii === unii;
+                              return {ingredient, asMoiety, strength: parseStrengthText(ingredient.strength)};
+                        });
+                        const first = parts[0].strength;
+                        const summable = parts.every(
+                              (p) =>
+                                    p.asMoiety &&
+                                    p.strength &&
+                                    first &&
+                                    p.strength.unit === first.unit &&
+                                    p.strength.per === first.per &&
+                                    p.strength.perUnit === first.perUnit
+                        );
+                        const total = summable
+                              ? Number(parts.reduce((sum, p) => sum + Number(p.strength!.value), 0).toPrecision(6))
+                              : null;
+                        return {
+                              unii,
+                              name: group.name,
+                              label: String.fromCharCode(65 + g),
+                              hue: (g * 137 + 200) % 360,
+                              parts,
+                              total: total == null ? null : strengthText(formatStrength({...first!, value: String(total)}))
+                        };
+                  });
+      });
+      const moietyGroupOf = (ingredient: LabelIngredient) =>
+            moietyGroups.find((group) => group.parts.some((p) => p.ingredient === ingredient));
       const rxnavMarketingStatus = $derived(
             d?.rxnav?.properties.find((property) => property.name === 'MARKETING_STATUS')?.value ?? null
       );
@@ -171,6 +249,22 @@
             return days >= 0 && days <= DISCONTINUING_DAYS ? {date: date(end), days} : null;
       });
       const volume = $derived(item.resolvedVolume);
+      // What the diagram needs beyond the resolved volume: the default row's
+      // diluent and vial content, and the package volume when the label showed
+      // it to be the vial's capacity rather than a fill.
+      const diagram = $derived.by(() => {
+            if (!volume) return null;
+            const row = item.reconstitution.find((step) => step.id && step.id === volume.rowId) ??
+                  (item.reconstitution.length === 1 ? item.reconstitution[0] : null);
+            const size = item.size;
+            const sizeMl = size?.kind === 'volume' ? size.value * (mlPer(size.unit) ?? NaN) : NaN;
+            const sizeMg = size?.kind === 'mass' ? size.value * (mgPer(size.unit) ?? NaN) : NaN;
+            return {
+                  diluentName: row?.diluents?.join(' or ') ?? null,
+                  contentMg: row?.vialMassMg ?? (Number.isFinite(sizeMg) ? sizeMg : null),
+                  capacityMl: volume.meaning === 'capacity' && Number.isFinite(sizeMl) ? sizeMl : null
+            };
+      });
       // A kit is sold as the kit; the unit of use is its drug bottle.
       const kit = $derived(item.kit ?? null);
       const kitPartText = (part: NonNullable<typeof kit>['parts'][number]) =>
@@ -372,6 +466,20 @@
       ></sup
       >{/each}
 {/snippet}
+{#snippet overrideValue(key: string, value: string, label: string)}
+      {@const correction = INGREDIENT_CORRECTION_KEY.test(key) ? parseIngredientCorrection(value) : null}
+      {#if correction}
+            {describeCorrection(correction, label.replace(/: ingredient correction$/, ''))}
+            {#if correction.conversion}
+                  {@const c = correction.conversion}
+                  <span class="conversion"
+                  >converted from {c.original} × {Number(c.factor).toPrecision(4)} (MW {c.from.mw.toFixed(2)} → {c.to.mw.toFixed(2)}{c.n !== 1 ? `, n = ${c.n}` : ''}; {c.gsrsFetchedAt && !c.mwEdited
+                        ? `GSRS, ${c.gsrsFetchedAt.slice(0, 10)}`
+                        : 'MW entered by hand'})</span
+                  >
+            {/if}
+      {:else}{value}{/if}
+{/snippet}
 {#snippet src(id: SourceId)}
       {@const n = sourceNumber(id)}
       {#if n}<sup class="cite source"
@@ -489,62 +597,73 @@
       <!-- What the package looks like comes first: it is how a pharmacist confirms they hold the right one. -->
       {#if appearances.length}
       <section class="wide identification">
-            <h4>Appearance</h4>
-                  <p>
-                        {appearances.map(appearanceText).join(' · ')}{@render edit(
-                        appearances.flatMap((_, i) => [
-                              ...['colors', 'shape', 'sizeMm', 'score', 'profile', 'imprint'].map(
-                                    (field) => `details.spl.appearances.${i}.${field}`
-                              ),
-                              pillIlnKey(i)
-                        ]),
-                        'pill appearance',
-                        'spl'
-                  )}
-                  </p>
+            <h4>Appearance{@render edit(
+                  appearances.flatMap((_, i) => [
+                        ...['colors', 'shape', 'sizeMm', 'score', 'profile', 'imprint'].map(
+                              (field) => `details.spl.appearances.${i}.${field}`
+                        ),
+                        pillIlnKey(i)
+                  ]),
+                  'pill appearance',
+                  'spl'
+            )}</h4>
+            <div class="appearance-grid">
                   {#if isSolidDoseForm(item.doseForm)}
-                        <div class="pill-mockups">
-                              {#await pillMedia}
-                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
+                        {#await pillMedia}
+                              {#each appearances as appearance, i (appearance.productCode ?? i)}
+                                    <figure class="appearance-card">
                                           <PillMockup {appearance} doseForm={item.doseForm}/>
-                                    {/each}
-                              {:then media}
-                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
-                                          {@const photo = media?.photos[i] ?? labelPhotoOf(appearance)}
+                                          <figcaption>{appearanceText(appearance)}</figcaption>
+                                    </figure>
+                              {/each}
+                        {:then media}
+                              {#each appearances as appearance, i (appearance.productCode ?? i)}
+                                    {@const photo = media?.photos[i] ?? labelPhotoOf(appearance)}
+                                    <figure class="appearance-card">
                                           <PillMockup
                                                 {appearance}
                                                 doseForm={item.doseForm}
                                                 layout={photo
-									? (media?.layouts[pillImageKey(photo.setId, photo.image)] ?? null)
-									: null}
+                                                      ? (media?.layouts[pillImageKey(photo.setId, photo.image)] ?? null)
+                                                      : null}
                                                 photoUrl={photo ? pillPhotoUrl(photo) : null}
                                           />
-                                    {/each}
-                              {:catch}
-                                    {#each appearances as appearance, i (appearance.productCode ?? i)}
-                                          {@const photo = labelPhotoOf(appearance)}
+                                          <figcaption>{appearanceText(appearance)}</figcaption>
+                                    </figure>
+                              {/each}
+                        {:catch}
+                              {#each appearances as appearance, i (appearance.productCode ?? i)}
+                                    {@const photo = labelPhotoOf(appearance)}
+                                    <figure class="appearance-card">
                                           <PillMockup
                                                 {appearance}
                                                 doseForm={item.doseForm}
                                                 photoUrl={photo ? pillPhotoUrl(photo) : null}
                                           />
-                                    {/each}
-                              {/await}
-                        </div>
-                  {/if}
-                  {#if drugsComNdcUrl(item.ndc)}
-                        <p class="pill-links">
-                              Drugs.com:
-                              <a href={drugsComNdcUrl(item.ndc)} target="_blank" rel="noopener noreferrer">this NDC</a>
-                              {#each [...new Set((d?.spl?.appearances ?? [])
-                                    .map((a) => a.imprint)
-                                    .filter((x) => !!x))] as imprint (imprint)}
-                                    · <a href={drugsComImprintUrl(imprint)} target="_blank" rel="noopener noreferrer"
-                              >pill identifier “{imprintFaces(imprint).join(' ')}”</a
-                              >
+                                          <figcaption>{appearanceText(appearance)}</figcaption>
+                                    </figure>
                               {/each}
-                        </p>
+                        {/await}
+                  {:else}
+                        {#each appearances as appearance, i (appearance.productCode ?? i)}
+                              <figure class="appearance-card text-only">
+                                    <figcaption>{appearanceText(appearance)}</figcaption>
+                              </figure>
+                        {/each}
                   {/if}
+            </div>
+            {#if drugsComNdcUrl(item.ndc)}
+                  <p class="pill-links">
+                        <span class="pill-links-label">Look up on Drugs.com</span>
+                        <a href={drugsComNdcUrl(item.ndc)} target="_blank" rel="noopener noreferrer">This NDC</a>
+                        {#each [...new Set((d?.spl?.appearances ?? [])
+                              .map((a) => a.imprint)
+                              .filter((x) => !!x))] as imprint (imprint)}
+                              <a href={drugsComImprintUrl(imprint)} target="_blank" rel="noopener noreferrer"
+                              >Imprint “{imprintFaces(imprint).join(' ')}”</a>
+                        {/each}
+                  </p>
+            {/if}
       </section>
       {/if}
 
@@ -631,14 +750,16 @@
                               {/if}{@render src('spl')}
                         </dd>
                   {/if}
-                  <dt>Multi-dose</dt>
-                  <dd>
-                        {flag(item.isMultiDose, 'Multi-dose', 'Single-dose')}{@render edit(['isMultiDose'], 'multi-dose', 'catalog')}
-                  </dd>
-                  <dt>Dry fill</dt>
-                  <dd>
-                        {item.isDryFill ? 'Yes — reconstitute before use' : 'No'}{@render edit(['isDryFill'], 'dry fill', 'catalog')}
-                  </dd>
+                  {#if !isSolidDoseForm(item.doseForm)}
+                        <dt>Multi-dose</dt>
+                        <dd>
+                              {flag(item.isMultiDose, 'Multi-dose', 'Single-dose')}{@render edit(['isMultiDose'], 'multi-dose', 'catalog')}
+                        </dd>
+                        <dt>Dry fill</dt>
+                        <dd>
+                              {item.isDryFill ? 'Yes — reconstitute before use' : 'No'}{@render edit(['isDryFill'], 'dry fill', 'catalog')}
+                        </dd>
+                  {/if}
             </dl>
       </section>
 
@@ -876,6 +997,18 @@
                                     'powder displacement'
                               )}{/if}
                         </p>
+                        {#if diagram}
+                              <ReconstitutionDiagram
+                                    finalVolumeMl={volume.finalVolumeMl}
+                                    diluentMl={volume.diluentMl}
+                                    powderDisplacementMl={volume.powderDisplacementMl}
+                                    concentrationMgPerMl={volume.concentrationMgPerMl}
+                                    diluentName={diagram.diluentName}
+                                    contentMg={diagram.contentMg}
+                                    capacityMl={diagram.capacityMl}
+                                    container={isOralDryFillForm(item.doseForm) ? 'bottle' : 'vial'}
+                              />
+                        {/if}
                         <p class="muted">
                               Package volume meaning: {volume.meaning}.{@render edit(
                               ['resolvedVolume.meaning'],
@@ -1058,7 +1191,12 @@
                                                 </div>{/if}
                                           {:else}{ingredient.kind === 'active'
                                                 ? substance(ingredient.name)
-                                                : ingredient.name}{/if}
+                                                : ingredient.name}{#if moietyGroupOf(ingredient)}{@const group = moietyGroupOf(ingredient)!}<span
+                                                      class="moiety-group"
+                                                      style:--group-hue={group.hue}
+                                                      title={`Shares ${constituentName(group.name)} with ${group.parts.length - 1} other ingredient(s) — see group ${group.label} below the table`}
+                                                >{group.label} · {constituentName(group.name)}{group.parts.find((p) => p.ingredient === ingredient)?.asMoiety ? '' : ' (salt mass)'}</span
+                                                >{/if}{/if}
                                                 {#if ingredient.part}
                                                       <div class="muted">
                                                             in {ingredient.part.replace(/^[^(]+/, (name) => name.toLowerCase())}
@@ -1078,6 +1216,10 @@
                                                 {#if ingredient.strengthNotes?.length}<sup
                                                       title={ingredient.strengthNotes.join('\n')}
                                                 >{ingredient.strengthNotes.map(noteMark).join(',')}</sup
+                                                >{/if}{#if manualMark(ingredient)}<sup
+                                                      class="manual-mark"
+                                                      title="Manually corrected — see the § note below the table"
+                                                >{manualMark(ingredient)}</sup
                                                 >{/if}{@render edit(
                                                       [
                                                             `details.spl.ingredients.${splIndex(ingredient)}.strength`,
@@ -1087,9 +1229,6 @@
                                                       ],
                                                       `${ingredient.name} strength`
                                                 )}
-                                                {#if item.propertyOverrides?.[ingredientCorrectionKey(splIndex(ingredient))]}<span
-                                                      class="corrected" title="Replaced by an ingredient correction">corrected</span
-                                                >{/if}
 </td
                                           >
                                           <td>{ingredient.basis ?? '—'}</td>
@@ -1123,10 +1262,34 @@
                               </tbody>
                         </table>
                   </div>
-                  {#if strengthNotes.length}
+                  {#if strengthNotes.length || manualCorrections.length}
                         <ul class="muted footnotes">
                               {#each strengthNotes as note (note)}
                                     <li>{noteMark(note)} — {note}</li>
+                              {/each}
+                              {#each manualCorrections as correction (correction.ingredient)}
+                                    <li class="manual-note"><span class="manual-mark">{manualMark(correction.ingredient)}</span>
+                                          — {manualNote(correction)} <span class="manual-tag">manual</span></li>
+                              {/each}
+                        </ul>
+                  {/if}
+                  {#if moietyGroups.length}
+                        <ul class="moiety-groups">
+                              {#each moietyGroups as group (group.unii)}
+                                    <li style:--group-hue={group.hue}>
+                                          <span class="moiety-group">{group.label} · {constituentName(group.name)}</span>
+                                          {#each group.parts as part, p (part.ingredient)}{p ? ' + ' : ''}<span
+                                                class:muted={!part.asMoiety}
+                                          >{part.ingredient.strength ? strengthText(part.ingredient.strength) : '?'}
+                                                {part.asMoiety
+                                                      ? part.ingredient.unii === group.unii
+                                                            ? `as ${constituentName(group.name)} itself`
+                                                            : `as ${constituentName(group.name)}, from ${substance(part.ingredient.name)}`
+                                                      : `of ${substance(part.ingredient.name)} (salt mass, not ${constituentName(group.name)})`}</span
+                                          >{/each}
+                                          {#if group.total}= <b>{group.total} {constituentName(group.name)} in total</b>
+                                          {:else}<span class="muted">— not totaled: strengths are not all stated as {constituentName(group.name)} in the same units</span>{/if}
+                                    </li>
                               {/each}
                         </ul>
                   {/if}
@@ -1331,15 +1494,14 @@
                         {#each overrides as [key, override], i (key)}
                               <li id={`${uid}-override-${i + 1}`}>
                                     <b>{overrideFields.find((field) => field.key === key)?.label ?? key}:</b>
-                                    {override.value}{@render editButton([key], 'this property')}
+                                    {@render overrideValue(key, override.value, overrideFields.find((field) => field.key === key)?.label ?? key)}{@render editButton([key], 'this property')}
                                     {#if override.ambiguity}<span class="ambiguity-tag"
                                     >{AMBIGUITY_KINDS[override.ambiguity.kind]?.label ?? override.ambiguity.kind}</span
                                     >
                                           {#if override.ambiguity.note}
                                                 <i>{override.ambiguity.note}</i>{/if}
                                     {/if}
-                                    —
-                                    <OverrideCitation {override}/>
+                                    <div class="citation-source"><OverrideCitation {override}/></div>
                                     {@render deleteButton(key, overrideFields.find((field) => field.key === key)?.label ?? key)}
                               </li>
                         {/each}
@@ -1382,6 +1544,15 @@
       .delete:disabled {
             opacity: 0.6;
             cursor: default;
+      }
+
+      .citation-source {
+            margin-top: 0.1rem;
+            color: #5c6777;
+      }
+
+      .conversion {
+            color: #5c6777;
       }
 
       .delete-error {
@@ -1794,15 +1965,50 @@
             white-space: nowrap;
       }
 
-      .corrected {
-            margin-left: 0.4rem;
+      .manual-mark {
+            color: #a8560b;
+            font-weight: 700;
+      }
+
+      .manual-tag {
+            margin-left: 0.3rem;
             padding: 0 0.4rem;
             border-radius: 999px;
-            background: #eef3fa;
-            color: #3464a5;
+            background: #fff0d6;
+            color: #8a5a00;
             font-size: 0.72rem;
             font-weight: 650;
       }
+
+      .moiety-group {
+            margin-left: 0.5rem;
+            padding: 0 0.45rem;
+            border-radius: 999px;
+            border: 1px solid hsl(var(--group-hue) 55% 70%);
+            background: hsl(var(--group-hue) 70% 95%);
+            color: hsl(var(--group-hue) 60% 30%);
+            font-size: 0.72rem;
+            font-weight: 650;
+            white-space: nowrap;
+      }
+
+      .moiety-groups {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0 0;
+            font-size: 0.85em;
+      }
+
+      .moiety-groups li {
+            padding: 0.2rem 0 0.2rem 0.6rem;
+            border-left: 3px solid hsl(var(--group-hue) 55% 60%);
+            margin-bottom: 0.25rem;
+      }
+
+      .moiety-groups .moiety-group {
+            margin: 0 0.4rem 0 0;
+      }
+
 
       .ing-table td.row-end {
             position: relative;
@@ -1938,17 +2144,52 @@
             opacity: 0.8;
       }
 
+      .appearance-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 0.25rem 0 0.75rem;
+      }
+
+      .appearance-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0.75rem;
+            max-width: 16rem;
+            border: 1px solid #e0e7f0;
+            border-radius: 8px;
+      }
+
+      .appearance-card.text-only {
+            align-items: flex-start;
+            max-width: none;
+      }
+
+      .appearance-card figcaption {
+            font-size: 0.85rem;
+            line-height: 1.35;
+            text-align: center;
+      }
+
+      .appearance-card.text-only figcaption {
+            text-align: left;
+      }
+
       .pill-links {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.25rem 0.75rem;
             font-size: 0.8rem;
             color: var(--muted, #777);
             margin: 0 0 0.75rem;
       }
 
-      .pill-mockups {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin: 0.25rem 0 0.75rem;
+      .pill-links-label {
+            font-weight: 600;
       }
 
       /* Provider marks stay out of the way until a value is hovered or they are asked for. */

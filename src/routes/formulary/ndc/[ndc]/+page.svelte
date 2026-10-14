@@ -8,7 +8,7 @@
       import DosingMeasureForm from '$lib/components/DosingMeasureForm.svelte';
       import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
       import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
-      import {packageDisplayTitle} from '$lib/package-title';
+      import {labelProductName, rxNormPackageTitle} from '$lib/package-title';
 
       let {data, form} = $props();
 
@@ -30,7 +30,10 @@
 
       const item = $derived(data.item);
       const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
-      const displayTitle = $derived(packageDisplayTitle(item));
+      const displayTitle = $derived(rxNormPackageTitle(item));
+      const labelName = $derived(labelProductName(item));
+      // The header is usually the formulary item's own RxNorm name; it isn't repeated.
+      const sameName = (name: string) => !!displayTitle && displayTitle.toLowerCase().startsWith(name.trim().toLowerCase());
 </script>
 
 <svelte:head>
@@ -46,6 +49,7 @@
             <h1>
                   {displayTitle ?? item.brandName ?? item.genericName ?? item.description ?? `NDC ${item.ndc}`}
             </h1>
+            {#if labelName}<p class="sub label-name">Labeled as {labelName}</p>{/if}
             {#if item.labelerName}<p class="sub"><a href={resolve('/formulary/labeler/[code]', {code: item.ndc.slice(0, 5)})}>{item.labelerName}</a></p>{/if}
             {#if data.formularyItems.length}
                   <p class="sub">
@@ -53,7 +57,7 @@
                         {#each data.formularyItems as formularyItem, index (formularyItem.id)}
                               {index ? ', ' : ''}
                               <a href={resolve('/formulary/items/[id]', {id: formularyItem.id})}>
-                                    {formularyItem.displayName}
+                                    {sameName(formularyItem.displayName) ? 'this item' : formularyItem.displayName}
                               </a>
                         {/each}
                   </p>

@@ -1,6 +1,7 @@
 import type { SplIngredient, SplProduct, StatedStrength } from './spl-ingredients';
 import { strengthText } from './spl-ingredients';
-import { mgPer, toMg } from './units';
+import { convertStrength, roundSignificant } from './strength-conversion';
+import { mgPer, mlPer, toMg } from './units';
 
 // ── Label strengths that cannot be true as coded ─────────────────────────────
 // SPL states every strength as a numerator/denominator ratio whose denominator
@@ -15,11 +16,16 @@ import { mgPer, toMg } from './units';
 //      of vancomycin hydrochloride is 500 mg of vancomycin. RxNorm normalizes
 //      to the moiety, so a small excess over RxNorm's strength, on an
 //      ingredient whose name is the moiety plus a counterion, is the signature.
+//   3. The same mix-up with a heavy counterion (lysine acetate, cysteine
+//      hydrochloride), where RxNorm often copied the label's number and so
+//      cannot arbitrate. The FDA directory naming the salt at the very mass the
+//      label calls moiety strength is the signature; GSRS molecular weights
+//      give the moiety's share.
 //
 // Corrections are returned alongside the stated values, never instead of them:
 // the caller shows the corrected strength and a note naming what the label said.
 
-export type StrengthCorrectionKind = 'presentation-unit' | 'salt-equivalent';
+export type StrengthCorrectionKind = 'presentation-unit' | 'salt-equivalent' | 'moiety-equivalent';
 
 export interface StrengthCorrection {
   kind: StrengthCorrectionKind;
@@ -92,7 +98,13 @@ function counterionOf(salt: string, moiety: string): string | null {
  */
 export function checkProductStrengths(
   product: Pick<SplProduct, 'ingredients' | 'presentation'>,
-  options: { rxNormName?: string | null } = {}
+  options: {
+    rxNormName?: string | null;
+    /** GSRS salt-to-moiety factors by the salt's UNII; see `MoietyFactor`. */
+    moietyFactors?: ReadonlyMap<string, MoietyFactor>;
+    /** The FDA directory's active ingredients, as it names and measures them. */
+    directory?: readonly { name: string; strength: string | null }[];
+  } = {}
 ): CheckedStrength[] {
   const checked: CheckedStrength[] = product.ingredients.map((ingredient) => ({
     strength: ingredient.strength,
@@ -104,6 +116,7 @@ export function checkProductStrengths(
 
   correctMassDenominators(product, checked);
   correctSaltAsMoiety(product.ingredients, checked, options.rxNormName ?? null);
+  correctHeavySaltAsMoiety(product.ingredients, checked, options.moietyFactors, options.directory);
   return checked;
 }
 
@@ -188,6 +201,78 @@ function correctSaltAsMoiety(
         `Strength corrected from stated value of ${stated}, equivalent to ` +
         `${corrected} ${row.strengthUnit} ${moiety.name.toLowerCase()}` +
         (counterion ? ` as the ${counterion} salt` : ' as its salt')
+    });
+  });
+}
+
+/** How a salt's mass becomes its moiety's, per GSRS. */
+export interface MoietyFactor {
+  moietyUnii: string;
+  /** Exact decimal `moietyCount · MW(moiety) / MW(salt)`. */
+  factor: string;
+}
+
+/** A strength as mg per mL, or per one unit when it has no volume; null when unreadable. */
+function concentration(
+  value: number | null,
+  unit: string | null,
+  per: number | null,
+  perUnit: string | null
+): { mg: number; perVolume: boolean } | null {
+  const mg = massMg(value, unit);
+  if (mg === null || per === null || !(per > 0)) return null;
+  const ml = mlPer(perUnit);
+  return ml === null ? { mg: mg / per, perVolume: false } : { mg: mg / (per * ml), perVolume: true };
+}
+
+/** `1.2 g/100mL`, `.024 g/100mL`, `500 mg/1` as the FDA directory writes them. */
+function directoryConcentration(text: string | null) {
+  const match = /^\s*(\d*\.?\d+)\s*([a-zµ]+)\s*(?:\/\s*(\d*\.?\d+)?\s*([a-zµ]*))?\s*$/i.exec(text ?? '');
+  if (!match) return null;
+  return concentration(Number(match[1]), match[2], match[3] ? Number(match[3]) : 1, match[4] || null);
+}
+
+/** Within this the directory and label state the same mass. */
+const SAME_MASS = 0.005;
+
+/** Rule 3 — a heavy salt's mass stated as moiety strength, confirmed by the directory. */
+function correctHeavySaltAsMoiety(
+  ingredients: SplIngredient[],
+  checked: CheckedStrength[],
+  factors: ReadonlyMap<string, MoietyFactor> | undefined,
+  directory: readonly { name: string; strength: string | null }[] | undefined
+): void {
+  if (!factors?.size || !directory?.length) return;
+  ingredients.forEach((ingredient, index) => {
+    const row = checked[index];
+    if (ingredient.kind !== 'active' || ingredient.basis !== 'moiety' || !ingredient.unii) return;
+    if (ingredient.moieties.length !== 1 || row.strength === null) return;
+    if (row.corrections.some((correction) => correction.kind === 'salt-equivalent')) return;
+    const moiety = ingredient.moieties[0];
+    const known = factors.get(ingredient.unii);
+    if (!known || known.moietyUnii !== moiety.unii) return;
+    const factor = Number(known.factor);
+    // Small counterions are rule 2's, where RxNorm can arbitrate.
+    if (!(factor > 0) || 1 / factor <= MAX_SALT_RATIO) return;
+
+    const label = concentration(row.strength, row.strengthUnit, row.per, row.perUnit);
+    if (!label || label.mg <= 0) return;
+    const listed = directory.find((entry) => sameName(entry.name, ingredient.name));
+    const stated = directoryConcentration(listed?.strength ?? null);
+    if (!stated || stated.perVolume !== label.perVolume) return;
+    if (Math.abs(stated.mg - label.mg) > SAME_MASS * label.mg) return;
+
+    const converted = convertStrength(row.strength, known.factor);
+    if (!converted) return;
+    const before = strengthText({ ...row, per: null, perUnit: null })!;
+    row.strength = Number(roundSignificant(converted));
+    const counterion = counterionOf(ingredient.name, moiety.name);
+    row.corrections.push({
+      kind: 'moiety-equivalent',
+      note:
+        `Strength corrected from stated value of ${before}, the mass of the ` +
+        `${counterion ? `${counterion} salt` : 'salt'}, to its equivalent of ` +
+        `${row.strength} ${row.strengthUnit} ${moiety.name.toLowerCase()}`
     });
   });
 }

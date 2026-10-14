@@ -1,4 +1,5 @@
 import { quantifiedScdName } from '$lib/quantified-scd';
+import { itemName } from '$lib/item-name';
 import { releasePeriod } from '$lib/time-release';
 import type { PrismaClient } from '../../generated/client';
 import type { ExternalPackage, RxConcept } from './catalog-providers';
@@ -181,6 +182,10 @@ export type LoadedItem = {
 	/** Release period of a timed item ("12 HR"), or null. */
 	releasePeriod: string | null;
 	releaseAbbreviation: string | null;
+	/** The name as sourced (RxNorm or the label), before the user's naming. */
+	sourceName: string;
+	nameOverride: string | null;
+	strengthAsPercent: boolean;
 	target: LoadTarget;
 	/** RxNorm term type of a concept load (SCD, SBD, GPCK…), when the catalog knows it. */
 	tty: string | null;
@@ -218,6 +223,8 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 							id: true,
 							displayName: true,
 							releaseAbbreviation: true,
+							nameOverride: true,
+							strengthAsPercent: true,
 							_count: {
 								select: {
 									formularyItemPackages: {
@@ -262,7 +269,10 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 	const excludedBy = new Map(excluded.map((row) => [row.formularyItemId, row._count]));
 	return items.map(({ target, item, loadedAt }) => ({
 		formularyItemId: item.id,
-		displayName: quantifiedScdName(item.displayName),
+		displayName: itemName(item.displayName, item),
+		sourceName: quantifiedScdName(item.displayName),
+		nameOverride: item.nameOverride,
+		strengthAsPercent: item.strengthAsPercent,
 		releasePeriod: releasePeriod(item.displayName),
 		releaseAbbreviation: item.releaseAbbreviation,
 		target,

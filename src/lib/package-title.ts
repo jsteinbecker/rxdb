@@ -5,6 +5,7 @@ import { withBiosimilarSuffix } from './biosimilar';
 import { ingredientGroup } from './ingredient-group';
 import { dryFillStrength, pharmacyBulkFillMl } from './ingredient-content';
 import { mgPer } from './units';
+import { quantifiedScdName } from './quantified-scd';
 
 type Ingredient = { name: string; strength: string | null };
 
@@ -213,22 +214,38 @@ function generatedName(item: PackageTitleSource): string | null {
 		doseForm = timeReleaseAfterRelease(`${period} ${doseForm}`);
 	}
 
+	const brand = realBrand(item, ingredients);
+	const name = brand
+		? `${brand} (${actives})${doseForm ? ` ${doseForm}` : ''}`
+		: `${actives}${doseForm ? ` ${doseForm}` : ''}`;
+	return name.charAt(0).toLocaleUpperCase() + name.slice(1);
+}
+
+/** The package's proprietary name, brand-cased, unless it is only the generic in other words. */
+function realBrand(item: PackageTitleSource, ingredients: Ingredient[]): string | null {
 	const brand = item.brandName?.trim();
+	if (!brand) return null;
 	const generic = [item.genericName, ...ingredients.map((ingredient) => ingredient.name)]
 		.filter((name): name is string => !!name?.trim())
 		.flatMap((name) => [normalized(name), normalized(ingredientGroup(name))]);
 	const isBrand =
-		!!brand &&
 		!generic.some((name) => name.includes(normalized(brand))) &&
 		!isGenericWording(brand, [
 			item.genericName,
 			...ingredients.map((ingredient) => ingredient.name)
 		]);
+	return isBrand ? brandCase(brand) : null;
+}
 
-	const name = isBrand
-		? `${brandCase(brand!)} (${actives})${doseForm ? ` ${doseForm}` : ''}`
-		: `${actives}${doseForm ? ` ${doseForm}` : ''}`;
-	return name.charAt(0).toLocaleUpperCase() + name.slice(1);
+/**
+ * The name the labeler gives the product: its brand with the generic
+ * ("CroFab (ovine crotalidae venoms immune fab)"), or the generic alone.
+ */
+export function labelProductName(item: PackageTitleSource): string | null {
+	const generic = item.genericName?.trim().toLowerCase() || null;
+	const brand = realBrand(item, correctedIngredients(item));
+	if (brand && generic) return `${brand} (${generic})`;
+	return brand ?? generic;
 }
 
 /**
@@ -243,8 +260,26 @@ export function packageDisplayTitle(item: PackageTitleSource): string | null {
 		(rxNormName
 			? timeReleaseAfterRelease(rxNormName).replace(/^./, (char) => char.toLocaleUpperCase())
 			: null);
-	if (!name) return null;
+	return name ? withContext(name, item) : null;
+}
 
+/**
+ * The package titled by its RxNorm clinical drug ("Agkistrodon piscivorus
+ * antivenin 780 UNT / … Injection [CroFab]"), the normalized name it is
+ * stocked by; the generated title stands in when RxNorm has no concept.
+ */
+export function rxNormPackageTitle(item: PackageTitleSource): string | null {
+	const rxNormName = item.details?.rxnav?.conceptName?.trim();
+	if (!rxNormName) return packageDisplayTitle(item);
+	// The page names the labeler beside the title, so it is not repeated here.
+	return withContext(
+		quantifiedScdName(rxNormName).replace(/^./, (char) => char.toLocaleUpperCase()),
+		{ ...item, labelerName: null }
+	);
+}
+
+/** A title with its package context: concentrate, multi-dose, carton count and labeler. */
+function withContext(name: string, item: PackageTitleSource): string {
 	const context: string[] = [];
 	if (/\bCONCENTRATE\b/i.test(item.splTitle ?? '')) context.push('(Concentrate)');
 	if (item.isMultiDose === true) context.push('MDV');
