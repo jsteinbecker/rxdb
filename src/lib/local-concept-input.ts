@@ -5,13 +5,25 @@ import type { LocalIngredient } from './local-concept.ts';
 
 export class LocalConceptInputError extends Error {}
 
+/**
+ * One line of the label's electrolyte statement ("acetate about 96 mEq/L,
+ * provided as acetic acid and lysine acetate"). Not an ingredient row.
+ */
+export type IonicRow = {
+  element: string;
+  /** '' exact, '~' about, '<' less than. */
+  comparator: '' | '~' | '<';
+  mEqPerL: string;
+  source: string | null;
+};
+
 export type LocalConceptInput = {
   doseForm: string;
   ingredients: LocalIngredient[];
   evidenceSetId: string;
   evidenceVersion: string;
   evidenceNdc: string | null;
-  ionicContent: unknown | null;
+  ionicContent: IonicRow[] | null;
   note: string | null;
 };
 
@@ -71,6 +83,29 @@ function readIngredient(raw: unknown, index: number): LocalIngredient {
   };
 }
 
+const COMPARATORS = ['', '~', '<'] as const;
+
+function readIonicContent(raw: unknown): IonicRow[] | null {
+  if (raw === undefined || raw === null) return null;
+  if (!Array.isArray(raw)) throw new LocalConceptInputError('Ionic content is malformed');
+  if (raw.length > 20) throw new LocalConceptInputError('Ionic content has too many rows');
+  return raw.length
+    ? raw.map((row, index) => {
+        const at = `Ionic content ${index + 1}`;
+        if (!isRecord(row)) throw new LocalConceptInputError(`${at} is malformed`);
+        const comparator = row.comparator ?? '';
+        if (!COMPARATORS.includes(comparator as IonicRow['comparator']))
+          throw new LocalConceptInputError(`${at}: comparator must be blank, ~ or <`);
+        return {
+          element: text(row.element, `${at} element`, 100),
+          comparator: comparator as IonicRow['comparator'],
+          mEqPerL: positive(row.mEqPerL, `${at} mEq/L`),
+          source: optionalText(row.source, `${at} source`, 300)
+        };
+      })
+    : null;
+}
+
 /** Throws `LocalConceptInputError` for invalid input. */
 export function parseLocalConceptInput(raw: unknown): LocalConceptInput {
   if (!isRecord(raw)) throw new LocalConceptInputError('Invalid local concept');
@@ -89,7 +124,7 @@ export function parseLocalConceptInput(raw: unknown): LocalConceptInput {
     evidenceSetId: text(raw.evidenceSetId, 'Evidence set'),
     evidenceVersion: text(raw.evidenceVersion, 'Evidence version', 100),
     evidenceNdc: optionalText(raw.evidenceNdc, 'Evidence NDC', 50),
-    ionicContent: raw.ionicContent ?? null,
+    ionicContent: readIonicContent(raw.ionicContent),
     note: optionalText(raw.note, 'Note')
   };
 }

@@ -7,6 +7,7 @@
       import IngredientCorrectionDialog from '$lib/components/IngredientCorrectionDialog.svelte';
       import DosingMeasureForm from '$lib/components/DosingMeasureForm.svelte';
       import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
+      import LocalConceptDialog from '$lib/components/LocalConceptDialog.svelte';
       import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
       import {labelProductName, rxNormPackageTitle} from '$lib/package-title';
 
@@ -16,6 +17,7 @@
       let reinterpret: ReinterpretDialog;
       let correction: IngredientCorrectionDialog;
       let pharmClassRule: PharmClassRuleDialog;
+      let localConcept: LocalConceptDialog;
       let editKeys = $state<string[]>([]);
       let excludeDialog: HTMLDialogElement;
       let actionsMenu: HTMLElement;
@@ -107,7 +109,7 @@
       </dialog>
       <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.message ?? null}/>
       <div class="body" class:with-panel={editKeys.length}>
-            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }}/>
+            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }} localConceptScd={data.localConceptEditor.target.scd?.rxcui ?? null} onlocalconcept={(mode) => localConcept.open(mode)} onstoplocalconcept={() => localConcept.confirmStop()}/>
             {#if editKeys.length}
                   {#key editKeys}
                         <div class="panel-slot">
@@ -124,6 +126,7 @@
             {/if}
       </div>
       <PharmClassRuleDialog bind:this={pharmClassRule} rules={data.pharmClassRules} confirmRemove={data.confirmRemove} message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete' ? form.message : null}/>
+      <LocalConceptDialog bind:this={localConcept} editor={data.localConceptEditor} localConcept={item.localConcept} rxnormName={item.details?.rxnav?.conceptName ?? null} message={form?.action === 'localConceptSave' || form?.action === 'localConceptStop' ? form.message : null}/>
       <ReinterpretDialog bind:this={reinterpret} {item}/>
       <IngredientCorrectionDialog bind:this={correction} {item} equivalents={data.equivalents}/>
 </main>

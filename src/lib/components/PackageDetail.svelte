@@ -37,6 +37,7 @@
       } from '$lib/ingredient-correction';
       import {packageClassKey} from '$lib/pharm-class-key';
       import {scopeOptions} from '$lib/pharm-class-scope-options';
+      import LocalConceptBlock from './LocalConceptBlock.svelte';
 
       let {
             item,
@@ -47,7 +48,10 @@
             onretry = undefined,
             onassignclass = undefined,
             onedit,
-            oncorrect
+            oncorrect,
+            localConceptScd = null,
+            onlocalconcept = undefined,
+            onstoplocalconcept = undefined
       }: {
             item: StagedPackage;
             /**
@@ -66,6 +70,12 @@
             onedit?: (keys: string[]) => void;
             /** Opens the ingredient correction wizard on the ingredient at this index. */
             oncorrect?: (index: number) => void;
+            /** The RxNorm SCD a local concept for this NDC supersedes (an SBD's counterpart). */
+            localConceptScd?: string | null;
+            /** Opens the local concept editor from the RxNorm block's menu. */
+            onlocalconcept?: (mode: 'define' | 'edit') => void;
+            /** Asks to stop the local concept superseding RxNorm's. */
+            onstoplocalconcept?: () => void;
             /** Each appearance's photo and measured layout; may still be on its way. */
             pillMedia?: PillMedia | Promise<PillMedia>;
       } = $props();
@@ -1381,7 +1391,43 @@
 
       {#if d?.rxnav}
             <section class="wide">
-                  <h4>RxNorm</h4>
+                  <div class="pharm-head">
+                        <h4>RxNorm</h4>
+                        {#if onlocalconcept}
+                              <div class="pharm-menu">
+                                    <button
+                                          class="row-menu-trigger"
+                                          type="button"
+                                          aria-label="RxNorm actions"
+                                          aria-haspopup="menu"
+                                          aria-expanded={rowMenu === 'rxnorm'}
+                                          onclick={() => (rowMenu = rowMenu === 'rxnorm' ? null : 'rxnorm')}>
+                                          ⋯
+                                    </button>
+                                    {#if rowMenu === 'rxnorm'}
+                                          <div class="row-menu" role="menu">
+                                                {#if !item.localConcept}
+                                                      <button type="button" role="menuitem" onclick={() => { rowMenu = null; onlocalconcept('define'); }}>
+                                                            Define local concept…
+                                                      </button>
+                                                {:else}
+                                                      {#if !item.localConcept.derived}
+                                                            <button type="button" role="menuitem" onclick={() => { rowMenu = null; onlocalconcept('edit'); }}>
+                                                                  Edit local concept…
+                                                            </button>
+                                                      {/if}
+                                                      <button type="button" role="menuitem" onclick={() => { rowMenu = null; onstoplocalconcept?.(); }}>
+                                                            Stop superseding…
+                                                      </button>
+                                                {/if}
+                                          </div>
+                                    {/if}
+                              </div>
+                        {/if}
+                  </div>
+                  {#if item.localConcept}
+                        <LocalConceptBlock localConcept={item.localConcept} rxnormName={d.rxnav.conceptName} scdRxcui={localConceptScd} />
+                  {/if}
                   <dl>
                         <dt>Concept</dt>
                         <dd>

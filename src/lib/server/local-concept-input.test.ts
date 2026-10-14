@@ -98,3 +98,31 @@ describe('parseLocalConceptInput', () => {
     assert.equal(parseLocalConceptInput(input({ ingredients })).ingredients.length, 21);
   });
 });
+
+describe('parseLocalConceptInput ionic content', () => {
+  it('keeps label electrolyte rows, trimmed', () => {
+    const out = parseLocalConceptInput(
+      input({
+        ionicContent: [
+          { element: ' Acetate ', comparator: '~', mEqPerL: '96', source: ' provided as acetic acid ' },
+          { element: 'Chloride', comparator: '<', mEqPerL: '3', source: '' }
+        ]
+      })
+    );
+    assert.deepEqual(out.ionicContent, [
+      { element: 'Acetate', comparator: '~', mEqPerL: '96', source: 'provided as acetic acid' },
+      { element: 'Chloride', comparator: '<', mEqPerL: '3', source: null }
+    ]);
+  });
+
+  it('treats an empty list as none', () => {
+    assert.equal(parseLocalConceptInput(input({ ionicContent: [] })).ionicContent, null);
+  });
+
+  it('rejects malformed rows', () => {
+    rejects(input({ ionicContent: { element: 'Acetate' } }));
+    rejects(input({ ionicContent: [{ element: '', comparator: '', mEqPerL: '96' }] }));
+    rejects(input({ ionicContent: [{ element: 'Acetate', comparator: '>', mEqPerL: '96' }] }));
+    rejects(input({ ionicContent: [{ element: 'Acetate', comparator: '', mEqPerL: 'lots' }] }));
+  });
+});

@@ -3,9 +3,21 @@ import { toNdc11 } from '$lib/ndc';
 import { prisma } from '$lib/server/prisma';
 import { itemName } from '$lib/item-name';
 import { stagedTree, syncExternalPackages } from '$lib/server/catalog-sync';
-import { defaultScope, unlinkPackage } from '$lib/server/catalog-formulary';
+import { defaultScope, loadedItems, localNamesOf, unlinkPackage } from '$lib/server/catalog-formulary';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
 import { withLocalConcepts } from '$lib/server/local-concept-view';
+import { loadConceptSnapshots } from '$lib/server/catalog-store';
+import {
+	createLocalConcept,
+	listLocalConcepts,
+	LocalConceptInputError,
+	stopSuperseding,
+	supersede,
+	updateLocalConcept
+} from '$lib/server/local-concept-store';
+import { localConceptDraft, type DraftSource } from '$lib/local-concept-draft';
+import { parseLocalConceptInput, type IonicRow, type LocalConceptInput } from '$lib/local-concept-input';
+import type { LocalConceptView } from '$lib/local-concept-view';
 import { packageClassKey } from '$lib/pharm-class-key';
 import { scopeOptions } from '$lib/pharm-class-scope-options';
 import { parseSettings } from '$lib/settings';
@@ -67,12 +79,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		select: { formularyItem: { select: { id: true, displayName: true, nameOverride: true, strengthAsPercent: true } } }
 	});
-	const formularyItems = links.map(({ formularyItem }) => ({
-		id: formularyItem.id,
-		displayName: itemName(formularyItem.displayName, formularyItem)
-	}));
 	const scope = await defaultScope(prisma);
 	const scopeId = scope.id;
+	// A superseded concept's item reads by its local name; a nameOverride still wins (itemName).
+	const localNames = links.length ? localNamesOf(await loadedItems(prisma, scopeId)) : new Map<string, string>();
+	const formularyItems = links.map(({ formularyItem }) => ({
+		id: formularyItem.id,
+		displayName: itemName(localNames.get(formularyItem.id) ?? formularyItem.displayName, formularyItem)
+	}));
 	const [shown] = await withLocalConcepts(
 		prisma,
 		scopeId,
@@ -80,6 +94,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	);
 	return {
 		item: shown,
+		localConceptEditor: await localConceptEditorFor(scopeId, shown),
 		confirmRemove: parseSettings(scope.settings).confirmRemove,
 		// Streamed: counting matches scans the cached snapshots.
 		pharmClassRules: pharmClassRulesFor(scopeId, item),
@@ -91,6 +106,97 @@ export const load: PageServerLoad = async ({ params }) => {
 		pillMedia: pillMediaFor(item)
 	};
 };
+
+type SupersedeTarget = {
+	/** The RxNorm SCD this NDC's concept is, or generalizes to, when known. */
+	scd: { rxcui: string; name: string | null } | null;
+	/** Why a new local concept can't supersede `scd` here; null when it can. */
+	blocked: string | null;
+};
+
+/**
+ * The SCD a local concept defined from this NDC supersedes: the NDC's own
+ * RxCUI when it is an SCD, else its SCD counterpart from the concept snapshot.
+ */
+async function supersedeTarget(scopeId: string, item: DraftSource): Promise<SupersedeTarget> {
+	const rxcui = item.details?.rxnav?.rxcui;
+	if (!rxcui) return { scd: null, blocked: 'This NDC has no RxCUI to supersede.' };
+	const concept = (await loadConceptSnapshots(prisma, [rxcui])).get(rxcui);
+	if (!concept) return { scd: null, blocked: `RxCUI ${rxcui} has no cached concept, so its SCD is unknown; search for ${rxcui} once to cache it.` };
+	const counterpart = concept.details?.counterparts.find((c) => c.tty === 'SCD');
+	const scd =
+		concept.tty === 'SCD'
+			? { rxcui, name: concept.name }
+			: counterpart
+				? { rxcui: counterpart.rxcui, name: counterpart.name }
+				: null;
+	if (!scd) return { scd: null, blocked: `RxCUI ${rxcui} (${concept.tty ?? 'unknown type'}) has no SCD counterpart.` };
+	const target = await prisma.externalIdentifier.findFirst({
+		where: { namespace: 'rxnorm_rxcui', normalizedValue: scd.rxcui, validTo: null },
+		select: { entityId: true }
+	});
+	if (!target) return { scd, blocked: `RxCUI ${scd.rxcui} is not in the catalog yet; load it to the formulary first.` };
+	const open = await prisma.entityMapping.findFirst({
+		where: { objectEntityId: target.entityId, scopeId, mappingType: 'supersedes', validTo: null, supersededAt: null },
+		select: { id: true }
+	});
+	return { scd, blocked: open ? `RxCUI ${scd.rxcui} is already superseded in this formulary.` : null };
+}
+
+/** What the local concept block and its "Define / Edit local concept" dialog start from. */
+async function localConceptEditorFor(scopeId: string, item: DraftSource & { localConcept?: LocalConceptView }) {
+	const local = item.localConcept;
+	const [target, stored, substances] = await Promise.all([
+		supersedeTarget(scopeId, item).catch((cause): SupersedeTarget => {
+			console.error('supersede target lookup failed', cause);
+			return { scd: null, blocked: 'Could not look up the RxNorm SCD.' };
+		}),
+		local && !local.derived
+			? prisma.localConcept.findUnique({
+					where: { id: local.id },
+					select: { evidenceSetId: true, evidenceVersion: true, evidenceNdc: true, note: true }
+				})
+			: null,
+		// Type-ahead names are a convenience: a failure leaves only the label's own.
+		prisma.uniiSubstance
+			.findMany({
+				where: { notFound: false, name: { not: null } },
+				select: { unii: true, name: true },
+				orderBy: { name: 'asc' },
+				take: 5000
+			})
+			.catch(() => [])
+	]);
+	const existing: { id: string; code: string; input: LocalConceptInput } | null =
+		local && stored
+			? {
+					id: local.id,
+					code: local.code,
+					input: {
+						doseForm: local.doseForm,
+						ingredients: local.ingredients,
+						evidenceSetId: stored.evidenceSetId,
+						evidenceVersion: stored.evidenceVersion,
+						evidenceNdc: stored.evidenceNdc,
+						ionicContent: Array.isArray(local.ionicContent) ? (local.ionicContent as IonicRow[]) : null,
+						note: stored.note
+					}
+				}
+			: null;
+	// The label's own substances first, then every one GSRS has answered for.
+	const options = new Map<string, string>();
+	for (const row of item.details?.spl?.ingredients ?? []) {
+		if (row.unii) options.set(row.unii.toUpperCase(), row.name);
+		for (const moiety of row.moieties) if (moiety.unii) options.set(moiety.unii.toUpperCase(), moiety.name);
+	}
+	for (const row of substances) if (row.name && !options.has(row.unii)) options.set(row.unii, row.name);
+	return {
+		draft: localConceptDraft(item),
+		existing,
+		target,
+		substances: [...options].map(([unii, name]) => ({ unii, name }))
+	};
+}
 
 /** The scope options for assigning a class to this package, each with its match count and any existing rule. */
 async function pharmClassRulesFor(
@@ -325,6 +431,74 @@ export const actions: Actions = {
 			throw cause;
 		}
 		return { pharmClassRuleSaved: true };
+	},
+	/**
+	 * Creates a local SCD (evidence always from this NDC's label) and, when asked,
+	 * supersedes the SCD in the same transaction; or updates the one being edited.
+	 */
+	localConceptSave: async ({ params, request }) => {
+		const ndc = toNdc11(params.ndc);
+		if (!ndc) return fail(400, { action: 'localConceptSave', message: 'Invalid NDC.' });
+		const form = await request.formData();
+		let raw: Record<string, unknown>;
+		try {
+			raw = JSON.parse(String(form.get('concept') ?? ''));
+		} catch {
+			return fail(400, { action: 'localConceptSave', message: 'Malformed local concept.' });
+		}
+		const id = String(form.get('id') ?? '');
+		const scopeId = (await defaultScope(prisma)).id;
+		try {
+			if (id) {
+				// Evidence stays what the concept was defined from.
+				const stored = await prisma.localConcept.findUnique({
+					where: { id },
+					select: { evidenceSetId: true, evidenceVersion: true, evidenceNdc: true }
+				});
+				if (!stored) throw new LocalConceptInputError('Local concept not found');
+				await updateLocalConcept(prisma, id, parseLocalConceptInput({ ...raw, ...stored }));
+				return { localConceptSaved: true };
+			}
+			const [item] = await syncExternalPackages([ndc]);
+			if (!item) return fail(404, { action: 'localConceptSave', message: 'No package data available.' });
+			const { evidenceSetId, evidenceVersion, evidenceNdc } = localConceptDraft(item).input;
+			const input = parseLocalConceptInput({ ...raw, evidenceSetId, evidenceVersion, evidenceNdc });
+			let rxcui: string | null = null;
+			if (form.get('supersede') === 'on') {
+				const target = await supersedeTarget(scopeId, item);
+				if (target.blocked || !target.scd)
+					throw new LocalConceptInputError(target.blocked ?? 'There is no SCD to supersede.');
+				rxcui = target.scd.rxcui;
+			}
+			await prisma.$transaction(
+				async (tx) => {
+					const created = await createLocalConcept(tx, input);
+					if (rxcui) await supersede(tx, scopeId, created.id, rxcui, null);
+				},
+				{ timeout: 60_000 }
+			);
+			return { localConceptSaved: true };
+		} catch (cause) {
+			if (cause instanceof LocalConceptInputError)
+				return fail(400, { action: 'localConceptSave', message: cause.message });
+			throw cause;
+		}
+	},
+	/** Ends the local concept's active supersede mapping in this scope. */
+	localConceptStop: async ({ request }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		if (!id) return fail(400, { action: 'localConceptStop', message: 'No local concept chosen.' });
+		const scopeId = (await defaultScope(prisma)).id;
+		try {
+			const mapping = (await listLocalConcepts(prisma, scopeId)).find((c) => c.id === id)?.supersedes;
+			if (!mapping?.active) throw new LocalConceptInputError('No active supersede mapping found');
+			await stopSuperseding(prisma, scopeId, mapping.mappingId);
+		} catch (cause) {
+			if (cause instanceof LocalConceptInputError)
+				return fail(400, { action: 'localConceptStop', message: cause.message });
+			throw cause;
+		}
+		return { localConceptSaved: true };
 	},
 	apply: async ({ params, request }) => {
 		const ndc = toNdc11(params.ndc);

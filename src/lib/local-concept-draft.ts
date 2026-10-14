@@ -36,7 +36,13 @@ function mgPerMl(text: string | null | undefined, volumeMl: number | null): numb
 
 const groupKey = (name: string) => ingredientGroup(name).toLowerCase();
 
-export function localConceptDraft(item: ExternalPackage): {
+/** The package fields a draft reads; a staged package has them too. */
+export type DraftSource = Pick<
+  ExternalPackage,
+  'ndc' | 'splSetId' | 'size' | 'ingredients' | 'details' | 'propertyOverrides'
+>;
+
+export function localConceptDraft(item: DraftSource): {
   input: LocalConceptInput;
   warnings: string[];
 } {
