@@ -1,7 +1,6 @@
 <script lang="ts">
       import {resolve} from '$app/paths';
       import {afterNavigate, replaceState} from '$app/navigation';
-      import {onMount} from 'svelte';
       import {page} from '$app/state';
       import {enhance} from '$app/forms';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
@@ -24,7 +23,19 @@
       let excludeDialog: HTMLDialogElement;
       let actionsMenu: HTMLElement;
 
-      afterNavigate(({from}) => (fromFormulary = from?.url.pathname === '/formulary'));
+      // The local concepts list links here with ?localConcept=edit to open the editor directly.
+      // afterNavigate runs once the router has started (hard loads included), which replaceState needs.
+      afterNavigate(({from, to}) => {
+            fromFormulary = from?.url.pathname === '/formulary';
+            const local = data.item.localConcept;
+            if (to?.url.searchParams.get('localConcept') === 'edit' && local && !local.derived) {
+                  localConcept.open('edit');
+                  // Drop the param so a reload or a non-JS post doesn't reopen the dialog.
+                  const url = new URL(to.url);
+                  url.searchParams.delete('localConcept');
+                  replaceState(url, page.state);
+            }
+      });
 
       function back(event: MouseEvent) {
             if (!fromFormulary) return;
@@ -32,17 +43,6 @@
             history.back();
       }
 
-      // The local concepts list links here with ?localConcept=edit to open the editor directly.
-      onMount(() => {
-            const local = data.item.localConcept;
-            if (page.url.searchParams.get('localConcept') === 'edit' && local && !local.derived) {
-                  localConcept.open('edit');
-                  // Drop the param so a reload or a non-JS post doesn't reopen the dialog.
-                  const url = new URL(page.url);
-                  url.searchParams.delete('localConcept');
-                  replaceState(url, page.state);
-            }
-      });
 
       const item = $derived(data.item);
       const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
