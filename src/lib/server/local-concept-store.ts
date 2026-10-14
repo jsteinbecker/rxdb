@@ -470,6 +470,7 @@ export async function checkLocalConceptDrift(
     );
     if (!drift) continue;
     await inTransaction(db, async (tx) => {
+      await lock(tx); // review_item has no unique key; serialize find-then-create
       const open = await tx.reviewItem.findFirst({
         where: { kind: DRIFT_KIND, mappingId: m.id, status: 'open' }
       });

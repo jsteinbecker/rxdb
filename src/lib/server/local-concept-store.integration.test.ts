@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/client';
 import { parseLocalConceptInput } from '../local-concept-input.ts';
+import type { ExternalPackage } from './catalog-providers';
 import { defaultScope } from './catalog-formulary';
 import {
   LocalConceptInputError,
@@ -114,12 +115,47 @@ test(
           assert.equal(drift[0].entityId, made.id);
           assert.equal(await checkLocalConceptDrift(tx, [], []), 0);
 
+          const pkg = (rxnav: object) => ({ details: { rxnav } }) as unknown as ExternalPackage;
+          const driftItems = () =>
+            tx.reviewItem.findMany({ where: { mappingId, kind: 'local_concept_drift', status: 'open' } });
+          // (a) a non-ACTIVE concept status marks it inactive.
+          assert.equal(
+            await checkLocalConceptDrift(tx, [renamed], [
+              pkg({ rxcui, conceptStatus: 'Remapped', history: [] })
+            ]),
+            1
+          );
+          let items = await driftItems();
+          assert.equal(items.length, 1);
+          assert.equal(items[0].severity, 'warning');
+          assert.equal(items[0].note, 'inactive');
+          // Back to a plain rename when the package says ACTIVE.
+          await checkLocalConceptDrift(tx, [renamed], [pkg({ rxcui, conceptStatus: 'Active', history: [] })]);
+          items = await driftItems();
+          assert.deepEqual([items.length, items[0].severity, items[0].note], [1, 'info', 'renamed']);
+          // (b) history that maps the rxcui to a different active rxcui.
+          await checkLocalConceptDrift(tx, [renamed], [
+            pkg({
+              rxcui: 'other',
+              conceptStatus: 'Active',
+              history: [{ originalRxcui: rxcui, activeRxcui: 'X999', start: null, end: null }]
+            })
+          ]);
+          items = await driftItems();
+          assert.deepEqual([items.length, items[0].severity, items[0].note], [1, 'warning', 'inactive']);
+          // (c) RxNorm's new name matches the local ingredients exactly.
+          await checkLocalConceptDrift(tx, [{ ...renamed, name: 'glycine 12.5 MG/ML Injectable Solution' }], []);
+          items = await driftItems();
+          assert.deepEqual([items.length, items[0].severity, items[0].note], [1, 'info', 'caught_up']);
+
           await stopSuperseding(tx, scope.id, mappingId);
           assert.equal((await localConceptsForRxcuis(tx, scope.id, [rxcui])).size, 0);
           const stopped = (await listLocalConcepts(tx, scope.id)).find((c) => c.id === made.id);
           assert.equal(stopped?.supersedes?.active, false);
           assert.equal(stopped?.supersedes?.rxcui, rxcui);
-          assert.equal(stopped?.openDrift, 1); // the open drift item survives stopping
+          // Stopping a mapping leaves its open drift review item for a person to resolve.
+          assert.equal(stopped?.openDrift, (await driftItems()).length);
+          assert.equal((await driftItems()).length, 1);
           const unmapped = (await listLocalConcepts(tx, scope.id)).find((c) => c.id === second.id);
           assert.equal(unmapped?.supersedes, null);
           assert.equal(unmapped?.openDrift, 0);
