@@ -9,6 +9,7 @@
       import {pillImageKey, pillPhotoUrl} from '$lib/pill-image-layout';
       import {abbreviatedRelease} from '$lib/time-release';
       import {strengthAsPercent} from '$lib/item-name';
+      import {badgeText} from '$lib/local-concept-list';
 
       let {data, form} = $props();
 
@@ -50,6 +51,9 @@
             <h1>{item.displayName}</h1>
             <p class="meta">
                   <span class="level">{level}</span>
+                  {#if item.localConcept}
+                        <span class="level local" title={item.localConcept.name}>{badgeText(item.localConcept)}</span>
+                  {/if}
                   <span class="mono">
         {#if item.target.kind === 'concept'}RxCUI <RxCui
               rxcui={item.target.rxcui}/>{:else}NDC {formatNdc(item.target.ndc)}{/if}
@@ -538,6 +542,11 @@
             padding: 0.15rem 0.5rem;
             font-size: 0.7rem;
             font-weight: 700;
+      }
+
+      .level.local {
+            background: #fdf1e0;
+            color: #8a4b0b;
       }
 
       .shared {

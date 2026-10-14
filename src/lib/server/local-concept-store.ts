@@ -317,6 +317,7 @@ export async function localConceptsForRxcuis(
 export type LocalConceptListRow = Omit<LocalConceptRecord, 'supersedes'> & {
   supersedes: { rxcui: string; name: string | null; mappingId: string; active: boolean } | null;
   openDrift: number;
+  evidence: { setId: string; version: string; ndc: string | null };
 };
 
 /** Every non-retired local concept, with its latest supersede mapping in the scope. */
@@ -390,7 +391,8 @@ export async function listLocalConcepts(db: Db, scopeId: string): Promise<LocalC
             active: m.validTo === null && m.supersededAt === null
           }
         : null,
-      openDrift: m ? (counts.get(m.id) ?? 0) : 0
+      openDrift: m ? (counts.get(m.id) ?? 0) : 0,
+      evidence: { setId: c.evidenceSetId, version: c.evidenceVersion, ndc: c.evidenceNdc }
     };
   });
 }

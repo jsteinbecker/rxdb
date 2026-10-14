@@ -1,6 +1,8 @@
 <script lang="ts">
       import {resolve} from '$app/paths';
       import {afterNavigate} from '$app/navigation';
+      import {onMount} from 'svelte';
+      import {page} from '$app/state';
       import {enhance} from '$app/forms';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
       import ReinterpretDialog from '$lib/components/ReinterpretDialog.svelte';
@@ -29,6 +31,12 @@
             event.preventDefault();
             history.back();
       }
+
+      // The local concepts list links here with ?localConcept=edit to open the editor directly.
+      onMount(() => {
+            const local = data.item.localConcept;
+            if (page.url.searchParams.get('localConcept') === 'edit' && local && !local.derived) localConcept.open('edit');
+      });
 
       const item = $derived(data.item);
       const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
