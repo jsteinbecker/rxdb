@@ -679,10 +679,6 @@ export type ProductIngredientUncheckedUpdateManyWithoutProductNestedInput = {
   deleteMany?: Prisma.ProductIngredientScalarWhereInput | Prisma.ProductIngredientScalarWhereInput[]
 }
 
-export type EnumStrengthBasisFieldUpdateOperationsInput = {
-  set?: $Enums.StrengthBasis
-}
-
 export type ProductIngredientCreateWithoutIngredientInput = {
   id?: string
   isActive?: boolean

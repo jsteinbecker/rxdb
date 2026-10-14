@@ -18,7 +18,7 @@ metabisulfite, and several of its amino-acid strengths are wrong. The current la
   `local_concept` namespace, so nothing a sync does can touch these rows.
 - **The ingredients live in their own table.** `ClinicalDrug` has no ingredient rows, and `ProductIngredient` hangs
   off a labeled `Product`. A new `local_concept_ingredient` table mirrors `ProductIngredient` (substance by UNII,
-  basis, numerator and denominator), so it gets the same generated `measure` columns for strength comparison.
+  basis, numerator and denominator). Strengths are compared in TypeScript, not with generated `measure` columns.
 - **Replacement is a scoped mapping.** An `EntityMapping` with a new `MappingType` value `supersedes` links the local
   concept (subject) to the RxNorm concept (object) in one `Scope`. It already carries an approver, validity,
   `supersededAt` and `invalidatedReason`, so a replacement can be switched off without deleting anything. The local
@@ -49,9 +49,9 @@ name, e.g. `Injectable Solution`), `evidence_set_id` (SPL set id), `evidence_ver
 
 `local_concept_ingredient`: `id`, `local_concept_id` (FK), `ordinal`, `substance_unii`, `substance_name`, `basis`
 (`StrengthBasis`), `moiety_unii` / `moiety_name` (required when `basis` ≠ `ingredient`), `strength_num_mag`,
-`strength_num_uom`, `strength_den_mag` (default 1), `strength_den_uom`, plus the generated `strength_num`,
-`strength_den` and `strength` `measure` columns, using the same expressions as `product_ingredient`. Unique on
-`(local_concept_id, substance_unii)`.
+`strength_num_uom`, `strength_den_mag` (default 1), `strength_den_uom`. There are no `measure` columns: the
+existing `product_ingredient.strength*` measure columns are plain composites that nothing fills. Strengths are compared
+in TypeScript on exact rationals normalized to mg/mL (or mEq/mL). Unique on `(local_concept_id, substance_unii)`.
 
 Ionic content (e.g. acetate mEq/L) is **not** an ingredient row. It is optional `ionic_content` JSON on
 `local_concept`, shaped like `LabelIngredient.ionicContent`, so the label's electrolyte statement can be shown without
@@ -79,8 +79,9 @@ the local SCD's ingredients, plus the RxNorm brand. It is marked `derived: true`
 can save it as a real local SBD later.
 
 ## Where it is applied
-- **Formulary load** (`loadToFormulary`, concept targets): if the RxCUI resolves, the item's `displayName` comes from
-  the local concept. The origin key stays `rxcui:<RxCUI>`, so reloading the same RxCUI finds the same item.
+- **Formulary load** (`loadToFormulary`, concept targets): keeps storing RxNorm's name. Local names are applied when
+  read, so "Stop superseding" restores the RxNorm name everywhere at once. The origin key stays `rxcui:<RxCUI>`, so
+  reloading the same RxCUI finds the same item.
 - **Formulary item page** and `formulary-view.ts`: the name and ingredient list come from the local concept, with a
   "Local concept · supersedes RxCUI 800611" badge. The existing `nameOverride` still wins over the generated name.
 - **NDC page** (`PackageDetail.svelte`, RxNorm block): show the local concept first, with RxNorm's concept beneath it
@@ -98,7 +99,7 @@ compared:
 - the concept's name changed → `ReviewItem` kind `local_concept_drift`, severity `info` ("RxNorm changed 800611; check
   whether the local concept is still needed")
 - the concept became inactive or remapped (`conceptStatus`, `history`) → same kind, severity `warning`
-- the RxNorm ingredients now equal the local ones (same UNIIs and `measure` strengths) → severity `info`, suggesting
+- the RxNorm ingredients now equal the local ones (same UNIIs and normalized strengths) → severity `info`, suggesting
   the user retire the local concept
 
 The review item sets `mappingId` (which reaches both concepts) and `entityId` = the local concept. Only one open
@@ -152,8 +153,6 @@ local SBD "… [TrophAmine]", with no separate row needed.
   - derived SBD: an SBD with no mapping whose counterpart SCD is mapped
   - drift classification: name changed, concept retired/remapped, ingredients now match, nothing changed
   - the diff of RxNorm vs. local ingredients for the TrophAmine table above
-- Migration check: the generated `measure` columns on `local_concept_ingredient` compare equal to a `product_ingredient`
-  row with the same strength in different units (8.51 mg/mL vs 0.851 g/100 mL).
 - Dev-server check: create the TrophAmine local SCD from NDC 0264-1933-10, then confirm that
   - the NDC page shows the local concept, the RxNorm diff, and acetate as ionic content
   - loading RxCUI 800611 into the formulary gives the local name, and reloading finds the same item
@@ -161,6 +160,8 @@ local SBD "… [TrophAmine]", with no separate row needed.
   - "Stop superseding" brings back RxNorm's name everywhere without a reload of the cache
 
 ## Out of scope (follow-ups)
+- Saved local SBDs. The schema supports them (`generic_id`, `brand_name`), but this round only creates local SCDs;
+  SBD-coded NDCs get the derived SBD.
 - Local concepts with no RxNorm concept to supersede (new products RxNorm doesn't have yet).
 - Local versions of other term types (SCDC, GPCK/BPCK kits).
 - Mapping NDCs straight to a local concept when RxNav gives them no RxCUI.
