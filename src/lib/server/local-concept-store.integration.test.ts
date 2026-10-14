@@ -103,12 +103,29 @@ test(
 
           await stopSuperseding(tx, scope.id, mappingId);
           assert.equal((await localConceptsForRxcuis(tx, scope.id, [rxcui])).size, 0);
+          const stopped = (await listLocalConcepts(tx, scope.id)).find((c) => c.id === made.id);
+          assert.equal(stopped?.supersedes?.active, false);
+          assert.equal(stopped?.supersedes?.rxcui, rxcui);
+          assert.equal(stopped?.openDrift, 0);
+          const unmapped = (await listLocalConcepts(tx, scope.id)).find((c) => c.id === second.id);
+          assert.equal(unmapped?.supersedes, null);
+          assert.equal(unmapped?.openDrift, 0);
+          await assert.rejects(
+            () => retireLocalConcept(tx, rx.id),
+            (e) => e instanceof LocalConceptInputError
+          );
+          assert.equal((await tx.entity.findUniqueOrThrow({ where: { id: rx.id } })).retiredAt, null);
 
           // A fresh mapping resolves, until the concept is retired.
           const again = await supersede(tx, scope.id, made.id, rxcui, null);
           assert.equal((await localConceptsForRxcuis(tx, scope.id, [rxcui])).size, 1);
           await retireLocalConcept(tx, made.id);
           assert.equal((await localConceptsForRxcuis(tx, scope.id, [rxcui])).size, 0);
+          assert.ok(!(await listLocalConcepts(tx, scope.id)).some((c) => c.id === made.id));
+          await assert.rejects(
+            () => retireLocalConcept(tx, made.id),
+            (e) => e instanceof LocalConceptInputError
+          );
           const mapping = await tx.entityMapping.findUniqueOrThrow({ where: { id: again.mappingId } });
           assert.ok(mapping.validTo);
 

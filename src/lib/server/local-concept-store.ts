@@ -188,6 +188,12 @@ export async function stopSuperseding(db: Db, scopeId: string, mappingId: string
 /** Retire the concept and end every mapping that points at it. */
 export async function retireLocalConcept(db: Db, id: string): Promise<void> {
   await inTransaction(db, async (tx) => {
+    const local = await tx.clinicalDrug.findFirst({
+      where: { id, localConcept: { isNot: null } },
+      select: { entity: { select: { retiredAt: true } } }
+    });
+    if (!local) throw new LocalConceptInputError('Local concept not found');
+    if (local.entity.retiredAt) throw new LocalConceptInputError('Local concept is already retired');
     const now = new Date();
     await tx.entity.update({ where: { id }, data: { retiredAt: now } });
     await tx.entityMapping.updateMany({
@@ -306,25 +312,83 @@ export async function localConceptsForRxcuis(
   return new Map(found.map(({ rxcui, record }) => [rxcui, record]));
 }
 
-export async function listLocalConcepts(
-  db: Db,
-  scopeId: string
-): Promise<(LocalConceptRecord & { openDrift: number })[]> {
-  const found = await activeMappings(db, scopeId);
-  if (!found.length) return [];
-  const drift = await db.reviewItem.groupBy({
-    by: ['mappingId'],
-    where: {
-      scopeId,
-      kind: DRIFT_KIND,
-      status: 'open',
-      mappingId: { in: found.map((f) => f.record.supersedes.mappingId) }
-    },
-    _count: { _all: true }
+export type LocalConceptListRow = Omit<LocalConceptRecord, 'supersedes'> & {
+  supersedes: { rxcui: string; name: string | null; mappingId: string; active: boolean } | null;
+  openDrift: number;
+};
+
+/** Every non-retired local concept, with its latest supersede mapping in the scope. */
+export async function listLocalConcepts(db: Db, scopeId: string): Promise<LocalConceptListRow[]> {
+  const concepts = await db.localConcept.findMany({
+    where: { clinicalDrug: { entity: { retiredAt: null } } },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      ingredients: { orderBy: { ordinal: 'asc' } },
+      clinicalDrug: {
+        select: {
+          name: true,
+          tty: true,
+          entity: {
+            select: {
+              externalIdentifiers: {
+                where: { namespace: NAMESPACE, validTo: null },
+                select: { value: true }
+              },
+              mappingsAsSubject: {
+                where: { scopeId, mappingType: 'supersedes' },
+                orderBy: { recordedAt: 'desc' },
+                take: 1,
+                include: {
+                  objectEntity: {
+                    select: {
+                      externalIdentifiers: {
+                        where: { namespace: 'rxnorm_rxcui' },
+                        orderBy: { validFrom: 'desc' },
+                        take: 1,
+                        select: { normalizedValue: true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   });
+  const mappingIds = concepts.flatMap((c) =>
+    c.clinicalDrug.entity.mappingsAsSubject.map((m) => m.id)
+  );
+  const drift = mappingIds.length
+    ? await db.reviewItem.groupBy({
+        by: ['mappingId'],
+        where: { scopeId, kind: DRIFT_KIND, status: 'open', mappingId: { in: mappingIds } },
+        _count: { _all: true }
+      })
+    : [];
   const counts = new Map(drift.map((d) => [d.mappingId, d._count._all]));
-  return found.map(({ record }) => ({
-    ...record,
-    openDrift: counts.get(record.supersedes.mappingId) ?? 0
-  }));
+  return concepts.map((c) => {
+    const drug = c.clinicalDrug;
+    const m = drug.entity.mappingsAsSubject[0];
+    return {
+      id: c.id,
+      code: drug.entity.externalIdentifiers[0]?.value ?? '',
+      tty: drug.tty === 'SBD' ? 'SBD' : 'SCD',
+      name: drug.name,
+      doseForm: c.doseForm,
+      brandName: c.brandName,
+      ingredients: c.ingredients.map(rowFor),
+      ionicContent: c.ionicContent,
+      supersedes: m
+        ? {
+            rxcui: m.objectEntity.externalIdentifiers[0]?.normalizedValue ?? '',
+            name: m.supersededName,
+            mappingId: m.id,
+            active: m.validTo === null && m.supersededAt === null
+          }
+        : null,
+      openDrift: m ? (counts.get(m.id) ?? 0) : 0
+    };
+  });
 }
