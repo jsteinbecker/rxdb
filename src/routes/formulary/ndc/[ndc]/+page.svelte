@@ -1,6 +1,6 @@
 <script lang="ts">
       import {resolve} from '$app/paths';
-      import {afterNavigate} from '$app/navigation';
+      import {afterNavigate, replaceState} from '$app/navigation';
       import {onMount} from 'svelte';
       import {page} from '$app/state';
       import {enhance} from '$app/forms';
@@ -35,7 +35,13 @@
       // The local concepts list links here with ?localConcept=edit to open the editor directly.
       onMount(() => {
             const local = data.item.localConcept;
-            if (page.url.searchParams.get('localConcept') === 'edit' && local && !local.derived) localConcept.open('edit');
+            if (page.url.searchParams.get('localConcept') === 'edit' && local && !local.derived) {
+                  localConcept.open('edit');
+                  // Drop the param so a reload or a non-JS post doesn't reopen the dialog.
+                  const url = new URL(page.url);
+                  url.searchParams.delete('localConcept');
+                  replaceState(url, page.state);
+            }
       });
 
       const item = $derived(data.item);

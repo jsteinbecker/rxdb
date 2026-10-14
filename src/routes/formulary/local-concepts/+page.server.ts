@@ -7,7 +7,8 @@ import {
 	listLocalConcepts,
 	LocalConceptInputError,
 	retireLocalConcept,
-	stopSuperseding
+	stopSuperseding,
+	supersede
 } from '$lib/server/local-concept-store';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -36,6 +37,26 @@ export const actions: Actions = {
 		} catch (cause) {
 			if (cause instanceof LocalConceptInputError)
 				return fail(400, { action: 'localConceptStop', message: cause.message });
+			throw cause;
+		}
+		return { localConceptSaved: true };
+	},
+	/** Re-creates the supersede mapping of a stopped concept; the rxcui is the stored one. */
+	localConceptResupersede: async ({ request }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		if (!id) return fail(400, { action: 'localConceptResupersede', message: 'No local concept chosen.' });
+		try {
+			const scopeId = (await defaultScope(prisma)).id;
+			const concepts = await listLocalConcepts(prisma, scopeId);
+			const refused = editTargetError(id, concepts);
+			if (refused) return fail(refused.status, { action: 'localConceptResupersede', message: refused.message });
+			const mapping = concepts.find((c) => c.id === id)?.supersedes;
+			if (!mapping?.rxcui) throw new LocalConceptInputError('This concept never superseded an RxNorm concept.');
+			if (mapping.active) throw new LocalConceptInputError('This concept is already superseding.');
+			await supersede(prisma, scopeId, id, mapping.rxcui, null);
+		} catch (cause) {
+			if (cause instanceof LocalConceptInputError)
+				return fail(400, { action: 'localConceptResupersede', message: cause.message });
 			throw cause;
 		}
 		return { localConceptSaved: true };

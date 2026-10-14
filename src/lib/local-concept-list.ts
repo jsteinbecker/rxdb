@@ -19,6 +19,21 @@ export function editNdc(evidenceNdc: string | null): string | null {
   return evidenceNdc && /^\d{11}$/.test(evidenceNdc) ? evidenceNdc : null;
 }
 
+/**
+ * Whether a row's Edit item works. The NDC page only resolves a concept through an active
+ * mapping, so Edit needs one plus a usable evidence NDC; otherwise says why not.
+ */
+export function editState(row: {
+  supersedes: { active: boolean } | null;
+  evidence: { ndc: string | null };
+}): { ndc: string; reason?: undefined } | { ndc: null; reason: string } {
+  if (!row.supersedes) return { ndc: null, reason: "Not superseding anything; edit isn't available here yet" };
+  if (!row.supersedes.active) return { ndc: null, reason: 'Supersede again to edit it from its NDC page' };
+  const ndc = editNdc(row.evidence.ndc);
+  if (!ndc) return { ndc: null, reason: 'No evidence NDC was recorded for this concept, so there is no package page to edit it from.' };
+  return { ndc };
+}
+
 /** The badge text on a formulary item. */
 export function badgeText(local: { code: string; supersedes: { rxcui: string } }): string {
   return `Local concept ${local.code} · supersedes RxCUI ${local.supersedes.rxcui}`;

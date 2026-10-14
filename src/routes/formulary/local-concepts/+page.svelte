@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
-	import { editNdc, evidenceText, supersedesText } from '$lib/local-concept-list';
+	import { editState, evidenceText, supersedesText } from '$lib/local-concept-list';
 
 	let { data, form } = $props();
 
@@ -34,7 +34,9 @@
 		</p>
 	</header>
 
-	{#if (form?.action === 'localConceptStop' || form?.action === 'localConceptRetire') && form.message}
+	{#if (form?.action === 'localConceptStop' ||
+		form?.action === 'localConceptRetire' ||
+		form?.action === 'localConceptResupersede') && form.message}
 		<p class="notice error" role="alert">{form.message}</p>
 	{/if}
 
@@ -58,7 +60,7 @@
 			</thead>
 			<tbody>
 				{#each data.concepts as concept (concept.id)}
-					{@const ndc = editNdc(concept.evidence.ndc)}
+					{@const edit = editState(concept)}
 					<tr>
 						<td class="mono">{concept.code}</td>
 						<td>{concept.name}</td>
@@ -80,19 +82,25 @@
 								>
 								{#if menuFor === concept.id}
 									<div class="menu" role="menu">
-										{#if ndc}
+										{#if edit.ndc}
 											<a
 												role="menuitem"
-												href="{resolve('/formulary/ndc/[ndc]', { ndc })}?localConcept=edit">Edit</a
+												href="{resolve('/formulary/ndc/[ndc]', { ndc: edit.ndc })}?localConcept=edit">Edit</a
 											>
 										{:else}
-											<button
-												type="button"
-												role="menuitem"
-												disabled
-												title="No evidence NDC was recorded for this concept, so there is no package page to edit it from."
-												>Edit</button
+											<button type="button" role="menuitem" disabled title={edit.reason}>Edit</button>
+										{/if}
+										{#if concept.supersedes && !concept.supersedes.active}
+											<form
+												method="POST"
+												action="?/localConceptResupersede"
+												use:enhance={() => {
+													menuFor = null;
+												}}
 											>
+												<input type="hidden" name="id" value={concept.id} />
+												<button role="menuitem">Supersede again</button>
+											</form>
 										{/if}
 										{#if concept.supersedes?.active}
 											<form
