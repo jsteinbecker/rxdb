@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
-	import { editState, evidenceText, supersedesText } from '$lib/local-concept-list';
+	import { editState, evidenceText, supersedeItem, supersedesText } from '$lib/local-concept-list';
 
 	let { data, form } = $props();
 
@@ -36,7 +36,8 @@
 
 	{#if (form?.action === 'localConceptStop' ||
 		form?.action === 'localConceptRetire' ||
-		form?.action === 'localConceptResupersede') && form.message}
+		form?.action === 'localConceptResupersede' ||
+		form?.action === 'localConceptSupersede') && form.message}
 		<p class="notice error" role="alert">{form.message}</p>
 	{/if}
 
@@ -61,6 +62,7 @@
 			<tbody>
 				{#each data.concepts as concept (concept.id)}
 					{@const edit = editState(concept)}
+					{@const supersedeAction = supersedeItem(concept)}
 					<tr>
 						<td class="mono">{concept.code}</td>
 						<td>{concept.name}</td>
@@ -90,16 +92,21 @@
 										{:else}
 											<button type="button" role="menuitem" disabled title={edit.reason}>Edit</button>
 										{/if}
-										{#if concept.supersedes && !concept.supersedes.active}
+										{#if supersedeAction}
 											<form
 												method="POST"
-												action="?/localConceptResupersede"
+												action="?/{supersedeAction.action}"
 												use:enhance={() => {
 													menuFor = null;
 												}}
 											>
 												<input type="hidden" name="id" value={concept.id} />
-												<button role="menuitem">Supersede again</button>
+												<button
+													role="menuitem"
+													title={supersedeAction.action === 'localConceptSupersede'
+														? 'Supersede the RxNorm SCD of the NDC it was defined from'
+														: undefined}>{supersedeAction.label}</button
+												>
 											</form>
 										{/if}
 										{#if concept.supersedes?.active}

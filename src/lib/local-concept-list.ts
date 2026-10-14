@@ -27,11 +27,26 @@ export function editState(row: {
   supersedes: { active: boolean } | null;
   evidence: { ndc: string | null };
 }): { ndc: string; reason?: undefined } | { ndc: null; reason: string } {
-  if (!row.supersedes) return { ndc: null, reason: "Not superseding anything; edit isn't available here yet" };
+  if (!row.supersedes) return { ndc: null, reason: 'Not superseding anything; choose Supersede… to edit it from its NDC page' };
   if (!row.supersedes.active) return { ndc: null, reason: 'Supersede again to edit it from its NDC page' };
   const ndc = editNdc(row.evidence.ndc);
   if (!ndc) return { ndc: null, reason: 'No evidence NDC was recorded for this concept, so there is no package page to edit it from.' };
   return { ndc };
+}
+
+/**
+ * The row's supersede item: a stopped mapping is re-created as it was; a concept that
+ * never superseded anything gets its target from its evidence NDC; an active one has none.
+ */
+export function supersedeItem(row: {
+  supersedes: { active: boolean } | null;
+}):
+  | { action: 'localConceptResupersede'; label: 'Supersede again' }
+  | { action: 'localConceptSupersede'; label: 'Supersede…' }
+  | null {
+  if (!row.supersedes) return { action: 'localConceptSupersede', label: 'Supersede…' };
+  if (!row.supersedes.active) return { action: 'localConceptResupersede', label: 'Supersede again' };
+  return null;
 }
 
 /** The badge text on a formulary item. */

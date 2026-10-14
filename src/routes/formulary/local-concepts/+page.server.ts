@@ -2,6 +2,9 @@ import { fail } from '@sveltejs/kit';
 import { editTargetError } from '$lib/local-concept-input';
 import { prisma } from '$lib/server/prisma';
 import { defaultScope } from '$lib/server/catalog-formulary';
+import { syncExternalPackages } from '$lib/server/catalog-sync';
+import { supersedeTarget } from '$lib/server/local-concept-target';
+import { editNdc } from '$lib/local-concept-list';
 import { parseSettings } from '$lib/settings';
 import {
 	listLocalConcepts,
@@ -57,6 +60,37 @@ export const actions: Actions = {
 		} catch (cause) {
 			if (cause instanceof LocalConceptInputError)
 				return fail(400, { action: 'localConceptResupersede', message: cause.message });
+			throw cause;
+		}
+		return { localConceptSaved: true };
+	},
+	/**
+	 * Supersedes for a never-mapped concept: the target is recomputed from its evidence
+	 * NDC exactly as the NDC page's editor does (never a client-supplied rxcui).
+	 */
+	localConceptSupersede: async ({ request }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		if (!id) return fail(400, { action: 'localConceptSupersede', message: 'No local concept chosen.' });
+		try {
+			const scopeId = (await defaultScope(prisma)).id;
+			const concepts = await listLocalConcepts(prisma, scopeId);
+			const refused = editTargetError(id, concepts);
+			if (refused) return fail(refused.status, { action: 'localConceptSupersede', message: refused.message });
+			const concept = concepts.find((c) => c.id === id)!;
+			if (concept.supersedes)
+				throw new LocalConceptInputError('This concept has a supersede mapping already; use Supersede again.');
+			const ndc = editNdc(concept.evidence.ndc);
+			if (!ndc)
+				throw new LocalConceptInputError('No evidence NDC was recorded for this concept, so its RxNorm SCD is unknown.');
+			const [item] = await syncExternalPackages([ndc]);
+			if (!item) throw new LocalConceptInputError(`No package data available for NDC ${ndc}.`);
+			const target = await supersedeTarget(prisma, scopeId, item);
+			if (target.blocked || !target.scd)
+				throw new LocalConceptInputError(target.blocked ?? 'There is no SCD to supersede.');
+			await supersede(prisma, scopeId, id, target.scd.rxcui, null);
+		} catch (cause) {
+			if (cause instanceof LocalConceptInputError)
+				return fail(400, { action: 'localConceptSupersede', message: cause.message });
 			throw cause;
 		}
 		return { localConceptSaved: true };

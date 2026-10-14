@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { badgeText, editNdc, editState, evidenceText, supersedesText } from '../local-concept-list.ts';
+import { badgeText, editNdc, editState, evidenceText, supersedeItem, supersedesText } from '../local-concept-list.ts';
 
 test('supersedesText marks stopped mappings and tolerates a missing name', () => {
   assert.equal(supersedesText(null), 'Nothing');
@@ -15,8 +15,17 @@ test('editState allows edit only for an active mapping with a valid evidence NDC
   assert.equal(stopped.ndc, null);
   assert.match(stopped.reason ?? '', /Supersede again/);
   const never = editState({ supersedes: null, evidence });
-  assert.match(never.reason ?? '', /Not superseding anything/);
+  assert.match(never.reason ?? '', /Not superseding anything; choose Supersede…/);
   assert.equal(editState({ supersedes: { active: true }, evidence: { ndc: null } }).ndc, null);
+});
+
+test('supersedeItem: Supersede… when never mapped, Supersede again when stopped, none when active', () => {
+  assert.deepEqual(supersedeItem({ supersedes: null }), { action: 'localConceptSupersede', label: 'Supersede…' });
+  assert.deepEqual(supersedeItem({ supersedes: { active: false } }), {
+    action: 'localConceptResupersede',
+    label: 'Supersede again'
+  });
+  assert.equal(supersedeItem({ supersedes: { active: true } }), null);
 });
 
 test('evidenceText, editNdc and badgeText', () => {
