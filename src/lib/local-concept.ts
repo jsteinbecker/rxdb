@@ -156,7 +156,7 @@ export function localConceptName(input: {
   return input.brandName ? `${base} [${input.brandName}]` : base;
 }
 
-const SEGMENT = /^(.*?) (\d*\.?\d+) ([A-Z[\]]+\/[A-Z]+|[A-Z[\]]+)(?: (.*))?$/i;
+const SEGMENT = /^(.*?) (\d*\.?\d+) ([A-Z[\]]+\/[A-Z0-9]+|[A-Z[\]]+)(?: (.*))?$/i;
 
 /** Inverse of `localConceptName`; null when the name carries no strengths. */
 export function parseScdName(name: string): {

@@ -26,6 +26,8 @@ export type SearchResult = {
 	identifiers: string[];
 	/** The page that shows it, when one does. */
 	href?: string | null;
+	/** A clinical_drug row that is a local concept (LC code), not an RxNorm concept. */
+	localConcept?: true;
 };
 
 const amount = (value: unknown) => String(Number(Number(value).toPrecision(6)));
@@ -146,7 +148,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		await Promise.all([
 			prisma.clinicalDrug.findMany({
 				where: { name: { contains: query, mode: 'insensitive' }, entity: activeEntity },
-				select: { id: true, name: true, tty: true },
+				select: { id: true, name: true, tty: true, localConcept: { select: { id: true } } },
 				take: limit
 			}),
 			prisma.ingredient.findMany({
@@ -279,7 +281,8 @@ export const GET: RequestHandler = async ({ url }) => {
 			name: row.name,
 			detail: ttyLabel(row.tty),
 			matchedOn: 'name',
-			identifiers: identifiersByEntity.get(row.id) ?? []
+			identifiers: identifiersByEntity.get(row.id) ?? [],
+			...(row.localConcept ? { localConcept: true as const } : {})
 		});
 	}
 	for (const row of ingredients) {

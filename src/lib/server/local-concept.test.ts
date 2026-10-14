@@ -110,6 +110,17 @@ describe('parseScdName', () => {
   it('returns null without strengths', () => {
     assert.equal(parseScdName('Trophamine'), null);
   });
+  it('parses units with digits after the slash', () => {
+    const patch = parseScdName('nicotine 0.583 MG/HR / fentanyl 0.025 MG/24HR Transdermal System');
+    assert.deepEqual(
+      patch?.ingredients.map((i) => i.unit),
+      ['MG/HR', 'MG/24HR']
+    );
+    assert.equal(patch?.doseForm, 'Transdermal System');
+    const bag = parseScdName('dextrose 5 G/100ML Injectable Solution');
+    assert.deepEqual(bag?.ingredients[0], { name: 'dextrose', value: '5', unit: 'G/100ML' });
+    assert.equal(bag?.doseForm, 'Injectable Solution');
+  });
 });
 
 describe('sameStrength', () => {

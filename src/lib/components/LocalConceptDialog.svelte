@@ -165,6 +165,8 @@
 </datalist>
 
 <dialog bind:this={dialog} class="editor">
+	<!-- The keydown only filters Enter bubbling up from the form's own fields. -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<form
 		method="POST"
 		action="?/localConceptSave"
@@ -177,6 +179,13 @@
 				pending = false;
 				if (result.type === 'success') dialog.close();
 			};
+		}}
+		onkeydown={(event) => {
+			// Saving can also supersede, so only the Save button submits: Enter in an input or
+			// select does nothing (buttons still activate; textareas keep their newlines).
+			const target = event.target;
+			if (event.key === 'Enter' && (target instanceof HTMLInputElement || target instanceof HTMLSelectElement))
+				event.preventDefault();
 		}}
 	>
 		<h2>{editing ? `Edit local concept ${editing.code}` : 'Define local concept'}</h2>

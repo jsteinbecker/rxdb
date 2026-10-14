@@ -18,6 +18,7 @@
 		matchedOn: string;
 		identifiers: string[];
 		href?: string | null;
+		localConcept?: true;
 	};
 
 	type SyncSummary = {
@@ -616,7 +617,7 @@
 			{#each results as result (result.id)}
 				<li>
 					<div>
-						<span class="kind">{KIND_LABELS[result.kind] ?? result.kind.replace('_', ' ')}</span>
+						<span class="kind">{result.localConcept ? 'Local concept' : (KIND_LABELS[result.kind] ?? result.kind.replace('_', ' '))}</span>
 						<h2>{#if result.href}<a href={result.href}>{result.name}</a>{:else}{result.name}{/if}</h2>
 					</div>
 					{#if result.detail}<p>{result.detail}</p>{/if}

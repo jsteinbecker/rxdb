@@ -183,7 +183,7 @@ export async function supersede(
 
 export async function stopSuperseding(db: Db, scopeId: string, mappingId: string): Promise<void> {
   const result = await db.entityMapping.updateMany({
-    where: { id: mappingId, scopeId, mappingType: 'supersedes', validTo: null },
+    where: { id: mappingId, scopeId, mappingType: 'supersedes', validTo: null, supersededAt: null },
     data: { validTo: new Date(), invalidatedReason: 'stopped by user' }
   });
   if (!result.count) throw new LocalConceptInputError('No active supersede mapping found');
@@ -192,6 +192,7 @@ export async function stopSuperseding(db: Db, scopeId: string, mappingId: string
 /** Retire the concept and end every mapping that points at it. */
 export async function retireLocalConcept(db: Db, id: string): Promise<void> {
   await inTransaction(db, async (tx) => {
+    await lock(tx);
     const local = await tx.clinicalDrug.findFirst({
       where: { id, localConcept: { isNot: null } },
       select: { entity: { select: { retiredAt: true } } }
