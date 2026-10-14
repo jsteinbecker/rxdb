@@ -92,10 +92,22 @@ export function localConceptDraft(item: DraftSource): {
       // tyrosine beside tyrosine itself): two rows can't share one name, so this
       // one stays as labeled, at the amount the label stated.
       onMoiety = false;
-      mg = mgPerMl(statedBeforeCorrection(index), volumeMl);
+      const stated = statedBeforeCorrection(index);
+      if (!stated) {
+        warnings.push(`${row.name}: stated as ${moiety!.name}; enter the label amount`);
+        return;
+      }
+      mg = mgPerMl(stated, volumeMl);
     } else if (onMoiety) {
-      // The directory states salts on the moiety basis already.
-      mg = mgPerMl(directory.get(groupKey(row.name)), null) ?? mgPerMl(row.strength, volumeMl);
+      // The directory states salts on the moiety basis already. Without it, the
+      // SPL amount is only moiety-basis when the SPL row says so; a row flagged by
+      // strength notes alone may still carry the salt's mass.
+      mg = mgPerMl(directory.get(groupKey(row.name)), null);
+      if (mg === null && row.basis === 'moiety') mg = mgPerMl(row.strength, volumeMl);
+      if (mg === null) {
+        warnings.push(`${row.name}: no directory strength on the ${moiety!.name} basis; add it by hand`);
+        return;
+      }
     } else {
       mg = mgPerMl(row.strength, volumeMl);
     }

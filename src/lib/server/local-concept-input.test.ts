@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { LocalConceptInputError, parseLocalConceptInput } from '../local-concept-input.ts';
+import {
+  editTargetError,
+  LocalConceptInputError,
+  parseLocalConceptInput
+} from '../local-concept-input.ts';
 
 const row = (over: Record<string, unknown> = {}) => ({
   substanceUnii: 'abcde12345',
@@ -96,6 +100,20 @@ describe('parseLocalConceptInput', () => {
       })
     );
     assert.equal(parseLocalConceptInput(input({ ingredients })).ingredients.length, 21);
+  });
+});
+
+describe('editTargetError', () => {
+  const id = '0b6f3c2e-6a51-4d8e-9a43-1f0f6a3c9d21';
+  it('refuses a malformed id with 400', () => {
+    assert.equal(editTargetError('not-a-uuid', [{ id }])?.status, 400);
+    assert.equal(editTargetError('', [{ id }])?.status, 400);
+  });
+  it('refuses an id not among the editable concepts with 404', () => {
+    assert.equal(editTargetError('11111111-2222-4333-8444-555555555555', [{ id }])?.status, 404);
+  });
+  it('accepts an editable concept', () => {
+    assert.equal(editTargetError(id, [{ id }]), null);
   });
 });
 

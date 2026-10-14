@@ -2,6 +2,7 @@
 // LocalConceptInputError, which routes turn into fail(400).
 
 import type { LocalIngredient } from './local-concept.ts';
+import { isUuid } from './pharm-class-rule-input.ts';
 
 export class LocalConceptInputError extends Error {}
 
@@ -81,6 +82,21 @@ function readIngredient(raw: unknown, index: number): LocalIngredient {
     strengthDenMag: positive(raw.strengthDenMag ?? '1', `${at} per amount`),
     strengthDenUom: text(raw.strengthDenUom, `${at} per unit`, 50)
   };
+}
+
+/**
+ * Why `id` can't be edited, or null when it can: it must be a well-formed uuid
+ * (Postgres throws on a malformed one) of a concept in `editable`, the scope's
+ * non-retired local concepts.
+ */
+export function editTargetError(
+  id: string,
+  editable: { id: string }[]
+): { status: 400 | 404; message: string } | null {
+  if (!isUuid(id)) return { status: 400, message: 'Invalid local concept id.' };
+  if (!editable.some((concept) => concept.id === id))
+    return { status: 404, message: 'Local concept not found; it may have been retired.' };
+  return null;
 }
 
 const COMPARATORS = ['', '~', '<'] as const;

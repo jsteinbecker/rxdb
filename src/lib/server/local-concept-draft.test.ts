@@ -122,6 +122,33 @@ describe('localConceptDraft edge cases', () => {
     assert.ok(warnings.some((w) => /dose form/i.test(w)));
   });
 
+  it("keeps the SPL amount for a moiety row with no directory match when the SPL row's basis is moiety", () => {
+    const item = fixture();
+    item.ingredients = item.ingredients.filter((i) => i.name !== 'LYSINE ACETATE');
+    const { input } = localConceptDraft(item);
+    const lysine = bySubstance(input.ingredients, 'LYSINE ACETATE');
+    assert.equal(lysine.basis, 'active_moiety');
+    assert.equal(lysine.strengthNumMag, '8.51'); // 4.253 g / 500 mL
+  });
+
+  it('omits a strength-notes-only moiety row with no directory match, with a warning', () => {
+    const item = fixture();
+    item.ingredients = item.ingredients.filter((i) => i.name !== 'LYSINE ACETATE');
+    item.details!.spl!.ingredients.find((i) => i.name === 'LYSINE ACETATE')!.basis = 'ingredient';
+    const { input, warnings } = localConceptDraft(item);
+    assert.ok(!input.ingredients.some((r) => r.substanceName === 'LYSINE ACETATE'));
+    assert.ok(warnings.some((w) => w.startsWith('LYSINE ACETATE:')));
+    assert.equal(input.ingredients.length, 19);
+  });
+
+  it("says what is missing when a row on another row's substance has no stored label amount", () => {
+    const item = fixture();
+    item.propertyOverrides = {};
+    const { input, warnings } = localConceptDraft(item);
+    assert.ok(!input.ingredients.some((r) => r.substanceName === 'ACETYL L-TYROSINE'));
+    assert.ok(warnings.includes('ACETYL L-TYROSINE: stated as TYROSINE; enter the label amount'));
+  });
+
   it('reads an SPL strength that already has a volume denominator', () => {
     const item = fixture();
     const leucine = item.details!.spl!.ingredients.find((i) => i.name === 'LEUCINE')!;

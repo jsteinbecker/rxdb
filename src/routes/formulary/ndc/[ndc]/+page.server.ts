@@ -16,7 +16,7 @@ import {
 	updateLocalConcept
 } from '$lib/server/local-concept-store';
 import { localConceptDraft, type DraftSource } from '$lib/local-concept-draft';
-import { parseLocalConceptInput, type IonicRow, type LocalConceptInput } from '$lib/local-concept-input';
+import { editTargetError, parseLocalConceptInput, type IonicRow, type LocalConceptInput } from '$lib/local-concept-input';
 import type { LocalConceptView } from '$lib/local-concept-view';
 import { packageClassKey } from '$lib/pharm-class-key';
 import { scopeOptions } from '$lib/pharm-class-scope-options';
@@ -450,6 +450,8 @@ export const actions: Actions = {
 		const scopeId = (await defaultScope(prisma)).id;
 		try {
 			if (id) {
+				const refused = editTargetError(id, await listLocalConcepts(prisma, scopeId));
+				if (refused) return fail(refused.status, { action: 'localConceptSave', message: refused.message });
 				// Evidence stays what the concept was defined from.
 				const stored = await prisma.localConcept.findUnique({
 					where: { id },
