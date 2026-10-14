@@ -5,6 +5,7 @@ import { itemName } from '$lib/item-name';
 import { stagedTree, syncExternalPackages } from '$lib/server/catalog-sync';
 import { defaultScope, unlinkPackage } from '$lib/server/catalog-formulary';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
+import { withLocalConcepts } from '$lib/server/local-concept-view';
 import { packageClassKey } from '$lib/pharm-class-key';
 import { scopeOptions } from '$lib/pharm-class-scope-options';
 import { parseSettings } from '$lib/settings';
@@ -72,7 +73,11 @@ export const load: PageServerLoad = async ({ params }) => {
 	}));
 	const scope = await defaultScope(prisma);
 	const scopeId = scope.id;
-	const [shown] = await withPharmClassRules(prisma, scopeId, packages.slice(0, 1));
+	const [shown] = await withLocalConcepts(
+		prisma,
+		scopeId,
+		await withPharmClassRules(prisma, scopeId, packages.slice(0, 1))
+	);
 	return {
 		item: shown,
 		confirmRemove: parseSettings(scope.settings).confirmRemove,

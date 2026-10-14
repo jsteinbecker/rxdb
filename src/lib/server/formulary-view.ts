@@ -12,7 +12,12 @@ import {fillFromConcept} from '../concept-fill';
  * product; the latest enrichment snapshot supplies routes and label facts the
  * catalog does not model yet.
  */
-export async function formularyRows(db: PrismaClient, scopeId: string): Promise<FormularyRow[]> {
+export async function formularyRows(
+  db: PrismaClient,
+  scopeId: string,
+  /** formularyItemId -> local concept name; the user's nameOverride still wins. */
+  localNames: Map<string, string> = new Map()
+): Promise<FormularyRow[]> {
   const links = await db.formularyItemPackage.findMany({
     where: {
       validTo: null,
@@ -102,7 +107,10 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
         packageId: link.package.id,
         ndc,
         formularyItemId: link.formularyItem.id,
-        formularyItem: itemName(pseudo?.name ?? link.formularyItem.displayName, link.formularyItem),
+        formularyItem: itemName(
+          localNames.get(link.formularyItem.id) ?? pseudo?.name ?? link.formularyItem.displayName,
+          link.formularyItem
+        ),
         description: facts.description,
         displayTitle: packageDisplayTitle(facts),
         routes: item?.details?.product?.routes ?? [],

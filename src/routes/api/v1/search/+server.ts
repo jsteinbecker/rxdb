@@ -7,6 +7,7 @@ import { prisma } from '$lib/server/prisma';
 import { stagedTree, syncExternalSearch } from '$lib/server/catalog-sync';
 import { defaultScope } from '$lib/server/catalog-formulary';
 import { withPharmClassRulesInTree } from '$lib/server/pharm-class-view';
+import { withLocalConceptsInTree } from '$lib/server/local-concept-view';
 import type { RequestHandler } from './$types';
 
 const DEFAULT_LIMIT = 24;
@@ -45,7 +46,12 @@ function strengthText(row: {
 /** Rules only change what is displayed, so a failed lookup must not discard a successful search. */
 async function stagedWithRules(tree: Awaited<ReturnType<typeof stagedTree>>) {
 	try {
-		return await withPharmClassRulesInTree(prisma, (await defaultScope(prisma)).id, tree);
+		const scopeId = (await defaultScope(prisma)).id;
+		return await withLocalConceptsInTree(
+			prisma,
+			scopeId,
+			await withPharmClassRulesInTree(prisma, scopeId, tree)
+		);
 	} catch (cause) {
 		console.error('pharm-class rules lookup failed; returning source classes', cause);
 		return tree;
