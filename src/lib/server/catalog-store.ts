@@ -12,6 +12,8 @@ import {
 } from './catalog-cache';
 import { exclusionReason } from './catalog-facts';
 import { linkPseudoScd } from './pseudo-scd-store';
+import { checkLocalConceptDrift } from './local-concept-store';
+import { logger } from './log';
 
 type Db = Prisma.TransactionClient;
 
@@ -540,6 +542,8 @@ async function attachBrands(db: Db, entityId: string, concept: RxConcept) {
 	}
 }
 
+const driftLog = logger('local-concept');
+
 export async function persistCollection(
 	db: PrismaClient,
 	concepts: RxConcept[],
@@ -608,6 +612,12 @@ export async function persistCollection(
 			},
 			{ timeout: 60_000 }
 		);
+	}
+	// Review items only; a failure here must never fail the load.
+	try {
+		await checkLocalConceptDrift(db, concepts, packages);
+	} catch (error) {
+		driftLog.error('drift check failed', { error: String(error) });
 	}
 }
 

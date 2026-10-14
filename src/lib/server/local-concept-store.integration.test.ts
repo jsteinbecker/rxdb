@@ -7,6 +7,7 @@ import { parseLocalConceptInput } from '../local-concept-input.ts';
 import { defaultScope } from './catalog-formulary';
 import {
   LocalConceptInputError,
+  checkLocalConceptDrift,
   createLocalConcept,
   listLocalConcepts,
   localConceptsForRxcuis,
@@ -101,12 +102,24 @@ test(
           assert.equal(updated?.name, 'glycine 12.5 MG/ML Injectable Solution');
           assert.equal(updated?.ingredients.length, 1);
 
+          // RxNorm renames the superseded concept: one open review item, updated not duplicated.
+          const renamed = { rxcui, name: 'renamed RxNorm concept', tty: 'SCD', ndcs: [], evidence: [], vetOnly: null };
+          assert.equal(await checkLocalConceptDrift(tx, [renamed], []), 1);
+          assert.equal(await checkLocalConceptDrift(tx, [renamed], []), 1);
+          const drift = await tx.reviewItem.findMany({ where: { mappingId, kind: 'local_concept_drift' } });
+          assert.equal(drift.length, 1);
+          assert.equal(drift[0].status, 'open');
+          assert.equal(drift[0].note, 'renamed');
+          assert.equal(drift[0].severity, 'info');
+          assert.equal(drift[0].entityId, made.id);
+          assert.equal(await checkLocalConceptDrift(tx, [], []), 0);
+
           await stopSuperseding(tx, scope.id, mappingId);
           assert.equal((await localConceptsForRxcuis(tx, scope.id, [rxcui])).size, 0);
           const stopped = (await listLocalConcepts(tx, scope.id)).find((c) => c.id === made.id);
           assert.equal(stopped?.supersedes?.active, false);
           assert.equal(stopped?.supersedes?.rxcui, rxcui);
-          assert.equal(stopped?.openDrift, 0);
+          assert.equal(stopped?.openDrift, 1); // the open drift item survives stopping
           const unmapped = (await listLocalConcepts(tx, scope.id)).find((c) => c.id === second.id);
           assert.equal(unmapped?.supersedes, null);
           assert.equal(unmapped?.openDrift, 0);

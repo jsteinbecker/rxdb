@@ -1,6 +1,8 @@
 import { Prisma, type PrismaClient } from '../../generated/client';
 import { LocalConceptInputError, type LocalConceptInput } from '../local-concept-input.ts';
+import { classifyDrift } from '../local-concept-drift.ts';
 import { localConceptName, type LocalIngredient } from '../local-concept.ts';
+import type { ExternalPackage, RxConcept } from './catalog-providers';
 import type { LocalConceptRecord } from '../local-concept-view.ts';
 
 export { LocalConceptInputError } from '../local-concept-input.ts';
@@ -391,4 +393,105 @@ export async function listLocalConcepts(db: Db, scopeId: string): Promise<LocalC
       openDrift: m ? (counts.get(m.id) ?? 0) : 0
     };
   });
+}
+
+/** Packages of this call say the concept is no longer active in RxNorm. */
+function inactiveRxcuis(packages: ExternalPackage[]): Set<string> {
+  const out = new Set<string>();
+  for (const pkg of packages) {
+    const rxnav = pkg.details?.rxnav;
+    if (!rxnav) continue;
+    const status = rxnav.conceptStatus?.trim().toUpperCase();
+    if (rxnav.rxcui && status && status !== 'ACTIVE') out.add(rxnav.rxcui);
+    for (const h of rxnav.history ?? []) {
+      if (h.originalRxcui && h.activeRxcui && h.activeRxcui !== h.originalRxcui) {
+        out.add(h.originalRxcui);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Opens one review item per superseded mapping whose RxNorm concept changed in
+ * this load. Writes nothing else; returns the number of items created or updated.
+ */
+export async function checkLocalConceptDrift(
+  db: Db,
+  concepts: RxConcept[],
+  packages: ExternalPackage[]
+): Promise<number> {
+  const byRxcui = new Map(concepts.map((c) => [c.rxcui, c]));
+  if (!byRxcui.size) return 0;
+  const mappings = await db.entityMapping.findMany({
+    where: {
+      mappingType: 'supersedes',
+      validTo: null,
+      supersededAt: null,
+      subjectEntity: { retiredAt: null, clinicalDrug: { localConcept: { isNot: null } } },
+      objectEntity: {
+        externalIdentifiers: {
+          some: { namespace: 'rxnorm_rxcui', normalizedValue: { in: [...byRxcui.keys()] }, validTo: null }
+        }
+      }
+    },
+    include: {
+      objectEntity: {
+        select: {
+          externalIdentifiers: {
+            where: { namespace: 'rxnorm_rxcui', validTo: null },
+            select: { normalizedValue: true }
+          }
+        }
+      },
+      subjectEntity: {
+        select: {
+          clinicalDrug: {
+            select: { localConcept: { include: { ingredients: { orderBy: { ordinal: 'asc' } } } } }
+          }
+        }
+      }
+    }
+  });
+  if (!mappings.length) return 0;
+  const inactive = inactiveRxcuis(packages);
+  let written = 0;
+  for (const m of mappings) {
+    const rxcui = m.objectEntity.externalIdentifiers
+      .map((i) => i.normalizedValue)
+      .find((v) => byRxcui.has(v));
+    const concept = rxcui ? byRxcui.get(rxcui) : undefined;
+    const local = m.subjectEntity.clinicalDrug?.localConcept;
+    if (!rxcui || !concept || !local) continue;
+    const drift = classifyDrift(
+      m,
+      { name: concept.name, inactive: inactive.has(rxcui) },
+      local.ingredients.map(rowFor)
+    );
+    if (!drift) continue;
+    await inTransaction(db, async (tx) => {
+      const open = await tx.reviewItem.findFirst({
+        where: { kind: DRIFT_KIND, mappingId: m.id, status: 'open' }
+      });
+      if (open) {
+        await tx.reviewItem.update({
+          where: { id: open.id },
+          data: { severity: drift.severity, note: drift.reason }
+        });
+      } else {
+        await tx.reviewItem.create({
+          data: {
+            scopeId: m.scopeId,
+            kind: DRIFT_KIND,
+            severity: drift.severity,
+            entityId: m.subjectEntityId,
+            mappingId: m.id,
+            note: drift.reason
+          }
+        });
+      }
+    });
+    written++;
+  }
+  return written;
 }
