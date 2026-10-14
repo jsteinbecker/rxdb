@@ -24,7 +24,8 @@
       let actionsMenu: HTMLElement;
 
       // The local concepts list links here with ?localConcept=edit to open the editor directly.
-      // afterNavigate runs once the router has started (hard loads included), which replaceState needs.
+      // On a hard load afterNavigate fires during hydration, before the router has started, and
+      // replaceState throws until then; so the URL cleanup is deferred to a macrotask.
       afterNavigate(({from, to}) => {
             fromFormulary = from?.url.pathname === '/formulary';
             const local = data.item.localConcept;
@@ -33,7 +34,13 @@
                   // Drop the param so a reload or a non-JS post doesn't reopen the dialog.
                   const url = new URL(to.url);
                   url.searchParams.delete('localConcept');
-                  replaceState(url, page.state);
+                  setTimeout(() => {
+                        try {
+                              replaceState(url, page.state);
+                        } catch {
+                              /* router not ready; leaving the param is harmless */
+                        }
+                  }, 0);
             }
       });
 
@@ -42,7 +49,6 @@
             event.preventDefault();
             history.back();
       }
-
 
       const item = $derived(data.item);
       const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
