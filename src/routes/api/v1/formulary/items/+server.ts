@@ -17,8 +17,10 @@ import type { RequestHandler } from './$types';
  */
 export const GET: RequestHandler = async ({ url }) => {
 	const scope = await defaultScope(prisma);
-	const items = await loadedItems(prisma, scope.id);
-	const rows = await formularyRows(prisma, scope.id, localNamesOf(items));
+	const loading = loadedItems(prisma, scope.id);
+	const names = loading.then(localNamesOf);
+	names.catch(() => {}); // a failure surfaces through Promise.all; don't report it twice
+	const [items, rows] = await Promise.all([loading, formularyRows(prisma, scope.id, names)]);
 	const snapshots = await loadPackageSnapshots(
 		prisma,
 		rows.map((row) => row.ndc),

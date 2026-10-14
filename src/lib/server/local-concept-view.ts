@@ -1,38 +1,41 @@
 import type { PrismaClient } from '../../generated/client';
 import { applyLocalConcepts, resolveLocal, type LocalConceptRecord, type LocalConceptView } from '../local-concept-view';
-import { scdsForSbds } from './catalog-store';
-import type { ExternalPackage } from './catalog-providers';
-import { localConceptsForRxcuis } from './local-concept-store';
+import { loadConceptSnapshots, sbdIndex } from './catalog-store';
+import type { ExternalPackage, RxConcept } from './catalog-providers';
+import { activeLocalConcepts } from './local-concept-store';
 
-type LoadRecords = (db: PrismaClient, scopeId: string, rxcuis: string[]) => Promise<Map<string, LocalConceptRecord>>;
-type LoadScds = (db: PrismaClient, sbdRxcuis: string[]) => Promise<Map<string, { scdRxcui: string; brand: string | null }>>;
+type LoadActive = (db: PrismaClient, scopeId: string) => Promise<Map<string, LocalConceptRecord>>;
+type LoadSnapshots = (db: PrismaClient, rxcuis: string[]) => Promise<Map<string, RxConcept>>;
 
 /**
  * rxcui -> local view for the scope: direct mappings, plus derived SBDs for
  * rxcuis with no mapping of their own whose SCD counterpart is mapped.
- * Read paths only (never sync, staging or reinterpret).
+ * Starts from the scope's active mappings (few), so a scope without local
+ * concepts reads nothing else, and only the mapped SCDs' snapshots are read
+ * to find which requested SBDs they claim. Read paths only (never sync,
+ * staging or reinterpret).
  */
 export async function localConceptsByRxcui(
   db: PrismaClient,
   scopeId: string,
   rxcuis: string[],
-  loadRecords: LoadRecords = localConceptsForRxcuis,
-  loadScds: LoadScds = scdsForSbds
+  loadActive: LoadActive = activeLocalConcepts,
+  loadSnapshots: LoadSnapshots = loadConceptSnapshots
 ): Promise<Map<string, LocalConceptView>> {
   const wanted = [...new Set(rxcuis.filter(Boolean))];
   if (!wanted.length) return new Map();
-  const byRxcui = new Map(await loadRecords(db, scopeId, wanted));
+  const byRxcui = await loadActive(db, scopeId);
+  if (!byRxcui.size) return new Map();
   const unmapped = wanted.filter((rxcui) => !byRxcui.has(rxcui));
   const counterparts = new Map<string, string>();
   const brands = new Map<string, string>();
   if (unmapped.length) {
-    const scds = await loadScds(db, unmapped);
-    for (const [rxcui, { scdRxcui, brand }] of scds) {
+    // A derived SBD needs a mapped SCD, so only mapped rxcuis' snapshots can claim one.
+    const snapshots = await loadSnapshots(db, [...byRxcui.keys()]);
+    for (const [rxcui, { scdRxcui, brand }] of sbdIndex([...snapshots.values()], unmapped)) {
       counterparts.set(rxcui, scdRxcui);
       if (brand) brands.set(rxcui, brand);
     }
-    const scdKeys = [...new Set(counterparts.values())].filter((rxcui) => !byRxcui.has(rxcui));
-    if (scdKeys.length) for (const [k, v] of await loadRecords(db, scopeId, scdKeys)) byRxcui.set(k, v);
   }
   return resolveLocal(wanted, byRxcui, counterparts, brands);
 }
@@ -45,12 +48,12 @@ export async function withLocalConcepts<T extends Pick<ExternalPackage, 'details
   db: PrismaClient,
   scopeId: string,
   items: T[],
-  loadRecords: LoadRecords = localConceptsForRxcuis,
-  loadScds: LoadScds = scdsForSbds
+  loadActive: LoadActive = activeLocalConcepts,
+  loadSnapshots: LoadSnapshots = loadConceptSnapshots
 ): Promise<(T & { localConcept?: LocalConceptView })[]> {
   try {
     return await applyLocalConcepts(items, (rxcuis) =>
-      localConceptsByRxcui(db, scopeId, rxcuis, loadRecords, loadScds)
+      localConceptsByRxcui(db, scopeId, rxcuis, loadActive, loadSnapshots)
     );
   } catch (error) {
     console.error('local concept lookup failed; serving un-augmented data', error);
@@ -68,11 +71,11 @@ export async function withLocalConceptsInTree<
   db: PrismaClient,
   scopeId: string,
   tree: Tree,
-  loadRecords?: LoadRecords,
-  loadScds?: LoadScds
+  loadActive?: LoadActive,
+  loadSnapshots?: LoadSnapshots
 ): Promise<Tree> {
   const flat = [...tree.concepts.flatMap((c) => c.packages), ...tree.packages];
-  const resolved = await withLocalConcepts(db, scopeId, flat, loadRecords, loadScds);
+  const resolved = await withLocalConcepts(db, scopeId, flat, loadActive, loadSnapshots);
   let next = 0;
   return {
     ...tree,

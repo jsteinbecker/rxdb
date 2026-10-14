@@ -316,6 +316,15 @@ export async function localConceptsForRxcuis(
   return new Map(found.map(({ rxcui, record }) => [rxcui, record]));
 }
 
+/** Every active supersede mapping in the scope, keyed by the superseded rxcui; one query. */
+export async function activeLocalConcepts(
+  db: Db,
+  scopeId: string
+): Promise<Map<string, LocalConceptRecord>> {
+  const found = await activeMappings(db, scopeId);
+  return new Map(found.map(({ rxcui, record }) => [rxcui, record]));
+}
+
 export type LocalConceptListRow = Omit<LocalConceptRecord, 'supersedes'> & {
   supersedes: { rxcui: string; name: string | null; mappingId: string; active: boolean } | null;
   openDrift: number;

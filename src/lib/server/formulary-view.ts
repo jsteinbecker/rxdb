@@ -15,8 +15,11 @@ import {fillFromConcept} from '../concept-fill';
 export async function formularyRows(
   db: PrismaClient,
   scopeId: string,
-  /** formularyItemId -> local concept name; the user's nameOverride still wins. */
-  localNames: Map<string, string> = new Map()
+  /**
+   * formularyItemId -> local concept name; the user's nameOverride still wins.
+   * A promise is awaited only after the rows are read, so callers can load both at once.
+   */
+  localNames: Map<string, string> | Promise<Map<string, string>> = new Map()
 ): Promise<FormularyRow[]> {
   const links = await db.formularyItemPackage.findMany({
     where: {
@@ -71,6 +74,7 @@ export async function formularyRows(
   );
   const snapshots = await loadPackageSnapshots(db, ndcs, { withoutLabel: true });
   const directory = await productDirectory(db);
+  const names = await localNames;
 
   // Packages never enriched are placed by their concept rather than left "Not specified".
   return fillFromConcept(links.flatMap((link) => {
@@ -108,7 +112,7 @@ export async function formularyRows(
         ndc,
         formularyItemId: link.formularyItem.id,
         formularyItem: itemName(
-          localNames.get(link.formularyItem.id) ?? pseudo?.name ?? link.formularyItem.displayName,
+          names.get(link.formularyItem.id) ?? pseudo?.name ?? link.formularyItem.displayName,
           link.formularyItem
         ),
         description: facts.description,

@@ -171,6 +171,9 @@ export function sbdIndex(
 /**
  * The SCD for each SBD, read from the SCD snapshots that list the SBD as a
  * counterpart. The SQL only narrows which snapshots are read; `sbdIndex` decides.
+ * Scans every cached concept, so it is for the local concept editor's supersede
+ * target only; display paths start from the scope's mapped SCDs instead
+ * (`localConceptsByRxcui`).
  */
 export async function scdsForSbds(
 	db: Pick<PrismaClient, '$queryRaw'>,
