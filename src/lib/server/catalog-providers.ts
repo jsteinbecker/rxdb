@@ -1364,7 +1364,13 @@ export async function enrichPackages(
 			.filter((p) => p.propName === 'LABEL_TYPE')
 			.map((p) => p.propValue);
 		if (product?.product_type) labelTypes.push(product.product_type);
-		const listed = packaging ? true : !product && fdaPayload?.results?.length === 0 ? false : null;
+		// A product found without this package (even by the package-level search) is the
+		// directory saying the package is not listed; only an outage leaves it unknown.
+		const listed = packaging
+			? true
+			: product || fdaPayload?.results?.length === 0
+				? false
+				: null;
 		const splPresent =
 			splPayload && Array.isArray(splPayload.data) ? splPayload.data.length > 0 : null;
 		const listedByFDA = listed === true;

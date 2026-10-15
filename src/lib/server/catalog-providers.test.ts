@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { hyphenCandidates, toNdc11 } from '../ndc';
 import type { SplProduct } from '../spl-ingredients';
+import { exclusionReason } from './catalog-facts';
 import {
 	completeMoieties,
 	discoverRxNav,
@@ -350,6 +351,28 @@ test('NDC enrichment marks an explicit FDA or SPL listing independently', async 
 		const [item] = await enrichPackages(['12345678901']);
 		assert.equal(item.listed, true);
 		assert.equal(item.splPresent, false);
+	} finally {
+		globalThis.fetch = original;
+	}
+});
+
+test('a directory product without this package reads as unlisted, not unknown', async () => {
+	const original = globalThis.fetch;
+	globalThis.fetch = async (input) => {
+		const url = new URL(String(input));
+		if (url.pathname.endsWith('/spls.json')) return Response.json({ data: [] });
+		if (url.hostname === 'api.fda.gov')
+			return Response.json({
+				results: [{ product_ndc: '33358-028', packaging: [{ package_ndc: '33358-028-21' }] }]
+			});
+		// RxNav lags; its ACTIVE must not outweigh the directory and DailyMed.
+		return Response.json({ ndcStatus: { status: 'ACTIVE' } });
+	};
+	try {
+		const [item] = await enrichPackages(['33358002860']);
+		assert.equal(item.listed, false);
+		assert.equal(item.splPresent, false);
+		assert.equal(exclusionReason(item), 'no-spl');
 	} finally {
 		globalThis.fetch = original;
 	}

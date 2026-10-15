@@ -6,8 +6,8 @@ import { naturalCompare } from './natural-sort';
 import {
   type ComboDoseDisplay,
   DEFAULT_LEVELS,
-  DIMENSION_BY_KEY,
-  ingredientLabel
+  ingredientLabel,
+  validLevelKeys
 } from './formulary-hierarchy';
 
 export type ExpandDepth = 'none' | 'first' | 'all';
@@ -69,11 +69,7 @@ const EXPAND_DEPTHS: ExpandDepth[] = ['none', 'first', 'all'];
 
 function validLevels(value: unknown): string[] | null {
 	if (!Array.isArray(value)) return null;
-	return [
-		...new Set(
-			value.filter((key): key is string => typeof key === 'string' && DIMENSION_BY_KEY.has(key))
-		)
-	];
+	return validLevelKeys(value.filter((key): key is string => typeof key === 'string'));
 }
 
 function parseViews(value: unknown): FormularyView[] {

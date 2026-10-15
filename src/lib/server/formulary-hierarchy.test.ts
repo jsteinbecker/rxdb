@@ -241,3 +241,45 @@ test('equal strengths share one node however they are written', () => {
 		[['1g', 3], ['2g', 1]]
 	);
 });
+
+test('a merging level absorbs an only child, radix-tree style', () => {
+	const thiamine = (ndc: string, routes: string[], ingredients: FormularyRow['ingredients']) =>
+		row({ ndc, routes, ingredients, formularyItem: ndc });
+	const rows = [
+		thiamine('1', ['INTRAVENOUS'], [{ name: 'THIAMINE', strength: '100 mg/mL' }]),
+		thiamine('2', ['ORAL'], [{ name: 'THIAMINE', strength: '200 mg/1' }]),
+		thiamine('3', ['ORAL'], [
+			{ name: 'THIAMINE', strength: '200 mg/1' },
+			{ name: 'FOLIC ACID', strength: '1 mg/1' }
+		])
+	];
+	const read = (nodes: ReturnType<typeof buildTree>): unknown[] =>
+		nodes.map((node) => {
+			const label = [...(node.merged ?? []).map((part) => part.label), node.label].join(' – ');
+			return node.children.length ? [label, read(node.children)] : label;
+		});
+
+	assert.deepEqual(read(buildTree(rows, ['route~', 'ingredientCombo', 'strength'])), [
+		['Intravenous route – Thiamine', ['100mg/mL']],
+		[
+			'Oral route',
+			[
+				['Folic Acid / Thiamine', ['200mg / 1mg']],
+				['Thiamine', ['200mg']]
+			]
+		]
+	]);
+	assert.deepEqual(read(buildTree(rows, ['route~', 'ingredientCombo~', 'strength'])), [
+		'Intravenous route – Thiamine – 100mg/mL',
+		['Oral route', ['Folic Acid / Thiamine – 200mg / 1mg', 'Thiamine – 200mg']]
+	]);
+
+	const [iv] = buildTree(rows, ['route~', 'ingredientCombo~', 'strength']);
+	assert.deepEqual(iv.merged?.map((part) => part.dimension), ['route', 'ingredientCombo']);
+	assert.equal(iv.dimension, 'strength');
+	assert.deepEqual(iv.rows.map((item) => item.ndc), ['1']);
+});
+
+test('parseLevels keeps merge marks and drops a dimension given twice', () => {
+	assert.deepEqual(parseLevels('route~,route,bogus~,labeler'), ['route~', 'labeler']);
+});

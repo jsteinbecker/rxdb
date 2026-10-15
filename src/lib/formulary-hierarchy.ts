@@ -140,6 +140,10 @@ export function packageSize(row: FormularyRow): string | null {
 
 const routeLabel = (route: string) => `${titleCase(route)} route`;
 
+/** The route a Route node's label names ("Oral route" → "Oral"); null for other labels. */
+export const routeOfLabel = (label: string): string | null =>
+	label.match(/^(.+) route$/)?.[1] ?? null;
+
 /**
  * Collapse terminology variants that do not change the useful hierarchy split.
  * Lyophilized describes how a powder for solution is manufactured; it still
@@ -354,6 +358,37 @@ export const DIMENSION_BY_KEY = new Map(DIMENSIONS.map((dimension) => [dimension
 
 export const DEFAULT_LEVELS = ['routeClass', 'routeForm', 'formularyItem', 'packaging'];
 
+/**
+ * A level is a dimension key, suffixed with `~` when its nodes absorb an only
+ * child, radix-tree style: "IV" over a lone "Thiamine" reads "IV – Thiamine".
+ */
+export const MERGE_MARK = '~';
+
+/** The dimension key a level groups by, without its merge mark. */
+export const levelDimension = (level: string) =>
+	level.endsWith(MERGE_MARK) ? level.slice(0, -MERGE_MARK.length) : level;
+
+/** Whether a level's nodes absorb an only child. */
+export const mergesChildren = (level: string) => level.endsWith(MERGE_MARK);
+
+/** Turn a level's merge mark on or off. */
+export const withMerge = (level: string, merge: boolean) =>
+	levelDimension(level) + (merge ? MERGE_MARK : '');
+
+/** A level's display name, e.g. "Route class". */
+export const levelLabel = (level: string) => DIMENSION_BY_KEY.get(levelDimension(level))?.label;
+
+/** Valid levels, merge marks kept, one per dimension. */
+export function validLevelKeys(levels: string[]): string[] {
+	const seen = new Set<string>();
+	return levels.filter((level) => {
+		const key = levelDimension(level);
+		if (!DIMENSION_BY_KEY.has(key) || seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
 export type TreeNode = {
 	/** Stable path key, e.g. "routeClass=Enteral|route=Oral route". */
 	id: string;
@@ -362,7 +397,12 @@ export type TreeNode = {
 	count: number;
 	children: TreeNode[];
 	rows: FormularyRow[];
+	/** Ancestors merged into this node, outermost first; they read before its label. */
+	merged?: { dimension: string; label: string }[];
 };
+
+/** Separator between a merged node's segments. */
+export const MERGE_SEPARATOR = ' – ';
 
 const compare = naturalCompare;
 
@@ -371,7 +411,8 @@ const compare = naturalCompare;
  * (packages); an empty level list returns a single flat root.
  */
 export function buildTree(rows: FormularyRow[], levels: string[], parent = ''): TreeNode[] {
-	const [key, ...rest] = levels;
+	const [level, ...rest] = levels;
+	const key = level && levelDimension(level);
 	const dimension = key ? DIMENSION_BY_KEY.get(key) : undefined;
 	if (!dimension) return rest.length ? buildTree(rows, rest, parent) : [];
 	const buckets = new Map<string, FormularyRow[]>();
@@ -388,6 +429,11 @@ export function buildTree(rows: FormularyRow[], levels: string[], parent = ''): 
 		.map(([label, members]) => {
 			const id = `${parent}${parent ? '|' : ''}${key}=${label}`;
 			const children = buildTree(members, rest, id);
+			// Every row lands in some child, so an only child holds them all.
+			if (mergesChildren(level) && children.length === 1) {
+				const [child] = children;
+				return { ...child, merged: [{ dimension: key, label }, ...(child.merged ?? [])] };
+			}
 			return {
 				id,
 				dimension: key,
@@ -403,10 +449,10 @@ export function buildTree(rows: FormularyRow[], levels: string[], parent = ''): 
 		});
 }
 
-/** Parse `?levels=a,b,c`, dropping unknown and duplicate keys. */
+/** Parse `?levels=a,b~,c`, dropping unknown and duplicate keys. */
 export function parseLevels(value: string | null, fallback = DEFAULT_LEVELS): string[] {
 	if (value === null) return fallback;
-	return [...new Set(value.split(',').filter((key) => DIMENSION_BY_KEY.has(key)))];
+	return validLevelKeys(value.split(','));
 }
 
 /**

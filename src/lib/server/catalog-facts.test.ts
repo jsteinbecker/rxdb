@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { inactivatedOnDailyMed } from './catalog-providers';
-import { type ActivityInput, exclusionReason, parsePackageFacts } from './catalog-facts';
+import {
+	type ActivityInput,
+	directoryListed,
+	exclusionReason,
+	parsePackageFacts
+} from './catalog-facts';
 import {
 	CATALOG_VERSION,
 	isFresh,
@@ -184,6 +189,18 @@ test('activity ladder distinguishes absence from outage and prefers FDA marketin
 	assert.equal(exclusionReason({ ...unknown, listed: true, splPresent: false }, now), null);
 	assert.equal(exclusionReason({ ...unknown, listed: false, splPresent: true }, now), null);
 	assert.equal(exclusionReason({ ...unknown, listed: null, splPresent: false }, now), null);
+	// 33358-0028-60 as stored: the directory found product 33358-0028 without this
+	// package, DailyMed has no SPL, and RxNav still said ACTIVE. That is unlisted.
+	assert.equal(
+		exclusionReason(
+			{ ...unknown, listed: null, productCode: '33358-0028', splPresent: false, rxcuiStatus: 'ACTIVE' },
+			now
+		),
+		'no-spl'
+	);
+	assert.equal(directoryListed({ listed: null, productCode: '33358-0028' }), false);
+	assert.equal(directoryListed({ listed: true, productCode: '33358-0028' }), true);
+	assert.equal(directoryListed({ listed: null, productCode: null }), null);
 	assert.equal(exclusionReason({ ...unknown, isVeterinary: true }, now), 'veterinary');
 	// The end date applies without a directory answer, against RxNav's lagging ACTIVE.
 	assert.equal(

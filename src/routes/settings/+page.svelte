@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
-	import { DIMENSION_BY_KEY, DEFAULT_LEVELS } from '$lib/formulary-hierarchy';
+	import { DEFAULT_LEVELS, levelLabel } from '$lib/formulary-hierarchy';
 	import HierarchyBuilder from '$lib/components/HierarchyBuilder.svelte';
 	import type { ExpandDepth } from '$lib/settings';
 
@@ -126,7 +126,7 @@
 							{view.name}
 							{#if view.name === data.settings.defaultView}<span class="badge">Default</span>{/if}
 							<span class="small">
-								{view.levels.map((key) => DIMENSION_BY_KEY.get(key)?.label).join(' → ') ||
+								{view.levels.map(levelLabel).join(' → ') ||
 									'Flat package list'}
 							</span>
 						</span>

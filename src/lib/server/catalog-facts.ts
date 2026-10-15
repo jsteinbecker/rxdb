@@ -472,7 +472,22 @@ export type ActivityInput = {
 	isVeterinary: boolean | null;
 	/** A user's reason for keeping the NDC off the formulary. */
 	manualExclusion?: string | null;
+	/** The directory product found for the NDC's product code, listed or not. */
+	productCode?: string | null;
 };
+
+/**
+ * The FDA directory's answer for this package. A product found without this package
+ * among its packaging is a "not listed": openFDA lists every marketed package of a
+ * product. Snapshots stored before `listed` recorded that case carry it as null with
+ * the product code set, so they read the same way without a refetch.
+ */
+export function directoryListed(
+	item: Pick<ActivityInput, 'listed' | 'productCode'>
+): boolean | null {
+	return item.listed ?? (item.productCode ? false : null);
+}
+
 export type ExclusionReason =
 	| 'manual'
 	| 'veterinary'
@@ -496,9 +511,10 @@ export function exclusionReason(item: ActivityInput, now = new Date()): Exclusio
 		item.marketingEndDate < today
 	)
 		return 'marketing-ended';
-	if (item.listed === true) return null;
+	const listed = directoryListed(item);
+	if (listed === true) return null;
 	if (item.splPresent === true) return null;
-	if (item.listed === false && item.splPresent === false) return 'no-spl';
+	if (listed === false && item.splPresent === false) return 'no-spl';
 	if (INACTIVE.has(item.rxcuiStatus?.toUpperCase() ?? '')) return 'rxnav-inactive';
 	return null;
 }
