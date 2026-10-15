@@ -262,9 +262,12 @@ function tableRows(piece: string): string[] {
 	for (let i = 1; i < verbs.length; i++) {
 		const between = blanked.slice(verbs[i - 1], verbs[i]);
 		const start = /\b\d+(?:\.\d+)?\s*(?:mg|mcg|g)\b/i.exec(between) ?? /\b\d{4,5}-\d{3,4}(?:-\d{1,2})?\b/.exec(between);
-		if (!start) return [piece];
+		// No strength or NDC between them: the same row's second verb
+		// ("debossed "E" on one side and debossed "411" on the other").
+		if (!start) continue;
 		cuts.push(verbs[i - 1] + start.index);
 	}
+	if (!cuts.length) return [piece];
 	const rows = [0, ...cuts].map((start, i) => piece.slice(start, cuts[i]).trim());
 	return rows.every(describes) ? rows : [piece];
 }
