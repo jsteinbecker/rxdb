@@ -2,7 +2,7 @@
 	import PillMockup from '$lib/components/PillMockup.svelte';
 	import { ILN_DOC_EXAMPLES, type IlnDocExample } from '$lib/imprints/iln-doc-examples';
 	import { explainIln, formatIln, validateIln } from '$lib/imprints/iln-parse';
-	import { SHAPES } from '$lib/imprints/shapes';
+	import { formatShapeProportion, MAX_PROPORTION, PROPORTIONS, SHAPES, splitShapeProportion } from '$lib/imprints/shapes';
 	import { NAMED_SWATCHES, type PillAppearance } from '$lib/spl-characteristics';
 
 	// The help documentation (docs/iln.md) as a walkthrough: each section
@@ -89,7 +89,12 @@
 		{
 			title: 'Shapes',
 			body: 'All 19 SPL shapes plus ILN extensions. Pick one to see its outline.',
-			examples: SHAPES.map((s) => tab('F: "ABC" ; B: blank', s.id, `${s.label} (${s.source})`))
+			examples: [
+				...SHAPES.map((s) => tab('F: "ABC" ; B: blank', s.id, `${s.label} (${s.source})`)),
+				tab('F: "ABC" ; B: blank', 'STOUT CAPSULE', 'Capsule-shaped, stout (1.8:1)'),
+				tab('F: "ABC" ; B: blank', 'LONG CAPSULE', 'Capsule-shaped, long (3.4:1)'),
+				tab('F: "ABC" ; B: blank', 'CAPSULE 4:1', 'Capsule-shaped, 4:1')
+			]
 		}
 	];
 
@@ -98,6 +103,9 @@
 	let iln = $state(SECTIONS[0].examples[0].iln);
 	let shape = $state(SECTIONS[0].examples[0].shape);
 	let doseForm = $state(SECTIONS[0].examples[0].doseForm);
+	// A capsule outline's shape may carry its proportion: `LONG CAPSULE`, `CAPSULE 2.6:1`.
+	const shapeParts = $derived(splitShapeProportion(shape));
+	const proportion = $derived(PROPORTIONS[shapeParts.base]);
 	let color1 = $state('white');
 	let color2 = $state('white');
 	let selected = $state<string | null>("Overview#0");
@@ -183,10 +191,29 @@
 			</label>
 			<label>
 				Shape
-				<select bind:value={shape}>
+				<select
+					value={shapeParts.base}
+					onchange={(event) => (shape = formatShapeProportion(event.currentTarget.value, shapeParts.ratio))}
+				>
 					{#each SHAPES as s (s.id)}<option value={s.id}>{s.label}</option>{/each}
 				</select>
 			</label>
+			{#if proportion}
+				<label>
+					Length : width
+					<input
+						type="number"
+						min="1.1"
+						max={MAX_PROPORTION}
+						step="0.1"
+						value={Math.round((shapeParts.ratio ?? proportion.default) * 100) / 100}
+						oninput={(event) => {
+							const ratio = Number(event.currentTarget.value);
+							if (ratio > 1 && ratio <= MAX_PROPORTION) shape = formatShapeProportion(shapeParts.base, ratio);
+						}}
+					/>
+				</label>
+			{/if}
 			<label>
 				{isCapsule ? 'Cap' : 'Color'}
 				<input list="iln-colors" bind:value={color1} />

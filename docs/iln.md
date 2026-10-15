@@ -30,7 +30,7 @@ All ILN code lives in [src/lib/imprints/](../src/lib/imprints/).
 | [iln-parse.ts](../src/lib/imprints/iln-parse.ts) | Parse, validate, canonicalize and explain ILN strings | `parseIln`, `validateIln`, `formatIln`, `explainIln`, `IlnSyntaxError` |
 | [iln-location.ts](../src/lib/imprints/iln-location.ts) | Location codes (`PATH:ROUTE@PLACE`), modifiers (incl. legacy forms), OCR baseline → code, face assembly | `parseLocation`, `formatLocation`, `describeLocation`, `parseModifiers`, `locateBaseline`, `buildFace` |
 | [spl-to-iln.ts](../src/lib/imprints/spl-to-iln.ts) | SPL XML / flat records → ranked ILN guesses; AST serialization | `guessIln`, `guessFromSplXml`, `guessFromRecord`, `serializeSurfaces`, types `Node`, `Surface`, `IlnGuess` |
-| [shapes.ts](../src/lib/imprints/shapes.ts) | Shape and hole vocabularies, direction/hole tags | `SHAPES`, `HOLES`, `findShape`, `findHole`, `isElongated`, `parseShapeOrient`, `parseHoleOrient` |
+| [shapes.ts](../src/lib/imprints/shapes.ts) | Shape and hole vocabularies, capsule-outline proportion, direction/hole tags | `SHAPES`, `HOLES`, `findShape`, `findHole`, `isElongated`, `parseShapeOrient`, `parseHoleOrient`, `splitShapeProportion`, `shapeRatio`, `formatShapeProportion` |
 | [measured-to-iln.ts](../src/lib/imprints/measured-to-iln.ts) | Measured photo layout (from `pill-image-analyze`) → ILN | `measuredToIln` |
 | [iln-render.ts](../src/lib/imprints/iln-render.ts) | ILN → marks in a 100×100 box per face, consumed by `PillMockup.svelte` | `drawPill`, `layout`, `PillView`, `PillDrawing` |
 
@@ -417,6 +417,23 @@ Shape is its own field, separate from the ILN string. ILN depends on it in two w
 | TRIANGLE | C48353 | no | TIP (apex) | TIP@N |
 
 CAPSULE here is the outline (straight sides, semicircular ends), not the capsule dosage form. `OBLONG`, `CAPLET` and `STADIUM` are accepted as aliases for it.
+
+#### Proportion
+
+A CAPSULE outline's shape value may also say how long it is for its width, i.e. its length ÷ width in the canonical view:
+
+| Shape value | Length : width |
+|---|---|
+| `CAPSULE` | default, about 2.7 : 1 |
+| `LONG CAPSULE` | 3.4 : 1 |
+| `STOUT CAPSULE` | 1.8 : 1 |
+| `CAPSULE 2.6:1`, `CAPSULE 19:8` | as stated; any `length:width`, e.g. in millimetres |
+
+- The ratio must be longer than wide and at most 6 : 1. Use a word or a ratio, not both.
+- Only CAPSULE takes a proportion; on any other shape it is an error. `validateIln(src, { shape })` reports both.
+- The proportion is drawing detail, not identity: `findShape('LONG CAPSULE')` is CAPSULE, it stays elongated, and the SPL term is plain CAPSULE.
+- A two-piece capsule drawn with a proportioned CAPSULE shape gets a shell of that proportion.
+- `splitShapeProportion`, `shapeRatio` and `formatShapeProportion` in `shapes.ts` read and write it; the canonical form uses the word when the ratio is a word's, and drops the default.
 
 ### ILN extension shapes
 

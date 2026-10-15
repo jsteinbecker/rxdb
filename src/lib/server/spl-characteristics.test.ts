@@ -59,3 +59,17 @@ test('the label photo is read from SPLIMAGE as a file name', () => {
 	assert.equal(appearanceOf(product)!.image, 'AHP48801.jpg');
 	assert.equal(appearance('<value xsi:type="CE" code="C48348" displayName="ROUND"/>').image, null);
 });
+
+test('a capsule outline is drawn at its stated proportion', () => {
+	const plain = shapeGeometry('CAPSULE');
+	const ratio = (g: { width: number; height: number }) => g.width / (g.height - 8);
+	assert.ok(Math.abs(ratio(plain) - 96 / 36) < 1e-9);
+	assert.ok(Math.abs(ratio(shapeGeometry('CAPSULE 2:1')) - 2) < 1e-9);
+	assert.ok(ratio(shapeGeometry('LONG CAPSULE')) > ratio(plain));
+	assert.ok(ratio(shapeGeometry('STOUT CAPSULE')) < ratio(plain));
+	// Very stout outlines stay inside the 100-unit box.
+	assert.ok(shapeGeometry('CAPSULE 1.1:1').height <= 100);
+	// A bad proportion draws the plain outline.
+	assert.equal(shapeGeometry('CAPSULE 1:2').path, plain.path);
+	assert.notEqual(shapeGeometry('LONG CAPSULE').path, plain.path);
+});

@@ -5,18 +5,23 @@ import assert from 'node:assert/strict';
 import {
 	checkHoleOrient,
 	checkShapeOrient,
+	checkShapeProportion,
 	describeShapeOrient,
 	findHole,
 	findShape,
 	formatHoleOrient,
 	formatShapeOrient,
+	formatShapeProportion,
 	HOLES,
 	isDefaultHoleOrient,
 	isDefaultOrient,
 	isElongated,
 	parseHoleOrient,
 	parseShapeOrient,
-	SHAPES
+	PROPORTIONS,
+	shapeRatio,
+	SHAPES,
+	splitShapeProportion
 } from './shapes.ts'; // ── Registry ──────────────────────────────────────────────────
 
 // ── Registry ──────────────────────────────────────────────────
@@ -228,4 +233,41 @@ test('letter holes are chiral unless mirror-symmetric', () => {
 	assert.deepEqual(checkHoleOrient(findHole('R')!, parseHoleOrient('UP@E, MIRROR')), []);
 	assert.match(checkHoleOrient(findHole('T')!, parseHoleOrient('UP@N, MIRROR')).join(), /mirror/i);
 	assert.match(checkHoleOrient(findHole('A')!, parseHoleOrient('TIP@S')).join(), /UP/);
+});
+
+// ── Proportion ────────────────────────────────────────────────
+
+test('a capsule outline states its proportion as a word or length:width', () => {
+	assert.equal(shapeRatio('CAPSULE'), null);
+	assert.equal(shapeRatio('LONG CAPSULE'), PROPORTIONS.CAPSULE.LONG);
+	assert.equal(shapeRatio('stout caplet'), PROPORTIONS.CAPSULE.STOUT);
+	assert.equal(shapeRatio('CAPSULE 2.6:1'), 2.6);
+	assert.equal(shapeRatio('Oblong 19:8'), 19 / 8);
+	assert.deepEqual(splitShapeProportion('LONG CAPSULE'), { base: 'CAPSULE', ratio: 3.4, word: 'LONG' });
+});
+
+test('a proportioned shape is still found as its outline', () => {
+	for (const v of ['LONG CAPSULE', 'STOUT CAPSULE', 'CAPSULE 2.6:1', 'stadium 3:1']) {
+		assert.equal(findShape(v)?.id, 'CAPSULE', v);
+		assert.ok(isElongated(v), v);
+	}
+});
+
+test('bad proportions are reported', () => {
+	assert.match(checkShapeProportion('LONG ROUND')[0], /ROUND takes no proportion/);
+	assert.match(checkShapeProportion('CAPSULE 1:2')[0], /longer than wide/);
+	assert.match(checkShapeProportion('CAPSULE 9:1')[0], /at most 6:1/);
+	assert.match(checkShapeProportion('LONG CAPSULE 3:1')[0], /not both/);
+	assert.deepEqual(checkShapeProportion('CAPSULE 2.2:1'), []);
+	assert.deepEqual(checkShapeProportion('HEXAGON (6 sided)'), []);
+	assert.equal(shapeRatio('CAPSULE 1:2'), null);
+});
+
+test('proportions format canonically', () => {
+	assert.equal(formatShapeProportion('CAPSULE', null), 'CAPSULE');
+	assert.equal(formatShapeProportion('CAPSULE', PROPORTIONS.CAPSULE.default), 'CAPSULE');
+	assert.equal(formatShapeProportion('CAPSULE', 3.4), 'LONG CAPSULE');
+	assert.equal(formatShapeProportion('CAPSULE', 1.8), 'STOUT CAPSULE');
+	assert.equal(formatShapeProportion('CAPSULE', 19 / 8), 'CAPSULE 2.38:1');
+	assert.equal(formatShapeProportion('ROUND', 2), 'ROUND');
 });

@@ -10,6 +10,7 @@
       import {explainIln, validateIln} from '$lib/imprints/iln-parse';
       import {guessIln} from '$lib/imprints/spl-to-iln';
       import {toSplAppearance} from '$lib/imprints/iln-render';
+      import {findShape, formatShapeProportion, MAX_PROPORTION, PROPORTIONS, splitShapeProportion} from '$lib/imprints/shapes';
       import type {PillMedia} from '$lib/pill-image-layout';
       import {type Quantity, quantityDecimal} from '$lib/quantity';
       import {
@@ -28,6 +29,7 @@
             INGREDIENT_STRENGTH_KEY,
             overrideTargets,
             PILL_ILN_KEY,
+            PILL_SHAPE_KEY,
             splitMulti
       } from '$lib/property-override-fields';
 
@@ -104,6 +106,16 @@
             else next.delete(option);
             overrideValue = options.filter((o) => next.has(o)).join(separator ?? '');
       }
+
+      // A capsule-outline pill's shape also says how long it is for its width.
+      const shapeParts = $derived(PILL_SHAPE_KEY.test(overrideKey) ? splitShapeProportion(overrideValue) : null);
+      const proportion = $derived.by(() => {
+            const id = shapeParts ? findShape(shapeParts.base)?.id : undefined;
+            return id ? PROPORTIONS[id] : undefined;
+      });
+      const shapeRatio = $derived(shapeParts?.ratio ?? proportion?.default ?? null);
+      const setShape = (base: string, ratio: number | null) =>
+            (overrideValue = base ? formatShapeProportion(base, ratio) : '');
 
       // A pill's imprint layout is ILN: checked as it is typed and previewed as a mockup.
       const pillIndex = $derived(PILL_ILN_KEY.exec(overrideKey)?.[1]);
@@ -344,7 +356,38 @@
       {:else}
             <label
             >Correct value
-                  {#if choices}
+                  {#if choices && shapeParts}
+                        <select
+                              value={shapeParts.base}
+                              onchange={(event) => setShape(event.currentTarget.value, shapeParts?.ratio ?? null)}
+                              disabled={source === 'ndc'}
+                        >
+                              <option value="">Choose…</option>
+                              {#each choices as choice (choice)}
+                                    <option value={choice}>{choice}</option>
+                              {/each}
+                        </select>
+                        {#if proportion && shapeRatio !== null}
+                              <span class="proportion">
+                                    Length : width
+                                    <input
+                                          type="number"
+                                          min="1.1"
+                                          max={MAX_PROPORTION}
+                                          step="0.1"
+                                          value={Math.round(shapeRatio * 100) / 100}
+                                          oninput={(event) => {
+                                                const ratio = Number(event.currentTarget.value);
+                                                if (ratio > 1 && ratio <= MAX_PROPORTION) setShape(shapeParts!.base, ratio);
+                                          }}
+                                          disabled={source === 'ndc'}
+                                    />: 1
+                                    <button type="button" onclick={() => setShape(shapeParts!.base, proportion!.STOUT)} disabled={source === 'ndc'}>Stout</button>
+                                    <button type="button" onclick={() => setShape(shapeParts!.base, null)} disabled={source === 'ndc'}>Default</button>
+                                    <button type="button" onclick={() => setShape(shapeParts!.base, proportion!.LONG)} disabled={source === 'ndc'}>Long</button>
+                              </span>
+                        {/if}
+                  {:else if choices}
                         <select bind:value={overrideValue} disabled={source === 'ndc'}
                         >
                               <option value="">Choose…</option>
@@ -929,6 +972,20 @@
             color: #7a8594;
             font-size: 0.75rem;
             font-weight: 400;
+      }
+
+      .proportion {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: 0.4rem;
+            color: #5c6777;
+            font-size: 0.82rem;
+      }
+
+      .proportion input {
+            width: 4.5rem;
       }
 
       .hint,

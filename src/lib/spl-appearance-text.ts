@@ -1,4 +1,5 @@
 import { baseColor, COLOR_WORDS, imprintFaces, type PillAppearance } from './spl-characteristics';
+import { splitShapeProportion } from './imprints/shapes';
 
 // ── What the label's prose says the pill looks like ──────────────────────────
 // The `<characteristic>` observations $lib/spl-characteristics.ts decodes are
@@ -810,7 +811,8 @@ function fit(description: TextAppearance, appearance: PillAppearance | null, con
 		score += description.colors.some((c) => appearance.colors.map(baseColor).includes(baseColor(c))) ? 8 : -4;
 	}
 	if (appearance?.shape && description.shape) {
-		score += appearance.shape === description.shape ? 4 : 0;
+		// A corrected `LONG CAPSULE` still matches prose that says capsule-shaped.
+		score += splitShapeProportion(appearance.shape).base === description.shape ? 4 : 0;
 	}
 	const form = (context.doseForm ?? '').toUpperCase();
 	if (form && description.unit) {

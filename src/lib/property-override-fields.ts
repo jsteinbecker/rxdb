@@ -11,6 +11,7 @@ import {
   serializeIngredientCorrection
 } from './ingredient-correction';
 import {guessIln} from './imprints/spl-to-iln';
+import {splitShapeProportion} from './imprints/shapes';
 import {validateIln} from './imprints/iln-parse';
 import {toSplAppearance} from './imprints/iln-render';
 import {
@@ -216,6 +217,8 @@ export const INGREDIENT_STRENGTH_KEY = /^details\.spl\.ingredients\.(\d+)\.stren
 
 /** `details.spl.appearances.<index>.iln`: a pill's imprint layout, in ILN. */
 export const PILL_ILN_KEY = /^details\.spl\.appearances\.(\d+)\.iln$/;
+/** A pill's shape, which may carry a proportion: `LONG CAPSULE`, `CAPSULE 2.6:1`. */
+export const PILL_SHAPE_KEY = /^details\.spl\.appearances\.(\d+)\.shape$/;
 export const pillIlnKey = (index: number) => `details.spl.appearances.${index}.iln`;
 
 /** `details.spl.appearances.<index>.<field>`: one coded fact about a pill. */
@@ -598,7 +601,11 @@ function resolveField(key: string): OverrideField | null {
       case 'shape':
         return field({
           choices: SHAPE_CHOICES,
-          valid: (value) => SHAPE_CHOICES.includes(value),
+          // A capsule outline may also state its proportion (`LONG CAPSULE`, `CAPSULE 2.6:1`).
+          valid: (value) => {
+            const {base, error} = splitShapeProportion(value);
+            return !error && SHAPE_CHOICES.includes(base);
+          },
           get: (item) => appearanceOf(item)?.shape ?? null,
           set: set((appearance, value) => {
             appearance.shape = value;

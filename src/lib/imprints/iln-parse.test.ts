@@ -423,3 +423,11 @@ test('formats and explains see-through shells', () => {
 		/Cap \(translucent green shell, white powder\)/
 	);
 });
+
+test('validateIln checks a shape proportion', () => {
+	assert.equal(validateIln('F: "ABC" ; B: blank', { shape: 'LONG CAPSULE' }).ok, true);
+	assert.equal(validateIln('F: "ABC" ; B: blank', { shape: 'CAPSULE 2.4:1' }).ok, true);
+	const bad = validateIln('F: "ABC" ; B: blank', { shape: 'STOUT ROUND' });
+	assert.equal(bad.ok, false);
+	assert.match(bad.issues[0].message, /ROUND takes no proportion/);
+});
