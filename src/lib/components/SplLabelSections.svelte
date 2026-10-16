@@ -3,11 +3,24 @@
       import {cubicInOut, cubicOut} from 'svelte/easing';
       import type {PackageDetails} from '$lib/server/catalog-providers';
       import LabelBlocks from './LabelBlocks.svelte';
+      import type {Omission} from '$lib/label-relevance';
 
       let {sections}: { sections: NonNullable<PackageDetails['label']>['sections'] } = $props();
 
       let expanded = $state<Record<string, boolean>>({});
       let closing = $state<Record<string, boolean>>({});
+      let showAll = $state<Record<string, boolean>>({});
+
+      const joined = (items: string[]) =>
+            items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+
+      /** "Hidden: 2 passages for oral suspension. This NDC is a tablet." */
+      function omissionText(o: Omission): string {
+            // A row is a table row or one line of a bottle-size list, so "entry".
+            const noun = o.unit === 'passage' ? (o.count === 1 ? 'passage' : 'passages') : o.count === 1 ? 'entry' : 'entries';
+            const others = o.reason === 'strength' ? `the ${joined(o.others)}` : joined(o.others);
+            return `Hidden: ${o.count} ${noun} for ${others}. This NDC is ${o.own}.`;
+      }
 
       const reduced =
             typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -31,7 +44,9 @@
             open={expanded[section.key] || closing[section.key]}
             class:expanded={expanded[section.key]}
       >
-            <summary onclick={(e) => toggle(e, section.key)}>{section.title}</summary>
+            <summary onclick={(e) => toggle(e, section.key)}>
+                  <span>{section.title}{#if section.omissions?.length}<span class="filtered"> · filtered</span>{/if}</span>
+            </summary>
             {#if expanded[section.key]}
                   <div
                         class="body"
@@ -42,7 +57,19 @@
                               in:fly={{ y: -6, duration: ms(260), delay: ms(90), easing: cubicOut }}
                               out:fade={{ duration: ms(120) }}
                         >
-                              {#if section.blocks?.length}
+                              {#if section.omissions?.length}
+                                    <p class="omitted">
+                                          {#if showAll[section.key]}
+                                                Showing the full label text, including passages for other products on this label.
+                                          {:else}
+                                                {section.omissions.map(omissionText).join(' ')}
+                                          {/if}
+                                          <button type="button" class="link" onclick={() => (showAll[section.key] = !showAll[section.key])}>
+                                                {showAll[section.key] ? 'Show only this NDC' : 'Show full label text'}
+                                          </button>
+                                    </p>
+                                    <LabelBlocks blocks={(showAll[section.key] ? section.fullBlocks : section.blocks) ?? []}/>
+                              {:else if section.blocks?.length}
                                     <LabelBlocks blocks={section.blocks}/>
                               {:else}
                                     <p class="prose">{section.text}</p>
@@ -115,6 +142,31 @@
             summary::after {
                   transition: none;
             }
+      }
+
+      .filtered {
+            color: #6b7686;
+            font-weight: 400;
+            font-size: 0.72rem;
+      }
+
+      .omitted {
+            margin: 0.35rem 0 0.5rem;
+            font-size: 0.7rem;
+            font-style: italic;
+            color: #6b7686;
+      }
+
+      .omitted .link {
+            margin-left: 0.25rem;
+            padding: 0;
+            border: 0;
+            background: none;
+            font: inherit;
+            font-style: normal;
+            color: #3464a5;
+            text-decoration: underline;
+            cursor: pointer;
       }
 
       .prose {

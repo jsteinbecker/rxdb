@@ -36,33 +36,55 @@ const doc = (...products: string[]) => `<document>${products.join('')}</document
 
 // Amoxicillin-style: tablets and a powder for oral suspension on one label.
 export const TABLET_AND_SUSPENSION = doc(
-	product('11111-100', 'TABLET, FILM COATED', ['500', 'mg', '1', '1'], [
-		['11111-100-30', '30', '1', 'BOTTLE']
-	]),
-	product('11111-200', 'POWDER, FOR SUSPENSION', ['250', 'mg', '5', 'mL'], [
-		['11111-200-80', '80', 'mL', 'BOTTLE'],
-		['11111-200-15', '150', 'mL', 'BOTTLE']
-	])
+	product(
+		'11111-100',
+		'TABLET, FILM COATED',
+		['500', 'mg', '1', '1'],
+		[['11111-100-30', '30', '1', 'BOTTLE']]
+	),
+	product(
+		'11111-200',
+		'POWDER, FOR SUSPENSION',
+		['250', 'mg', '5', 'mL'],
+		[
+			['11111-200-80', '80', 'mL', 'BOTTLE'],
+			['11111-200-15', '150', 'mL', 'BOTTLE']
+		]
+	)
 );
 
 // Ceftriaxone-style: three vial strengths of one injection.
 export const THREE_VIALS = doc(
-	product('22222-500', 'INJECTION, POWDER, FOR SOLUTION', ['500', 'mg', '1', '1'], [
-		['22222-500-10', '1', '1', 'VIAL']
-	]),
-	product('22222-100', 'INJECTION, POWDER, FOR SOLUTION', ['1', 'g', '1', '1'], [
-		['22222-100-10', '1', '1', 'VIAL']
-	]),
-	product('22222-200', 'INJECTION, POWDER, FOR SOLUTION', ['2', 'g', '1', '1'], [
-		['22222-200-10', '1', '1', 'VIAL']
-	])
+	product(
+		'22222-500',
+		'INJECTION, POWDER, FOR SOLUTION',
+		['500', 'mg', '1', '1'],
+		[['22222-500-10', '1', '1', 'VIAL']]
+	),
+	product(
+		'22222-100',
+		'INJECTION, POWDER, FOR SOLUTION',
+		['1', 'g', '1', '1'],
+		[['22222-100-10', '1', '1', 'VIAL']]
+	),
+	product(
+		'22222-200',
+		'INJECTION, POWDER, FOR SOLUTION',
+		['2', 'g', '1', '1'],
+		[['22222-200-10', '1', '1', 'VIAL']]
+	)
 );
 
 const SINGLE = doc(
-	product('33333-100', 'TABLET', ['10', 'mg', '1', '1'], [
-		['33333-100-30', '30', '1', 'BOTTLE'],
-		['33333-100-90', '90', '1', 'BOTTLE']
-	])
+	product(
+		'33333-100',
+		'TABLET',
+		['10', 'mg', '1', '1'],
+		[
+			['33333-100-30', '30', '1', 'BOTTLE'],
+			['33333-100-90', '90', '1', 'BOTTLE']
+		]
+	)
 );
 
 // A powder kit with a drug-free diluent part, each part its own product.
@@ -110,7 +132,10 @@ test('labelScope: 1 g vial NDC among three vial strengths', () => {
 	const scope = labelScope(parseSplIngredients(THREE_VIALS), '22222010010');
 	assert.ok(scope);
 	assert.equal(scope.own.family, 'injection');
-	assert.deepEqual(scope.own.strengths.map((s) => s.mg), [1000]);
+	assert.deepEqual(
+		scope.own.strengths.map((s) => s.mg),
+		[1000]
+	);
 	assert.equal(scope.own.strengths[0].text, '1 g vial');
 	assert.deepEqual(
 		scope.siblings.flatMap((s) => s.strengths.map((x) => x.mg)),
@@ -126,10 +151,16 @@ test('labelScope: bottle sizes of one oral powder are told apart by package', ()
 	]);
 	assert.ok(scope);
 	assert.equal(scope.own.family, 'oral-suspension');
-	assert.deepEqual(scope.own.strengths.map((s) => s.containerMl), [150]);
+	assert.deepEqual(
+		scope.own.strengths.map((s) => s.containerMl),
+		[150]
+	);
 	assert.equal(scope.own.strengths[0].text, '150 mL bottle');
 	const sameFamily = scope.siblings.find((s) => s.family === 'oral-suspension');
-	assert.deepEqual(sameFamily?.strengths.map((s) => s.containerMl), [80]);
+	assert.deepEqual(
+		sameFamily?.strengths.map((s) => s.containerMl),
+		[80]
+	);
 });
 
 test('labelScope: a single-product label has nothing to filter', () => {
@@ -144,14 +175,25 @@ test('labelScope: a kit diluent part is not a sibling dose form', () => {
 
 const h = (level: number, text: string): LabelBlock => ({ type: 'heading', level, text });
 const p = (text: string): LabelBlock => ({ type: 'paragraph', runs: [{ text }] });
-const list = (...items: string[]): LabelBlock => ({ type: 'list', ordered: false, items: items.map((t) => [p(t)]) });
+const list = (...items: string[]): LabelBlock => ({
+	type: 'list',
+	ordered: false,
+	items: items.map((t) => [p(t)])
+});
 const textOf = (blocks: LabelBlock[]): string[] =>
 	blocks.flatMap((b) =>
-		b.type === 'heading' ? [b.text] : b.type === 'paragraph' ? [b.runs.map((r) => r.text).join('')] : b.type === 'list' ? b.items.flatMap(textOf) : []
+		b.type === 'heading'
+			? [b.text]
+			: b.type === 'paragraph'
+				? [b.runs.map((r) => r.text).join('')]
+				: b.type === 'list'
+					? b.items.flatMap(textOf)
+					: []
 	);
 
 const tabletScope = () => labelScope(parseSplIngredients(TABLET_AND_SUSPENSION), '11111010030')!;
-const suspensionScope = () => labelScope(parseSplIngredients(TABLET_AND_SUSPENSION), '11111020080')!;
+const suspensionScope = () =>
+	labelScope(parseSplIngredients(TABLET_AND_SUSPENSION), '11111020080')!;
 
 test('filterLabelBlocks drops a subsection headed for another form, as one passage', () => {
 	const blocks = [
@@ -202,7 +244,10 @@ test('filterLabelBlocks drops a heading left with nothing under it, keeps one wi
 		p('Take the missed dose as soon as remembered.')
 	];
 	const result = filterLabelBlocks(blocks, tabletScope());
-	assert.deepEqual(textOf(result.blocks), ['Missed dose', 'Take the missed dose as soon as remembered.']);
+	assert.deepEqual(textOf(result.blocks), [
+		'Missed dose',
+		'Take the missed dose as soon as remembered.'
+	]);
 });
 
 test('filterLabelBlocks drops a table captioned for another form', () => {
@@ -237,19 +282,38 @@ test("filterLabelBlocks keeps only this vial's row of a dilution table", () => {
 	assert.deepEqual(stubsOf(result.blocks[0]), ['1 g']);
 	assert.equal(result.blocks[0].type === 'table' && result.blocks[0].head.length, 1);
 	assert.deepEqual(result.omissions, [
-		{ reason: 'strength', count: 2, unit: 'row', others: ['500 mg vial', '2 g vial'], own: 'the 1 g vial' }
+		{
+			reason: 'strength',
+			count: 2,
+			unit: 'row',
+			others: ['500 mg vial', '2 g vial'],
+			own: 'the 1 g vial'
+		}
 	]);
 });
 
 test('filterLabelBlocks keeps a row whose strength no product on the label has', () => {
-	const result = filterLabelBlocks([dilution('500 mg', '1 g', '10 g pharmacy bulk package')], vialScope());
+	const result = filterLabelBlocks(
+		[dilution('500 mg', '1 g', '10 g pharmacy bulk package')],
+		vialScope()
+	);
 	assert.deepEqual(stubsOf(result.blocks[0]), ['1 g', '10 g pharmacy bulk package']);
 });
 
 test('filterLabelBlocks does not read 1250 mg as 250 mg', () => {
 	const scope = {
-		own: { family: 'tablet' as const, formLabel: 'tablet', strengths: [{ text: '1250 mg tablet', mg: 1250, containerMl: null }] },
-		siblings: [{ family: 'tablet' as const, formLabel: 'tablet', strengths: [{ text: '250 mg tablet', mg: 250, containerMl: null }] }]
+		own: {
+			family: 'tablet' as const,
+			formLabel: 'tablet',
+			strengths: [{ text: '1250 mg tablet', mg: 1250, containerMl: null }]
+		},
+		siblings: [
+			{
+				family: 'tablet' as const,
+				formLabel: 'tablet',
+				strengths: [{ text: '250 mg tablet', mg: 250, containerMl: null }]
+			}
+		]
 	};
 	const result = filterLabelBlocks([dilution('1250 mg', '250 mg')], scope);
 	assert.deepEqual(stubsOf(result.blocks[0]), ['1250 mg']);
@@ -257,8 +321,18 @@ test('filterLabelBlocks does not read 1250 mg as 250 mg', () => {
 
 test('filterLabelBlocks ignores an equal strength in another form', () => {
 	const scope = {
-		own: { family: 'tablet' as const, formLabel: 'tablet', strengths: [{ text: '500 mg tablet', mg: 500, containerMl: null }] },
-		siblings: [{ family: 'capsule' as const, formLabel: 'capsule', strengths: [{ text: '250 mg capsule', mg: 250, containerMl: null }] }]
+		own: {
+			family: 'tablet' as const,
+			formLabel: 'tablet',
+			strengths: [{ text: '500 mg tablet', mg: 500, containerMl: null }]
+		},
+		siblings: [
+			{
+				family: 'capsule' as const,
+				formLabel: 'capsule',
+				strengths: [{ text: '250 mg capsule', mg: 250, containerMl: null }]
+			}
+		]
 	};
 	const result = filterLabelBlocks([dilution('250 mg', '500 mg')], scope);
 	assert.deepEqual(stubsOf(result.blocks[0]), ['250 mg', '500 mg']);
@@ -274,7 +348,10 @@ test("filterLabelBlocks keeps only this bottle's line of a bottle-size list", ()
 		scope
 	);
 	assert.deepEqual(textOf(result.blocks), ['150 mL – add 150 mL of water.']);
-	assert.deepEqual(result.omissions.map((o) => [o.reason, o.others]), [['strength', ['80 mL bottle']]]);
+	assert.deepEqual(
+		result.omissions.map((o) => [o.reason, o.others]),
+		[['strength', ['80 mL bottle']]]
+	);
 });
 
 test('filterLabelBlocks leaves a table that names no sibling strength alone', () => {

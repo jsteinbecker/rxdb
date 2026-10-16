@@ -18,6 +18,7 @@ import { appearancesByPackage, type PillAppearance } from '../spl-characteristic
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
 import { type LabelBlock, labelSectionBlocks } from '../spl-sections';
+import { filterLabelBlocks, labelScope, type Omission } from '../label-relevance';
 import { dryFillStrength, isDryFillForm, pharmacyBulkFillMl } from '../ingredient-content';
 import {
 	type KitComposition,
@@ -128,7 +129,7 @@ export type PackageDetails = {
 		/** Set when the label was found through a sibling package's NDC. */
 		siblingNdc?: string | null;
 		/** `blocks` is the SPL's own structure for the section; `text` is openFDA's flattening. */
-		sections: { key: string; title: string; text: string; blocks?: LabelBlock[] }[];
+		sections: LabelSection[];
 	} | null;
 	spl: {
 		version: string | null;
@@ -212,6 +213,16 @@ const LABEL_SECTIONS: [string, string][] = [
 	['instructions_for_use', 'Instructions for use'],
 	['package_label_principal_display_panel', 'Principal display panel']
 ];
+
+/** One prescribing-information section; `fullBlocks` and `omissions` only when something was hidden. */
+export interface LabelSection {
+	key: string;
+	title: string;
+	text: string;
+	blocks?: LabelBlock[];
+	fullBlocks?: LabelBlock[];
+	omissions?: Omission[];
+}
 
 const strings = (value: unknown): string[] =>
 	Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
@@ -1388,6 +1399,15 @@ export async function enrichPackages(
 		if (hints.moietiesOf) await completeMoieties(splProducts, hints.moietiesOf);
 		const moietyFactors = await moietyFactorsOf(splProducts, hints.moietyFactorOf);
 		const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
+		// Who else this label speaks to — the suspension beside these tablets,
+		// the other vial sizes — so their passages can be set aside.
+		const scope = labelScope(splProducts, ndc, [
+			...(product?.packaging ?? []).map((item) => ({
+				ndc: item.package_ndc ?? '',
+				description: item.description ?? null
+			})),
+			{ ndc, description: packageDescription }
+		]);
 		const hyphenated = new Set(candidates);
 		const ownProducts = splProductsForNdc(splProducts, ndc);
 		const labelRow = matchedLabel as
@@ -1634,9 +1654,25 @@ export async function enrichPackages(
 						version: labelRow.version ?? null,
 						setId: labelRow.set_id ?? null,
 						siblingNdc: labelSiblingNdc ?? splSiblingNdc,
-						sections: LABEL_SECTIONS.flatMap(([key, title]) => {
+						sections: LABEL_SECTIONS.flatMap(([key, title]): LabelSection[] => {
 							const text = strings(labelRow[key]).join('\n\n').trim();
 							const blocks = sectionBlocks[key];
+							// The display panel is this carton's own art, already per package.
+							const filtered =
+								blocks && scope && key !== 'package_label_principal_display_panel'
+									? filterLabelBlocks(blocks, scope)
+									: null;
+							if (blocks && filtered?.omissions.length)
+								return [
+									{
+										key,
+										title,
+										text,
+										blocks: filtered.blocks,
+										fullBlocks: blocks,
+										omissions: filtered.omissions
+									}
+								];
 							return text || blocks ? [{ key, title, text, ...(blocks ? { blocks } : {}) }] : [];
 						})
 					}

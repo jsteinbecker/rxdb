@@ -110,7 +110,9 @@ function strengthOf(
 	const containerWord =
 		family === 'tablet' || family === 'capsule'
 			? family
-			: (container?.form ?? presentation?.form?.toLowerCase() ?? formLabelOf(family, product.doseForm));
+			: (container?.form ??
+				presentation?.form?.toLowerCase() ??
+				formLabelOf(family, product.doseForm));
 	const perMl = active.per !== null ? active.per * (mlPer(active.perUnit) ?? 0) : 0;
 	const stated = toMg(active.strength, active.strengthUnit);
 	if (perMl) {
@@ -128,7 +130,10 @@ function strengthOf(
 		return { text: `${trimNumber(containerMl)} mL ${containerWord}`, mg: null, containerMl };
 	}
 	return {
-		text: `${trimNumber(active.strength)} ${active.strengthUnit ?? ''} ${containerWord}`.replace(/\s+/g, ' '),
+		text: `${trimNumber(active.strength)} ${active.strengthUnit ?? ''} ${containerWord}`.replace(
+			/\s+/g,
+			' '
+		),
 		mg: stated,
 		containerMl: family === 'tablet' || family === 'capsule' ? null : containerMl
 	};
@@ -155,11 +160,17 @@ export function labelScope(
 	);
 	let own: LabelProduct | null = null;
 	const others = new Map<string, LabelProduct>();
-	const add = (into: Map<string, LabelProduct>, family: FormFamily, doseForm: string | null, strength: LabelStrength | null) => {
+	const add = (
+		into: Map<string, LabelProduct>,
+		family: FormFamily,
+		doseForm: string | null,
+		strength: LabelStrength | null
+	) => {
 		const formLabel = formLabelOf(family, doseForm);
 		const entry = into.get(formLabel) ?? { family, formLabel, strengths: [] };
 		into.set(formLabel, entry);
-		if (strength && !entry.strengths.some((s) => sameStrength(s, strength))) entry.strengths.push(strength);
+		if (strength && !entry.strengths.some((s) => sameStrength(s, strength)))
+			entry.strengths.push(strength);
 	};
 	for (const product of products) {
 		// A kit's carton and its drug-free diluent are not dose forms of the drug.
@@ -168,9 +179,17 @@ export function labelScope(
 		const codes = product.packageCodes.length ? product.packageCodes : [null];
 		for (const code of codes) {
 			const key = code ? toNdc11(code) : null;
-			const strength = strengthOf(product, family, containerOf(key ? (descriptions.get(key) ?? null) : null));
+			const strength = strengthOf(
+				product,
+				family,
+				containerOf(key ? (descriptions.get(key) ?? null) : null)
+			);
 			if (key === ndc && !own) {
-				own = { family, formLabel: formLabelOf(family, product.doseForm), strengths: strength ? [strength] : [] };
+				own = {
+					family,
+					formLabel: formLabelOf(family, product.doseForm),
+					strengths: strength ? [strength] : []
+				};
 			} else add(others, family, product.doseForm, strength);
 		}
 	}
@@ -211,7 +230,8 @@ export const FORM_TERMS: Record<FormFamily, RegExp | null> = {
 	capsule: /\bcapsules?\b/i,
 	'oral-suspension': /\bsuspensions?\b/i,
 	'oral-solution': /\boral\s+solutions?\b|\bsyrups?\b|\belixirs?\b/i,
-	injection: /\binject(?:ion|able)s?\b|\bvials?\b|\bintravenous(?:ly)?\b|\bintramuscular(?:ly)?\b|\binfusions?\b/i,
+	injection:
+		/\binject(?:ion|able)s?\b|\bvials?\b|\bintravenous(?:ly)?\b|\bintramuscular(?:ly)?\b|\binfusions?\b/i,
 	topical: null,
 	ophthalmic: /\bophthalmic\b|\beye\s+drops?\b/i,
 	other: null
@@ -220,7 +240,8 @@ export const FORM_TERMS: Record<FormFamily, RegExp | null> = {
 // Making a powder up. A tablet or capsule never is, so on an oral solid's
 // label this is always about a sibling — the one $lib/ingredient-content.ts's
 // `isOralSolidForm` relies on too.
-const RECONSTITUTION = /\b(?:re)?constitut|\bshake\s+(?:well|the\s+bottle)|\badd\b[^.]*\bwater\b|\bdiluent\b/i;
+const RECONSTITUTION =
+	/\b(?:re)?constitut|\bshake\s+(?:well|the\s+bottle)|\badd\b[^.]*\bwater\b|\bdiluent\b/i;
 
 const isOralSolid = (family: FormFamily) => family === 'tablet' || family === 'capsule';
 
@@ -329,7 +350,9 @@ const near = (a: number, b: number) => Math.abs(a - b) <= 0.005 * Math.max(a, b)
  */
 function strengthMatcher(scope: LabelScope) {
 	const own = scope.own.strengths;
-	const siblings = scope.siblings.filter((s) => s.family === scope.own.family).flatMap((s) => s.strengths);
+	const siblings = scope.siblings
+		.filter((s) => s.family === scope.own.family)
+		.flatMap((s) => s.strengths);
 	if (!own.length || !siblings.length) return null;
 	const byMass = own.every((s) => s.mg !== null);
 	const measure = (s: LabelStrength) => (byMass ? s.mg : s.containerMl);
@@ -341,19 +364,27 @@ function strengthMatcher(scope: LabelScope) {
 	return (text: string): { sibling: LabelStrength | null; known: boolean } => {
 		const value = quantityOf(text);
 		if (value === null) return { sibling: null, known: false };
-		if (own.some((s) => measure(s) !== null && near(measure(s)!, value))) return { sibling: null, known: true };
+		if (own.some((s) => measure(s) !== null && near(measure(s)!, value)))
+			return { sibling: null, known: true };
 		const sibling = siblings.find((s) => measure(s) !== null && near(measure(s)!, value)) ?? null;
 		return { sibling, known: sibling !== null };
 	};
 }
 
 /** Rows (as text) with sibling strengths removed, only when ≥2 rows name label strengths. */
-function filterRows<T>(rows: T[], textOf: (row: T) => string, scope: LabelScope, tally: Tally): T[] {
+function filterRows<T>(
+	rows: T[],
+	textOf: (row: T) => string,
+	scope: LabelScope,
+	tally: Tally
+): T[] {
 	const match = strengthMatcher(scope);
 	if (!match) return rows;
 	const matched = rows.map((row) => match(textOf(row)));
 	const distinct = new Set(
-		rows.flatMap((row, i) => (matched[i].known ? [leadingQuantity(textOf(row))?.mg ?? leadingQuantity(textOf(row))?.ml] : []))
+		rows.flatMap((row, i) =>
+			matched[i].known ? [leadingQuantity(textOf(row))?.mg ?? leadingQuantity(textOf(row))?.ml] : []
+		)
 	);
 	if (distinct.size < 2) return rows;
 	return rows.filter((_, i) => {
@@ -384,7 +415,12 @@ function filterBlock(block: LabelBlock, scope: LabelScope, tally: Tally): LabelB
 	}
 	if (block.type === 'table') {
 		// Header rows always stay; a body row is told apart by its stub cell.
-		const body = filterRows(block.body, (row) => (row[0] ? runsText(row[0].runs) : ''), scope, tally);
+		const body = filterRows(
+			block.body,
+			(row) => (row[0] ? runsText(row[0].runs) : ''),
+			scope,
+			tally
+		);
 		if (!body.length) return null;
 		return body.length === block.body.length ? block : { ...block, body };
 	}
