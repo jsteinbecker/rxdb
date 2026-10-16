@@ -10,7 +10,7 @@
 // It is deliberately timid: a passage that names nobody, or names this NDC
 // alongside a sibling, stays. Pure and shared, like $lib/spl-sections.ts.
 
-import type { LabelBlock } from './spl-sections';
+import type { LabelBlock, LabelCell } from './spl-sections';
 import type { SplProduct } from './spl-ingredients';
 import { toNdc11 } from './ndc';
 import { mlPer, toMg } from './units';
@@ -387,20 +387,74 @@ function filterRows<T>(
 	scope: LabelScope,
 	tally: Tally
 ): T[] {
+	const keep = keptRows(rows.map(textOf), scope, tally);
+	return keep ? rows.filter((_, i) => keep[i]) : rows;
+}
+
+/**
+ * Which rows (by their leading text) to keep, tallying the rest; null when
+ * nothing is to be told apart — fewer than two rows name a label strength.
+ */
+function keptRows(texts: string[], scope: LabelScope, tally: Tally): boolean[] | null {
 	const match = strengthMatcher(scope);
-	if (!match) return rows;
-	const matched = rows.map((row) => match(textOf(row)));
+	if (!match) return null;
+	const matched = texts.map((text) => match(text));
 	const distinct = new Set(
-		rows.flatMap((row, i) =>
-			matched[i].known ? [leadingQuantity(textOf(row))?.mg ?? leadingQuantity(textOf(row))?.ml] : []
+		texts.flatMap((text, i) =>
+			matched[i].known ? [leadingQuantity(text)?.mg ?? leadingQuantity(text)?.ml] : []
 		)
 	);
-	if (distinct.size < 2) return rows;
-	return rows.filter((_, i) => {
-		const sibling = matched[i].sibling;
+	if (distinct.size < 2) return null;
+	return matched.map(({ sibling }) => {
 		if (sibling) tally.add('strength', 'row', [sibling.text]);
 		return !sibling;
 	});
+}
+
+type Row = LabelCell[];
+
+/**
+ * A table body without its sibling-strength rows. A stub cell spanning a
+ * group of rows ("250 mg/5 mL" over three bottle sizes) is not a row's own
+ * key: each row is read by its first unspanned cell, and the stub shrinks to
+ * the rows kept, moving down when its own row goes. A span anywhere but the
+ * leading columns cannot be re-homed safely, so such a table is left whole.
+ */
+function filterTableBody(body: Row[], scope: LabelScope, tally: Tally): Row[] {
+	const spans = (row: Row) => {
+		let leading = 0;
+		while (leading < row.length && (row[leading].rowspan ?? 1) > 1) leading++;
+		return leading;
+	};
+	if (body.some((row) => row.slice(spans(row)).some((c) => (c.rowspan ?? 1) > 1))) return body;
+	// Each row's cells as a reader sees them: the stubs spanning down into it,
+	// then its own. Its key is the first that states a quantity — the vial in
+	// "1 g" over IM and IV rows, the bottle beside a "250 mg/5 mL" stub.
+	const covering: LabelCell[][] = body.map(() => []);
+	body.forEach((row, i) => {
+		for (const stub of row.slice(0, spans(row)))
+			for (let j = i; j < Math.min(body.length, i + (stub.rowspan ?? 1)); j++)
+				covering[j].push(stub);
+	});
+	const keyOf = (row: Row, i: number) => {
+		const cells = [...covering[i], ...row.slice(spans(row))].map((c) => runsText(c.runs));
+		return cells.find((text) => leadingQuantity(text)) ?? '';
+	};
+	const keep = keptRows(body.map(keyOf), scope, tally);
+	if (!keep) return body;
+	const rows: Row[] = body.map((row) => row.slice(spans(row)));
+	const stubs: Row[] = body.map(() => []);
+	body.forEach((row, i) => {
+		for (const stub of row.slice(0, spans(row))) {
+			const covered = keep.slice(i, i + (stub.rowspan ?? 1));
+			const first = covered.indexOf(true);
+			if (first < 0) continue;
+			const kept = covered.filter(Boolean).length;
+			const { rowspan: _, ...rest } = stub;
+			stubs[i + first].push(kept > 1 ? { ...rest, rowspan: kept } : rest);
+		}
+	});
+	return rows.flatMap((row, i) => (keep[i] ? [[...stubs[i], ...row]] : []));
 }
 
 /** A leaf block with what does not apply removed; null when nothing is left. */
@@ -430,12 +484,7 @@ function filterBlock(block: LabelBlock, scope: LabelScope, tally: Tally): LabelB
 			: '';
 	if (block.type === 'table' && PREPARATION.test(about)) {
 		// Header rows always stay; a body row is told apart by its stub cell.
-		const body = filterRows(
-			block.body,
-			(row) => (row[0] ? runsText(row[0].runs) : ''),
-			scope,
-			tally
-		);
+		const body = filterTableBody(block.body, scope, tally);
 		if (!body.length) return null;
 		return body.length === block.body.length ? block : { ...block, body };
 	}

@@ -454,3 +454,118 @@ test('filterLabelSection never filters indications or safety sections', () => {
 		assert.equal(filterLabelSection(key, blocks, scope), null, key);
 	assert.equal(filterLabelSection('dosage_and_administration', blocks, scope)?.blocks.length, 0);
 });
+
+// ── Row-spanning stub cells ──────────────────────────────────────────────────
+
+const bottles = {
+	own: {
+		family: 'oral-suspension' as const,
+		formLabel: 'oral suspension',
+		strengths: [{ text: '150 mL bottle', mg: null, containerMl: 150 }]
+	},
+	siblings: [
+		{
+			family: 'oral-suspension' as const,
+			formLabel: 'oral suspension',
+			strengths: [
+				{ text: '80 mL bottle', mg: null, containerMl: 80 },
+				{ text: '100 mL bottle', mg: null, containerMl: 100 }
+			]
+		}
+	]
+};
+const spanning = (text: string, rowspan: number) => ({ runs: [{ text }], header: false, rowspan });
+const waterTable = (body: ReturnType<typeof cell>[][]): LabelBlock => ({
+	type: 'table',
+	caption: 'Table 3. Amount of Water for Mixing',
+	head: [[cell('Strength', true), cell('Bottle Size', true), cell('Water', true)]],
+	body,
+	foot: []
+});
+
+test('filterLabelBlocks re-homes a row-spanning stub when its first row goes', () => {
+	const result = filterLabelBlocks(
+		[
+			waterTable([
+				[spanning('250 mg/5 mL', 3), cell('80 mL'), cell('47 mL')],
+				[cell('100 mL'), cell('60 mL')],
+				[cell('150 mL'), cell('90 mL')]
+			])
+		],
+		bottles
+	);
+	const block = result.blocks[0];
+	assert.equal(block.type, 'table');
+	assert.deepEqual(
+		block.type === 'table' &&
+			block.body.map((row) => row.map((c) => [c.runs[0].text, c.rowspan ?? 1])),
+		[
+			[
+				['250 mg/5 mL', 1],
+				['150 mL', 1],
+				['90 mL', 1]
+			]
+		]
+	);
+	assert.equal(result.omissions[0].count, 2);
+});
+
+test('filterLabelBlocks shrinks a row-spanning stub to the rows it keeps', () => {
+	const result = filterLabelBlocks(
+		[
+			waterTable([
+				[spanning('250 mg/5 mL', 3), cell('150 mL'), cell('90 mL')],
+				[cell('80 mL'), cell('47 mL')],
+				[cell('150 mL'), cell('91 mL')]
+			])
+		],
+		bottles
+	);
+	const block = result.blocks[0];
+	assert.deepEqual(
+		block.type === 'table' &&
+			block.body.map((row) => row.map((c) => [c.runs[0].text, c.rowspan ?? 1])),
+		[
+			[
+				['250 mg/5 mL', 2],
+				['150 mL', 1],
+				['90 mL', 1]
+			],
+			[
+				['150 mL', 1],
+				['91 mL', 1]
+			]
+		]
+	);
+});
+
+test('filterLabelBlocks leaves a table with a mid-row span alone', () => {
+	const table = waterTable([
+		[cell('80 mL'), spanning('see note', 2), cell('47 mL')],
+		[cell('150 mL'), cell('90 mL')]
+	]);
+	assert.deepEqual(filterLabelBlocks([table], bottles).blocks, [table]);
+});
+
+test('filterLabelBlocks reads a row by the vial stub spanning it', () => {
+	const table: LabelBlock = {
+		type: 'table',
+		caption: null,
+		head: [[cell('Vial size', true), cell('Route', true), cell('Diluent', true)]],
+		body: [
+			[spanning('1 g', 2), cell('IM'), cell('3.6 mL')],
+			[cell('IV'), cell('9.6 mL')],
+			[spanning('2 g', 2), cell('IM'), cell('7.2 mL')],
+			[cell('IV'), cell('19.2 mL')]
+		],
+		foot: []
+	};
+	const block = filterLabelBlocks([table], vialScope()).blocks[0];
+	assert.deepEqual(
+		block.type === 'table' && block.body.map((row) => row.map((c) => [c.runs[0].text, c.rowspan ?? 1])),
+		[
+			[['1 g', 2], ['IM', 1], ['3.6 mL', 1]],
+			[['IV', 1], ['9.6 mL', 1]]
+		]
+	);
+});
