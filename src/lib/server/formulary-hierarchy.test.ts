@@ -241,3 +241,89 @@ test('equal strengths share one node however they are written', () => {
 		[['1g', 3], ['2g', 1]]
 	);
 });
+
+test('a merging level absorbs an only child, radix-tree style', () => {
+	const thiamine = (ndc: string, routes: string[], ingredients: FormularyRow['ingredients']) =>
+		row({ ndc, routes, ingredients, formularyItem: ndc });
+	const rows = [
+		thiamine('1', ['INTRAVENOUS'], [{ name: 'THIAMINE', strength: '100 mg/mL' }]),
+		thiamine('2', ['ORAL'], [{ name: 'THIAMINE', strength: '200 mg/1' }]),
+		thiamine('3', ['ORAL'], [
+			{ name: 'THIAMINE', strength: '200 mg/1' },
+			{ name: 'FOLIC ACID', strength: '1 mg/1' }
+		])
+	];
+	const read = (nodes: ReturnType<typeof buildTree>): unknown[] =>
+		nodes.map((node) => {
+			const label = [...(node.merged ?? []).map((part) => part.label), node.label].join(' – ');
+			return node.children.length ? [label, read(node.children)] : label;
+		});
+
+	assert.deepEqual(read(buildTree(rows, ['route~', 'ingredientCombo', 'strength'])), [
+		['Intravenous route – Thiamine', ['100mg/mL']],
+		[
+			'Oral route',
+			[
+				['Folic Acid / Thiamine', ['200mg / 1mg']],
+				['Thiamine', ['200mg']]
+			]
+		]
+	]);
+	assert.deepEqual(read(buildTree(rows, ['route~', 'ingredientCombo~', 'strength'])), [
+		'Intravenous route – Thiamine – 100mg/mL',
+		['Oral route', ['Folic Acid / Thiamine – 200mg / 1mg', 'Thiamine – 200mg']]
+	]);
+
+	const [iv] = buildTree(rows, ['route~', 'ingredientCombo~', 'strength']);
+	assert.deepEqual(iv.merged?.map((part) => part.dimension), ['route', 'ingredientCombo']);
+	assert.equal(iv.dimension, 'strength');
+	assert.deepEqual(iv.rows.map((item) => item.ndc), ['1']);
+});
+
+test('parseLevels keeps merge marks and drops a dimension given twice', () => {
+	assert.deepEqual(parseLevels('route~,route,bogus~,labeler'), ['route~', 'labeler']);
+});
+
+test('equivalence groups merge sibling values into their display', () => {
+	const rows = [
+		row({ ndc: '1', doseForm: 'TABLET, COATED' }),
+		row({ ndc: '2', doseForm: 'TABLET, FILM COATED' }),
+		row({ ndc: '3', doseForm: 'Tablet, film-coated' }),
+		row({ ndc: '4', doseForm: 'TABLET' })
+	];
+	const equivalenceGroups = [
+		{ dimension: 'doseForm', display: 'Tablet, Coated', members: ['Tablet, Film Coated'] }
+	];
+	const tree = buildTree(rows, ['doseForm'], { equivalenceGroups });
+	assert.deepEqual(
+		tree.map((node) => [node.label, node.count, node.equivalent]),
+		[
+			['Tablet', 1, undefined],
+			['Tablet, Coated', 3, ['Tablet, Film Coated', 'Tablet, Film-Coated']]
+		]
+	);
+	// A dose-form group also merges the form within Route + form.
+	assert.deepEqual(
+		buildTree(rows, ['routeForm'], { equivalenceGroups }).map((node) => [node.label, node.count]),
+		[
+			['Oral Tablet', 1],
+			['Oral Tablet, Coated', 3]
+		]
+	);
+});
+
+test('a route group narrows rows to every route it gathers', () => {
+	const rows = [row({ routes: ['INTRAVENOUS', 'INTRAMUSCULAR', 'SUBCUTANEOUS'] })];
+	const tree = buildTree(rows, ['route', 'routeForm'], {
+		equivalenceGroups: [
+			{ dimension: 'route', display: 'Injection', members: ['Intravenous route', 'Intramuscular route'] }
+		]
+	});
+	assert.deepEqual(
+		tree.map((node) => [node.label, node.children.map((child) => child.label)]),
+		[
+			['Injection', ['Intramuscular Capsule', 'Intravenous Capsule']],
+			['Subcutaneous route', ['Subcutaneous Capsule']]
+		]
+	);
+});

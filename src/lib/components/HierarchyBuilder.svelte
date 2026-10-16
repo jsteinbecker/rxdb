@@ -1,8 +1,17 @@
 <script lang="ts">
-	import { DIMENSION_BY_KEY, DIMENSIONS } from '$lib/formulary-hierarchy';
+	import {
+		DIMENSION_BY_KEY,
+		DIMENSIONS,
+		levelDimension,
+		mergesChildren,
+		withMerge
+	} from '$lib/formulary-hierarchy';
 
 	/** Drag-and-drop editor for a formulary hierarchy; each level nests under the one before it. */
 	let { levels = $bindable() }: { levels: string[] } = $props();
+
+	/** Levels by dimension key; a level's key may carry a merge mark. */
+	const inUse = $derived(new Set(levels.map(levelDimension)));
 
 	/** Chip being dragged, and where it came from (a hierarchy index or the palette). */
 	let dragging: { key: string; from: number | null } | null = $state(null);
@@ -12,16 +21,25 @@
 		DIMENSIONS.filter(
 			(dimension) =>
 				!dimension.variant?.hidden &&
-				!levels.includes(dimension.key) &&
-				!(dimension.variant && levels.includes(dimension.variant.key))
+				!inUse.has(dimension.key) &&
+				!(dimension.variant && inUse.has(dimension.variant.key))
 		)
 	);
 
 	/** Swap a chip for its variant in place, e.g. separated ↔ combined ingredients. */
-	function switchVariant(key: string) {
-		const variant = DIMENSION_BY_KEY.get(key)?.variant;
-		if (variant) levels = levels.map((level) => (level === key ? variant.key : level));
+	function switchVariant(level: string) {
+		const variant = DIMENSION_BY_KEY.get(levelDimension(level))?.variant;
+		if (variant)
+			levels = levels.map((other) =>
+				other === level ? withMerge(variant.key, mergesChildren(level)) : other
+			);
 	}
+
+	/** Have a level's nodes absorb an only child ("IV – Thiamine"), or stop. */
+	const toggleMerge = (level: string) =>
+		(levels = levels.map((other) =>
+			other === level ? withMerge(level, !mergesChildren(level)) : other
+		));
 
 	function place(key: string, index: number) {
 		const next = levels.filter((level) => level !== key);
@@ -87,8 +105,9 @@
 		if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node)) dropAt = null;
 	}}
 >
-	{#each levels as key, index (key)}
-		{@const dimension = DIMENSION_BY_KEY.get(key)}
+	{#each levels as key, index (levelDimension(key))}
+		{@const dimension = DIMENSION_BY_KEY.get(levelDimension(key))}
+		{@const merging = mergesChildren(key)}
 		{#if dropAt === index}<li class="gap" aria-hidden="true"></li>{/if}
 		<li
 			class="chip level"
@@ -111,6 +130,19 @@
 					onclick={() => switchVariant(key)}>⇄ {dimension.variant.mode}</button
 				>
 			{/if}
+			<button
+				type="button"
+				class="mode merge"
+				class:on={merging}
+				aria-pressed={merging}
+				disabled={index === levels.length - 1 && !merging}
+				title={index === levels.length - 1
+					? 'The last level has no children to merge'
+					: merging
+						? 'Merging: a node with one child reads as one row, e.g. “IV – Thiamine”'
+						: 'Merge a node with its only child into one row, e.g. “IV – Thiamine”'}
+				onclick={() => toggleMerge(key)}>{merging ? '⤓ Merged' : '⤓ Merge'}</button
+			>
 			<span class="chip-actions">
 				<button
 					type="button"
@@ -239,6 +271,18 @@
 		font-size: 0.75rem;
 		padding: 0.1rem 0.4rem;
 		border-radius: 999px;
+	}
+
+	.mode.merge {
+		background: white;
+		color: #3464a5;
+		box-shadow: inset 0 0 0 1px #8fb3e6;
+	}
+
+	.mode.merge.on {
+		background: #204f91;
+		color: white;
+		box-shadow: none;
 	}
 
 	.chip-actions {

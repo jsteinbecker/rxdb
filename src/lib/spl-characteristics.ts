@@ -1,5 +1,6 @@
 import type { SplCharacteristic, SplProduct } from './spl-ingredients';
 import { roundCorners } from './round-corners';
+import { PROPORTIONS, splitShapeProportion } from './imprints/shapes';
 
 // ── What the pill in the bottle looks like ───────────────────────────────────
 // The decoding half of the `<characteristic>` observations $lib/spl-ingredients.ts
@@ -329,6 +330,7 @@ export const COLOR_WORDS: Record<string, string> = {
 	bluish: 'blue',
 	navy: 'blue',
 	aqua: 'turquoise',
+	aquamarine: 'turquoise',
 	teal: 'turquoise',
 	turquoise: 'turquoise',
 	cyan: 'turquoise',
@@ -459,6 +461,7 @@ export const NAMED_SWATCHES: Record<string, string> = {
 	blue: '#5f93e0',
 	cyan: '#4fcde8',
 	aqua: '#8ee0e0',
+	aquamarine: '#7fdcc4',
 	turquoise: '#3fbfb0',
 	teal: '#2a8a86',
 	mint: '#b2e8c8',
@@ -559,7 +562,23 @@ export function shapeGeometry(shape: string | null): ShapeGeometry {
 	return { ...geometry, path: roundCorners(geometry.path) };
 }
 
+/**
+ * A stadium (straight sides, semicircular ends) at a length ÷ width ratio,
+ * as long as the box allows. The layout box keeps the default capsule's
+ * 8-unit margin above the outline's height.
+ */
+function stadium(ratio: number): ShapeGeometry {
+	const tallest = 80;
+	const width = Math.min(96, tallest * ratio);
+	const height = width / ratio;
+	return { path: roundedRect(width, height, height / 2), width, height: height + 8 };
+}
+
 function rawShapeGeometry(shape: string | null): ShapeGeometry {
+	// `LONG CAPSULE`, `CAPSULE 2.6:1`: the outline, drawn at the stated proportion.
+	const proportion = shape ? splitShapeProportion(shape) : null;
+	const ratio = proportion && !proportion.error ? proportion.ratio : null;
+	if (proportion) shape = proportion.base;
 	const term = (shapeTerm(null, shape) ?? '').replace(/[^A-Z]/g, '');
 	// A letter-shaped through-hole: VDONUT, KDONUT, ADONUT ...
 	const letterHole = /^([A-Z])DONUT$/.exec(term);
@@ -581,7 +600,7 @@ function rawShapeGeometry(shape: string | null): ShapeGeometry {
 		case 'EGG':return {path: 'M50,8C72,8 91,25 91,48C91,72 72,91 50,91C28,91 13,75 13,53C13,30 27,8 50,8z', width: 78, height: 83};
 		case 'CAPSULE':
 		case 'CAPSULESHAPED':
-			return { path: roundedRect(96, 36, 18), width: 96, height: 44 };
+			return stadium(ratio ?? PROPORTIONS.CAPSULE.default);
 		case 'OBLONG':
 			return { path: roundedRect(94, 52, 14), width: 94, height: 52 };
 		case 'SQUARE':

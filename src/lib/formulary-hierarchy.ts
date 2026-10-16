@@ -11,6 +11,7 @@ import { labelerGroup } from './labeler-group';
 import { naturalCompare } from './natural-sort';
 import { mgPer } from './units';
 import { canonicalSplForm } from './concept-fill';
+import { equivalence, type EquivalenceGroup, type Equivalence } from './equivalence';
 
 export type FormularyRow = {
 	packageId: string;
@@ -43,6 +44,8 @@ export type FormularyRow = {
 	enriched?: boolean;
 	/** Facts filled from the formulary concept because the package never stated them. */
 	inferred?: { ingredients?: boolean; doseForm?: boolean };
+	/** The dose form as its equivalence group reads; set by `buildTree`. */
+	doseFormLabel?: string;
 };
 
 /**
@@ -140,6 +143,10 @@ export function packageSize(row: FormularyRow): string | null {
 
 const routeLabel = (route: string) => `${titleCase(route)} route`;
 
+/** The route a Route node's label names ("Oral route" → "Oral"); null for other labels. */
+export const routeOfLabel = (label: string): string | null =>
+	label.match(/^(.+) route$/)?.[1] ?? null;
+
 /**
  * Collapse terminology variants that do not change the useful hierarchy split.
  * Lyophilized describes how a powder for solution is manufactured; it still
@@ -149,6 +156,12 @@ const routeLabel = (route: string) => `${titleCase(route)} route`;
 export function hierarchyDoseForm(doseForm: string): string {
 	return titleCase(canonicalSplForm(doseForm));
 }
+
+/** The dose form a row is grouped under, after equivalence groups. */
+const formLabel = (row: FormularyRow) => {
+	const doseForm = clean(row.doseForm);
+	return doseForm ? (row.doseFormLabel ?? hierarchyDoseForm(doseForm)) : null;
+};
 
 const routeForm = (doseForm: string) => (route: string) => titleCase(`${route} ${doseForm}`.trim());
 
@@ -252,23 +265,21 @@ export const DIMENSIONS: Dimension[] = [
 		label: 'Dose form',
 		hint: 'Capsule, powder for suspension…',
 		values: (row) => {
-			const doseForm = clean(row.doseForm);
-			return doseForm ? [hierarchyDoseForm(doseForm)] : [];
+			const doseForm = formLabel(row);
+			return doseForm ? [doseForm] : [];
 		}
 	},
 	{
 		key: 'routeForm',
 		label: 'Route + form',
 		hint: 'Oral Capsule, Intravenous Solution…',
-		values: (row) =>
-			row.doseForm
-				? (row.routes.length ? row.routes : ['']).map(routeForm(hierarchyDoseForm(row.doseForm)))
-				: [],
+		values: (row) => {
+			const doseForm = formLabel(row);
+			return doseForm ? (row.routes.length ? row.routes : ['']).map(routeForm(doseForm)) : [];
+		},
 		narrow: (row, value) => ({
 			...row,
-			routes: row.routes.filter(
-				(route) => routeForm(row.doseForm ? hierarchyDoseForm(row.doseForm) : '')(route) === value
-			)
+			routes: row.routes.filter((route) => routeForm(formLabel(row) ?? '')(route) === value)
 		})
 	},
 	{
@@ -354,6 +365,37 @@ export const DIMENSION_BY_KEY = new Map(DIMENSIONS.map((dimension) => [dimension
 
 export const DEFAULT_LEVELS = ['routeClass', 'routeForm', 'formularyItem', 'packaging'];
 
+/**
+ * A level is a dimension key, suffixed with `~` when its nodes absorb an only
+ * child, radix-tree style: "IV" over a lone "Thiamine" reads "IV – Thiamine".
+ */
+export const MERGE_MARK = '~';
+
+/** The dimension key a level groups by, without its merge mark. */
+export const levelDimension = (level: string) =>
+	level.endsWith(MERGE_MARK) ? level.slice(0, -MERGE_MARK.length) : level;
+
+/** Whether a level's nodes absorb an only child. */
+export const mergesChildren = (level: string) => level.endsWith(MERGE_MARK);
+
+/** Turn a level's merge mark on or off. */
+export const withMerge = (level: string, merge: boolean) =>
+	levelDimension(level) + (merge ? MERGE_MARK : '');
+
+/** A level's display name, e.g. "Route class". */
+export const levelLabel = (level: string) => DIMENSION_BY_KEY.get(levelDimension(level))?.label;
+
+/** Valid levels, merge marks kept, one per dimension. */
+export function validLevelKeys(levels: string[]): string[] {
+	const seen = new Set<string>();
+	return levels.filter((level) => {
+		const key = levelDimension(level);
+		if (!DIMENSION_BY_KEY.has(key) || seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
 export type TreeNode = {
 	/** Stable path key, e.g. "routeClass=Enteral|route=Oral route". */
 	id: string;
@@ -362,32 +404,110 @@ export type TreeNode = {
 	count: number;
 	children: TreeNode[];
 	rows: FormularyRow[];
+	/** Ancestors merged into this node, outermost first; they read before its label. */
+	merged?: { dimension: string; label: string }[];
+	/** The values an equivalence group gathered under this label, when they differ from it. */
+	equivalent?: string[];
 };
+
+/** Separator between a merged node's segments. */
+export const MERGE_SEPARATOR = ' – ';
 
 const compare = naturalCompare;
 
+export type TreeOptions = {
+	/** Values of one dimension that read as one node. */
+	equivalenceGroups?: EquivalenceGroup[];
+};
+
 /**
  * Group rows by each dimension in turn. The last level's nodes hold the rows
- * (packages); an empty level list returns a single flat root.
+ * (packages); an empty level list returns a single flat root. Equivalence
+ * groups merge sibling values into their display label; a dose-form group
+ * also merges the form within "Route + form".
  */
-export function buildTree(rows: FormularyRow[], levels: string[], parent = ''): TreeNode[] {
-	const [key, ...rest] = levels;
+export function buildTree(
+	rows: FormularyRow[],
+	levels: string[],
+	options: TreeOptions = {}
+): TreeNode[] {
+	const groups = options.equivalenceGroups ?? [];
+	const eq = equivalence(groups);
+	const formGroups = groups.some((group) => group.dimension === 'doseForm');
+	const prepared = formGroups
+		? rows.map((row) => {
+				const doseForm = clean(row.doseForm);
+				return doseForm
+					? { ...row, doseFormLabel: eq('doseForm', hierarchyDoseForm(doseForm)) }
+					: row;
+			})
+		: rows;
+	return grow(prepared, levels, groups.length ? eq : null, '');
+}
+
+/**
+ * A row as seen beneath an equivalence label: narrowed to every original
+ * value that label gathers, its routes joined.
+ */
+function narrowAll(
+	dimension: Dimension,
+	row: FormularyRow,
+	originals: string[]
+): FormularyRow {
+	if (!dimension.narrow) return row;
+	const views = originals.map((value) => dimension.narrow!(row, value));
+	return views.length === 1
+		? views[0]
+		: { ...views[0], routes: [...new Set(views.flatMap((view) => view.routes))] };
+}
+
+function grow(
+	rows: FormularyRow[],
+	levels: string[],
+	eq: Equivalence | null,
+	parent: string
+): TreeNode[] {
+	const [level, ...rest] = levels;
+	const key = level && levelDimension(level);
 	const dimension = key ? DIMENSION_BY_KEY.get(key) : undefined;
-	if (!dimension) return rest.length ? buildTree(rows, rest, parent) : [];
+	if (!dimension) return rest.length ? grow(rows, rest, eq, parent) : [];
 	const buckets = new Map<string, FormularyRow[]>();
+	const gathered = new Map<string, Set<string>>();
 	for (const row of rows) {
-		const values = [...new Set(dimension.values(row))];
-		for (const value of values.length ? values : [NOT_SPECIFIED])
-			buckets.set(value, [
-				...(buckets.get(value) ?? []),
-				dimension.narrow && values.length ? dimension.narrow(row, value) : row
+		const originals = [...new Set(dimension.values(row))];
+		const labels = new Map<string, string[]>();
+		for (const value of originals) {
+			const label = eq ? eq(key, value) : value;
+			labels.set(label, [...(labels.get(label) ?? []), value]);
+			if (label !== value) gathered.set(label, (gathered.get(label) ?? new Set()).add(value));
+		}
+		// Dose forms were mapped before grouping so Route + form shares them; recover the spelling.
+		if (key === 'doseForm' && row.doseFormLabel && row.doseForm) {
+			const original = hierarchyDoseForm(row.doseForm);
+			if (original !== row.doseFormLabel)
+				gathered.set(
+					row.doseFormLabel,
+					(gathered.get(row.doseFormLabel) ?? new Set()).add(original)
+				);
+		}
+		if (!labels.size) labels.set(NOT_SPECIFIED, []);
+		for (const [label, values] of labels)
+			buckets.set(label, [
+				...(buckets.get(label) ?? []),
+				values.length ? narrowAll(dimension, row, values) : row
 			]);
 	}
 	return [...buckets]
 		.sort(([a], [b]) => (a === NOT_SPECIFIED ? 1 : b === NOT_SPECIFIED ? -1 : compare(a, b)))
 		.map(([label, members]) => {
 			const id = `${parent}${parent ? '|' : ''}${key}=${label}`;
-			const children = buildTree(members, rest, id);
+			const children = grow(members, rest, eq, id);
+			// Every row lands in some child, so an only child holds them all.
+			if (mergesChildren(level) && children.length === 1) {
+				const [child] = children;
+				return { ...child, merged: [{ dimension: key, label }, ...(child.merged ?? [])] };
+			}
+			const equivalent = gathered.get(label);
 			return {
 				id,
 				dimension: key,
@@ -398,15 +518,29 @@ export function buildTree(rows: FormularyRow[], levels: string[], parent = ''): 
 					? []
 					: [...members].sort(
 							(a, b) => a.preferenceRank - b.preferenceRank || compare(a.ndc, b.ndc)
-						)
+						),
+				...(equivalent ? { equivalent: [...equivalent].sort(compare) } : {})
 			};
 		});
 }
 
-/** Parse `?levels=a,b,c`, dropping unknown and duplicate keys. */
+/** Each value a dimension takes across the rows, with how many rows take it. */
+export function dimensionValues(rows: FormularyRow[], key: string): { label: string; count: number }[] {
+	const dimension = DIMENSION_BY_KEY.get(key);
+	if (!dimension) return [];
+	const counts = new Map<string, number>();
+	for (const row of rows)
+		for (const value of new Set(dimension.values(row)))
+			counts.set(value, (counts.get(value) ?? 0) + 1);
+	return [...counts]
+		.map(([label, count]) => ({ label, count }))
+		.sort((a, b) => compare(a.label, b.label));
+}
+
+/** Parse `?levels=a,b~,c`, dropping unknown and duplicate keys. */
 export function parseLevels(value: string | null, fallback = DEFAULT_LEVELS): string[] {
 	if (value === null) return fallback;
-	return [...new Set(value.split(',').filter((key) => DIMENSION_BY_KEY.has(key)))];
+	return validLevelKeys(value.split(','));
 }
 
 /**

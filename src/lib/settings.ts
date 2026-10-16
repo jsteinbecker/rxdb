@@ -7,8 +7,10 @@ import {
   type ComboDoseDisplay,
   DEFAULT_LEVELS,
   DIMENSION_BY_KEY,
-  ingredientLabel
+  ingredientLabel,
+  validLevelKeys
 } from './formulary-hierarchy';
+import { type EquivalenceGroup, parseEquivalenceGroups } from './equivalence';
 
 export type ExpandDepth = 'none' | 'first' | 'all';
 
@@ -38,6 +40,8 @@ export type FormularySettings = {
 	comboDoseDisplay: Record<string, ComboDoseDisplay>;
 	/** Pill drawings give every imprint string on a face one size unless ILN sizes it explicitly. */
 	uniformImprintSize: boolean;
+	/** Sibling values the hierarchy merges into one node, per dimension. */
+	equivalenceGroups: EquivalenceGroup[];
 };
 
 export const DEFAULT_SETTINGS: FormularySettings = {
@@ -47,7 +51,8 @@ export const DEFAULT_SETTINGS: FormularySettings = {
 	expandDepth: 'none',
 	confirmRemove: true,
 	comboDoseDisplay: {},
-	uniformImprintSize: false
+	uniformImprintSize: false,
+	equivalenceGroups: []
 };
 
 export function parseComboDoseDisplay(value: unknown): ComboDoseDisplay | null {
@@ -69,11 +74,7 @@ const EXPAND_DEPTHS: ExpandDepth[] = ['none', 'first', 'all'];
 
 function validLevels(value: unknown): string[] | null {
 	if (!Array.isArray(value)) return null;
-	return [
-		...new Set(
-			value.filter((key): key is string => typeof key === 'string' && DIMENSION_BY_KEY.has(key))
-		)
-	];
+	return validLevelKeys(value.filter((key): key is string => typeof key === 'string'));
 }
 
 function parseViews(value: unknown): FormularyView[] {
@@ -116,6 +117,10 @@ export function parseSettings(value: unknown): FormularySettings {
 			typeof raw.uniformImprintSize === 'boolean'
 				? raw.uniformImprintSize
 				: DEFAULT_SETTINGS.uniformImprintSize,
+		equivalenceGroups: parseEquivalenceGroups(
+			raw.equivalenceGroups,
+			new Set(DIMENSION_BY_KEY.keys())
+		),
 		comboDoseDisplay: Object.fromEntries(
 			Object.entries(
 				raw.comboDoseDisplay && typeof raw.comboDoseDisplay === 'object' ? raw.comboDoseDisplay : {}

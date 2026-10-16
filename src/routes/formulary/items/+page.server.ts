@@ -3,7 +3,22 @@ import { prisma } from '$lib/server/prisma';
 import { defaultScope, loadedItems, removeFromFormulary } from '$lib/server/catalog-formulary';
 import { loadStagedNode } from '$lib/server/catalog-sync';
 import { parseSettings } from '$lib/settings';
+import type { LoadedItem } from '$lib/server/catalog-formulary';
 import type { Actions, PageServerLoad } from './$types';
+
+async function reloadItems(scopeId: string, items: LoadedItem[]) {
+	let reloaded = 0;
+	const failures: string[] = [];
+	for (const item of items) {
+		try {
+			await loadStagedNode(item.target, scopeId, { force: true });
+			reloaded++;
+		} catch (error) {
+			failures.push(`${item.displayName}: ${error instanceof Error ? error.message : 'Could not reload.'}`);
+		}
+	}
+	return { reloaded, total: items.length, failures };
+}
 
 export const load: PageServerLoad = async () => {
 	const scope = await defaultScope(prisma);
@@ -17,18 +32,17 @@ export const load: PageServerLoad = async () => {
 export const actions: Actions = {
 	reloadAll: async () => {
 		const scope = await defaultScope(prisma);
-		const items = await loadedItems(prisma, scope.id);
-		let reloaded = 0;
-		const failures: string[] = [];
-		for (const item of items) {
-			try {
-				await loadStagedNode(item.target, scope.id, { force: true });
-				reloaded++;
-			} catch (error) {
-				failures.push(`${item.displayName}: ${error instanceof Error ? error.message : 'Could not reload.'}`);
-			}
-		}
-		return { reloadAll: { reloaded, total: items.length, failures } };
+		return { reloadAll: await reloadItems(scope.id, await loadedItems(prisma, scope.id)) };
+	},
+	reloadSelected: async ({ request }) => {
+		const ids = new Set(
+			(await request.formData()).getAll('formularyItemId').filter((id): id is string => typeof id === 'string' && !!id)
+		);
+		if (!ids.size) return fail(400, { message: 'Choose items to refresh.' });
+		const scope = await defaultScope(prisma);
+		const items = (await loadedItems(prisma, scope.id)).filter((item) => ids.has(item.formularyItemId));
+		if (!items.length) return fail(404, { message: 'Those items are no longer on this formulary.' });
+		return { reloadAll: await reloadItems(scope.id, items) };
 	},
 	remove: async ({ request }) => {
 		const id = (await request.formData()).get('formularyItemId');

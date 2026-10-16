@@ -27,6 +27,7 @@ import {
   findHole,
   holeFromName,
   isHoleName,
+  checkShapeProportion,
   findShape,
   formatHoleOrient,
   formatShapeOrient,
@@ -440,6 +441,7 @@ export function validateIln(src: string, opts: IlnOptions = {}): ValidationResul
 			'warning',
 			`Unknown shape "${opts.shape}"; shape checks skipped (run "shapes" to list known shapes)`
 		);
+	if (shape) checkShapeProportion(opts.shape!).forEach((m) => add('error', m));
 	for (const s of surfaces) {
 		if (!s.orient) continue;
 		if (s.label !== 'F' && s.label !== 'B') {

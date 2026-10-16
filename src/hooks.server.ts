@@ -1,7 +1,24 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, ServerInit } from '@sveltejs/kit';
 import { logger } from '$lib/server/log';
+import { prisma } from '$lib/server/prisma';
+import { reconcileFormularyEligibility } from '$lib/server/catalog-store';
 
 const log = logger('http');
+
+/**
+ * Exclusion rules live in code, so a restart is when they can change: recheck every
+ * formulary package against its stored evidence in the background.
+ */
+export const init: ServerInit = () => {
+	const eligibility = logger('eligibility');
+	reconcileFormularyEligibility(prisma)
+		.then(({ checked, excluded }) =>
+			eligibility.info(`${checked} formulary packages checked; ${excluded.length} excluded`, {
+				excluded
+			})
+		)
+		.catch((error) => eligibility.error('formulary eligibility sweep failed', { error }));
+};
 
 /** Logs every incoming request with its response status and duration. */
 export const handle: Handle = async ({ event, resolve }) => {

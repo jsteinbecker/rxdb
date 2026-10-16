@@ -536,10 +536,10 @@ for (const s of SHAPES) {
 	INDEX.set(norm(s.id).replace(/ /g, ''), s);
 }
 
-/** Find a shape by id, SPL term, NCI code, label or alias (case-insensitive). */
+/** Find a shape by id, SPL term, NCI code, label or alias (case-insensitive). A proportion (`LONG CAPSULE`, `CAPSULE 2.6:1`) is ignored. */
 export function findShape(name: string | undefined): ShapeDef | undefined {
 	if (!name) return undefined;
-	const raw = name.trim();
+	const raw = splitShapeProportion(name).base;
 	if (/^\(\s*\)$/.test(raw)) return INDEX.get('()');
 	const n = norm(raw);
 	return INDEX.get(n) ?? INDEX.get(n.replace(/ /g, ''));
@@ -547,6 +547,105 @@ export function findShape(name: string | undefined): ShapeDef | undefined {
 
 export function isElongated(name: string | undefined): boolean {
 	return findShape(name)?.elongated ?? false;
+}
+
+// ───────────────────────── Proportion ─────────────────────────
+
+/**
+ * Outlines whose length-to-width ratio the shape value may state. The ratio
+ * is the outline's length ÷ its width in the canonical view (long axis
+ * horizontal); without one the outline is drawn at its default.
+ */
+export const PROPORTIONS: Record<string, { default: number; LONG: number; STOUT: number }> = {
+	CAPSULE: { default: 96 / 36, LONG: 3.4, STOUT: 1.8 }
+};
+export type ProportionWord = 'LONG' | 'STOUT';
+const PROPORTION_WORDS: ProportionWord[] = ['LONG', 'STOUT'];
+/** A ratio of 1 is a circle; beyond this a stadium is a stick. */
+export const MAX_PROPORTION = 6;
+
+export interface ShapeProportion {
+	/** The shape value without its proportion: `CAPSULE`. */
+	base: string;
+	/** Length ÷ width as stated (a word resolved to its ratio); null when none was. */
+	ratio: number | null;
+	/** `LONG` or `STOUT` when the proportion was written as a word. */
+	word: ProportionWord | null;
+	/** Why the proportion can't be used, when it can't; `base` and `ratio` are then still parsed. */
+	error?: string;
+}
+
+/**
+ * Split a shape value into its outline and its proportion:
+ * `LONG CAPSULE`, `STOUT CAPSULE`, `CAPSULE 2.6:1` or `CAPSULE 19:8` (length:width,
+ * e.g. in millimetres). A plain shape comes back with no ratio.
+ */
+export function splitShapeProportion(value: string): ShapeProportion {
+	let base = value.trim();
+	let word: ProportionWord | null = null;
+	let ratio: number | null = null;
+	const lead = /^(LONG|STOUT)\s+/i.exec(base);
+	if (lead) {
+		word = lead[1].toUpperCase() as ProportionWord;
+		base = base.slice(lead[0].length);
+	}
+	const tail = /\s+(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$/.exec(base);
+	if (tail) {
+		base = base.slice(0, tail.index).trim();
+		ratio = Number(tail[1]) / Number(tail[2]);
+	}
+	if (!word && !tail) return { base, ratio: null, word: null };
+	const preset = findShapeProportion(base);
+	const label = findShape(base)?.id ?? base;
+	if (word && tail)
+		return { base, ratio, word, error: `Give ${label}'s proportion once: ${word} or ${tail[1]}:${tail[2]}, not both` };
+	if (!preset)
+		return {
+			base,
+			ratio,
+			word,
+			error: `${label} takes no proportion; only ${Object.keys(PROPORTIONS).join(', ')} does`
+		};
+	if (word) return { base, ratio: preset[word], word };
+	if (!Number.isFinite(ratio) || ratio! <= 1 || ratio! > MAX_PROPORTION)
+		return {
+			base,
+			ratio,
+			word,
+			error: `${label} proportion ${tail![1]}:${tail![2]} must be longer than wide and at most ${MAX_PROPORTION}:1`
+		};
+	return { base, ratio, word };
+}
+
+const findShapeProportion = (base: string) => {
+	const id = findShape(base)?.id;
+	return id ? PROPORTIONS[id] : undefined;
+};
+
+/** Length ÷ width to draw a shape value at, or null for its default outline (or a shape that takes none). */
+export function shapeRatio(value: string | null | undefined): number | null {
+	if (!value) return null;
+	const p = splitShapeProportion(value);
+	return p.error ? null : p.ratio;
+}
+
+/**
+ * The canonical shape value for an outline and a ratio: the word when the
+ * ratio is one, `CAPSULE 2.6:1` otherwise, and the bare outline at its default.
+ */
+export function formatShapeProportion(base: string, ratio: number | null): string {
+	const preset = findShapeProportion(base);
+	if (ratio === null || !preset) return base;
+	const r = Math.round(ratio * 100) / 100;
+	if (r === Math.round(preset.default * 100) / 100) return base;
+	const word = PROPORTION_WORDS.find((w) => preset[w] === r);
+	return word ? `${word} ${base}` : `${base} ${r}:1`;
+}
+
+/** Problems with a shape value's proportion (empty = fine, or none stated). */
+export function checkShapeProportion(value: string): string[] {
+	const error = splitShapeProportion(value).error;
+	return error ? [error] : [];
 }
 
 // ───────────────────────── Direction tags ─────────────────────────

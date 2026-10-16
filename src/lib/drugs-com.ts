@@ -23,11 +23,22 @@ export function drugsComNdcUrl(ndc11: string): string | null {
 	return `${DRUGS_COM}/search.php?searchterm=${hyphenated}`;
 }
 
+// A segment that is only a layout word is the labeler transcribing "E over
+// 410" into SPL (`E;over;410`), not text on the pill.
+const LAYOUT_WORD = /^(?:over|above|below|under)$/i;
+
 /**
- * The pill identifier for an imprint. SPL separates faces and lines with
+ * An imprint as Drugs.com writes it. SPL separates faces and lines with
  * semicolons; Drugs.com writes the same imprint space-separated (`IP 464`).
  */
+export function drugsComImprint(imprint: string | null): string {
+	return imprintFaces(imprint)
+		.filter((face) => !LAYOUT_WORD.test(face))
+		.join(' ');
+}
+
+/** The pill identifier for an imprint. */
 export function drugsComImprintUrl(imprint: string | null): string | null {
-	const text = imprintFaces(imprint).join(' ');
+	const text = drugsComImprint(imprint);
 	return text ? `${DRUGS_COM}/imprints.php?imprint=${encodeURIComponent(text).replace(/%20/g, '+')}` : null;
 }

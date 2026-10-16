@@ -25,7 +25,7 @@
  * flat record (Pillbox-style keys such as splimprint, splcolor_text).
  */
 
-import { isElongated } from './shapes.ts';
+import { findShape, isElongated } from './shapes.ts';
 
 // ───────────────────────── Types ─────────────────────────
 
@@ -427,7 +427,9 @@ function detectForm(app: SplAppearance): { form: PillForm; penalty: number; note
 		return { form: 'capsule', penalty: 0 };
 	}
 	if (df) return { form: 'tablet', penalty: 0 };
-	if (app.shape === 'CAPSULE' && app.colors.length === 2) {
+	// `LONG CAPSULE` and `CAPSULE 2.6:1` are still the capsule outline.
+	const capsuleShape = findShape(app.shape)?.id === 'CAPSULE';
+	if (capsuleShape && app.colors.length === 2) {
 		return {
 			form: 'capsule',
 			penalty: 1,
@@ -436,9 +438,9 @@ function detectForm(app: SplAppearance): { form: PillForm; penalty: number; note
 	}
 	return {
 		form: 'tablet',
-		penalty: app.shape === 'CAPSULE' ? 1 : 0,
+		penalty: capsuleShape ? 1 : 0,
 		note:
-			app.shape === 'CAPSULE'
+			capsuleShape
 				? 'No dosage form given; capsule-shaped item treated as a tablet (caplet).'
 				: undefined
 	};

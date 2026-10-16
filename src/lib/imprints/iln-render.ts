@@ -1237,6 +1237,13 @@ export interface DrawOptions {
 }
 
 /**
+ * A two-piece capsule's outline: the stated shape when it is a (possibly
+ * proportioned) capsule outline, so `LONG CAPSULE` draws a longer shell.
+ */
+const capsuleOutline = (shape: string | null): string =>
+	shape && findShape(shape)?.id === 'CAPSULE' ? shape : 'CAPSULE';
+
+/**
  * Guess the imprint layout for an appearance and lay out every view of it.
  *
  * A tablet or softgel gets a front and a back; the back is dropped only when
@@ -1263,7 +1270,7 @@ export function drawPill(
 	const by = (label: string) => surfaces.find((s) => s.label === label);
 
 	if (guess.form === 'capsule' || surfaces.some((s) => s.label === 'CAP' || s.label === 'BODY')) {
-		const geometry = shapeGeometry('CAPSULE');
+		const geometry = shapeGeometry(capsuleOutline(appearance.shape));
 		const whole = faceBox(geometry.width, geometry.height, 0.82);
 		const cap = { ...whole, w: whole.w / 2 - 2 };
 		const body = { ...whole, x: whole.x + whole.w / 2 + 2, w: whole.w / 2 - 2 };
@@ -1432,7 +1439,7 @@ function measuredViews(
 	layout: PillImageLayout
 ): PillView[] {
 	const capsule = guess.form === 'capsule';
-	const geometry = shapeGeometry(capsule ? 'CAPSULE' : appearance.shape);
+	const geometry = shapeGeometry(capsule ? capsuleOutline(appearance.shape) : appearance.shape);
 	const box = faceBox(geometry.width, geometry.height, 1);
 	const finish = guess.form === 'tablet' ? 'deboss' : 'ink';
 	// A capsule is one view: the photographed side with the imprint on it.

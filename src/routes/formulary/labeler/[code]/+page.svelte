@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import FormularyIcon from '$lib/components/FormularyIcon.svelte';
+	import { doseFormAbbreviation, packageDescriptionCase, productNameCase } from '$lib/package-text';
 
 	let { data } = $props();
 
 	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
+	const titleCase = (value: string) =>
+		value.toLowerCase().replace(/(^|[\s,/(-])([a-z])/g, (_, lead, char) => lead + char.toUpperCase());
 	const counts = $derived({
 		products: new Set(data.packages.map((p) => p.ndc.slice(5, 9))).size,
 		onFormulary: data.packages.filter((p) => p.onFormulary).length
@@ -123,37 +127,47 @@
 	{#if data.packages.length}
 		<table>
 			<thead>
-				<tr><th>NDC</th><th>Labeled as</th><th>Package</th><th>Dose form</th></tr>
+				<tr><th>NDC</th><th>Package</th><th>Dose form</th></tr>
 			</thead>
 			{#each groups as [key, packages] (key)}
 				<tbody>
 					{#if grouping !== 'none'}
 						<tr class="group"
-							><th colspan="4">{key} <span class="muted">· {packages.length}</span></th></tr
+							><th colspan="3">{key} <span class="muted">· {packages.length}</span></th></tr
 						>
 					{/if}
 					{#each packages as pkg (pkg.ndc)}
 						<tr>
-							<td class="mono">
-								<a href={resolve('/formulary/ndc/[ndc]', { ndc: pkg.ndc })}>{formatNdc(pkg.ndc)}</a>
-								{#if pkg.onFormulary}<span class="tag">formulary</span>{/if}
-							</td>
-							<td class="mono">
-								{tenDigit(pkg.ndc, pkg.zeroSegment) ?? '—'}
+							<td class="mono ndc">
+								<FormularyIcon status={pkg.formularyStatus} />
+								<a
+									href={resolve('/formulary/ndc/[ndc]', { ndc: pkg.ndc })}
+									title="NDC11 {formatNdc(pkg.ndc)}">{tenDigit(pkg.ndc, pkg.zeroSegment) ?? formatNdc(pkg.ndc)}</a
+								>
 								{#if pkg.zeroBasis && pkg.zeroBasis !== 'labeled'}<span
 										class="basis"
 										title={pkg.zeroBasis === 'labeler'
 											? 'From the labeler’s other NDCs'
 											: 'Only one segment has a zero to drop'}>{pkg.zeroBasis}</span
+									>{:else if !pkg.zeroSegment}<span
+										class="basis"
+										title="The labeled 10-digit form is undetermined; showing the 11-digit NDC"
+										>NDC11</span
 									>{/if}
 							</td>
 							<td>
 								<div class="product-name">
-									{pkg.brandName ?? pkg.genericName ?? 'Unknown product'}
+									{productNameCase(pkg.brandName ?? pkg.genericName ?? 'Unknown product')}
 								</div>
-								<div class="package-detail">{pkg.description ?? 'Package details unavailable'}</div>
+								<div class="package-detail">
+									{pkg.description ? packageDescriptionCase(pkg.description) : 'Package details unavailable'}
+								</div>
 							</td>
-							<td>{pkg.doseForm ?? '—'}</td>
+							<td>
+								{#if pkg.doseForm}<abbr class="dose-form" title={titleCase(pkg.doseForm)}
+										>{doseFormAbbreviation(pkg.doseForm)}</abbr
+									>{:else}—{/if}
+							</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -257,15 +271,6 @@
 		margin-top: 0.15rem;
 		color: #5c6777;
 	}
-	.tag {
-		display: inline-block;
-		margin: 0 0.25rem 0.15rem 0;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
-		font-size: 0.75rem;
-		background: #eef1f5;
-		color: #3a4556;
-	}
 	.basis {
 		margin-left: 0.35rem;
 		color: #8a5a00;
@@ -285,11 +290,17 @@
 		background: #f0f3f7;
 		color: #18212f;
 	}
-	.tag {
-		margin-left: 0.35rem;
-		background: #e3f1e8;
-		color: #22663d;
-		font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+	.ndc a {
+		margin-left: 0.3rem;
+	}
+	.dose-form {
+		font-size: 0.75rem;
+		font-weight: 750;
+		letter-spacing: 0.03em;
+		color: #3a4556;
+		text-decoration: none;
+		white-space: nowrap;
+		cursor: help;
 	}
 	@media (max-width: 640px) {
 		main {

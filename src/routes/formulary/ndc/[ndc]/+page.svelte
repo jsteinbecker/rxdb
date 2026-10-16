@@ -225,7 +225,7 @@
 
       .with-panel {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem);
+            grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
             gap: 1.5rem;
             align-items: start;
       }
@@ -241,9 +241,15 @@
                   grid-template-columns: minmax(0, 1fr);
             }
 
+            /* Stays in view above the details so their label text can be highlighted. */
             .panel-slot {
-                  position: static;
+                  z-index: 5;
+                  top: 0;
                   order: -1;
+            }
+
+            .panel-slot :global(aside) {
+                  max-height: 45vh;
             }
       }
 

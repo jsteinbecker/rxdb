@@ -1,8 +1,13 @@
 <script lang="ts">
       import type {LabelBlock, LabelCell, LabelRun} from '$lib/spl-sections';
       import LabelBlocks from './LabelBlocks.svelte';
+      import {citationCapture} from '$lib/citation-capture.svelte';
 
       let {blocks}: { blocks: LabelBlock[] } = $props();
+
+      // A row is cited as its cells' text, the way the server reads a table.
+      const rowText = (cells: LabelCell[]) =>
+            cells.map((cell) => cell.runs.map((run) => run.text).join('')).join(' ');
 </script>
 
 {#snippet runs(list: LabelRun[])}
@@ -17,7 +22,21 @@
 {/snippet}
 
 {#snippet row(cells: LabelCell[], header: boolean)}
+      {@const capture = citationCapture.current}
       <tr>
+            {#if capture}
+                  <td class="pick">
+                        <input
+                              type="checkbox"
+                              aria-label="Cite this row"
+                              title="Cite this row"
+                              {@attach (input) => {
+                                    input.checked = capture.rowPicked(input.closest('tr')!);
+                              }}
+                              onchange={(event) => capture.toggleRow(event.currentTarget.closest('tr')!, rowText(cells))}
+                        />
+                  </td>
+            {/if}
             {#each cells as cell, i (i)}
                   {#if header || cell.header}
                         <th colspan={cell.colspan} rowspan={cell.rowspan}>{@render runs(cell.runs)}</th>
@@ -83,6 +102,9 @@
             left;vertical-align: top;white-space: pre-line;}
       th {background: #edf3fb;color: #334863;font-weight: 650;line-height: 1.35;}
       td:last-child, th:last-child {border-right: 0;}
+      .pick {width: 1.6rem;padding: 0.6rem 0.2rem 0.6rem 0.55rem;background: #f7f9fc;}
+      .pick input {margin: 0.1rem 0 0;cursor: pointer;}
+      thead .pick, tfoot .pick {background: inherit;}
       tbody tr:nth-child(even) {background: #f8fafc;}
       tbody tr:hover {background: #eef5ff;}
       tfoot {background: #f7f9fc;font-weight: 600;}
