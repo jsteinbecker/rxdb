@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { defaultScope, loadedItems } from '$lib/server/catalog-formulary';
+import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
 import { formularyRows } from '$lib/server/formulary-view';
 import { loadPackageSnapshots } from '$lib/server/catalog-store';
 import { itemPackages } from '$lib/formulary-item';
@@ -17,10 +17,10 @@ import type { RequestHandler } from './$types';
  */
 export const GET: RequestHandler = async ({ url }) => {
 	const scope = await defaultScope(prisma);
-	const [items, rows] = await Promise.all([
-		loadedItems(prisma, scope.id),
-		formularyRows(prisma, scope.id)
-	]);
+	const loading = loadedItems(prisma, scope.id);
+	const names = loading.then(localNamesOf);
+	names.catch(() => {}); // a failure surfaces through Promise.all; don't report it twice
+	const [items, rows] = await Promise.all([loading, formularyRows(prisma, scope.id, names)]);
 	const snapshots = await loadPackageSnapshots(
 		prisma,
 		rows.map((row) => row.ndc),

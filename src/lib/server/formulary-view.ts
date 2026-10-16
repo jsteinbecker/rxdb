@@ -12,7 +12,15 @@ import {fillFromConcept} from '../concept-fill';
  * product; the latest enrichment snapshot supplies routes and label facts the
  * catalog does not model yet.
  */
-export async function formularyRows(db: PrismaClient, scopeId: string): Promise<FormularyRow[]> {
+export async function formularyRows(
+  db: PrismaClient,
+  scopeId: string,
+  /**
+   * formularyItemId -> local concept name; the user's nameOverride still wins.
+   * A promise is awaited only after the rows are read, so callers can load both at once.
+   */
+  localNames: Map<string, string> | Promise<Map<string, string>> = new Map()
+): Promise<FormularyRow[]> {
   const links = await db.formularyItemPackage.findMany({
     where: {
       validTo: null,
@@ -66,6 +74,7 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
   );
   const snapshots = await loadPackageSnapshots(db, ndcs, { withoutLabel: true });
   const directory = await productDirectory(db);
+  const names = await localNames;
 
   // Packages never enriched are placed by their concept rather than left "Not specified".
   return fillFromConcept(links.flatMap((link) => {
@@ -102,7 +111,10 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
         packageId: link.package.id,
         ndc,
         formularyItemId: link.formularyItem.id,
-        formularyItem: itemName(pseudo?.name ?? link.formularyItem.displayName, link.formularyItem),
+        formularyItem: itemName(
+          names.get(link.formularyItem.id) ?? pseudo?.name ?? link.formularyItem.displayName,
+          link.formularyItem
+        ),
         description: facts.description,
         displayTitle: packageDisplayTitle(facts),
         routes: item?.details?.product?.routes ?? [],

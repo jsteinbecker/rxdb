@@ -18,7 +18,7 @@
         "db:migrate": "prisma migrate dev",
         "db:studio": "prisma studio",
         "test": "node --import tsx --test src/lib/server/*.test.ts src/lib/imprints/*.test.ts",
-        "test:db": "RUN_DB_TESTS=1 node --env-file=.env --import tsx --test src/lib/server/catalog-store.integration.test.ts src/lib/server/compound-store.integration.test.ts"
+        "test:db": "RUN_DB_TESTS=1 node --env-file=.env --import tsx --test src/lib/server/catalog-store.integration.test.ts src/lib/server/compound-store.integration.test.ts src/lib/server/local-concept-store.integration.test.ts"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

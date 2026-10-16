@@ -7,6 +7,7 @@ import { prisma } from '$lib/server/prisma';
 import { stagedTree, syncExternalSearch } from '$lib/server/catalog-sync';
 import { defaultScope } from '$lib/server/catalog-formulary';
 import { withPharmClassRulesInTree } from '$lib/server/pharm-class-view';
+import { withLocalConceptsInTree } from '$lib/server/local-concept-view';
 import type { RequestHandler } from './$types';
 
 const DEFAULT_LIMIT = 24;
@@ -25,6 +26,8 @@ export type SearchResult = {
 	identifiers: string[];
 	/** The page that shows it, when one does. */
 	href?: string | null;
+	/** A clinical_drug row that is a local concept (LC code), not an RxNorm concept. */
+	localConcept?: true;
 };
 
 const amount = (value: unknown) => String(Number(Number(value).toPrecision(6)));
@@ -45,7 +48,12 @@ function strengthText(row: {
 /** Rules only change what is displayed, so a failed lookup must not discard a successful search. */
 async function stagedWithRules(tree: Awaited<ReturnType<typeof stagedTree>>) {
 	try {
-		return await withPharmClassRulesInTree(prisma, (await defaultScope(prisma)).id, tree);
+		const scopeId = (await defaultScope(prisma)).id;
+		return await withLocalConceptsInTree(
+			prisma,
+			scopeId,
+			await withPharmClassRulesInTree(prisma, scopeId, tree)
+		);
 	} catch (cause) {
 		console.error('pharm-class rules lookup failed; returning source classes', cause);
 		return tree;
@@ -140,7 +148,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		await Promise.all([
 			prisma.clinicalDrug.findMany({
 				where: { name: { contains: query, mode: 'insensitive' }, entity: activeEntity },
-				select: { id: true, name: true, tty: true },
+				select: { id: true, name: true, tty: true, localConcept: { select: { id: true } } },
 				take: limit
 			}),
 			prisma.ingredient.findMany({
@@ -273,7 +281,8 @@ export const GET: RequestHandler = async ({ url }) => {
 			name: row.name,
 			detail: ttyLabel(row.tty),
 			matchedOn: 'name',
-			identifiers: identifiersByEntity.get(row.id) ?? []
+			identifiers: identifiersByEntity.get(row.id) ?? [],
+			...(row.localConcept ? { localConcept: true as const } : {})
 		});
 	}
 	for (const row of ingredients) {

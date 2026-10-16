@@ -175,6 +175,7 @@ export type ClinicalDrugWhereInput = {
   name?: Prisma.StringFilter<"ClinicalDrug"> | string
   tty?: Prisma.StringNullableFilter<"ClinicalDrug"> | string | null
   entity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
+  localConcept?: Prisma.XOR<Prisma.LocalConceptNullableScalarRelationFilter, Prisma.LocalConceptWhereInput> | null
 }
 
 export type ClinicalDrugOrderByWithRelationInput = {
@@ -183,6 +184,7 @@ export type ClinicalDrugOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   tty?: Prisma.SortOrderInput | Prisma.SortOrder
   entity?: Prisma.EntityOrderByWithRelationInput
+  localConcept?: Prisma.LocalConceptOrderByWithRelationInput
 }
 
 export type ClinicalDrugWhereUniqueInput = Prisma.AtLeast<{
@@ -195,6 +197,7 @@ export type ClinicalDrugWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"ClinicalDrug"> | string
   tty?: Prisma.StringNullableFilter<"ClinicalDrug"> | string | null
   entity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
+  localConcept?: Prisma.XOR<Prisma.LocalConceptNullableScalarRelationFilter, Prisma.LocalConceptWhereInput> | null
 }, "id" | "id_type">
 
 export type ClinicalDrugOrderByWithAggregationInput = {
@@ -221,6 +224,7 @@ export type ClinicalDrugCreateInput = {
   name: string
   tty?: string | null
   entity: Prisma.EntityCreateNestedOneWithoutClinicalDrugInput
+  localConcept?: Prisma.LocalConceptCreateNestedOneWithoutClinicalDrugInput
 }
 
 export type ClinicalDrugUncheckedCreateInput = {
@@ -228,12 +232,14 @@ export type ClinicalDrugUncheckedCreateInput = {
   type?: $Enums.EntityType
   name: string
   tty?: string | null
+  localConcept?: Prisma.LocalConceptUncheckedCreateNestedOneWithoutClinicalDrugInput
 }
 
 export type ClinicalDrugUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tty?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entity?: Prisma.EntityUpdateOneRequiredWithoutClinicalDrugNestedInput
+  localConcept?: Prisma.LocalConceptUpdateOneWithoutClinicalDrugNestedInput
 }
 
 export type ClinicalDrugUncheckedUpdateInput = {
@@ -241,6 +247,7 @@ export type ClinicalDrugUncheckedUpdateInput = {
   type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tty?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  localConcept?: Prisma.LocalConceptUncheckedUpdateOneWithoutClinicalDrugNestedInput
 }
 
 export type ClinicalDrugCreateManyInput = {
@@ -293,6 +300,11 @@ export type ClinicalDrugMinOrderByAggregateInput = {
   tty?: Prisma.SortOrder
 }
 
+export type ClinicalDrugScalarRelationFilter = {
+  is?: Prisma.ClinicalDrugWhereInput
+  isNot?: Prisma.ClinicalDrugWhereInput
+}
+
 export type ClinicalDrugCreateNestedOneWithoutEntityInput = {
   create?: Prisma.XOR<Prisma.ClinicalDrugCreateWithoutEntityInput, Prisma.ClinicalDrugUncheckedCreateWithoutEntityInput>
   connectOrCreate?: Prisma.ClinicalDrugCreateOrConnectWithoutEntityInput
@@ -325,14 +337,30 @@ export type ClinicalDrugUncheckedUpdateOneWithoutEntityNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ClinicalDrugUpdateToOneWithWhereWithoutEntityInput, Prisma.ClinicalDrugUpdateWithoutEntityInput>, Prisma.ClinicalDrugUncheckedUpdateWithoutEntityInput>
 }
 
+export type ClinicalDrugCreateNestedOneWithoutLocalConceptInput = {
+  create?: Prisma.XOR<Prisma.ClinicalDrugCreateWithoutLocalConceptInput, Prisma.ClinicalDrugUncheckedCreateWithoutLocalConceptInput>
+  connectOrCreate?: Prisma.ClinicalDrugCreateOrConnectWithoutLocalConceptInput
+  connect?: Prisma.ClinicalDrugWhereUniqueInput
+}
+
+export type ClinicalDrugUpdateOneRequiredWithoutLocalConceptNestedInput = {
+  create?: Prisma.XOR<Prisma.ClinicalDrugCreateWithoutLocalConceptInput, Prisma.ClinicalDrugUncheckedCreateWithoutLocalConceptInput>
+  connectOrCreate?: Prisma.ClinicalDrugCreateOrConnectWithoutLocalConceptInput
+  upsert?: Prisma.ClinicalDrugUpsertWithoutLocalConceptInput
+  connect?: Prisma.ClinicalDrugWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClinicalDrugUpdateToOneWithWhereWithoutLocalConceptInput, Prisma.ClinicalDrugUpdateWithoutLocalConceptInput>, Prisma.ClinicalDrugUncheckedUpdateWithoutLocalConceptInput>
+}
+
 export type ClinicalDrugCreateWithoutEntityInput = {
   name: string
   tty?: string | null
+  localConcept?: Prisma.LocalConceptCreateNestedOneWithoutClinicalDrugInput
 }
 
 export type ClinicalDrugUncheckedCreateWithoutEntityInput = {
   name: string
   tty?: string | null
+  localConcept?: Prisma.LocalConceptUncheckedCreateNestedOneWithoutClinicalDrugInput
 }
 
 export type ClinicalDrugCreateOrConnectWithoutEntityInput = {
@@ -354,9 +382,53 @@ export type ClinicalDrugUpdateToOneWithWhereWithoutEntityInput = {
 export type ClinicalDrugUpdateWithoutEntityInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tty?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  localConcept?: Prisma.LocalConceptUpdateOneWithoutClinicalDrugNestedInput
 }
 
 export type ClinicalDrugUncheckedUpdateWithoutEntityInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  tty?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  localConcept?: Prisma.LocalConceptUncheckedUpdateOneWithoutClinicalDrugNestedInput
+}
+
+export type ClinicalDrugCreateWithoutLocalConceptInput = {
+  name: string
+  tty?: string | null
+  entity: Prisma.EntityCreateNestedOneWithoutClinicalDrugInput
+}
+
+export type ClinicalDrugUncheckedCreateWithoutLocalConceptInput = {
+  id: string
+  type?: $Enums.EntityType
+  name: string
+  tty?: string | null
+}
+
+export type ClinicalDrugCreateOrConnectWithoutLocalConceptInput = {
+  where: Prisma.ClinicalDrugWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClinicalDrugCreateWithoutLocalConceptInput, Prisma.ClinicalDrugUncheckedCreateWithoutLocalConceptInput>
+}
+
+export type ClinicalDrugUpsertWithoutLocalConceptInput = {
+  update: Prisma.XOR<Prisma.ClinicalDrugUpdateWithoutLocalConceptInput, Prisma.ClinicalDrugUncheckedUpdateWithoutLocalConceptInput>
+  create: Prisma.XOR<Prisma.ClinicalDrugCreateWithoutLocalConceptInput, Prisma.ClinicalDrugUncheckedCreateWithoutLocalConceptInput>
+  where?: Prisma.ClinicalDrugWhereInput
+}
+
+export type ClinicalDrugUpdateToOneWithWhereWithoutLocalConceptInput = {
+  where?: Prisma.ClinicalDrugWhereInput
+  data: Prisma.XOR<Prisma.ClinicalDrugUpdateWithoutLocalConceptInput, Prisma.ClinicalDrugUncheckedUpdateWithoutLocalConceptInput>
+}
+
+export type ClinicalDrugUpdateWithoutLocalConceptInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  tty?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entity?: Prisma.EntityUpdateOneRequiredWithoutClinicalDrugNestedInput
+}
+
+export type ClinicalDrugUncheckedUpdateWithoutLocalConceptInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
   name?: Prisma.StringFieldUpdateOperationsInput | string
   tty?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -369,6 +441,7 @@ export type ClinicalDrugSelect<ExtArgs extends runtime.Types.Extensions.Internal
   name?: boolean
   tty?: boolean
   entity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
+  localConcept?: boolean | Prisma.ClinicalDrug$localConceptArgs<ExtArgs>
 }, ExtArgs["result"]["clinicalDrug"]>
 
 export type ClinicalDrugSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -397,6 +470,7 @@ export type ClinicalDrugSelectScalar = {
 export type ClinicalDrugOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "name" | "tty", ExtArgs["result"]["clinicalDrug"]>
 export type ClinicalDrugInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
+  localConcept?: boolean | Prisma.ClinicalDrug$localConceptArgs<ExtArgs>
 }
 export type ClinicalDrugIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
@@ -409,6 +483,7 @@ export type $ClinicalDrugPayload<ExtArgs extends runtime.Types.Extensions.Intern
   name: "ClinicalDrug"
   objects: {
     entity: Prisma.$EntityPayload<ExtArgs>
+    localConcept: Prisma.$LocalConceptPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -810,6 +885,7 @@ readonly fields: ClinicalDrugFieldRefs;
 export interface Prisma__ClinicalDrugClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   entity<T extends Prisma.EntityDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EntityDefaultArgs<ExtArgs>>): Prisma.Prisma__EntityClient<runtime.Types.Result.GetResult<Prisma.$EntityPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  localConcept<T extends Prisma.ClinicalDrug$localConceptArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClinicalDrug$localConceptArgs<ExtArgs>>): Prisma.Prisma__LocalConceptClient<runtime.Types.Result.GetResult<Prisma.$LocalConceptPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1241,6 +1317,25 @@ export type ClinicalDrugDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many ClinicalDrugs to delete.
    */
   limit?: number
+}
+
+/**
+ * ClinicalDrug.localConcept
+ */
+export type ClinicalDrug$localConceptArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the LocalConcept
+   */
+  select?: Prisma.LocalConceptSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the LocalConcept
+   */
+  omit?: Prisma.LocalConceptOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.LocalConceptInclude<ExtArgs> | null
+  where?: Prisma.LocalConceptWhereInput
 }
 
 /**

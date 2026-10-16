@@ -63,7 +63,8 @@ export const MappingType = {
   equivalent: 'equivalent',
   broader: 'broader',
   narrower: 'narrower',
-  candidate: 'candidate'
+  candidate: 'candidate',
+  supersedes: 'supersedes'
 } as const
 
 export type MappingType = (typeof MappingType)[keyof typeof MappingType]
