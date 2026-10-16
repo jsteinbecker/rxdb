@@ -10,6 +10,7 @@
 // It is deliberately timid: a passage that names nobody, or names this NDC
 // alongside a sibling, stays. Pure and shared, like $lib/spl-sections.ts.
 
+import type { LabelBlock } from './spl-sections';
 import type { SplProduct } from './spl-ingredients';
 import { toNdc11 } from './ndc';
 import { mlPer, toMg } from './units';
@@ -184,4 +185,172 @@ export function labelScope(
 		}))
 		.filter((entry) => entry.family !== mine.family || entry.strengths.length);
 	return siblings.length ? { own: mine, siblings } : null;
+}
+
+// ── Filtering the label's blocks ─────────────────────────────────────────────
+
+/** What one section lost, for the disclaimer above it. */
+export interface Omission {
+	reason: 'form' | 'strength';
+	count: number;
+	unit: 'passage' | 'row';
+	/** Who the hidden text was for: `oral suspension`, `500 mg vial`. */
+	others: string[];
+	/** Who this NDC is: `a tablet`, `the 1 g vial`. */
+	own: string;
+}
+
+export interface FilteredBlocks {
+	blocks: LabelBlock[];
+	omissions: Omission[];
+}
+
+/** How label prose names each family. `other` is never named. */
+export const FORM_TERMS: Record<FormFamily, RegExp | null> = {
+	tablet: /\btablets?\b|\bcaplets?\b/i,
+	capsule: /\bcapsules?\b/i,
+	'oral-suspension': /\bsuspensions?\b/i,
+	'oral-solution': /\boral\s+solutions?\b|\bsyrups?\b|\belixirs?\b/i,
+	injection: /\binject(?:ion|able)s?\b|\bvials?\b|\bintravenous(?:ly)?\b|\bintramuscular(?:ly)?\b|\binfusions?\b/i,
+	topical: null,
+	ophthalmic: /\bophthalmic\b|\beye\s+drops?\b/i,
+	other: null
+};
+
+// Making a powder up. A tablet or capsule never is, so on an oral solid's
+// label this is always about a sibling — the one $lib/ingredient-content.ts's
+// `isOralSolidForm` relies on too.
+const RECONSTITUTION = /\b(?:re)?constitut|\bshake\s+(?:well|the\s+bottle)|\badd\b[^.]*\bwater\b|\bdiluent\b/i;
+
+const isOralSolid = (family: FormFamily) => family === 'tablet' || family === 'capsule';
+
+const article = (text: string) => (/^[aeiou]/i.test(text) ? `an ${text}` : `a ${text}`);
+
+const runsText = (runs: { text: string }[]) => runs.map((run) => run.text).join('');
+
+/** Sibling forms a passage names while not naming this NDC's; null if none. */
+function otherFormsIn(text: string, scope: LabelScope): string[] | null {
+	if (FORM_TERMS[scope.own.family]?.test(text)) return null;
+	const others = scope.siblings.filter((s) => s.family !== scope.own.family);
+	let named = others.filter((s) => FORM_TERMS[s.family]?.test(text));
+	if (!named.length && isOralSolid(scope.own.family) && RECONSTITUTION.test(text))
+		named = others.filter((s) => !isOralSolid(s.family));
+	return named.length ? [...new Set(named.map((s) => s.formLabel))] : null;
+}
+
+/** The plain text of a block, for matching. */
+function blockText(block: LabelBlock): string {
+	switch (block.type) {
+		case 'heading':
+			return block.text;
+		case 'paragraph':
+			return runsText(block.runs);
+		case 'list':
+			return block.items.map((item) => item.map(blockText).join(' ')).join(' ');
+		case 'table':
+			return block.caption ?? '';
+	}
+}
+
+interface Section {
+	kind: 'section';
+	heading: Extract<LabelBlock, { type: 'heading' }> | null;
+	body: (LabelBlock | Section)[];
+}
+
+// Not `'body' in item`: a table has a body too.
+const isSection = (item: LabelBlock | Section): item is Section => 'kind' in item;
+
+/** Nest the flat block list under its headings, by level. */
+function nest(blocks: LabelBlock[]): Section {
+	const root: Section = { kind: 'section', heading: null, body: [] };
+	const stack: Section[] = [root];
+	for (const block of blocks) {
+		if (block.type !== 'heading') {
+			stack[stack.length - 1].body.push(block);
+			continue;
+		}
+		while (stack.length > 1 && stack[stack.length - 1].heading!.level >= block.level) stack.pop();
+		const section: Section = { kind: 'section', heading: block, body: [] };
+		stack[stack.length - 1].body.push(section);
+		stack.push(section);
+	}
+	return root;
+}
+
+class Tally {
+	private counts = new Map<string, Omission>();
+	constructor(private scope: LabelScope) {}
+	add(reason: Omission['reason'], unit: Omission['unit'], others: string[]) {
+		const key = `${reason}|${unit}|${others.join('|')}`;
+		const entry = this.counts.get(key);
+		if (entry) entry.count++;
+		else
+			this.counts.set(key, {
+				reason,
+				count: 1,
+				unit,
+				others,
+				own:
+					reason === 'form'
+						? article(this.scope.own.formLabel)
+						: `the ${this.scope.own.strengths[0]?.text ?? this.scope.own.formLabel}`
+			});
+	}
+	get omissions() {
+		return [...this.counts.values()];
+	}
+}
+
+/** A leaf block with what does not apply removed; null when nothing is left. */
+function filterBlock(block: LabelBlock, scope: LabelScope, tally: Tally): LabelBlock | null {
+	if (block.type === 'list') {
+		const items = block.items.flatMap((item) => {
+			const others = otherFormsIn(item.map(blockText).join(' '), scope);
+			if (others) {
+				tally.add('form', 'passage', others);
+				return [];
+			}
+			return [item];
+		});
+		return items.length ? { ...block, items } : null;
+	}
+	const others = otherFormsIn(blockText(block), scope);
+	if (others) {
+		tally.add('form', 'passage', others);
+		return null;
+	}
+	return block;
+}
+
+/** A section's kept blocks, flattened; a heading goes when all under it went. */
+function filterSection(section: Section, scope: LabelScope, tally: Tally): LabelBlock[] {
+	if (section.heading) {
+		const others = otherFormsIn(section.heading.text, scope);
+		if (others) {
+			tally.add('form', 'passage', others);
+			return [];
+		}
+	}
+	let removed = false;
+	const kept = section.body.flatMap((item) => {
+		const out = isSection(item)
+			? filterSection(item, scope, tally)
+			: [filterBlock(item, scope, tally)].filter((b) => b !== null);
+		if (!out.length) removed = true;
+		return out;
+	});
+	if (!section.heading) return kept;
+	if (removed && !kept.some((block) => block.type !== 'heading')) return [];
+	return [section.heading, ...kept];
+}
+
+/**
+ * The blocks of one label section that apply to the NDC `scope` describes,
+ * and what was taken out. Ambiguous text is always kept.
+ */
+export function filterLabelBlocks(blocks: LabelBlock[], scope: LabelScope): FilteredBlocks {
+	const tally = new Tally(scope);
+	const kept = filterSection(nest(blocks), scope, tally);
+	return { blocks: kept, omissions: tally.omissions };
 }

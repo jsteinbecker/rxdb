@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseSplIngredients } from '../spl-ingredients';
-import { formFamilyOf, labelScope } from '../label-relevance';
+import type { LabelBlock } from '../spl-sections';
+import { filterLabelBlocks, formFamilyOf, labelScope } from '../label-relevance';
 
 // One `<manufacturedProduct>` with a single active ingredient, in the shape
 // the SPL strength tests use.
@@ -137,4 +138,82 @@ test('labelScope: a single-product label has nothing to filter', () => {
 
 test('labelScope: a kit diluent part is not a sibling dose form', () => {
 	assert.equal(labelScope(parseSplIngredients(KIT), '44444020605'), null);
+});
+
+// ── Dose form ────────────────────────────────────────────────────────────────
+
+const h = (level: number, text: string): LabelBlock => ({ type: 'heading', level, text });
+const p = (text: string): LabelBlock => ({ type: 'paragraph', runs: [{ text }] });
+const list = (...items: string[]): LabelBlock => ({ type: 'list', ordered: false, items: items.map((t) => [p(t)]) });
+const textOf = (blocks: LabelBlock[]): string[] =>
+	blocks.flatMap((b) =>
+		b.type === 'heading' ? [b.text] : b.type === 'paragraph' ? [b.runs.map((r) => r.text).join('')] : b.type === 'list' ? b.items.flatMap(textOf) : []
+	);
+
+const tabletScope = () => labelScope(parseSplIngredients(TABLET_AND_SUSPENSION), '11111010030')!;
+const suspensionScope = () => labelScope(parseSplIngredients(TABLET_AND_SUSPENSION), '11111020080')!;
+
+test('filterLabelBlocks drops a subsection headed for another form, as one passage', () => {
+	const blocks = [
+		h(1, '2.1 Dosing'),
+		p('Take one tablet twice daily.'),
+		h(1, '2.3 Preparation of Oral Suspension'),
+		p('Tap the bottle until the powder flows freely.'),
+		p('Add water in two portions.')
+	];
+	const result = filterLabelBlocks(blocks, tabletScope());
+	assert.deepEqual(textOf(result.blocks), ['2.1 Dosing', 'Take one tablet twice daily.']);
+	assert.deepEqual(result.omissions, [
+		{ reason: 'form', count: 1, unit: 'passage', others: ['oral suspension'], own: 'a tablet' }
+	]);
+});
+
+test('filterLabelBlocks drops reconstitution prose on an oral solid NDC', () => {
+	const blocks = [p('Constitute the powder with 63 mL of water; shake well.')];
+	assert.deepEqual(filterLabelBlocks(blocks, tabletScope()).blocks, []);
+});
+
+test('filterLabelBlocks keeps reconstitution prose on the suspension NDC', () => {
+	const blocks = [p('Constitute the powder with 63 mL of water; shake well.')];
+	const result = filterLabelBlocks(blocks, suspensionScope());
+	assert.deepEqual(result.blocks, blocks);
+	assert.deepEqual(result.omissions, []);
+});
+
+test('filterLabelBlocks keeps a passage naming both forms', () => {
+	const blocks = [p('Tablets and oral suspension may be taken with or without food.')];
+	assert.deepEqual(filterLabelBlocks(blocks, tabletScope()).blocks, blocks);
+	assert.deepEqual(filterLabelBlocks(blocks, suspensionScope()).blocks, blocks);
+});
+
+test("filterLabelBlocks drops only the other form's list item", () => {
+	const blocks = [list('Tablets: swallow whole.', 'Oral suspension: shake well before use.')];
+	const result = filterLabelBlocks(blocks, tabletScope());
+	assert.deepEqual(textOf(result.blocks), ['Tablets: swallow whole.']);
+	assert.equal(result.omissions[0].count, 1);
+});
+
+test('filterLabelBlocks drops a heading left with nothing under it, keeps one with something', () => {
+	const blocks = [
+		h(1, 'Administration'),
+		p('Shake the oral suspension well before each use.'),
+		h(1, 'Missed dose'),
+		p('Shake the oral suspension well.'),
+		p('Take the missed dose as soon as remembered.')
+	];
+	const result = filterLabelBlocks(blocks, tabletScope());
+	assert.deepEqual(textOf(result.blocks), ['Missed dose', 'Take the missed dose as soon as remembered.']);
+});
+
+test('filterLabelBlocks drops a table captioned for another form', () => {
+	const table: LabelBlock = {
+		type: 'table',
+		caption: 'Table 2: Amount of water for constitution of the oral suspension',
+		head: [],
+		body: [[{ runs: [{ text: '80 mL' }], header: false }]],
+		foot: []
+	};
+	const result = filterLabelBlocks([table], tabletScope());
+	assert.deepEqual(result.blocks, []);
+	assert.equal(result.omissions[0].reason, 'form');
 });
