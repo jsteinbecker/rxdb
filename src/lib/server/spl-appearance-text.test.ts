@@ -149,3 +149,24 @@ test('a How Supplied table with one row per strength splits into one description
 	assert.ok(refined.imprint === '40;VLE 157' || refined.imprint === 'VLE 157;40', refined.imprint ?? '');
 	assert.ok(!refined.labelText?.text.includes('VLE 155'));
 });
+
+test('a flattened table row with two imprint verbs does not merge the rows (42806-410)', () => {
+	const text =
+		'16 HOW SUPPLIED/STORAGE AND HANDLING Bupropion hydrochloride extended-release tablets, USP (SR), for oral administration, are available as 100 mg Aquamarine, round, biconvex, film-coated tablets, debossed “E” over “410” on one side and plain on the other side and supplied as: NDC 42806-410-60 bottles of 60 NDC 42806-410-01 bottles of 100 NDC 42806-410-05 bottles of 500 150 mg Plum, round, biconvex, film-coated tablets, debossed “E” over “415” on one side and plain on the other side and supplied as: NDC 42806-415-60 bottles of 60 NDC 42806-415-01 bottles of 100 NDC 42806-415-52 bottles of 250 NDC 42806-415-05 bottles of 500 200 mg Light pink, round, biconvex, film-coated tablets, debossed “E” on one side and debossed “411” on the other side and supplied as: NDC 42806-411-60 bottles of 60 Store at 20° to 25°C (68° to 77°F).';
+	const found = parseAppearanceSection(text, 'how_supplied');
+	assert.deepEqual(
+		found.map((d) => [d.imprint, d.strengths, d.ndcProducts]),
+		[
+			['E 410', ['100 mg'], ['42806-410']],
+			['E 415', ['150 mg'], ['42806-415']],
+			['E;411', ['200 mg'], ['42806-411']]
+		]
+	);
+	const [refined] = refineAppearances([coded({ imprint: 'E;over;410', colors: ['blue'], shape: 'ROUND' })], [{ key: 'how_supplied', text }], {
+		ndc: '42806-0410-01',
+		strengths: ['100 mg/1']
+	});
+	assert.equal(refined.imprint, 'E 410');
+	assert.deepEqual(refined.colors, ['turquoise']);
+	assert.equal(refined.colorText, 'aquamarine');
+});

@@ -260,6 +260,18 @@ test(
               .status,
             'active'
           );
+          // A snapshot stored before "product found, package missing" read as unlisted
+          // (33358-0028-60): no SPL and a stale RxNav ACTIVE still take it off the formulary.
+          await link();
+          await refreshPackageEligibility(nested, [
+            { ...updated, listed: null, splPresent: false, rxcuiStatus: 'ACTIVE' }
+          ]);
+          assert.equal(
+            (await tx.entity.findUniqueOrThrow({ where: { id: first.entityId } })).status,
+            'catalog-excluded'
+          );
+          assert.equal(await linked(), 0);
+          await refreshPackageEligibility(nested, [updated]);
           await tx.entity.update({ where: { id: first.entityId }, data: { status: 'inactive' } });
           await refreshPackageEligibility(nested, [updated]);
           assert.equal(

@@ -19,6 +19,7 @@
       let editingName = $state(false);
       let nameDraft = $state('');
       let percentDraft = $state(false);
+      let refreshing = $state(false);
 
       const item = $derived(data.item);
       const layout = $derived(packageLayout(data.packages));
@@ -36,6 +37,7 @@
       const level = $derived(item.target.kind === 'concept' ? (item.tty ?? 'Concept') : 'NDC');
       const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
       const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+      const columns = $derived(2 + Number(showAppearance) + Number(layout.showDoseForm) + Number(layout.showRoutes));
 </script>
 
 <svelte:head>
@@ -65,6 +67,28 @@
                   · loaded {new Date(item.loadedAt).toLocaleDateString()}
                   · {data.scope.name}
             </p>
+            <form
+                  method="POST"
+                  action="?/refresh"
+                  class="refresh"
+                  use:enhance={() => {
+                        refreshing = true;
+                        return async ({update}) => {
+                              try {
+                                    await update();
+                              } finally {
+                                    refreshing = false;
+                              }
+                        };
+                  }}
+            >
+                  <button disabled={refreshing}>{refreshing ? 'Refreshing…' : 'Refresh'}</button>
+                  {#if form?.refreshMessage}
+                        <span class="error" role="alert">{form.refreshMessage}</span>
+                  {:else if form?.refreshed}
+                        <span role="status">Refreshed · {plural(form.refreshed.packagesLinked, 'package')} linked.</span>
+                  {/if}
+            </form>
             {#if data.related}
                   <nav class="related" aria-label="Related formulary items">
         <span class="related-label"
@@ -273,76 +297,100 @@
                         {/each}
                   {/if}
             </p>
-            {#each layout.groups as group (group.labeler)}
-                  <section class="labeler">
-                        <h3>{group.labeler} <span class="count">{plural(group.count, 'package')}</span></h3>
-                        {#each group.products as product (product.product)}
-                              {@const spans = showAppearance ? appearanceSpans(product.packages) : []}
-                              <h4>{product.product}</h4>
-                              <table>
-                                    <thead>
-                                    <tr>
-                                          <th>NDC</th>
-                                          <th>Pack</th>
-                                          {#if showAppearance}
-                                                <th>Appearance</th>
-                                          {/if}
-                                          {#if layout.showDoseForm}
-                                                <th>Dose form</th>
-                                          {/if}
-                                          {#if layout.showRoutes}
-                                                <th>Routes</th>
-                                          {/if}
-                                    </tr>
-                                    </thead>
+            {#snippet headerRow()}
+                  <tr>
+                        <th>NDC</th>
+                        <th>Pack</th>
+                        {#if showAppearance}
+                              <th>Appearance</th>
+                        {/if}
+                        {#if layout.showDoseForm}
+                              <th>Dose form</th>
+                        {/if}
+                        {#if layout.showRoutes}
+                              <th>Routes</th>
+                        {/if}
+                  </tr>
+            {/snippet}
+            {#snippet packageRows(packages: PackageLine[])}
+                  {@const spans = showAppearance ? appearanceSpans(packages) : []}
+                  {#each packages as pkg, row (pkg.packageId)}
+                        <tr>
+                              <td class="mono"><a
+                                    href="/formulary/ndc/{pkg.ndc}">{formatNdc(pkg.ndc)}</a></td>
+                              <td>
+                                    {pkg.pack ?? '—'}
+                                    {#if pkg.multiDose}<span class="tag">multi-dose</span>{/if}
+                              </td>
+                              {#if showAppearance && spans[row] > 0}
+                                    <td class="appearance" class:merged={spans[row] > 1}
+                                        rowspan={spans[row]}>
+                                          {#each data.appearances[pkg.ndc]?.list ?? [] as appearance, i (appearance.productCode ?? i)}
+                                                {@const entry = data.appearances[pkg.ndc]}
+                                                {@const photo = entry.photos[i]}
+                                                <PillMockup
+                                                      {appearance}
+                                                      doseForm={entry.doseForm}
+                                                      layout={photo ? (data.layouts[pillImageKey(photo.setId, photo.image)] ?? null) : null}
+                                                      photoUrl={photo ? pillPhotoUrl(photo) : null}
+                                                      size={46}
+                                                      compact
+                                                />
+                                          {:else}—
+                                          {/each}
+                                    </td>
+                              {/if}
+                              {#if layout.showDoseForm}
+                                    <td
+                                          class:inferred={pkg.inferred?.doseForm}
+                                          title={pkg.inferred?.doseForm ? 'From the RxNorm concept and sibling labels; this package has not been enriched' : undefined}
+                                    >{pkg.doseForm ?? '—'}</td>
+                              {/if}
+                              {#if layout.showRoutes}
+                                    <td>
+                                          {#each pkg.routes as route (route)}
+                                                <RouteBadge {route}/>
+                                          {:else}—
+                                          {/each}
+                                    </td>
+                              {/if}
+                        </tr>
+                  {/each}
+            {/snippet}
+            {#if layout.groups.length > 1}
+                  <!-- Several labelers read best side by side: one table, grouped by labeler then product. -->
+                  <table class="unified">
+                        <thead>{@render headerRow()}</thead>
+                        {#each layout.groups as group (group.labeler)}
+                              <tbody>
+                              <tr class="labeler-row">
+                                    <th colspan={columns}>{group.labeler} <span class="count">{plural(group.count, 'package')}</span></th>
+                              </tr>
+                              </tbody>
+                              {#each group.products as product (product.product)}
                                     <tbody>
-                                    {#each product.packages as pkg, row (pkg.packageId)}
-                                          <tr>
-                                                <td class="mono"><a
-                                                      href="/formulary/ndc/{pkg.ndc}">{formatNdc(pkg.ndc)}</a></td>
-                                                <td>
-                                                      {pkg.pack ?? '—'}
-                                                      {#if pkg.multiDose}<span class="tag">multi-dose</span>{/if}
-                                                </td>
-                                                {#if showAppearance && spans[row] > 0}
-                                                      <td class="appearance" class:merged={spans[row] > 1}
-                                                          rowspan={spans[row]}>
-                                                            {#each data.appearances[pkg.ndc]?.list ?? [] as appearance, i (appearance.productCode ?? i)}
-                                                                  {@const entry = data.appearances[pkg.ndc]}
-                                                                  {@const photo = entry.photos[i]}
-                                                                  <PillMockup
-                                                                        {appearance}
-                                                                        doseForm={entry.doseForm}
-                                                                        layout={photo ? (data.layouts[pillImageKey(photo.setId, photo.image)] ?? null) : null}
-                                                                        photoUrl={photo ? pillPhotoUrl(photo) : null}
-                                                                        size={46}
-                                                                        compact
-                                                                  />
-                                                            {:else}—
-                                                            {/each}
-                                                      </td>
-                                                {/if}
-                                                {#if layout.showDoseForm}
-                                                      <td
-                                                            class:inferred={pkg.inferred?.doseForm}
-                                                            title={pkg.inferred?.doseForm ? 'From the RxNorm concept and sibling labels; this package has not been enriched' : undefined}
-                                                      >{pkg.doseForm ?? '—'}</td>
-                                                {/if}
-                                                {#if layout.showRoutes}
-                                                      <td>
-                                                            {#each pkg.routes as route (route)}
-                                                                  <RouteBadge {route}/>
-                                                            {:else}—
-                                                            {/each}
-                                                      </td>
-                                                {/if}
-                                          </tr>
-                                    {/each}
+                                    <tr class="product-row">
+                                          <th colspan={columns}>{product.product}</th>
+                                    </tr>
+                                    {@render packageRows(product.packages)}
                                     </tbody>
-                              </table>
+                              {/each}
                         {/each}
-                  </section>
-            {/each}
+                  </table>
+            {:else}
+                  {#each layout.groups as group (group.labeler)}
+                        <section class="labeler">
+                              <h3>{group.labeler} <span class="count">{plural(group.count, 'package')}</span></h3>
+                              {#each group.products as product (product.product)}
+                                    <h4>{product.product}</h4>
+                                    <table>
+                                          <thead>{@render headerRow()}</thead>
+                                          <tbody>{@render packageRows(product.packages)}</tbody>
+                                    </table>
+                              {/each}
+                        </section>
+                  {/each}
+            {/if}
             {#if layout.pendingCount}
                   <!-- Open by default only when nothing above has detail to show. -->
                   <details class="pending" open={!layout.groups.length}>
@@ -558,6 +606,27 @@
       .labeler h3 {
             margin: 1.5rem 0 0;
             font-size: 1.05rem;
+      }
+
+      .unified {
+            margin-top: 1rem;
+      }
+
+      .unified .labeler-row th {
+            padding-top: 1rem;
+            border-bottom: 1px solid #c9d2dd;
+            color: #18212f;
+            font-size: 1.05rem;
+            letter-spacing: 0;
+            text-transform: none;
+      }
+
+      .unified .product-row th {
+            background: #f5f7fa;
+            color: #3b4656;
+            font-size: 0.9rem;
+            letter-spacing: 0;
+            text-transform: none;
       }
 
       .labeler h4 {

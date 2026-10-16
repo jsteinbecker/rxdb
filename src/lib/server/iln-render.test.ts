@@ -171,3 +171,14 @@ test('uniformText gives unmodified strings on a face one size, leaving sized one
 	for (const m of drawPill(appearance, 'TABLET', null, { uniformText: true }).views[0].marks)
 		assert.ok(!('auto' in m));
 });
+
+test('a proportioned capsule outline draws tablets and two-piece capsules at that proportion', () => {
+	const base = { productCode: null, colors: ['white'], colorText: null, shapeCode: null, shapeText: null, sizeMm: null, score: null, imprint: 'ABC' };
+	const plain = drawPill({ ...base, shape: 'CAPSULE' }, 'TABLET').views[0];
+	const long = drawPill({ ...base, shape: 'LONG CAPSULE' }, 'TABLET').views[0];
+	assert.ok(long.width / long.height > plain.width / plain.height);
+	const shell = drawPill({ ...base, colors: ['white', 'blue'], shape: 'STOUT CAPSULE' }, 'CAPSULE').views[0];
+	const plainShell = drawPill({ ...base, colors: ['white', 'blue'], shape: 'CAPSULE' }, 'CAPSULE').views[0];
+	assert.equal(shell.label, 'CAPSULE');
+	assert.ok(shell.width / shell.height < plainShell.width / plainShell.height);
+});

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import RxCui from '$lib/components/RxCui.svelte';
       import {enhance} from '$app/forms';
+      import {SvelteMap} from 'svelte/reactivity';
       import {naturalCompare} from '$lib/natural-sort';
       import type {LoadedItem} from '$lib/server/catalog-formulary';
 
@@ -8,8 +9,12 @@
 
 	let filter = $state('');
 	let level = $state<'all' | 'concept' | 'package'>('all');
-	let pending = $state<{ id: string; action: 'update' | 'remove' } | null>(null);
+	// Per-row actions in flight, so several rows can refresh at once without resetting each other.
+	const pending = new SvelteMap<string, 'update' | 'remove'>();
 	let reloadingAll = $state(false);
+	let reloadingSelected = $state(false);
+	let selected = $state<Set<string>>(new Set());
+	const busy = $derived(reloadingAll || reloadingSelected);
 
 	// Keep the filter when returning from an item's page.
 	export const snapshot = {
@@ -37,6 +42,28 @@
 			)
 			.sort((a: LoadedItem, b: LoadedItem) => naturalCompare(a.displayName, b.displayName));
 	});
+
+	// Only count selections still on the page (removed items drop out).
+	const selectedItems = $derived(data.items.filter((item: LoadedItem) => selected.has(item.formularyItemId)));
+	const allShownSelected = $derived(
+		items.length > 0 && items.every((item: LoadedItem) => selected.has(item.formularyItemId))
+	);
+
+	const toggle = (id: string, on: boolean) => {
+		const next = new Set(selected);
+		if (on) next.add(id);
+		else next.delete(id);
+		selected = next;
+	};
+
+	const toggleShown = (on: boolean) => {
+		const next = new Set(selected);
+		for (const item of items) {
+			if (on) next.add(item.formularyItemId);
+			else next.delete(item.formularyItemId);
+		}
+		selected = next;
+	};
 
 	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -107,11 +134,55 @@
 				};
 			}}
 		>
-			<button class="reload-all" disabled={!data.items.length || reloadingAll || pending !== null}>
+			<button class="reload-all" disabled={!data.items.length || busy || pending.size > 0}>
 				{reloadingAll ? 'Refreshing all…' : 'Refresh all'}
 			</button>
 		</form>
 	</div>
+
+	{#if items.length}
+		<div class="selection">
+			<label>
+				<input
+					type="checkbox"
+					checked={allShownSelected}
+					indeterminate={!allShownSelected && items.some((item: LoadedItem) => selected.has(item.formularyItemId))}
+					onchange={(event) => toggleShown(event.currentTarget.checked)}
+					disabled={busy}
+				/>
+				Select all shown
+			</label>
+			{#if selectedItems.length}
+				<span class="small">{plural(selectedItems.length, 'item')} selected</span>
+				<button type="button" class="link" onclick={() => (selected = new Set())} disabled={busy}>Clear</button>
+			{/if}
+			<form
+				method="POST"
+				action="?/reloadSelected"
+				use:enhance={({ cancel }) => {
+					if (!selectedItems.length) return cancel();
+					reloadingSelected = true;
+					return async ({ result, update }) => {
+						try {
+							await update();
+							if (result.type === 'success') selected = new Set();
+						} finally {
+							reloadingSelected = false;
+						}
+					};
+				}}
+			>
+				{#each selectedItems as item (item.formularyItemId)}
+					<input type="hidden" name="formularyItemId" value={item.formularyItemId} />
+				{/each}
+				<button class="reload-selected" disabled={!selectedItems.length || busy || pending.size > 0}>
+					{reloadingSelected
+						? `Refreshing ${plural(selectedItems.length, 'item')}…`
+						: `Refresh selected${selectedItems.length ? ` (${selectedItems.length})` : ''}`}
+				</button>
+			</form>
+		</div>
+	{/if}
 
 	{#if !data.items.length}
 		<p class="empty">
@@ -122,7 +193,14 @@
 	{:else}
 		<ul class="items">
 			{#each items as item (item.formularyItemId)}
-				<li>
+				<li class:selected={selected.has(item.formularyItemId)}>
+					<input
+						type="checkbox"
+						aria-label="Select {item.displayName}"
+						checked={selected.has(item.formularyItemId)}
+						onchange={(event) => toggle(item.formularyItemId, event.currentTarget.checked)}
+						disabled={busy}
+					/>
 					<span class="level" class:package={item.target.kind === 'package'}>{levelOf(item)}</span>
 					<span class="desc">
 						<a href="/formulary/items/{item.formularyItemId}">{item.displayName}</a>
@@ -138,10 +216,14 @@
 						method="POST"
 						action="?/update"
 						use:enhance={() => {
-							pending = { id: item.formularyItemId, action: 'update' };
+							const id = item.formularyItemId;
+							pending.set(id, 'update');
 							return async ({ update }) => {
-								await update();
-								pending = null;
+								try {
+									await update();
+								} finally {
+									pending.delete(id);
+								}
 							};
 						}}
 					>
@@ -152,8 +234,8 @@
 							name="target"
 							value={item.target.kind === 'concept' ? item.target.rxcui : item.target.ndc}
 						/>
-						<button disabled={reloadingAll || pending?.id === item.formularyItemId}>
-							{pending?.id === item.formularyItemId && pending.action === 'update'
+						<button disabled={busy || pending.has(item.formularyItemId)}>
+							{pending.get(item.formularyItemId) === 'update'
 								? 'Refreshing…'
 								: 'Refresh'}
 						</button>
@@ -168,16 +250,20 @@
 									: `NDC ${formatNdc(item.target.ndc)}`;
 							if (data.settings.confirmRemove && !confirm(`Remove ${scope} from the formulary?`))
 								return cancel();
-							pending = { id: item.formularyItemId, action: 'remove' };
+							const id = item.formularyItemId;
+							pending.set(id, 'remove');
 							return async ({ update }) => {
-								await update();
-								pending = null;
+								try {
+									await update();
+								} finally {
+									pending.delete(id);
+								}
 							};
 						}}
 					>
 						<input type="hidden" name="formularyItemId" value={item.formularyItemId} />
-						<button class="danger" disabled={reloadingAll || pending?.id === item.formularyItemId}
-							>{pending?.id === item.formularyItemId && pending.action === 'remove' ? 'Removing…' : 'Remove'}</button
+						<button class="danger" disabled={busy || pending.has(item.formularyItemId)}
+							>{pending.get(item.formularyItemId) === 'remove' ? 'Removing…' : 'Remove'}</button
 						>
 					</form>
 				</li>
@@ -248,6 +334,52 @@
 		font-weight: 650;
 		white-space: nowrap;
 		cursor: pointer;
+	}
+
+	.selection {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin: 0 0 0.75rem;
+		font-size: 0.85rem;
+	}
+
+	.selection label {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		cursor: pointer;
+	}
+
+	.selection form {
+		margin-left: auto;
+	}
+
+	button.reload-selected {
+		border: 1px solid #3464a5;
+		border-radius: 0.55rem;
+		background: white;
+		color: #3464a5;
+		padding: 0.4rem 0.75rem;
+		font: inherit;
+		font-weight: 650;
+		white-space: nowrap;
+		cursor: pointer;
+	}
+
+	button.link {
+		border: 0;
+		background: none;
+		color: #3464a5;
+		padding: 0;
+		font: inherit;
+		cursor: pointer;
+		text-decoration: underline;
+	}
+
+	.items li.selected {
+		border-color: #9db8de;
+		background: #f5f8fd;
 	}
 
 	.items {

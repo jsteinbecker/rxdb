@@ -2,14 +2,22 @@ import { fail } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { clearFormulary, defaultScope, loadedItems } from '$lib/server/catalog-formulary';
 import { parseSettings, type FormularySettings } from '$lib/settings';
+import { formularyRows } from '$lib/server/formulary-view';
+import { DIMENSIONS, dimensionValues } from '$lib/formulary-hierarchy';
+import { parseEquivalenceGroups } from '$lib/equivalence';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
 	const scope = await defaultScope(prisma);
+	const rows = await formularyRows(prisma, scope.id);
 	return {
 		scope: { id: scope.id, name: scope.name },
 		settings: parseSettings(scope.settings),
-		itemCount: (await loadedItems(prisma, scope.id)).length
+		itemCount: (await loadedItems(prisma, scope.id)).length,
+		/** Each dimension's current values, for building equivalence groups. */
+		dimensionValues: Object.fromEntries(
+			DIMENSIONS.map((dimension) => [dimension.key, dimensionValues(rows, dimension.key)])
+		)
 	};
 };
 
@@ -25,6 +33,7 @@ export const actions: Actions = {
 		const settings = parseSettings({
 			// Edited elsewhere (the formulary page, the views section); carry them over.
 			comboDoseDisplay: current.comboDoseDisplay,
+			equivalenceGroups: current.equivalenceGroups,
 			views: current.views,
 			defaultView: current.defaultView,
 			defaultLevels: current.defaultLevels,
@@ -70,6 +79,40 @@ export const actions: Actions = {
 		return updateViews((settings) => ({ ...settings, defaultView: name }));
 	},
 
+	/** Add or replace an equivalence group; `index` names the one replaced. */
+	saveGroup: async ({ request }) => {
+		const form = await request.formData();
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(String(form.get('group') ?? ''));
+		} catch {
+			return fail(400, { section: 'groups', message: 'The group could not be read.' });
+		}
+		const [group] = parseEquivalenceGroups([parsed]);
+		if (!group)
+			return fail(400, { section: 'groups', message: 'A group needs a display name.' });
+		if (!group.members.length)
+			return fail(400, { section: 'groups', message: 'Add at least one value to merge.' });
+		const index = Number(form.get('index'));
+		return updateSettings((settings) => {
+			const groups = [...settings.equivalenceGroups];
+			if (Number.isInteger(index) && index >= 0 && index < groups.length) groups[index] = group;
+			else groups.push(group);
+			return { ...settings, equivalenceGroups: groups };
+		}, { section: 'groups', savedGroup: group.display });
+	},
+
+	deleteGroup: async ({ request }) => {
+		const index = Number((await request.formData()).get('index'));
+		return updateSettings(
+			(settings) => ({
+				...settings,
+				equivalenceGroups: settings.equivalenceGroups.filter((_, at) => at !== index)
+			}),
+			{ section: 'groups' }
+		);
+	},
+
 	clear: async ({ request }) => {
 		const scope = await defaultScope(prisma);
 		const typed = String((await request.formData()).get('confirmName') ?? '').trim();
@@ -82,12 +125,17 @@ export const actions: Actions = {
 	}
 };
 
-async function updateViews(
+async function updateSettings<T>(
 	change: (settings: FormularySettings) => FormularySettings,
-	savedView?: string
+	result: T
 ) {
 	const scope = await defaultScope(prisma);
 	const settings = parseSettings(change(parseSettings(scope.settings)));
 	await prisma.scope.update({ where: { id: scope.id }, data: { settings } });
-	return { section: 'views', savedView };
+	return result;
 }
+
+const updateViews = (
+	change: (settings: FormularySettings) => FormularySettings,
+	savedView?: string
+) => updateSettings(change, { section: 'views' as const, savedView });

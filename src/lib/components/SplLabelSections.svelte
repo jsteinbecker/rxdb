@@ -3,11 +3,26 @@
       import {cubicInOut, cubicOut} from 'svelte/easing';
       import type {PackageDetails} from '$lib/server/catalog-providers';
       import LabelBlocks from './LabelBlocks.svelte';
+      import {filterLabelSection, type LabelScope, omissionNote} from '$lib/label-relevance';
 
-      let {sections}: { sections: NonNullable<PackageDetails['label']>['sections'] } = $props();
+      type Label = NonNullable<PackageDetails['label']>;
+      let {sections, scope = null}: { sections: Label['sections']; scope?: LabelScope | null } = $props();
+
+      // Only this NDC's passages, when the label is shared with other forms or
+      // strengths ($lib/label-relevance.ts decides which sections qualify).
+      const shown = $derived(
+            sections.map((section) => {
+                  const filtered =
+                        scope && section.blocks ? filterLabelSection(section.key, section.blocks, scope) : null;
+                  return filtered?.omissions.length
+                        ? {...section, blocks: filtered.blocks, fullBlocks: section.blocks, omissions: filtered.omissions}
+                        : {...section, fullBlocks: section.blocks, omissions: []};
+            })
+      );
 
       let expanded = $state<Record<string, boolean>>({});
       let closing = $state<Record<string, boolean>>({});
+      let showAll = $state<Record<string, boolean>>({});
 
       const reduced =
             typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,13 +40,15 @@
       }
 </script>
 
-{#each sections as section (section.key)}
+{#each shown as section (section.key)}
       <details
             data-spl-section={section.key}
             open={expanded[section.key] || closing[section.key]}
             class:expanded={expanded[section.key]}
       >
-            <summary onclick={(e) => toggle(e, section.key)}>{section.title}</summary>
+            <summary onclick={(e) => toggle(e, section.key)}>
+                  <span>{section.title}{#if section.omissions.length}<span class="filtered"> · filtered</span>{/if}</span>
+            </summary>
             {#if expanded[section.key]}
                   <div
                         class="body"
@@ -42,7 +59,19 @@
                               in:fly={{ y: -6, duration: ms(260), delay: ms(90), easing: cubicOut }}
                               out:fade={{ duration: ms(120) }}
                         >
-                              {#if section.blocks?.length}
+                              {#if section.omissions.length}
+                                    <p class="omitted">
+                                          {#if showAll[section.key]}
+                                                Showing the full label text, including passages for other products on this label.
+                                          {:else}
+                                                {section.omissions.map(omissionNote).join(' ')}
+                                          {/if}
+                                          <button type="button" class="link" onclick={() => (showAll[section.key] = !showAll[section.key])}>
+                                                {showAll[section.key] ? 'Show only this NDC' : 'Show full label text'}
+                                          </button>
+                                    </p>
+                                    <LabelBlocks blocks={(showAll[section.key] ? section.fullBlocks : section.blocks) ?? []}/>
+                              {:else if section.blocks?.length}
                                     <LabelBlocks blocks={section.blocks}/>
                               {:else}
                                     <p class="prose">{section.text}</p>
@@ -115,6 +144,31 @@
             summary::after {
                   transition: none;
             }
+      }
+
+      .filtered {
+            color: #6b7686;
+            font-weight: 400;
+            font-size: 0.72rem;
+      }
+
+      .omitted {
+            margin: 0.35rem 0 0.5rem;
+            font-size: 0.7rem;
+            font-style: italic;
+            color: #6b7686;
+      }
+
+      .omitted .link {
+            margin-left: 0.25rem;
+            padding: 0;
+            border: 0;
+            background: none;
+            font: inherit;
+            font-style: normal;
+            color: #3464a5;
+            text-decoration: underline;
+            cursor: pointer;
       }
 
       .prose {

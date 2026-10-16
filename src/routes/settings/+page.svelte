@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
-	import { DIMENSION_BY_KEY, DEFAULT_LEVELS } from '$lib/formulary-hierarchy';
+	import { DEFAULT_LEVELS, levelLabel } from '$lib/formulary-hierarchy';
 	import HierarchyBuilder from '$lib/components/HierarchyBuilder.svelte';
+	import EquivalenceGroups from '$lib/components/EquivalenceGroups.svelte';
 	import type { ExpandDepth } from '$lib/settings';
 
 	let { data, form } = $props();
@@ -126,7 +127,7 @@
 							{view.name}
 							{#if view.name === data.settings.defaultView}<span class="badge">Default</span>{/if}
 							<span class="small">
-								{view.levels.map((key) => DIMENSION_BY_KEY.get(key)?.label).join(' → ') ||
+								{view.levels.map(levelLabel).join(' → ') ||
 									'Flat package list'}
 							</span>
 						</span>
@@ -194,6 +195,21 @@
 				{/if}
 			{/if}
 		</form>
+	</section>
+
+	<section class="card" aria-labelledby="groups-heading">
+		<h2 id="groups-heading">Equivalence groups</h2>
+		<p class="hint">
+			Values that should read as one node wherever the hierarchy splits on that attribute — e.g.
+			“Tablet, Coated” and “Tablet, Film Coated” shown as “Tablet, Coated”. Spellings that differ
+			only in case, punctuation, word order, plurals or common abbreviations match on their own.
+		</p>
+		<EquivalenceGroups
+			groups={data.settings.equivalenceGroups}
+			values={data.dimensionValues}
+			message={form?.section === 'groups' && 'message' in form ? form.message : null}
+			savedGroup={form?.section === 'groups' && 'savedGroup' in form ? form.savedGroup : null}
+		/>
 	</section>
 
 	<section class="card danger-zone">

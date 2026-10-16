@@ -9,6 +9,7 @@ import { parseReleaseAbbreviation } from '$lib/time-release';
 import { parseNameOverride } from '$lib/item-name';
 import { summarizeItem } from '$lib/item-summary';
 import { loadPackageSnapshots } from '$lib/server/catalog-store';
+import { loadStagedNode } from '$lib/server/catalog-sync';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
 import { withLocalConcepts } from '$lib/server/local-concept-view';
 import { hasAppearance, isSolidDoseForm, type PillAppearance } from '$lib/spl-characteristics';
@@ -118,6 +119,18 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
+	refresh: async ({ params }) => {
+		const { scope, item } = await itemInScope(params.id);
+		if (!item) error(404, 'That item is not on this formulary.');
+		try {
+			const result = await loadStagedNode(item.target, scope.id, { force: true });
+			return { refreshed: { packagesLinked: result.packagesLinked } };
+		} catch (e) {
+			return fail(422, {
+				refreshMessage: e instanceof Error ? e.message : 'The item could not be refreshed.'
+			});
+		}
+	},
 	setName: async ({ params, request }) => {
 		const form = await request.formData();
 		const parsed = parseNameOverride(form.get('name'));

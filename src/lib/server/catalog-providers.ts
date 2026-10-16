@@ -19,6 +19,7 @@ import { appearancesByPackage, type PillAppearance } from '../spl-characteristic
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
 import { type LabelBlock, labelSectionBlocks } from '../spl-sections';
+import { labelScope, type LabelScope } from '../label-relevance';
 import { dryFillStrength, isDryFillForm, pharmacyBulkFillMl } from '../ingredient-content';
 import {
 	type KitComposition,
@@ -130,6 +131,12 @@ export type PackageDetails = {
 		siblingNdc?: string | null;
 		/** `blocks` is the SPL's own structure for the section; `text` is openFDA's flattening. */
 		sections: { key: string; title: string; text: string; blocks?: LabelBlock[] }[];
+		/**
+		 * The other products sharing this label, so the page can set aside
+		 * their passages ($lib/label-relevance.ts). Null when there are none;
+		 * absent on snapshots stored before it existed.
+		 */
+		scope?: LabelScope | null;
 	} | null;
 	spl: {
 		version: string | null;
@@ -1367,7 +1374,13 @@ export async function enrichPackages(
 			.filter((p) => p.propName === 'LABEL_TYPE')
 			.map((p) => p.propValue);
 		if (product?.product_type) labelTypes.push(product.product_type);
-		const listed = packaging ? true : !product && fdaPayload?.results?.length === 0 ? false : null;
+		// A product found without this package (even by the package-level search) is the
+		// directory saying the package is not listed; only an outage leaves it unknown.
+		const listed = packaging
+			? true
+			: product || fdaPayload?.results?.length === 0
+				? false
+				: null;
 		const splPresent =
 			splPayload && Array.isArray(splPayload.data) ? splPayload.data.length > 0 : null;
 		const listedByFDA = listed === true;
@@ -1385,6 +1398,17 @@ export async function enrichPackages(
 		if (hints.moietiesOf) await completeMoieties(splProducts, hints.moietiesOf);
 		const moietyFactors = await moietyFactorsOf(splProducts, hints.moietyFactorOf);
 		const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
+		// Who else this label speaks to — the suspension beside these tablets,
+		// the other vial sizes — so the page can set their passages aside.
+		// Stored with the label rather than applied here, so a snapshot keeps
+		// the full text once and the filter can change without a re-fetch.
+		const scope = labelScope(splProducts, ndc, [
+			...(product?.packaging ?? []).map((item) => ({
+				ndc: item.package_ndc ?? '',
+				description: item.description ?? null
+			})),
+			{ ndc, description: packageDescription }
+		]);
 		const hyphenated = new Set(candidates);
 		const ownProducts = splProductsForNdc(splProducts, ndc);
 		const labelRow = matchedLabel as
@@ -1631,6 +1655,7 @@ export async function enrichPackages(
 						version: labelRow.version ?? null,
 						setId: labelRow.set_id ?? null,
 						siblingNdc: labelSiblingNdc ?? splSiblingNdc,
+						scope,
 						sections: LABEL_SECTIONS.flatMap(([key, title]) => {
 							const text = strings(labelRow[key]).join('\n\n').trim();
 							const blocks = sectionBlocks[key];

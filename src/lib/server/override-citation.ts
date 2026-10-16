@@ -3,8 +3,10 @@ import {
 	overrideField,
 	overrideTargets,
 	type PropertyOverride,
+	type SplPassage,
 	validOverrideValue
 } from '../property-override-fields';
+import { MAX_SPL_PASSAGES, type SplPassageDraft } from '../citation-form';
 import { AMBIGUITY_KINDS, type AmbiguityKind } from '../labeler-ambiguity';
 import type { LabelBlock } from '../spl-sections';
 import type { ExternalPackage } from './catalog-providers';
@@ -33,14 +35,7 @@ function hasHeading(blocks: LabelBlock[], title: string): boolean {
 
 /** What the user submitted as support for an override, before checking. */
 export type OverrideCitationInput =
-	| {
-			source: 'spl';
-			sectionKey: string;
-			excerpt: string;
-			subsectionTitle: string;
-			startOffset: number;
-			endOffset: number;
-	  }
+	| { source: 'spl'; passages: SplPassageDraft[] }
 	| { source: 'url'; url: string; title: string; excerpt: string }
 	| { source: 'ndc'; ndc: string }
 	| { source: 'none' };
@@ -49,15 +44,39 @@ export type OverrideCitationInput =
 export function readCitationInput(form: FormData): OverrideCitationInput | null {
 	const text = (name: string) => String(form.get(name) ?? '');
 	const source = text('source') || 'spl';
-	if (source === 'spl')
+	if (source === 'spl') {
+		// A single passage may also come as the fields used before `passages`.
+		if (!form.has('passages'))
+			return {
+				source,
+				passages: [
+					{
+						sectionKey: text('sectionKey'),
+						excerpt: text('excerpt'),
+						subsectionTitle: text('subsectionTitle'),
+						startOffset: Number(form.get('startOffset')),
+						endOffset: Number(form.get('endOffset'))
+					}
+				]
+			};
+		let raw: unknown;
+		try {
+			raw = JSON.parse(text('passages'));
+		} catch {
+			return null;
+		}
+		if (!Array.isArray(raw)) return null;
 		return {
 			source,
-			sectionKey: text('sectionKey'),
-			excerpt: text('excerpt'),
-			subsectionTitle: text('subsectionTitle'),
-			startOffset: Number(form.get('startOffset')),
-			endOffset: Number(form.get('endOffset'))
+			passages: raw.map((passage) => ({
+				sectionKey: String(passage?.sectionKey ?? ''),
+				excerpt: String(passage?.excerpt ?? ''),
+				subsectionTitle: String(passage?.subsectionTitle ?? ''),
+				startOffset: Number(passage?.startOffset),
+				endOffset: Number(passage?.endOffset)
+			}))
 		};
+	}
 	if (source === 'url')
 		return { source, url: text('url'), title: text('title'), excerpt: text('excerpt') };
 	if (source === 'ndc') return { source, ndc: text('ndc') };
@@ -126,11 +145,30 @@ export function citeOverride(
 		};
 	}
 
-	const { sectionKey, excerpt, subsectionTitle, startOffset, endOffset } = citation;
+	if (!current.splSetId) throw new Error('Choose a section from this SPL.');
+	if (!citation.passages.length) throw new Error('Highlight the SPL text that supports the correction.');
+	if (citation.passages.length > MAX_SPL_PASSAGES)
+		throw new Error(`Cite at most ${MAX_SPL_PASSAGES} SPL passages.`);
+	const passages = citation.passages.map((passage) => citeSplPassage(current, passage));
+	const [first] = passages;
+	return {
+		value: corrected,
+		source: 'spl',
+		...first,
+		splSetId: current.splSetId,
+		...(passages.length > 1 ? { passages } : {}),
+		createdAt
+	};
+}
+
+/** Checks one highlighted passage against the SPL section it claims to quote. */
+function citeSplPassage(current: Package, passage: SplPassageDraft): SplPassage {
+	const normalized = (text: string) => text.replace(/\s+/g, ' ').trim();
+	const { sectionKey, excerpt, subsectionTitle, startOffset, endOffset } = passage;
 	const section = current.details?.label?.sections.find(
 		(candidate) => candidate.key === sectionKey
 	);
-	if (!current.splSetId || !section) throw new Error('Choose a section from this SPL.');
+	if (!section) throw new Error('Choose a section from this SPL.');
 	const quote = excerpt.trim();
 	const sourceText = section.blocks?.length
 		? section.blocks.map(blockText).join(' ')
@@ -148,16 +186,12 @@ export function citeOverride(
 	if (subsection && !hasHeading(section.blocks ?? [], subsection))
 		throw new Error('The selected subsection is not in this SPL section.');
 	return {
-		value: corrected,
-		source: 'spl',
 		excerpt: quote,
 		sectionKey,
 		sectionTitle: section.title,
 		subsectionTitle: subsection || null,
 		startOffset,
-		endOffset,
-		splSetId: current.splSetId,
-		createdAt
+		endOffset
 	};
 }
 

@@ -10,12 +10,16 @@
             comboKey,
             DIMENSION_BY_KEY,
             type FormularyRow,
+            levelLabel,
+            MERGE_SEPARATOR,
             packageSize,
             parseLevels,
+            routeOfLabel,
             strengthOf,
             summedDescription,
             type TreeNode
       } from '$lib/formulary-hierarchy';
+      import RouteBadge from '$lib/components/RouteBadge.svelte';
 
       let { data } = $props();
 
@@ -114,7 +118,9 @@
 		);
 	});
 
-	const tree = $derived(buildTree(rows, levels));
+	const tree = $derived(
+		buildTree(rows, levels, { equivalenceGroups: data.settings.equivalenceGroups })
+	);
 
 	/** How many open levels sit beneath each open node. On narrow screens the tree
 	 * doesn't indent, so ancestors shrink and fade by this much to read as further away. */
@@ -231,34 +237,61 @@
 	</ul>
 {/snippet}
 
+{#snippet segmentLabel(node: TreeNode, segment: { dimension: string; label: string }, depth: number)}
+	<!-- Below the root, or merged with another label, a route reads as its circled abbreviation. -->
+	{@const route =
+		(depth || node.merged?.length) && segment.dimension === 'route'
+			? routeOfLabel(segment.label)
+			: null}
+	{#if segment.dimension === 'formularyItem'}{@render summedText(
+			segment.label,
+			firstRow(node)?.doseDisplay
+		)}{:else if route}<RouteBadge {route} />{:else}{segment.label}{/if}
+{/snippet}
+
 {#snippet branch(nodes: TreeNode[], depth: number)}
 	<ul class="tree" role={depth ? 'group' : 'tree'}>
 		{#each nodes as node (node.id)}
 			{@const isOpen = expanded.has(node.id)}
-			{@const combo = node.dimension === 'ingredientCombo' && node.label.includes(' / ')}
+			<!-- A merged node reads as its absorbed ancestors' labels, then its own. -->
+			{@const segments = [...(node.merged ?? []), { dimension: node.dimension, label: node.label }]}
+			{@const combo = segments.find(
+				(segment) => segment.dimension === 'ingredientCombo' && segment.label.includes(' / ')
+			)?.label}
+			{@const item = segments.find((segment) => segment.dimension === 'formularyItem')?.label}
 			<li role="treeitem" aria-expanded={isOpen} aria-selected="false">
 				<div class="node-row" style:--recede={recede.get(node.id) ?? 0}>
 					<button class="node" onclick={() => toggle(node.id)} style:--depth={depth}>
 						<span class="twisty" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
 						<span class="node-label"
-							>{#if node.dimension === 'formularyItem'}{@render summedText(
-									node.label,
-									firstRow(node)?.doseDisplay
-								)}{:else}{node.label}{/if}</span
+							>{#each segments as segment, index (index)}{#if index}<span class="merge-sep"
+										>{MERGE_SEPARATOR}</span
+									>{/if}{@render segmentLabel(node, segment, depth)}{/each}</span
 						>
-						<span class="node-dim">{DIMENSION_BY_KEY.get(node.dimension)?.label}</span>
+						{#if node.equivalent}
+							<span
+								class="equiv"
+								title="Equivalence group — also gathers {node.equivalent.join(', ')}"
+								aria-label="Also gathers {node.equivalent.join(', ')}">≡</span
+							>
+						{/if}
+						<span class="node-dim"
+							>{segments
+								.map((segment) => DIMENSION_BY_KEY.get(segment.dimension)?.label)
+								.join(MERGE_SEPARATOR)}</span
+						>
 						<span class="count">{plural(node.count, 'NDC')}</span>
 					</button>
-					{#if node.dimension === 'formularyItem' && nodeItemId(node)}
+					{#if item && nodeItemId(node)}
 						<a
 							class="item-link"
-							data-nav-title={node.label}
+							data-nav-title={item}
 							href={resolve('/formulary/items/[id]', { id: nodeItemId(node)! })}
-							aria-label="Open formulary item {node.label}">Item →</a
+							aria-label="Open formulary item {item}">Item →</a
 						>
 					{/if}
 					{#if combo}
-						{@const current = doseChoice(node.label)}
+						{@const current = doseChoice(combo)}
 						<div class="row-menu" class:open={menuFor === node.id}>
 							<button
 								class="menu-trigger"
@@ -270,7 +303,7 @@
 							{#if menuFor === node.id}
 								<div class="menu" role="menu">
 									<p class="menu-heading">Show dose as</p>
-									{#each [['each', 'Each ingredient'], ['sum', 'Sum (same unit)'], ...node.label
+									{#each [['each', 'Each ingredient'], ['sum', 'Sum (same unit)'], ...combo
 											.split(' / ')
 											.map((name) => [`single:${name}`, `Only ${name}`])] as [value, text] (value)}
 										<button
@@ -278,7 +311,7 @@
 											aria-checked={current === value}
 											onclick={() => {
 												menuFor = null;
-												if (current !== value) setComboDose(node.label, value);
+												if (current !== value) setComboDose(combo, value);
 											}}
 										>
 											<span class="check" aria-hidden="true">{current === value ? '✓' : ''}</span
@@ -336,7 +369,7 @@
 					<button
 						class="ghost"
 						class:active={activeView?.name === view.name}
-						title={view.levels.map((key) => DIMENSION_BY_KEY.get(key)?.label).join(' → ') ||
+						title={view.levels.map(levelLabel).join(' → ') ||
 							'Flat package list'}
 						onclick={() => (levels = [...view.levels])}>{view.name}</button
 					>
@@ -346,7 +379,7 @@
 		</div>
 		{#if !activeView}
 			<p class="small custom">
-				Custom: {levels.map((key) => DIMENSION_BY_KEY.get(key)?.label).join(' → ') ||
+				Custom: {levels.map(levelLabel).join(' → ') ||
 					'Flat package list'}
 			</p>
 		{/if}
@@ -665,6 +698,18 @@
 
 	.paren {
 		opacity: 0.35;
+	}
+
+	.merge-sep {
+		color: #7a8594;
+		font-weight: 500;
+	}
+
+	.equiv {
+		flex: none;
+		color: #3464a5;
+		font-weight: 700;
+		cursor: help;
 	}
 
 	.node-label {

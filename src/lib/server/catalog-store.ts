@@ -12,6 +12,7 @@ import {
 } from './catalog-cache';
 import { exclusionReason } from './catalog-facts';
 import { parseScdName } from '../local-concept';
+import { type ActivityInput, exclusionReason } from './catalog-facts';
 import { linkPseudoScd } from './pseudo-scd-store';
 import { checkLocalConceptDrift } from './local-concept-store';
 import { logger } from './log';
@@ -691,7 +692,7 @@ export async function persistCollection(
 	}
 }
 
-function canRestorePackage(item: ExternalPackage): boolean {
+function canRestorePackage(item: ActivityInput): boolean {
 	return (
 		item.isVeterinary === false &&
 		(item.listed === true ||
@@ -713,7 +714,7 @@ async function unlinkExcluded(db: Db, entity: Prisma.EntityWhereInput) {
 }
 
 /** Reevaluate time-dependent exclusions even when no provider refresh is needed. */
-export async function refreshPackageEligibility(db: PrismaClient, items: ExternalPackage[]) {
+export async function refreshPackageEligibility(db: PrismaClient, items: EligibilityInput[]) {
 	if (!items.length) return;
 	await db.$transaction(
 		async (tx) => {
@@ -724,7 +725,51 @@ export async function refreshPackageEligibility(db: PrismaClient, items: Externa
 	);
 }
 
-async function applyEligibility(db: Db, items: ExternalPackage[]) {
+/** What the exclusion ladder reads from a package. */
+type EligibilityInput = ActivityInput & { ndc: string };
+
+/**
+ * Reapply the exclusion ladder to every package on a formulary, from stored evidence
+ * only (no provider calls). A sync already rechecks the packages it fetches; this
+ * covers the rest, so a rule change reaches packages nobody has opened since. It reads
+ * each package's newest snapshot of any catalog version: the eligibility facts do not
+ * depend on the parser that a version bump changes.
+ */
+export async function reconcileFormularyEligibility(db: PrismaClient) {
+	const items = await db.$queryRaw<EligibilityInput[]>`
+    SELECT DISTINCT ON (r.source_native_id)
+      r.source_native_id AS ndc,
+      (r.payload #>> '{item,listed}')::boolean AS listed,
+      r.payload #>> '{item,productCode}' AS "productCode",
+      (r.payload #>> '{item,splPresent}')::boolean AS "splPresent",
+      (r.payload #>> '{item,splInactivated}')::boolean AS "splInactivated",
+      (r.payload #>> '{item,isVeterinary}')::boolean AS "isVeterinary",
+      r.payload #>> '{item,rxcuiStatus}' AS "rxcuiStatus",
+      r.payload #>> '{item,marketingEndDate}' AS "marketingEndDate",
+      r.payload #>> '{item,manualExclusion}' AS "manualExclusion"
+    FROM source_record r
+    JOIN ingestion_run run ON run.id = r.ingestion_run_id
+    WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
+      AND r.source_native_id IN (
+        SELECT ei.normalized_value
+        FROM external_identifier ei
+        JOIN entity e ON e.id = ei.entity_id
+        WHERE ei.namespace = 'ndc11' AND ei.valid_to IS NULL
+          AND e.status = 'active' AND e.retired_at IS NULL
+          AND EXISTS (
+            SELECT 1 FROM formulary_item_package f
+            WHERE f.package_id = e.id AND f.valid_to IS NULL
+          )
+      )
+    ORDER BY r.source_native_id, r.observed_at DESC`;
+	await refreshPackageEligibility(db, items);
+	return {
+		checked: items.length,
+		excluded: items.filter((item) => exclusionReason(item)).map((item) => item.ndc)
+	};
+}
+
+async function applyEligibility(db: Db, items: EligibilityInput[]) {
 	const excluded = items.filter((item) => exclusionReason(item) !== null).map((item) => item.ndc);
 	const active = items
 		.filter((item) => !exclusionReason(item) && canRestorePackage(item))

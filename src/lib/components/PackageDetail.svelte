@@ -3,11 +3,11 @@
 	import RxCui from '$lib/components/RxCui.svelte';
       import type {StagedPackage} from '$lib/server/catalog-sync';
       import type {LabelIngredient} from '$lib/server/catalog-providers';
-      import {appearanceText, imprintFaces, isSolidDoseForm, SHAPE_CODES} from '$lib/spl-characteristics';
+      import {appearanceText, isSolidDoseForm, SHAPE_CODES} from '$lib/spl-characteristics';
       import {refineAppearances} from '$lib/spl-appearance-text';
       import PillMockup from './PillMockup.svelte';
       import RouteBadge from './RouteBadge.svelte';
-      import {drugsComImprintUrl, drugsComNdcUrl} from '$lib/drugs-com';
+      import {drugsComImprint, drugsComImprintUrl, drugsComNdcUrl} from '$lib/drugs-com';
       import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from '$lib/pill-image-layout';
       import {resolve} from '$app/paths';
       import {constituentName, ionDisplayName} from '$lib/ions';
@@ -667,11 +667,11 @@
                   <p class="pill-links">
                         <span class="pill-links-label">Look up on Drugs.com</span>
                         <a href={drugsComNdcUrl(item.ndc)} target="_blank" rel="noopener noreferrer">This NDC</a>
-                        {#each [...new Set((d?.spl?.appearances ?? [])
-                              .map((a) => a.imprint)
+                        {#each [...new Set(appearances
+                              .map((a) => drugsComImprint(a.imprint))
                               .filter((x) => !!x))] as imprint (imprint)}
                               <a href={drugsComImprintUrl(imprint)} target="_blank" rel="noopener noreferrer"
-                              >Imprint “{imprintFaces(imprint).join(' ')}”</a>
+                              >Imprint “{imprint}”</a>
                         {/each}
                   </p>
             {/if}
@@ -1387,7 +1387,7 @@
                         <dd>{d.spl.otherLabels.map((l) => l.title ?? l.setId).join('; ')}{@render src('spl')}</dd>
                   {/if}
             </dl>
-            <SplLabelSections sections={d?.label?.sections ?? []}/>
+            <SplLabelSections sections={d?.label?.sections ?? []} scope={d?.label?.scope ?? null}/>
       </section>
 
       {#if d?.rxnav}

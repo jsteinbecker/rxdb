@@ -1,5 +1,5 @@
 <script lang="ts">
-      import SplLabelSections from './SplLabelSections.svelte';
+      import SplPassagePicker from './SplPassagePicker.svelte';
       import type {CitationDraft} from '$lib/citation-form';
       import type {EquivalentPackage} from '$lib/property-override-fields';
       import type {StagedPackage} from '$lib/server/catalog-sync';
@@ -18,36 +18,12 @@
             describe: (equivalent: EquivalentPackage) => string;
       } = $props();
 
-      let root: HTMLElement;
       const sections = $derived(item.details?.label?.sections ?? []);
       const hasSpl = $derived(!!item.splSetId && sections.length > 0);
       const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
-
-      function captureExcerpt() {
-            const selection = window.getSelection();
-            if (!selection || selection.isCollapsed) return;
-            const range = selection.getRangeAt(0);
-            const text = selection.toString().trim();
-            const anchor = selection.anchorNode?.parentElement?.closest('[data-spl-section]');
-            const focus = selection.focusNode?.parentElement?.closest('[data-spl-section]');
-            if (anchor && anchor === focus && root.contains(anchor) && text) {
-                  draft.sectionKey = anchor.getAttribute('data-spl-section') ?? '';
-                  draft.excerpt = text;
-                  const before = range.cloneRange();
-                  before.selectNodeContents(anchor);
-                  before.setEnd(range.startContainer, range.startOffset);
-                  draft.startOffset = before.toString().length;
-                  draft.endOffset = draft.startOffset + range.toString().length;
-                  draft.subsectionTitle = '';
-                  for (const heading of anchor.querySelectorAll('.heading')) {
-                        if (range.comparePoint(heading, 0) === -1)
-                              draft.subsectionTitle = heading.textContent?.trim() ?? '';
-                  }
-            }
-      }
 </script>
 
-<div bind:this={root} class="cite">
+<div class="cite">
       <div aria-label="Cite" class="source-tabs" role="tablist">
             <span>Cite</span>
             <button aria-selected={draft.source === 'spl'} disabled={!hasSpl} onclick={() => (draft.source = 'spl')}
@@ -64,19 +40,7 @@
             </button>
       </div>
       {#if draft.source === 'spl'}
-            <p class="hint">Expand a section and highlight the SPL text that supports the correction.</p>
-            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-            <div class="label-picker" onmouseup={captureExcerpt} role="presentation">
-                  <SplLabelSections {sections}/>
-            </div>
-            {#if draft.excerpt}
-                  <p class="selected-excerpt"><b>Selected excerpt:</b> <mark>{draft.excerpt}</mark></p>
-            {/if}
-            {#if draft.sectionKey}<p class="hint">
-                  From {sections.find((section) => section.key === draft.sectionKey)?.title}{draft.subsectionTitle
-                  ? ` › ${draft.subsectionTitle}`
-                  : ''} · SPL {item.splSetId}
-            </p>{/if}
+            <SplPassagePicker bind:passages={draft.passages} {sections} splSetId={item.splSetId}/>
       {:else if draft.source === 'url'}
             <p class="hint">Cite a manufacturer page, package insert PDF, compendium entry, or other document.</p>
             <label>Address <input type="url" bind:value={draft.url} placeholder="https://…" maxlength="2000"/></label>
@@ -189,25 +153,8 @@
             font-size: 0.82rem;
       }
 
-      .label-picker {
-            min-height: 10rem;
-            max-height: 18rem;
-            overflow: auto;
-            padding: 0.25rem 0.6rem 0.6rem;
-            border: 1px solid #e0e7f0;
-            border-radius: 8px;
-      }
 
-      .selected-excerpt {
-            max-height: 6rem;
-            margin: 0;
-            overflow: auto;
-      }
 
-      .selected-excerpt mark {
-            background: #fff0a6;
-            white-space: pre-wrap;
-      }
 
       .equivalents {
             display: grid;

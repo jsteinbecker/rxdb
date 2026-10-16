@@ -50,6 +50,7 @@
       const cleanUnii = (value: string) => value.trim().toUpperCase();
 
       let dialog: HTMLDialogElement;
+      let isOpen = $state(false);
       let index = $state(-1);
       let step = $state<Step>('kind');
       let kind = $state<Kind | null>(null);
@@ -240,6 +241,19 @@
             }
       });
 
+      // While citing, the dialog docks small and non-modal so the page's label
+      // sections can be read and highlighted behind it.
+      const docked = $derived(step === 'cite');
+      $effect(() => {
+            const dock = docked;
+            untrack(() => {
+                  if (!dialog?.open || dialog.matches(':modal') !== dock) return;
+                  dialog.close();
+                  if (dock) dialog.show();
+                  else dialog.showModal();
+            });
+      });
+
       $effect(() => {
             for (const unii of [ingFinal, moietyFinalUnii, fromFinal, measuredTo]) untrack(() => ensure(unii));
       });
@@ -250,6 +264,11 @@
       });
 
       export function open(at: number) {
+            // Docked while citing, the page stays usable and can ask for another row.
+            if (dialog.open) {
+                  if (touched && !confirm('Discard this correction?')) return;
+                  dialog.close();
+            }
             index = at;
             const target = item.details?.spl?.ingredients[at];
             const prior = parseIngredientCorrection(item.propertyOverrides?.[ingredientCorrectionKey(at)]?.value ?? '');
@@ -270,6 +289,7 @@
             touched = false;
             message = '';
             step = 'kind';
+            isOpen = true;
             dialog.showModal();
       }
 
@@ -282,10 +302,16 @@
 
       const go = (delta: number) => (step = steps[Math.max(0, Math.min(steps.length - 1, position + delta))]);
 
+      // The close event can arrive late, so the picker is unmounted here directly.
+      function shut() {
+            isOpen = false;
+            dialog.close();
+      }
+
       function close() {
             if (busy) return;
             if (touched && !confirm('Discard this correction?')) return;
-            dialog.close();
+            shut();
       }
 
       async function save() {
@@ -302,7 +328,7 @@
                   if (result.type === 'success') {
                         touched = false;
                         await invalidateAll();
-                        dialog.close();
+                        shut();
                   } else
                         message =
                               result.type === 'failure'
@@ -350,7 +376,7 @@
 {/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<dialog aria-labelledby="correct-title" bind:this={dialog} oncancel={(event) => { if (touched || busy) { event.preventDefault(); close(); } }}>
+<dialog aria-labelledby="correct-title" bind:this={dialog} class:docked onclose={() => { if (!dialog.open) isOpen = false; }} onkeydown={(event) => { if (event.key === 'Escape' && docked) { event.preventDefault(); close(); } }} oncancel={(event) => { event.preventDefault(); if (touched || busy) close(); else shut(); }}>
       <header>
             <h2 id="correct-title">Correct ingredient{row ? ` · ${row.name}` : ''}</h2>
             <p>Step {position + 1} of {steps.length} · {STEP_TITLES[step]}</p>
@@ -450,11 +476,12 @@
                         {/if}
                   {/if}
             {:else if step === 'cite'}
-                  <CitationPicker {item} bind:draft={citation} {candidates}
+                  <!-- Unmounted once closed, so its highlights leave the page. -->
+                  {#if isOpen}<CitationPicker {item} bind:draft={citation} {candidates}
                                   describe={(equivalent) => {
                                         const theirs = parseIngredientCorrection(equivalent.values[key] ?? '');
                                         return theirs ? describeCorrection(theirs, row.name) : '';
-                                  }}/>
+                                  }}/>{/if}
             {:else if built}
                   <table class="review">
                         <thead><tr><th></th><th>Before</th><th>After</th></tr></thead>
@@ -504,6 +531,32 @@
 
       dialog[open] {
             display: flex;
+      }
+
+      dialog.docked {
+            position: fixed;
+            inset: auto 1rem 1rem auto;
+            z-index: 20;
+            width: min(360px, calc(100vw - 2rem));
+            max-height: min(60vh, 34rem);
+            margin: 0;
+      }
+
+      dialog.docked header {
+            padding: 0.7rem 2.5rem 0.55rem 0.9rem;
+      }
+
+      dialog.docked h2 {
+            font-size: 0.95rem;
+      }
+
+      dialog.docked header p {
+            font-size: 0.8rem;
+      }
+
+      dialog.docked .body {
+            padding: 0.7rem 0.9rem;
+            font-size: 0.84rem;
       }
 
       dialog::backdrop {
@@ -718,6 +771,16 @@
             background: #3464a5;
             color: #fff;
             font-weight: 650;
+      }
+
+      dialog.docked footer {
+            flex-wrap: wrap;
+            padding: 0.55rem 0.9rem;
+      }
+
+      dialog.docked footer button {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.84rem;
       }
 
       footer .primary:disabled {
