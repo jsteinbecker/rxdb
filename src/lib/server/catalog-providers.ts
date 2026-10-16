@@ -18,7 +18,7 @@ import { appearancesByPackage, type PillAppearance } from '../spl-characteristic
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
 import { type LabelBlock, labelSectionBlocks } from '../spl-sections';
-import { filterLabelBlocks, labelScope, type Omission } from '../label-relevance';
+import { labelScope, type LabelScope } from '../label-relevance';
 import { dryFillStrength, isDryFillForm, pharmacyBulkFillMl } from '../ingredient-content';
 import {
 	type KitComposition,
@@ -129,7 +129,13 @@ export type PackageDetails = {
 		/** Set when the label was found through a sibling package's NDC. */
 		siblingNdc?: string | null;
 		/** `blocks` is the SPL's own structure for the section; `text` is openFDA's flattening. */
-		sections: LabelSection[];
+		sections: { key: string; title: string; text: string; blocks?: LabelBlock[] }[];
+		/**
+		 * The other products sharing this label, so the page can set aside
+		 * their passages ($lib/label-relevance.ts). Null when there are none;
+		 * absent on snapshots stored before it existed.
+		 */
+		scope?: LabelScope | null;
 	} | null;
 	spl: {
 		version: string | null;
@@ -213,16 +219,6 @@ const LABEL_SECTIONS: [string, string][] = [
 	['instructions_for_use', 'Instructions for use'],
 	['package_label_principal_display_panel', 'Principal display panel']
 ];
-
-/** One prescribing-information section; `fullBlocks` and `omissions` only when something was hidden. */
-export interface LabelSection {
-	key: string;
-	title: string;
-	text: string;
-	blocks?: LabelBlock[];
-	fullBlocks?: LabelBlock[];
-	omissions?: Omission[];
-}
 
 const strings = (value: unknown): string[] =>
 	Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
@@ -1400,7 +1396,9 @@ export async function enrichPackages(
 		const moietyFactors = await moietyFactorsOf(splProducts, hints.moietyFactorOf);
 		const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
 		// Who else this label speaks to — the suspension beside these tablets,
-		// the other vial sizes — so their passages can be set aside.
+		// the other vial sizes — so the page can set their passages aside.
+		// Stored with the label rather than applied here, so a snapshot keeps
+		// the full text once and the filter can change without a re-fetch.
 		const scope = labelScope(splProducts, ndc, [
 			...(product?.packaging ?? []).map((item) => ({
 				ndc: item.package_ndc ?? '',
@@ -1654,25 +1652,10 @@ export async function enrichPackages(
 						version: labelRow.version ?? null,
 						setId: labelRow.set_id ?? null,
 						siblingNdc: labelSiblingNdc ?? splSiblingNdc,
-						sections: LABEL_SECTIONS.flatMap(([key, title]): LabelSection[] => {
+						scope,
+						sections: LABEL_SECTIONS.flatMap(([key, title]) => {
 							const text = strings(labelRow[key]).join('\n\n').trim();
 							const blocks = sectionBlocks[key];
-							// The display panel is this carton's own art, already per package.
-							const filtered =
-								blocks && scope && key !== 'package_label_principal_display_panel'
-									? filterLabelBlocks(blocks, scope)
-									: null;
-							if (blocks && filtered?.omissions.length)
-								return [
-									{
-										key,
-										title,
-										text,
-										blocks: filtered.blocks,
-										fullBlocks: blocks,
-										omissions: filtered.omissions
-									}
-								];
 							return text || blocks ? [{ key, title, text, ...(blocks ? { blocks } : {}) }] : [];
 						})
 					}

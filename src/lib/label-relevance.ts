@@ -85,9 +85,12 @@ const isActive = (product: SplProduct) =>
 
 const trimNumber = (value: number) => String(Number(value.toFixed(4)));
 
+/** `VIAL, SINGLE-USE` → `vial`: the noun a label would use. */
+const containerWordOf = (form: string) => form.split(',')[0].trim().toLowerCase();
+
 function containerOf(description: string | null): { ml: number; form: string } | null {
 	const match = /(\d+(?:\.\d+)?)\s*mL\s+in\s+1\s+([A-Z]+)/i.exec(description ?? '');
-	return match ? { ml: Number(match[1]), form: match[2].toLowerCase() } : null;
+	return match ? { ml: Number(match[1]), form: containerWordOf(match[2]) } : null;
 }
 
 /**
@@ -111,7 +114,7 @@ function strengthOf(
 		family === 'tablet' || family === 'capsule'
 			? family
 			: (container?.form ??
-				presentation?.form?.toLowerCase() ??
+				(presentation?.form ? containerWordOf(presentation.form) : null) ??
 				formLabelOf(family, product.doseForm));
 	const perMl = active.per !== null ? active.per * (mlPer(active.perUnit) ?? 0) : 0;
 	const stated = toMg(active.strength, active.strengthUnit);
@@ -341,6 +344,12 @@ function leadingQuantity(text: string): { mg: number | null; ml: number | null }
 	return { mg: toMg(value, unit.startsWith('gram') || unit === 'gm' ? 'g' : unit), ml: null };
 }
 
+// Only a table or list about the containers themselves is sorted by size: a
+// pharmacokinetic table's "0.5 g IV" and "2 g IV" rows are doses studied,
+// true of every vial. Read from a table's caption and header, a list's text.
+const PREPARATION =
+	/\bvials?\b|\bbottles?\b|\bcontainers?\b|\bpackages?\b|\bdiluent|\b(?:re)?constitut|\bdilut|\bsizes?\b|\bwater\b/i;
+
 const near = (a: number, b: number) => Math.abs(a - b) <= 0.005 * Math.max(a, b);
 
 /**
@@ -405,7 +414,9 @@ function filterBlock(block: LabelBlock, scope: LabelScope, tally: Tally): LabelB
 			}
 			return [item];
 		});
-		const sized = filterRows(items, (item) => item.map(blockText).join(' '), scope, tally);
+		const sized = PREPARATION.test(blockText({ ...block, items }))
+			? filterRows(items, (item) => item.map(blockText).join(' '), scope, tally)
+			: items;
 		return sized.length ? { ...block, items: sized } : null;
 	}
 	const others = otherFormsIn(blockText(block), scope);
@@ -413,7 +424,11 @@ function filterBlock(block: LabelBlock, scope: LabelScope, tally: Tally): LabelB
 		tally.add('form', 'passage', others);
 		return null;
 	}
-	if (block.type === 'table') {
+	const about =
+		block.type === 'table'
+			? [block.caption ?? '', ...block.head.flat().map((c) => runsText(c.runs))].join(' ')
+			: '';
+	if (block.type === 'table' && PREPARATION.test(about)) {
 		// Header rows always stay; a body row is told apart by its stub cell.
 		const body = filterRows(
 			block.body,
@@ -457,4 +472,30 @@ export function filterLabelBlocks(blocks: LabelBlock[], scope: LabelScope): Filt
 	const tally = new Tally(scope);
 	const kept = filterSection(nest(blocks), scope, tally);
 	return { blocks: kept, omissions: tally.omissions };
+}
+
+// ── Disclaimer copy ──────────────────────────────────────────────────────────
+
+const joined = (items: string[]) =>
+	items.length < 2
+		? (items[0] ?? '')
+		: `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+
+// "for tablets", but "for oral suspension": a liquid is a mass noun.
+const plural = (formLabel: string) =>
+	formLabel === 'tablet' || formLabel === 'capsule' ? `${formLabel}s` : formLabel;
+
+/** "Hidden: 2 passages for oral suspension. This NDC is a tablet." */
+export function omissionNote(o: Omission): string {
+	// A row is a table row or one line of a bottle-size list, so "entry".
+	const noun =
+		o.unit === 'passage'
+			? o.count === 1
+				? 'passage'
+				: 'passages'
+			: o.count === 1
+				? 'entry'
+				: 'entries';
+	const others = o.reason === 'strength' ? `the ${joined(o.others)}` : joined(o.others.map(plural));
+	return `Hidden: ${o.count} ${noun} for ${others}. This NDC is ${o.own}.`;
 }

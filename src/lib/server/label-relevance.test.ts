@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseSplIngredients } from '../spl-ingredients';
 import type { LabelBlock } from '../spl-sections';
-import { filterLabelBlocks, formFamilyOf, labelScope } from '../label-relevance';
+import { filterLabelBlocks, formFamilyOf, labelScope, omissionNote } from '../label-relevance';
 
 // One `<manufacturedProduct>` with a single active ingredient, in the shape
 // the SPL strength tests use.
@@ -65,7 +65,7 @@ export const THREE_VIALS = doc(
 		'22222-100',
 		'INJECTION, POWDER, FOR SOLUTION',
 		['1', 'g', '1', '1'],
-		[['22222-100-10', '1', '1', 'VIAL']]
+		[['22222-100-10', '1', '1', 'VIAL, SINGLE-USE']]
 	),
 	product(
 		'22222-200',
@@ -365,4 +365,60 @@ test('filterLabelBlocks drops a table left with only its header', () => {
 	const result = filterLabelBlocks([dilution('500 mg', '2 g')], vialScope());
 	assert.deepEqual(result.blocks, []);
 	assert.equal(result.omissions[0].count, 2);
+});
+
+// ── Disclaimer copy ──────────────────────────────────────────────────────────
+
+test('omissionNote names solid forms in the plural', () => {
+	assert.equal(
+		omissionNote({
+			reason: 'form',
+			count: 1,
+			unit: 'passage',
+			others: ['tablet'],
+			own: 'an oral suspension'
+		}),
+		'Hidden: 1 passage for tablets. This NDC is an oral suspension.'
+	);
+	assert.equal(
+		omissionNote({
+			reason: 'form',
+			count: 2,
+			unit: 'passage',
+			others: ['oral suspension'],
+			own: 'a tablet'
+		}),
+		'Hidden: 2 passages for oral suspension. This NDC is a tablet.'
+	);
+});
+
+test('omissionNote lists sibling strengths with "the"', () => {
+	assert.equal(
+		omissionNote({
+			reason: 'strength',
+			count: 2,
+			unit: 'row',
+			others: ['500 mg vial', '2 g vial'],
+			own: 'the 1 g vial'
+		}),
+		'Hidden: 2 entries for the 500 mg vial and 2 g vial. This NDC is the 1 g vial.'
+	);
+});
+
+test('filterLabelBlocks keeps dose rows of a pharmacokinetic table', () => {
+	// Sandoz ceftriaxone: "0.5 g IV", "2 g IV" are doses studied, not vials.
+	const pk: LabelBlock = {
+		type: 'table',
+		caption: 'Table 4: Average Plasma Concentrations of Ceftriaxone',
+		head: [[cell('Dose/Route', true), cell('0.5 hr', true), cell('1 hr', true)]],
+		body: [
+			[cell('0.5 g IV'), cell('82'), cell('59')],
+			[cell('1 g IV'), cell('151'), cell('111')],
+			[cell('2 g IV'), cell('257'), cell('192')]
+		],
+		foot: []
+	};
+	const result = filterLabelBlocks([pk], vialScope());
+	assert.deepEqual(result.blocks, [pk]);
+	assert.deepEqual(result.omissions, []);
 });

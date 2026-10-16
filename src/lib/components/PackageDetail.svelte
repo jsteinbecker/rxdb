@@ -1376,7 +1376,7 @@
                         <dd>{d.spl.otherLabels.map((l) => l.title ?? l.setId).join('; ')}{@render src('spl')}</dd>
                   {/if}
             </dl>
-            <SplLabelSections sections={d?.label?.sections ?? []}/>
+            <SplLabelSections sections={d?.label?.sections ?? []} scope={d?.label?.scope ?? null}/>
       </section>
 
       {#if d?.rxnav}

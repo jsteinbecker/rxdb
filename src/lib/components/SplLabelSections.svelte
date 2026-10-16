@@ -3,24 +3,28 @@
       import {cubicInOut, cubicOut} from 'svelte/easing';
       import type {PackageDetails} from '$lib/server/catalog-providers';
       import LabelBlocks from './LabelBlocks.svelte';
-      import type {Omission} from '$lib/label-relevance';
+      import {filterLabelBlocks, type LabelScope, omissionNote} from '$lib/label-relevance';
 
-      let {sections}: { sections: NonNullable<PackageDetails['label']>['sections'] } = $props();
+      type Label = NonNullable<PackageDetails['label']>;
+      let {sections, scope = null}: { sections: Label['sections']; scope?: LabelScope | null } = $props();
+
+      // Only this NDC's passages, when the label is shared with other forms or
+      // strengths. The display panel is this carton's own art, already per package.
+      const shown = $derived(
+            sections.map((section) => {
+                  const filtered =
+                        scope && section.blocks && section.key !== 'package_label_principal_display_panel'
+                              ? filterLabelBlocks(section.blocks, scope)
+                              : null;
+                  return filtered?.omissions.length
+                        ? {...section, blocks: filtered.blocks, fullBlocks: section.blocks, omissions: filtered.omissions}
+                        : {...section, fullBlocks: section.blocks, omissions: []};
+            })
+      );
 
       let expanded = $state<Record<string, boolean>>({});
       let closing = $state<Record<string, boolean>>({});
       let showAll = $state<Record<string, boolean>>({});
-
-      const joined = (items: string[]) =>
-            items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
-
-      /** "Hidden: 2 passages for oral suspension. This NDC is a tablet." */
-      function omissionText(o: Omission): string {
-            // A row is a table row or one line of a bottle-size list, so "entry".
-            const noun = o.unit === 'passage' ? (o.count === 1 ? 'passage' : 'passages') : o.count === 1 ? 'entry' : 'entries';
-            const others = o.reason === 'strength' ? `the ${joined(o.others)}` : joined(o.others);
-            return `Hidden: ${o.count} ${noun} for ${others}. This NDC is ${o.own}.`;
-      }
 
       const reduced =
             typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -38,14 +42,14 @@
       }
 </script>
 
-{#each sections as section (section.key)}
+{#each shown as section (section.key)}
       <details
             data-spl-section={section.key}
             open={expanded[section.key] || closing[section.key]}
             class:expanded={expanded[section.key]}
       >
             <summary onclick={(e) => toggle(e, section.key)}>
-                  <span>{section.title}{#if section.omissions?.length}<span class="filtered"> · filtered</span>{/if}</span>
+                  <span>{section.title}{#if section.omissions.length}<span class="filtered"> · filtered</span>{/if}</span>
             </summary>
             {#if expanded[section.key]}
                   <div
@@ -57,12 +61,12 @@
                               in:fly={{ y: -6, duration: ms(260), delay: ms(90), easing: cubicOut }}
                               out:fade={{ duration: ms(120) }}
                         >
-                              {#if section.omissions?.length}
+                              {#if section.omissions.length}
                                     <p class="omitted">
                                           {#if showAll[section.key]}
                                                 Showing the full label text, including passages for other products on this label.
                                           {:else}
-                                                {section.omissions.map(omissionText).join(' ')}
+                                                {section.omissions.map(omissionNote).join(' ')}
                                           {/if}
                                           <button type="button" class="link" onclick={() => (showAll[section.key] = !showAll[section.key])}>
                                                 {showAll[section.key] ? 'Show only this NDC' : 'Show full label text'}
