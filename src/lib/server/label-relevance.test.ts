@@ -217,3 +217,75 @@ test('filterLabelBlocks drops a table captioned for another form', () => {
 	assert.deepEqual(result.blocks, []);
 	assert.equal(result.omissions[0].reason, 'form');
 });
+
+// ── Strength and container size ─────────────────────────────────────────────
+
+const cell = (text: string, header = false) => ({ runs: [{ text }], header });
+const dilution = (...stubs: string[]): LabelBlock => ({
+	type: 'table',
+	caption: null,
+	head: [[cell('Vial size', true), cell('Diluent', true), cell('Concentration', true)]],
+	body: stubs.map((stub) => [cell(stub), cell('9.6 mL'), cell('100 mg/mL')]),
+	foot: []
+});
+const stubsOf = (block: LabelBlock | undefined) =>
+	block?.type === 'table' ? block.body.map((row) => row[0].runs[0].text) : [];
+const vialScope = () => labelScope(parseSplIngredients(THREE_VIALS), '22222010010')!;
+
+test("filterLabelBlocks keeps only this vial's row of a dilution table", () => {
+	const result = filterLabelBlocks([dilution('500 mg', '1 g', '2 g')], vialScope());
+	assert.deepEqual(stubsOf(result.blocks[0]), ['1 g']);
+	assert.equal(result.blocks[0].type === 'table' && result.blocks[0].head.length, 1);
+	assert.deepEqual(result.omissions, [
+		{ reason: 'strength', count: 2, unit: 'row', others: ['500 mg vial', '2 g vial'], own: 'the 1 g vial' }
+	]);
+});
+
+test('filterLabelBlocks keeps a row whose strength no product on the label has', () => {
+	const result = filterLabelBlocks([dilution('500 mg', '1 g', '10 g pharmacy bulk package')], vialScope());
+	assert.deepEqual(stubsOf(result.blocks[0]), ['1 g', '10 g pharmacy bulk package']);
+});
+
+test('filterLabelBlocks does not read 1250 mg as 250 mg', () => {
+	const scope = {
+		own: { family: 'tablet' as const, formLabel: 'tablet', strengths: [{ text: '1250 mg tablet', mg: 1250, containerMl: null }] },
+		siblings: [{ family: 'tablet' as const, formLabel: 'tablet', strengths: [{ text: '250 mg tablet', mg: 250, containerMl: null }] }]
+	};
+	const result = filterLabelBlocks([dilution('1250 mg', '250 mg')], scope);
+	assert.deepEqual(stubsOf(result.blocks[0]), ['1250 mg']);
+});
+
+test('filterLabelBlocks ignores an equal strength in another form', () => {
+	const scope = {
+		own: { family: 'tablet' as const, formLabel: 'tablet', strengths: [{ text: '500 mg tablet', mg: 500, containerMl: null }] },
+		siblings: [{ family: 'capsule' as const, formLabel: 'capsule', strengths: [{ text: '250 mg capsule', mg: 250, containerMl: null }] }]
+	};
+	const result = filterLabelBlocks([dilution('250 mg', '500 mg')], scope);
+	assert.deepEqual(stubsOf(result.blocks[0]), ['250 mg', '500 mg']);
+});
+
+test("filterLabelBlocks keeps only this bottle's line of a bottle-size list", () => {
+	const scope = labelScope(parseSplIngredients(TABLET_AND_SUSPENSION), '11111020015', [
+		{ ndc: '11111020080', description: '80 mL in 1 BOTTLE' },
+		{ ndc: '11111020015', description: '150 mL in 1 BOTTLE' }
+	])!;
+	const result = filterLabelBlocks(
+		[list('80 mL – add 80 mL of water.', '150 mL – add 150 mL of water.')],
+		scope
+	);
+	assert.deepEqual(textOf(result.blocks), ['150 mL – add 150 mL of water.']);
+	assert.deepEqual(result.omissions.map((o) => [o.reason, o.others]), [['strength', ['80 mL bottle']]]);
+});
+
+test('filterLabelBlocks leaves a table that names no sibling strength alone', () => {
+	const blocks = [dilution('1 g', '1 g')];
+	const result = filterLabelBlocks(blocks, vialScope());
+	assert.deepEqual(result.blocks, blocks);
+	assert.deepEqual(result.omissions, []);
+});
+
+test('filterLabelBlocks drops a table left with only its header', () => {
+	const result = filterLabelBlocks([dilution('500 mg', '2 g')], vialScope());
+	assert.deepEqual(result.blocks, []);
+	assert.equal(result.omissions[0].count, 2);
+});

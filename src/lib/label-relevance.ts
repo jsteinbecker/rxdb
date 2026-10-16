@@ -282,15 +282,18 @@ class Tally {
 	private counts = new Map<string, Omission>();
 	constructor(private scope: LabelScope) {}
 	add(reason: Omission['reason'], unit: Omission['unit'], others: string[]) {
-		const key = `${reason}|${unit}|${others.join('|')}`;
+		// One line per kind of omission: the others it was for are merged.
+		const key = `${reason}|${unit}`;
 		const entry = this.counts.get(key);
-		if (entry) entry.count++;
-		else
+		if (entry) {
+			entry.count++;
+			for (const other of others) if (!entry.others.includes(other)) entry.others.push(other);
+		} else
 			this.counts.set(key, {
 				reason,
 				count: 1,
 				unit,
-				others,
+				others: [...others],
 				own:
 					reason === 'form'
 						? article(this.scope.own.formLabel)
@@ -300,6 +303,64 @@ class Tally {
 	get omissions() {
 		return [...this.counts.values()];
 	}
+}
+
+// ── Strength ─────────────────────────────────────────────────────────────────
+// A dilution table or a bottle-size list leads each row with the vial or
+// bottle it is for: "1 g", "1 gram vial", "1 g (IV)", "80 mL – add 80 mL".
+
+const LEADING_QUANTITY = /^\s*(\d+(?:\.\d+)?)\s*(mcg|mg|grams?|gm|g|mL|milliliters?)(?![\w/])/i;
+
+function leadingQuantity(text: string): { mg: number | null; ml: number | null } | null {
+	const match = LEADING_QUANTITY.exec(text);
+	if (!match) return null;
+	const value = Number(match[1]);
+	const unit = match[2].toLowerCase();
+	if (unit === 'ml' || unit.startsWith('milli')) return { mg: null, ml: value };
+	return { mg: toMg(value, unit.startsWith('gram') || unit === 'gm' ? 'g' : unit), ml: null };
+}
+
+const near = (a: number, b: number) => Math.abs(a - b) <= 0.005 * Math.max(a, b);
+
+/**
+ * How a row's leading quantity is matched against this label's strengths:
+ * by mass when this NDC has one, else by container volume. Null when the
+ * label has no same-family sibling strength to tell apart.
+ */
+function strengthMatcher(scope: LabelScope) {
+	const own = scope.own.strengths;
+	const siblings = scope.siblings.filter((s) => s.family === scope.own.family).flatMap((s) => s.strengths);
+	if (!own.length || !siblings.length) return null;
+	const byMass = own.every((s) => s.mg !== null);
+	const measure = (s: LabelStrength) => (byMass ? s.mg : s.containerMl);
+	const quantityOf = (text: string) => {
+		const q = leadingQuantity(text);
+		return q ? (byMass ? q.mg : q.ml) : null;
+	};
+	/** The sibling a row is for, or null when it is this NDC's or nobody's. */
+	return (text: string): { sibling: LabelStrength | null; known: boolean } => {
+		const value = quantityOf(text);
+		if (value === null) return { sibling: null, known: false };
+		if (own.some((s) => measure(s) !== null && near(measure(s)!, value))) return { sibling: null, known: true };
+		const sibling = siblings.find((s) => measure(s) !== null && near(measure(s)!, value)) ?? null;
+		return { sibling, known: sibling !== null };
+	};
+}
+
+/** Rows (as text) with sibling strengths removed, only when ≥2 rows name label strengths. */
+function filterRows<T>(rows: T[], textOf: (row: T) => string, scope: LabelScope, tally: Tally): T[] {
+	const match = strengthMatcher(scope);
+	if (!match) return rows;
+	const matched = rows.map((row) => match(textOf(row)));
+	const distinct = new Set(
+		rows.flatMap((row, i) => (matched[i].known ? [leadingQuantity(textOf(row))?.mg ?? leadingQuantity(textOf(row))?.ml] : []))
+	);
+	if (distinct.size < 2) return rows;
+	return rows.filter((_, i) => {
+		const sibling = matched[i].sibling;
+		if (sibling) tally.add('strength', 'row', [sibling.text]);
+		return !sibling;
+	});
 }
 
 /** A leaf block with what does not apply removed; null when nothing is left. */
@@ -313,12 +374,19 @@ function filterBlock(block: LabelBlock, scope: LabelScope, tally: Tally): LabelB
 			}
 			return [item];
 		});
-		return items.length ? { ...block, items } : null;
+		const sized = filterRows(items, (item) => item.map(blockText).join(' '), scope, tally);
+		return sized.length ? { ...block, items: sized } : null;
 	}
 	const others = otherFormsIn(blockText(block), scope);
 	if (others) {
 		tally.add('form', 'passage', others);
 		return null;
+	}
+	if (block.type === 'table') {
+		// Header rows always stay; a body row is told apart by its stub cell.
+		const body = filterRows(block.body, (row) => (row[0] ? runsText(row[0].runs) : ''), scope, tally);
+		if (!body.length) return null;
+		return body.length === block.body.length ? block : { ...block, body };
 	}
 	return block;
 }
