@@ -8,6 +8,8 @@ F: "50" + "ACME"[RIM:W>N>E] + "MG"[RIM:W>S>E] ; B: "5" | "10"
 
 > Front: "50" centered, "ACME" arcing along the top edge, "MG" along the bottom edge. Back: "5" left of a vertical score, "10" right of it.
 
+<img src="../static/iln-examples/example-intro-arcs-scored-back.png" width="420" alt="Round tablet: 50 with ACME and MG arcs on the front; 5 and 10 either side of a score on the back">
+
 Shape, color, score count, marking method and hole type are separate fields. ILN references them only where layout depends on them.
 
 ILN is a description aid. For identifying a product for patient care, confirm against package labeling or an authoritative pill-identification source.
@@ -58,6 +60,10 @@ const guess = guessFromRecord({ splimprint: 'M;30', splshape_text: 'ROUND', spls
 ```
 
 Tests sit beside each module (`*.test.ts`) plus [src/lib/server/iln-render.test.ts](../src/lib/server/iln-render.test.ts) and [src/lib/server/spl-to-iln.test.ts](../src/lib/server/spl-to-iln.test.ts).
+
+### Example images
+
+The drawings in this document are `PillMockup` renders stored in [static/iln-examples/](../static/iln-examples/). The examples are listed in [iln-doc-examples.ts](../src/lib/imprints/iln-doc-examples.ts) and drawn, together with every shape, by the `/dev/iln-examples` page. After changing the renderer or an example, start the dev server on port 5199 and run `bash scripts/iln-screenshots.sh` to capture them again.
 
 ### Writing ILN by hand — checklist
 
@@ -112,6 +118,22 @@ Contents forms: `powder`, `granules`, `pellets`, `beads`, `minitablets`, `liquid
 ```
 CAP(translucent blue, granules white): "AB" ; BODY(clear, granules white): "12"
 ```
+
+<table>
+<tr>
+<td><code>CAP(blue): "AB" ; BODY(clear, pellets white): "12"</code><br>Clear body showing white pellets</td>
+<td><img src="../static/iln-examples/example-capsule-clear-body.png" width="320" alt="Clear body showing white pellets"></td>
+</tr>
+<tr>
+<td><code>CAP(translucent green, powder white): blank ; BODY(translucent green, powder white): "G 10"</code><br>Tinted see-through shell over powder</td>
+<td><img src="../static/iln-examples/example-capsule-translucent.png" width="320" alt="Tinted see-through shell over powder"></td>
+</tr>
+<tr>
+<td><code>CAP(clear, liquid yellow): blank ; BODY(clear, liquid yellow): "LQ"</code><br>Clear shell, yellow liquid fill</td>
+<td><img src="../static/iln-examples/example-capsule-clear-liquid.png" width="320" alt="Clear shell, yellow liquid fill"></td>
+</tr>
+</table>
+
 - Faces of directional shapes (tear, bullet, triangle, semicircle …) may take a direction tag after the label and color: `F[TIP@W]`, `B(pink)[FLAT@S]`. See [Shapes](#shape-definitions).
 - `F`/`B` (or `CAP`/`BODY`) are always listed, even when blank. `E` and `CAP+BODY` only when marked.
 - Never mix tablet labels with capsule labels in one string.
@@ -200,6 +222,13 @@ Rules for combining:
 
 ILN does not fix the exact margin left at the stopping point. "Most of the space" is enough to tell a filling element apart from a fixed-size one.
 
+<table>
+<tr>
+<td><code>F: "725"[LINE@S, fill] + "MSD"[RIM:N(cw), fill] ; B: blank</code><br>Two fill elements grow equally</td>
+<td><img src="../static/iln-examples/example-fill-priority.png" width="320" alt="Two fill elements grow equally"></td>
+</tr>
+</table>
+
 **Legacy shorthands** (still parsed; `formatIln` rewrites them):
 
 | Legacy | Location code |
@@ -245,27 +274,78 @@ text    = '"' { char | '\"' | '\\' | '\?' } '"'
 
 ### 8. Examples
 
-```
-F: "WATSON" / "349" ; B: "5" | "10"
-F: "AN" - "627" ; B: blank
-F: "TEVA 3109" ; B: blank | blank                     # score on the unmarked face
-F: "10" | "10"[LINE>W@C] ; B: <logo:Teva>             # right half upside down
-F: ("A" | "B") - ("C" | "D") ; B: "XYZ"               # cross score
-F: "50" + "ACME"[RIM:W>N>E] + "MG"[RIM:W>S>E] ; B: blank
-F: "AB" / "12" ; B: <heart: "5">
-F: <hole> + "RX 10"[HOLE:N>N(cw)] ; B: blank
-F: "ABC 10" ; B: "X"[STACK@C]
-F(white): "20" ; B(pink): "P"                          # bilayer
-F[TIP@W]: "ABC" ; B: "12"                               # tear: tip on the left of the front
-F: "K5" + <hole>[UP@E] ; B: "2" + <hole>[UP@W, MIRROR]   # K-donut
-F: "725"[LINE@S, fill] + "MSD"[RIM:N(cw), fill] ; B: blank   # both grow equally
-F: "AB\?3" ; B: blank ; E: "12"[BAND:N(cw)]
-CAP(white): "LILLY" ; BODY(blue): "3105"
-CAP(ivory): blank ; BODY(ivory): "250 mg"[BODY.MID:RAD>N, x2]
-CAP(red): "XY" ; BODY(red): "77"[BODY.MID:AX@back]
-```
+Each example with its drawing. The first column is the ILN string and what it shows.
 
-`#` comments above are annotation only; they are not part of ILN.
+<table>
+<tr>
+<td><code>F: "WATSON" / "349" ; B: "5" | "10"</code><br>Two stacked lines; vertical score on the back</td>
+<td><img src="../static/iln-examples/example-lines-and-score.png" width="320" alt="Two stacked lines; vertical score on the back"></td>
+</tr>
+<tr>
+<td><code>F: "AN" - "627" ; B: blank</code><br>Horizontal score between two runs</td>
+<td><img src="../static/iln-examples/example-horizontal-score.png" width="320" alt="Horizontal score between two runs"></td>
+</tr>
+<tr>
+<td><code>F: "TEVA 3109" ; B: blank | blank</code><br>Score on the unmarked face</td>
+<td><img src="../static/iln-examples/example-score-on-blank-face.png" width="320" alt="Score on the unmarked face"></td>
+</tr>
+<tr>
+<td><code>F: "10" | "10"[LINE&gt;W@C] ; B: &lt;logo:Teva&gt;</code><br>Right half upside down; logo on the back</td>
+<td><img src="../static/iln-examples/example-rotated-half.png" width="320" alt="Right half upside down; logo on the back"></td>
+</tr>
+<tr>
+<td><code>F: ("A" | "B") - ("C" | "D") ; B: "XYZ"</code><br>Cross score, four quadrants</td>
+<td><img src="../static/iln-examples/example-cross-score.png" width="320" alt="Cross score, four quadrants"></td>
+</tr>
+<tr>
+<td><code>F: "50" + "ACME"[RIM:W&gt;N&gt;E] + "MG"[RIM:W&gt;S&gt;E] ; B: blank</code><br>Top and bottom edge arcs</td>
+<td><img src="../static/iln-examples/example-rim-arcs.png" width="320" alt="Top and bottom edge arcs"></td>
+</tr>
+<tr>
+<td><code>F: "AB" / "12" ; B: &lt;heart: "5"&gt;</code><br>Symbol enclosing a marking</td>
+<td><img src="../static/iln-examples/example-symbol-with-markings.png" width="320" alt="Symbol enclosing a marking"></td>
+</tr>
+<tr>
+<td><code>F: &lt;hole&gt; + "RX 10"[HOLE:N&gt;N(cw)] ; B: blank</code><br>Text ringing a through-hole</td>
+<td><img src="../static/iln-examples/example-hole-ring.png" width="320" alt="Text ringing a through-hole"></td>
+</tr>
+<tr>
+<td><code>F: "ABC 10" ; B: "X"[STACK@C]</code><br>Stacked letters on the back</td>
+<td><img src="../static/iln-examples/example-stacked-letters.png" width="320" alt="Stacked letters on the back"></td>
+</tr>
+<tr>
+<td><code>F(white): "20" ; B(pink): "P"</code><br>Bilayer: per-face colors</td>
+<td><img src="../static/iln-examples/example-bilayer.png" width="320" alt="Bilayer: per-face colors"></td>
+</tr>
+<tr>
+<td><code>F[TIP@W]: "ABC" ; B: "12"</code><br>Tear shape, tip on the left of the front</td>
+<td><img src="../static/iln-examples/example-tear-tip-west.png" width="320" alt="Tear shape, tip on the left of the front"></td>
+</tr>
+<tr>
+<td><code>F: "K5" + &lt;hole&gt;[UP@E] ; B: "2" + &lt;hole&gt;[UP@W, MIRROR]</code><br>K-shaped hole, mirrored on the back</td>
+<td><img src="../static/iln-examples/example-k-donut.png" width="320" alt="K-shaped hole, mirrored on the back"></td>
+</tr>
+<tr>
+<td><code>F: "725"[LINE@S, fill] + "MSD"[RIM:N(cw), fill] ; B: blank</code><br>Two fill elements grow equally</td>
+<td><img src="../static/iln-examples/example-fill-priority.png" width="320" alt="Two fill elements grow equally"></td>
+</tr>
+<tr>
+<td><code>F: "AB\?3" ; B: blank ; E: "12"[BAND:N(cw)]</code><br>Illegible character; edge band print</td>
+<td><img src="../static/iln-examples/example-illegible-and-edge.png" width="320" alt="Illegible character; edge band print"></td>
+</tr>
+<tr>
+<td><code>CAP(white): "LILLY" ; BODY(blue): "3105"</code><br>Cap and body, each printed</td>
+<td><img src="../static/iln-examples/example-capsule-two-color.png" width="320" alt="Cap and body, each printed"></td>
+</tr>
+<tr>
+<td><code>CAP(ivory): blank ; BODY(ivory): "250 mg"[BODY.MID:RAD&gt;N, x2]</code><br>Print around the girth, twice</td>
+<td><img src="../static/iln-examples/example-capsule-radial.png" width="320" alt="Print around the girth, twice"></td>
+</tr>
+<tr>
+<td><code>CAP(red): "XY" ; BODY(red): "77"[BODY.MID:AX@back]</code><br>Axial print on the back of the body</td>
+<td><img src="../static/iln-examples/example-capsule-axial-back.png" width="320" alt="Axial print on the back of the body"></td>
+</tr>
+</table>
 
 ---
 
@@ -317,6 +397,17 @@ Straight text uses a 3×3 zone grid: `NW N NE / W C E / SW S SE`.
 
 Every arc can be reversed; the table lists forms that occur. On polygons and ovals the path follows the outline, so `RIM:SW>SE` on a triangle is straight text along its bottom side.
 
+<table>
+<tr>
+<td><code>F: "5" + "ACME"[RIM:NW&gt;NE] ; B: blank</code><br>Short top arc (location table)</td>
+<td><img src="../static/iln-examples/example-short-top-arc.png" width="320" alt="Short top arc (location table)"></td>
+</tr>
+<tr>
+<td><code>F: "7" + "ACME PHARMA"[RIM:N&gt;N(cw)] ; B: blank</code><br>Full ring (location table)</td>
+<td><img src="../static/iln-examples/example-full-ring.png" width="320" alt="Full ring (location table)"></td>
+</tr>
+</table>
+
 ### 2. Inner tracks
 
 | Code | Meaning |
@@ -344,6 +435,17 @@ Nested arcs on the same side are listed outer to inner: RIM, MID, HOLE.
 | `STACK@C`, `STACK@W`, `STACK@E` | Upright letters stacked top to bottom |
 
 Horizontal (`>E`) LINE text is in-flow; in ILN it is usually expressed with `/` and juxtaposition instead of a code. Every other code is out-of-flow and attached with `+`.
+
+<table>
+<tr>
+<td><code>F: "10" + "ACME"[LINE&gt;S@C] ; B: blank</code><br>Vertical text reading down (location table)</td>
+<td><img src="../static/iln-examples/example-vertical-text.png" width="320" alt="Vertical text reading down (location table)"></td>
+</tr>
+<tr>
+<td><code>F: "100" + "M"[LINE@NW] ; B: blank</code><br>Small mark in a corner (location table)</td>
+<td><img src="../static/iln-examples/example-corner-mark.png" width="320" alt="Small mark in a corner (location table)"></td>
+</tr>
+</table>
 
 ### 4. Score-relative
 
@@ -418,6 +520,40 @@ Shape is its own field, separate from the ILN string. ILN depends on it in two w
 
 CAPSULE here is the outline (straight sides, semicircular ends), not the capsule dosage form. `OBLONG`, `CAPLET` and `STADIUM` are accepted as aliases for it.
 
+Each SPL shape drawn with `F: "ABC" ; B: blank`:
+
+<table>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-bullet.png" width="180" alt="Bullet"><br>BULLET</td>
+<td align="center"><img src="../static/iln-examples/shape-capsule.png" width="180" alt="Capsule-shaped"><br>CAPSULE</td>
+<td align="center"><img src="../static/iln-examples/shape-clover.png" width="180" alt="Clover"><br>CLOVER</td>
+<td align="center"><img src="../static/iln-examples/shape-diamond.png" width="180" alt="Diamond"><br>DIAMOND</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-double-circle.png" width="180" alt="Double circle"><br>DOUBLE CIRCLE</td>
+<td align="center"><img src="../static/iln-examples/shape-freeform.png" width="180" alt="Freeform"><br>FREEFORM</td>
+<td align="center"><img src="../static/iln-examples/shape-gear.png" width="180" alt="Gear"><br>GEAR</td>
+<td align="center"><img src="../static/iln-examples/shape-heptagon.png" width="180" alt="Heptagon"><br>HEPTAGON</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-hexagon.png" width="180" alt="Hexagon"><br>HEXAGON</td>
+<td align="center"><img src="../static/iln-examples/shape-octagon.png" width="180" alt="Octagon"><br>OCTAGON</td>
+<td align="center"><img src="../static/iln-examples/shape-oval.png" width="180" alt="Oval"><br>OVAL</td>
+<td align="center"><img src="../static/iln-examples/shape-pentagon.png" width="180" alt="Pentagon"><br>PENTAGON</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-rectangle.png" width="180" alt="Rectangle"><br>RECTANGLE</td>
+<td align="center"><img src="../static/iln-examples/shape-round.png" width="180" alt="Round"><br>ROUND</td>
+<td align="center"><img src="../static/iln-examples/shape-semi-circle.png" width="180" alt="Semicircle"><br>SEMI-CIRCLE</td>
+<td align="center"><img src="../static/iln-examples/shape-square.png" width="180" alt="Square"><br>SQUARE</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-tear.png" width="180" alt="Tear"><br>TEAR</td>
+<td align="center"><img src="../static/iln-examples/shape-trapezoid.png" width="180" alt="Trapezoid"><br>TRAPEZOID</td>
+<td align="center"><img src="../static/iln-examples/shape-triangle.png" width="180" alt="Triangle"><br>TRIANGLE</td>
+</tr>
+</table>
+
 #### Proportion
 
 A CAPSULE outline's shape value may also say how long it is for its width, i.e. its length ÷ width in the canonical view:
@@ -456,6 +592,70 @@ These have no SPL code. When a system only accepts SPL terms, report the fallbac
 
 THIN OVAL, PAREN, BARREL, EGG and KIDNEY are elongated. To add another extension, add an entry to `SHAPES` in `src/lib/imprints/shapes.ts` (id, label, `source: 'ILN'`, `splFallback`, `elongated`, `features`, `defaultOrient`, description, aliases) and a test in `shapes.test.ts`.
 
+<table>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-thin-oval.png" width="180" alt="Thin oval"><br>THIN OVAL</td>
+<td align="center"><img src="../static/iln-examples/shape-paren.png" width="180" alt="() shape"><br>PAREN</td>
+<td align="center"><img src="../static/iln-examples/shape-barrel.png" width="180" alt="Barrel"><br>BARREL</td>
+<td align="center"><img src="../static/iln-examples/shape-u-shape.png" width="180" alt="U-shape"><br>U-SHAPE</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-shield.png" width="180" alt="Shield"><br>SHIELD</td>
+<td align="center"><img src="../static/iln-examples/shape-egg.png" width="180" alt="Egg"><br>EGG</td>
+<td align="center"><img src="../static/iln-examples/shape-heart.png" width="180" alt="Heart"><br>HEART</td>
+<td align="center"><img src="../static/iln-examples/shape-kidney.png" width="180" alt="Kidney"><br>KIDNEY</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-character.png" width="180" alt="Character"><br>CHARACTER</td>
+<td align="center"><img src="../static/iln-examples/shape-donut.png" width="180" alt="Donut"><br>DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-v-donut.png" width="180" alt="V-donut"><br>V-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-k-donut.png" width="180" alt="K-donut"><br>K-DONUT</td>
+</tr>
+</table>
+
+Any other capital letter can be a through-hole too: `A-DONUT` to `Z-DONUT`, each a round outline with that letter cut through (hole field = the letter). Letters that look different mirrored need `MIRROR` on the face where they read backwards, like K.
+
+<details>
+<summary>Letter donuts</summary>
+
+<table>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-a-donut.png" width="180" alt="A-donut"><br>A-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-b-donut.png" width="180" alt="B-donut"><br>B-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-c-donut.png" width="180" alt="C-donut"><br>C-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-d-donut.png" width="180" alt="D-donut"><br>D-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-e-donut.png" width="180" alt="E-donut"><br>E-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-f-donut.png" width="180" alt="F-donut"><br>F-DONUT</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-g-donut.png" width="180" alt="G-donut"><br>G-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-h-donut.png" width="180" alt="H-donut"><br>H-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-i-donut.png" width="180" alt="I-donut"><br>I-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-j-donut.png" width="180" alt="J-donut"><br>J-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-l-donut.png" width="180" alt="L-donut"><br>L-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-m-donut.png" width="180" alt="M-donut"><br>M-DONUT</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-n-donut.png" width="180" alt="N-donut"><br>N-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-o-donut.png" width="180" alt="O-donut"><br>O-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-p-donut.png" width="180" alt="P-donut"><br>P-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-q-donut.png" width="180" alt="Q-donut"><br>Q-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-r-donut.png" width="180" alt="R-donut"><br>R-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-s-donut.png" width="180" alt="S-donut"><br>S-DONUT</td>
+</tr>
+<tr>
+<td align="center"><img src="../static/iln-examples/shape-t-donut.png" width="180" alt="T-donut"><br>T-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-u-donut.png" width="180" alt="U-donut"><br>U-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-w-donut.png" width="180" alt="W-donut"><br>W-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-x-donut.png" width="180" alt="X-donut"><br>X-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-y-donut.png" width="180" alt="Y-donut"><br>Y-DONUT</td>
+<td align="center"><img src="../static/iln-examples/shape-z-donut.png" width="180" alt="Z-donut"><br>Z-DONUT</td>
+</tr>
+</table>
+
+
+</details>
+
 ### Drugs.com vocabulary
 
 Drugs.com's pill identifier uses 18 shape categories. They map as follows: Barrel → BARREL, Capsule/Oblong → CAPSULE, Character-shape → CHARACTER, Egg-shape → EGG, Eight-sided → OCTAGON, Oval → OVAL, Figure eight-shape → DOUBLE CIRCLE, Five-sided → PENTAGON, Gear-shape → GEAR, Heart-shape → HEART, Kidney-shape → KIDNEY, Rectangle → RECTANGLE, Round → ROUND, Seven-sided → HEPTAGON, Six-sided → HEXAGON, Three-sided → TRIANGLE, U-shape → U-SHAPE. "Four-sided" is deliberately unmapped: it can be SQUARE, DIAMOND, TRAPEZOID or RECTANGLE, so look at the pill.
@@ -489,6 +689,29 @@ F: "K5" + <hole>[UP@E] ; B: "2" + <hole>[UP@W, MIRROR]      # K-donut
 - `validateIln(src, { shape })` checks the tag against the hole type, rejects `MIRROR` on symmetric holes, flags `<hole>` on shapes that have no hole, and errors if both faces of a chiral hole are tagged with the same mirroring.
 - Hole tags can be combined with location codes on the same `<hole>`; they are written first.
 
+<table>
+<tr>
+<td><code>F: "10" + &lt;hole&gt;[TIP@N] ; B: blank</code><br>V-shaped hole pointing up</td>
+<td><img src="../static/iln-examples/example-v-donut.png" width="320" alt="V-shaped hole pointing up"></td>
+</tr>
+<tr>
+<td><code>F: "K5" + &lt;hole&gt;[UP@E] ; B: "2" + &lt;hole&gt;[UP@W, MIRROR]</code><br>K-shaped hole, mirrored on the back</td>
+<td><img src="../static/iln-examples/example-k-donut.png" width="320" alt="K-shaped hole, mirrored on the back"></td>
+</tr>
+<tr>
+<td><code>F: "20" + &lt;hole&gt; ; B: &lt;hole&gt;[MIRROR]</code><br>P-shaped hole; its counter is cut through too</td>
+<td><img src="../static/iln-examples/example-p-donut.png" width="320" alt="P-shaped hole; its counter is cut through too"></td>
+</tr>
+<tr>
+<td><code>F: &lt;hole&gt; ; B: blank</code><br>A-shaped hole</td>
+<td><img src="../static/iln-examples/example-a-donut.png" width="320" alt="A-shaped hole"></td>
+</tr>
+<tr>
+<td><code>F: &lt;hole&gt; ; B: blank</code><br>B-shaped hole</td>
+<td><img src="../static/iln-examples/example-b-donut.png" width="320" alt="B-shaped hole"></td>
+</tr>
+</table>
+
 ### Direction tags
 
 Written after the face label (and color): `F[TIP@E]: ...`, `B(pink)[FLAT@S]: ...`.
@@ -511,6 +734,8 @@ F[TIP@W]: "ABC" ; B: "12"
 ```
 
 `explainIln` reads this as: `Front (tip at the left): "ABC"` / `Back: "12"`.
+
+<img src="../static/iln-examples/example-tear-tip-west.png" width="420" alt="Tear-shaped tablet, tip on the left of the front">
 
 ---
 

@@ -3,7 +3,8 @@
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import type {StagedPackage} from '$lib/server/catalog-sync';
-      import SplLabelSections from './SplLabelSections.svelte';
+      import SplPassagePicker from './SplPassagePicker.svelte';
+      import {appendPassages, type SplPassageDraft} from '$lib/citation-form';
       import OverrideCitation from './OverrideCitation.svelte';
       import QuantityField from './QuantityField.svelte';
       import PillMockup from './PillMockup.svelte';
@@ -57,11 +58,7 @@
       // svelte-ignore state_referenced_locally
       let overrideKey = $state(keys[0] ?? '');
       let overrideValue = $state('');
-      let sectionKey = $state('');
-      let excerpt = $state('');
-      let subsectionTitle = $state('');
-      let startOffset = $state(0);
-      let endOffset = $state(0);
+      let passages = $state<SplPassageDraft[]>([]);
       const hasSpl = $derived(!!item.splSetId && !!item.details?.label?.sections.length);
       // svelte-ignore state_referenced_locally
       let source = $state<'spl' | 'url' | 'ndc' | 'none'>(hasSpl ? 'spl' : 'url');
@@ -181,7 +178,7 @@
             (!quantitySpec || !!quantity) &&
             (!pillAppearance || !!ilnCheck?.ok) &&
             (source === 'spl'
-                  ? !!excerpt && !!sectionKey
+                  ? passages.length > 0
                   : source === 'url'
                         ? !!url.trim() && !!urlExcerpt.trim()
                         : source === 'none' || !!equivalentNdc)
@@ -203,29 +200,6 @@
             const {top} = panel.getBoundingClientRect();
             if (top < 0 || top > window.innerHeight - 120) panel.scrollIntoView({block: 'start'});
       });
-
-      function captureExcerpt() {
-            const selection = window.getSelection();
-            if (!selection || selection.isCollapsed) return;
-            const range = selection.getRangeAt(0);
-            const text = selection.toString().trim();
-            const anchor = selection.anchorNode?.parentElement?.closest('[data-spl-section]');
-            const focus = selection.focusNode?.parentElement?.closest('[data-spl-section]');
-            if (anchor && anchor === focus && panel.contains(anchor) && text) {
-                  sectionKey = anchor.getAttribute('data-spl-section') ?? '';
-                  excerpt = text;
-                  const before = range.cloneRange();
-                  before.selectNodeContents(anchor);
-                  before.setEnd(range.startContainer, range.startOffset);
-                  startOffset = before.toString().length;
-                  endOffset = startOffset + range.toString().length;
-                  subsectionTitle = '';
-                  for (const heading of anchor.querySelectorAll('.heading')) {
-                        if (range.comparePoint(heading, 0) === -1)
-                              subsectionTitle = heading.textContent?.trim() ?? '';
-                  }
-            }
-      }
 
       let removing = $state(false);
 
@@ -265,13 +239,8 @@
                   form.set('note', kindNote);
             }
             form.set('source', source);
-            if (source === 'spl') {
-                  form.set('sectionKey', sectionKey);
-                  form.set('excerpt', excerpt);
-                  form.set('subsectionTitle', subsectionTitle);
-                  form.set('startOffset', String(startOffset));
-                  form.set('endOffset', String(endOffset));
-            } else if (source === 'url') {
+            if (source === 'spl') appendPassages(form, passages);
+            else if (source === 'url') {
                   form.set('url', url);
                   form.set('title', urlTitle);
                   form.set('excerpt', urlExcerpt);
@@ -539,21 +508,7 @@
             >
       </div>
       {#if source === 'spl'}
-            <p class="hint">Expand a section and highlight the SPL text that supports the correction.</p>
-            <div class="label-picker" onmouseup={captureExcerpt} role="presentation">
-                  <SplLabelSections {sections}/>
-            </div>
-            {#if excerpt}
-                  <p class="selected-excerpt">
-                        <b>Selected excerpt:</b>
-                        <mark>{excerpt}</mark>
-                  </p>
-            {/if}
-            {#if sectionKey}<p class="source-note">
-                  From {sections.find((section) => section.key === sectionKey)?.title}{subsectionTitle
-                  ? ` › ${subsectionTitle}`
-                  : ''} · SPL {item.splSetId}
-            </p>{/if}
+            <SplPassagePicker bind:passages {sections} splSetId={item.splSetId}/>
       {:else if source === 'url'}
             <p class="hint">
                   Cite a manufacturer page, package insert PDF, compendium entry, or other document.
@@ -697,12 +652,12 @@
             gap: 0.75rem;
             max-height: calc(100vh - 2rem);
             overflow: auto;
-            padding: 1rem 1.1rem;
+            padding: 0.8rem 0.9rem;
             border: 1px solid #d8dee8;
             border-radius: 12px;
             background: #fff;
             box-shadow: 0 4px 16px rgb(28 47 75 / 8%);
-            font-size: 0.88rem;
+            font-size: 0.84rem;
       }
 
       .panel-head {
@@ -988,32 +943,14 @@
             width: 4.5rem;
       }
 
-      .hint,
-      .source-note {
+      .hint {
             margin: 0;
             color: #5c6777;
             font-size: 0.82rem;
       }
 
-      .label-picker {
-            flex: 1 1 auto;
-            min-height: 12rem;
-            overflow: auto;
-            padding: 0.25rem 0.6rem 0.6rem;
-            border: 1px solid #e0e7f0;
-            border-radius: 8px;
-      }
 
-      .selected-excerpt {
-            max-height: 6rem;
-            margin: 0;
-            overflow: auto;
-      }
 
-      .selected-excerpt mark {
-            background: #fff0a6;
-            white-space: pre-wrap;
-      }
 
       .error {
             margin: 0;

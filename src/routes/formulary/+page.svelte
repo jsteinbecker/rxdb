@@ -118,7 +118,9 @@
 		);
 	});
 
-	const tree = $derived(buildTree(rows, levels));
+	const tree = $derived(
+		buildTree(rows, levels, { equivalenceGroups: data.settings.equivalenceGroups })
+	);
 
 	/** How many open levels sit beneath each open node. On narrow screens the tree
 	 * doesn't indent, so ancestors shrink and fade by this much to read as further away. */
@@ -236,8 +238,11 @@
 {/snippet}
 
 {#snippet segmentLabel(node: TreeNode, segment: { dimension: string; label: string }, depth: number)}
-	<!-- Below the root, a route reads as its circled abbreviation. -->
-	{@const route = depth && segment.dimension === 'route' ? routeOfLabel(segment.label) : null}
+	<!-- Below the root, or merged with another label, a route reads as its circled abbreviation. -->
+	{@const route =
+		(depth || node.merged?.length) && segment.dimension === 'route'
+			? routeOfLabel(segment.label)
+			: null}
 	{#if segment.dimension === 'formularyItem'}{@render summedText(
 			segment.label,
 			firstRow(node)?.doseDisplay
@@ -263,6 +268,13 @@
 										>{MERGE_SEPARATOR}</span
 									>{/if}{@render segmentLabel(node, segment, depth)}{/each}</span
 						>
+						{#if node.equivalent}
+							<span
+								class="equiv"
+								title="Equivalence group — also gathers {node.equivalent.join(', ')}"
+								aria-label="Also gathers {node.equivalent.join(', ')}">≡</span
+							>
+						{/if}
 						<span class="node-dim"
 							>{segments
 								.map((segment) => DIMENSION_BY_KEY.get(segment.dimension)?.label)
@@ -690,6 +702,13 @@
 	.merge-sep {
 		color: #7a8594;
 		font-weight: 500;
+	}
+
+	.equiv {
+		flex: none;
+		color: #3464a5;
+		font-weight: 700;
+		cursor: help;
 	}
 
 	.node-label {

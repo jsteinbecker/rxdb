@@ -1,11 +1,20 @@
-/** What the user has entered to support a correction, before it is checked server side. */
-export type CitationDraft = {
-  source: 'spl' | 'url' | 'ndc' | 'none';
+/** One highlighted passage of a package's SPL, located within its section. */
+export type SplPassageDraft = {
   sectionKey: string;
   excerpt: string;
   subsectionTitle: string;
+  /** Character offsets within the section element's text, for re-highlighting. */
   startOffset: number;
   endOffset: number;
+};
+
+/** The most passages one citation may quote. */
+export const MAX_SPL_PASSAGES = 10;
+
+/** What the user has entered to support a correction, before it is checked server side. */
+export type CitationDraft = {
+  source: 'spl' | 'url' | 'ndc' | 'none';
+  passages: SplPassageDraft[];
   url: string;
   urlTitle: string;
   urlExcerpt: string;
@@ -14,11 +23,7 @@ export type CitationDraft = {
 
 export const emptyCitation = (hasSpl: boolean): CitationDraft => ({
   source: hasSpl ? 'spl' : 'url',
-  sectionKey: '',
-  excerpt: '',
-  subsectionTitle: '',
-  startOffset: 0,
-  endOffset: 0,
+  passages: [],
   url: '',
   urlTitle: '',
   urlExcerpt: '',
@@ -28,21 +33,21 @@ export const emptyCitation = (hasSpl: boolean): CitationDraft => ({
 /** Whether the draft cites enough for the server to accept it. */
 export const citationReady = (draft: CitationDraft): boolean =>
   draft.source === 'spl'
-    ? !!draft.excerpt && !!draft.sectionKey
+    ? draft.passages.length > 0
     : draft.source === 'url'
       ? !!draft.url.trim() && !!draft.urlExcerpt.trim()
       : draft.source === 'none' || !!draft.ndc;
 
+/** Writes SPL passages as the field the `override` form action reads. */
+export function appendPassages(form: FormData, passages: SplPassageDraft[]): void {
+  form.set('passages', JSON.stringify(passages));
+}
+
 /** Writes the draft as the fields the `override` form action reads. */
 export function appendCitation(form: FormData, draft: CitationDraft): void {
   form.set('source', draft.source);
-  if (draft.source === 'spl') {
-    form.set('sectionKey', draft.sectionKey);
-    form.set('excerpt', draft.excerpt);
-    form.set('subsectionTitle', draft.subsectionTitle);
-    form.set('startOffset', String(draft.startOffset));
-    form.set('endOffset', String(draft.endOffset));
-  } else if (draft.source === 'url') {
+  if (draft.source === 'spl') appendPassages(form, draft.passages);
+  else if (draft.source === 'url') {
     form.set('url', draft.url);
     form.set('title', draft.urlTitle);
     form.set('excerpt', draft.urlExcerpt);

@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { findDefaultScope } from '$lib/server/catalog-formulary';
-import { formularyNdcs } from '$lib/server/formulary-view';
+import { formularyNdcStatuses } from '$lib/server/formulary-view';
 import {
 	labeledFormat,
 	labelerPackages,
@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		labelerPackages(prisma, code),
 		findDefaultScope(prisma)
 	]);
-	const onFormulary = scope ? await formularyNdcs(prisma, scope.id) : new Set<string>();
+	const statuses = scope ? await formularyNdcStatuses(prisma, scope.id) : new Map<string, 'on' | 'excluded'>();
 	// Sources disagree on casing, so tally names case-insensitively and show the
 	// most common spelling of each.
 	const names = new Map<string, Map<string, number>>();
@@ -42,7 +42,13 @@ export const load: PageServerLoad = async ({ params }) => {
 			const fallback = zero.segment && zero.segment !== 'mixed' ? zero.segment : null;
 			return {
 				...pkg,
-				onFormulary: onFormulary.has(pkg.ndc),
+				onFormulary: statuses.get(pkg.ndc) === 'on',
+				formularyStatus:
+					statuses.get(pkg.ndc) === 'on'
+						? ('on' as const)
+						: statuses.get(pkg.ndc) === 'excluded'
+							? ('flagged' as const)
+							: ('unknown' as const),
 				zeroSegment: own ? ZERO_SEGMENT[own.format] : fallback,
 				zeroBasis: own?.basis ?? (fallback ? ('labeler' as const) : null)
 			};

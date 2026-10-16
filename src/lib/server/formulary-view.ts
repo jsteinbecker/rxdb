@@ -149,6 +149,44 @@ export async function formularyNdcs(db: PrismaClient, scopeId: string): Promise<
   return new Set(links.flatMap((link) => link.package.entity.externalIdentifiers[0]?.normalizedValue ?? []));
 }
 
+/**
+ * Every NDC linked into the scope, with whether the link counts: `on` for an
+ * eligible package, `excluded` for one the catalog keeps off the formulary.
+ */
+export async function formularyNdcStatuses(
+  db: PrismaClient,
+  scopeId: string
+): Promise<Map<string, 'on' | 'excluded'>> {
+  const links = await db.formularyItemPackage.findMany({
+    where: { validTo: null, formularyItem: { scopeId, entity: { retiredAt: null } } },
+    select: {
+      package: {
+        select: {
+          entity: {
+            select: {
+              status: true,
+              externalIdentifiers: {
+                where: { namespace: 'ndc11', validTo: null },
+                select: { normalizedValue: true },
+                take: 1
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  const statuses = new Map<string, 'on' | 'excluded'>();
+  for (const { package: { entity } } of links) {
+    const ndc = entity.externalIdentifiers[0]?.normalizedValue;
+    if (!ndc) continue;
+    // Any eligible link puts the package on, whatever its other links say.
+    if (entity.status !== 'catalog-excluded') statuses.set(ndc, 'on');
+    else if (!statuses.has(ndc)) statuses.set(ndc, 'excluded');
+  }
+  return statuses;
+}
+
 /** The catalog's stand-in for a product whose labeler was never known. */
 const PLACEHOLDER_LABELER = /^unknown labeler$/i;
 

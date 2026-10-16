@@ -25,11 +25,15 @@ const item = packageFixture({
 });
 const spl = {
   source: 'spl' as const,
-  sectionKey: 'dosage_and_administration',
-  excerpt: 'Final volume 180 mL',
-  subsectionTitle: '',
-  startOffset: 24,
-  endOffset: 43
+  passages: [
+    {
+      sectionKey: 'dosage_and_administration',
+      excerpt: 'Final volume 180 mL',
+      subsectionTitle: '',
+      startOffset: 24,
+      endOffset: 43
+    }
+  ]
 };
 const now = new Date('2026-09-30T00:00:00.000Z');
 

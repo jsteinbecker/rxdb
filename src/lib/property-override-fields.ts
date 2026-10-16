@@ -23,6 +23,16 @@ import {
     SHAPE_CODES
 } from './spl-characteristics';
 
+/** One passage of this package's SPL that an override quotes. */
+export type SplPassage = {
+  excerpt: string;
+  sectionKey: string;
+  sectionTitle: string;
+  subsectionTitle: string | null;
+  startOffset: number;
+  endOffset: number;
+};
+
 /** How an equivalent NDC relates to the one being corrected. */
 export type EquivalentRelation = 'sibling' | 'concept';
 
@@ -48,6 +58,8 @@ export type PropertyOverride = {
       startOffset?: number;
       endOffset?: number;
       splSetId: string;
+      /** Every passage cited, when more than one; the fields above repeat the first. */
+      passages?: SplPassage[];
     }
   | { source: 'url'; url: string; title: string | null; excerpt: string }
   | {

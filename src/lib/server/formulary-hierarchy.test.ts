@@ -283,3 +283,47 @@ test('a merging level absorbs an only child, radix-tree style', () => {
 test('parseLevels keeps merge marks and drops a dimension given twice', () => {
 	assert.deepEqual(parseLevels('route~,route,bogus~,labeler'), ['route~', 'labeler']);
 });
+
+test('equivalence groups merge sibling values into their display', () => {
+	const rows = [
+		row({ ndc: '1', doseForm: 'TABLET, COATED' }),
+		row({ ndc: '2', doseForm: 'TABLET, FILM COATED' }),
+		row({ ndc: '3', doseForm: 'Tablet, film-coated' }),
+		row({ ndc: '4', doseForm: 'TABLET' })
+	];
+	const equivalenceGroups = [
+		{ dimension: 'doseForm', display: 'Tablet, Coated', members: ['Tablet, Film Coated'] }
+	];
+	const tree = buildTree(rows, ['doseForm'], { equivalenceGroups });
+	assert.deepEqual(
+		tree.map((node) => [node.label, node.count, node.equivalent]),
+		[
+			['Tablet', 1, undefined],
+			['Tablet, Coated', 3, ['Tablet, Film Coated', 'Tablet, Film-Coated']]
+		]
+	);
+	// A dose-form group also merges the form within Route + form.
+	assert.deepEqual(
+		buildTree(rows, ['routeForm'], { equivalenceGroups }).map((node) => [node.label, node.count]),
+		[
+			['Oral Tablet', 1],
+			['Oral Tablet, Coated', 3]
+		]
+	);
+});
+
+test('a route group narrows rows to every route it gathers', () => {
+	const rows = [row({ routes: ['INTRAVENOUS', 'INTRAMUSCULAR', 'SUBCUTANEOUS'] })];
+	const tree = buildTree(rows, ['route', 'routeForm'], {
+		equivalenceGroups: [
+			{ dimension: 'route', display: 'Injection', members: ['Intravenous route', 'Intramuscular route'] }
+		]
+	});
+	assert.deepEqual(
+		tree.map((node) => [node.label, node.children.map((child) => child.label)]),
+		[
+			['Injection', ['Intramuscular Capsule', 'Intravenous Capsule']],
+			['Subcutaneous route', ['Subcutaneous Capsule']]
+		]
+	);
+});
