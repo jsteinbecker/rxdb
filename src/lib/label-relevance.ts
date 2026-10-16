@@ -474,6 +474,34 @@ export function filterLabelBlocks(blocks: LabelBlock[], scope: LabelScope): Filt
 	return { blocks: kept, omissions: tally.omissions };
 }
 
+/**
+ * Sections whose text differs by form or strength. Indications and the safety
+ * sections are never filtered: a passage there that names another form (the
+ * H. pylori regimen's "lansoprazole capsules") is still about this NDC, and
+ * hiding a warning costs more than showing a stray one. Clinical pharmacology
+ * is left whole too: its form-specific studies sit in the same sentences as
+ * general facts ("stable in gastric acid… from the tablets and suspension").
+ * The display panel is
+ * the carton's own art, already per package.
+ */
+const FILTERED_SECTIONS = new Set([
+	'dosage_and_administration',
+	'dosage_forms_and_strengths',
+	'description',
+	'how_supplied',
+	'storage_and_handling',
+	'instructions_for_use'
+]);
+
+/** `filterLabelBlocks` for one label section, or null when the section is never filtered. */
+export function filterLabelSection(
+	key: string,
+	blocks: LabelBlock[],
+	scope: LabelScope
+): FilteredBlocks | null {
+	return FILTERED_SECTIONS.has(key) ? filterLabelBlocks(blocks, scope) : null;
+}
+
 // ── Disclaimer copy ──────────────────────────────────────────────────────────
 
 const joined = (items: string[]) =>

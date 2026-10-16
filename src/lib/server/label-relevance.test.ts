@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseSplIngredients } from '../spl-ingredients';
 import type { LabelBlock } from '../spl-sections';
-import { filterLabelBlocks, formFamilyOf, labelScope, omissionNote } from '../label-relevance';
+import {
+	filterLabelBlocks,
+	filterLabelSection,
+	formFamilyOf,
+	labelScope,
+	omissionNote
+} from '../label-relevance';
 
 // One `<manufacturedProduct>` with a single active ingredient, in the shape
 // the SPL strength tests use.
@@ -421,4 +427,30 @@ test('filterLabelBlocks keeps dose rows of a pharmacokinetic table', () => {
 	const result = filterLabelBlocks([pk], vialScope());
 	assert.deepEqual(result.blocks, [pk]);
 	assert.deepEqual(result.omissions, []);
+});
+
+// ── Which sections ───────────────────────────────────────────────────────────
+
+test('filterLabelSection never filters indications or safety sections', () => {
+	// Teva amoxicillin: the H. pylori regimen names lansoprazole capsules.
+	const blocks = [
+		p('Triple therapy: amoxicillin with clarithromycin plus lansoprazole 30 mg capsules.')
+	];
+	const scope = {
+		own: { family: 'tablet' as const, formLabel: 'tablet', strengths: [] },
+		siblings: [{ family: 'capsule' as const, formLabel: 'capsule', strengths: [] }]
+	};
+	for (const key of [
+		'indications_and_usage',
+		'boxed_warning',
+		'contraindications',
+		'warnings_and_cautions',
+		'adverse_reactions',
+		'drug_interactions',
+		'use_in_specific_populations',
+		'package_label_principal_display_panel',
+		'clinical_pharmacology'
+	])
+		assert.equal(filterLabelSection(key, blocks, scope), null, key);
+	assert.equal(filterLabelSection('dosage_and_administration', blocks, scope)?.blocks.length, 0);
 });

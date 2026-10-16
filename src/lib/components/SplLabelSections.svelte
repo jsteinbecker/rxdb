@@ -3,19 +3,17 @@
       import {cubicInOut, cubicOut} from 'svelte/easing';
       import type {PackageDetails} from '$lib/server/catalog-providers';
       import LabelBlocks from './LabelBlocks.svelte';
-      import {filterLabelBlocks, type LabelScope, omissionNote} from '$lib/label-relevance';
+      import {filterLabelSection, type LabelScope, omissionNote} from '$lib/label-relevance';
 
       type Label = NonNullable<PackageDetails['label']>;
       let {sections, scope = null}: { sections: Label['sections']; scope?: LabelScope | null } = $props();
 
       // Only this NDC's passages, when the label is shared with other forms or
-      // strengths. The display panel is this carton's own art, already per package.
+      // strengths ($lib/label-relevance.ts decides which sections qualify).
       const shown = $derived(
             sections.map((section) => {
                   const filtered =
-                        scope && section.blocks && section.key !== 'package_label_principal_display_panel'
-                              ? filterLabelBlocks(section.blocks, scope)
-                              : null;
+                        scope && section.blocks ? filterLabelSection(section.key, section.blocks, scope) : null;
                   return filtered?.omissions.length
                         ? {...section, blocks: filtered.blocks, fullBlocks: section.blocks, omissions: filtered.omissions}
                         : {...section, fullBlocks: section.blocks, omissions: []};
