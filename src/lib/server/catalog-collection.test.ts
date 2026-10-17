@@ -135,3 +135,19 @@ test('a rate-limited refetch keeps the product facts the failed provider supplie
 	assert.deepEqual(result.details?.product?.rxcuis, ['2']);
 	assert.equal(result.providerErrors?.[0].status, 429);
 });
+
+test('overrides survive a CATALOG_VERSION bump that leaves no readable snapshot', async () => {
+	const override = { value: 'Hand-corrected vial', createdAt: '2026-10-01T00:00:00Z', source: 'none' as const };
+	let saved: string | null | undefined;
+	const [result] = await collectPackages([packageFixture().ndc], {
+		load: async () => new Map(),
+		loadOverrides: async (ndcs) => new Map(ndcs.map((ndc) => [ndc, { description: override }])),
+		fetch: async () => [packageFixture({ description: 'Provider vial' })],
+		save: async (items) => {
+			saved = items[0].description;
+		}
+	});
+	assert.deepEqual(result.propertyOverrides?.description, override);
+	assert.equal(result.description, 'Hand-corrected vial');
+	assert.equal(saved, 'Hand-corrected vial');
+});

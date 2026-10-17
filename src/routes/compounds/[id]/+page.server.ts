@@ -2,6 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
 import { formularyRows } from '$lib/server/formulary-view';
+import { packageTitle } from '$lib/package-title';
 import {
 	addComponent,
 	CompoundError,
@@ -39,7 +40,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const byPackage = new Map(rows.map((row) => [row.packageId, row]));
 	const title = (packageId: string) => {
 		const row = byPackage.get(packageId);
-		return row ? (row.displayTitle ?? row.description ?? row.formularyItem) : 'Package no longer on the formulary';
+		return row ? packageTitle(row) : 'Package no longer on the formulary';
 	};
 	return {
 		scope: { id: scope.id, name: scope.name },
@@ -52,7 +53,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			return {
 				packageId: row.packageId,
 				ndc: row.ndc,
-				title: row.displayTitle ?? row.description ?? row.formularyItem,
+				title: packageTitle(row),
 				conc: found ? serializeRational(found.conc) : null,
 				doseUnit: found?.doseUnit ?? null
 			};

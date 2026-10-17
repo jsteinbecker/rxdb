@@ -8,6 +8,7 @@ import { stagedTree, syncExternalSearch } from '$lib/server/catalog-sync';
 import { defaultScope } from '$lib/server/catalog-formulary';
 import { withPharmClassRulesInTree } from '$lib/server/pharm-class-view';
 import { withLocalConceptsInTree } from '$lib/server/local-concept-view';
+import { filtersFrom, parseQuery, relevance, type ParsedQuery } from '$lib/search-relevance';
 import type { RequestHandler } from './$types';
 
 const DEFAULT_LIMIT = 24;
@@ -73,12 +74,38 @@ function normalizeIdentifier(value: string): string {
 	return toNdc11(value) ?? value.replace(/[^a-z0-9]/gi, '').toLowerCase();
 }
 
-function rank(result: SearchResult, query: string, exactIdentifierIds: Set<string>): number {
-	if (exactIdentifierIds.has(result.id)) return 0;
-	if (result.name.toLocaleLowerCase() === query.toLocaleLowerCase()) return 1;
-	if (result.name.toLocaleLowerCase().startsWith(query.toLocaleLowerCase())) return 2;
-	return result.matchedOn === 'name' ? 3 : 4;
+/** How well a local result answers the query, scored as the live ranking scores RxNav names. */
+function fitOf(result: SearchResult, parsed: ParsedQuery) {
+	return relevance(parsed, {
+		name: result.name,
+		aliases: [result.detail ?? '', ...result.identifiers]
+	});
 }
+
+/** Sort key: an exact identifier, then complete matches by score, an exact name, a name led by the query. */
+function rank(
+	result: SearchResult,
+	query: string,
+	parsed: ParsedQuery,
+	exactIdentifierIds: Set<string>
+): number[] {
+	const name = result.name.toLocaleLowerCase();
+	const needle = query.toLocaleLowerCase();
+	const fit = fitOf(result, parsed);
+	return [
+		Number(!exactIdentifierIds.has(result.id)),
+		Number(!fit.matched && result.matchedOn !== 'identifier'),
+		-fit.score,
+		Number(name !== needle),
+		Number(!name.startsWith(needle)),
+		result.matchedOn === 'name' ? 0 : 1
+	];
+}
+
+const compareKeys = (x: number[], y: number[]) => {
+	const i = x.findIndex((value, index) => value !== y[index]);
+	return i >= 0 ? x[i] - y[i] : 0;
+};
 
 /**
  * GET /api/v1/search?q=<name-or-identifier>[&scope=<formulary-scope-uuid>][&limit=24][&offset=0]
@@ -111,17 +138,26 @@ export const GET: RequestHandler = async ({ url }) => {
 	const localOnly = url.searchParams.get('local') === '1';
 	const externalSearch = localOnly
 		? null
-		: syncExternalSearch(query, offset)
-				.then(async ({ staged, ...summary }) => ({
-					sync: {
-						...summary,
-						warning: summary.partial
-							? 'Some providers were unavailable; known values were preserved.'
-							: null
-					},
+		: syncExternalSearch(query, offset, filtersFrom(url.searchParams))
+				.then(async ({ staged, matches, ...summary }) => {
 					// Display classes with the scope's rules applied; staged data keeps the source's.
-					staged: await stagedWithRules(await stagedTree(staged))
-				}))
+					const tree = await stagedWithRules(await stagedTree(staged));
+					return {
+						sync: {
+							...summary,
+							warning: summary.partial
+								? 'Some providers were unavailable; known values were preserved.'
+								: null
+						},
+						staged: {
+							...tree,
+							concepts: tree.concepts.map((concept) => ({
+								...concept,
+								match: matches[concept.rxcui]
+							}))
+						}
+					};
+				})
 				.catch((error: unknown) => ({
 					sync: {
 						concepts: 0,
@@ -131,6 +167,9 @@ export const GET: RequestHandler = async ({ url }) => {
 						partial: true,
 						total: 0,
 						offset,
+						facets: null,
+						suggestion: null,
+						approximate: false,
 						warning: error instanceof Error ? error.message : 'External catalog sync failed.'
 					},
 					staged: { scope: null, concepts: [], packages: [] }
@@ -139,6 +178,12 @@ export const GET: RequestHandler = async ({ url }) => {
 	if (externalSearch && url.searchParams.get('external') === '1')
 		return json({ query, ...(await externalSearch), results: [] });
 
+	// The catalog is matched on the query's most specific word, so `metformin 500 ER`
+	// finds metformin; the strength and form then rank and filter what came back.
+	const parsed = parseQuery(query);
+	const term = parsed.words.length
+		? parsed.words.reduce((a, b) => (b.length > a.length ? b : a))
+		: query;
 	const identifierQuery = normalizeIdentifier(query);
 	const identifierWhere = identifierQuery
 		? { normalizedValue: { startsWith: identifierQuery }, validTo: null }
@@ -147,12 +192,12 @@ export const GET: RequestHandler = async ({ url }) => {
 	const [clinicalDrugs, ingredients, products, packages, formularyItems, labelers, identifiers] =
 		await Promise.all([
 			prisma.clinicalDrug.findMany({
-				where: { name: { contains: query, mode: 'insensitive' }, entity: activeEntity },
+				where: { name: { contains: term, mode: 'insensitive' }, entity: activeEntity },
 				select: { id: true, name: true, tty: true, localConcept: { select: { id: true } } },
 				take: limit
 			}),
 			prisma.ingredient.findMany({
-				where: { name: { contains: query, mode: 'insensitive' }, entity: activeEntity },
+				where: { name: { contains: term, mode: 'insensitive' }, entity: activeEntity },
 				select: { id: true, name: true },
 				take: limit
 			}),
@@ -160,11 +205,11 @@ export const GET: RequestHandler = async ({ url }) => {
 				where: {
 					entity: activeEntity,
 					OR: [
-						{ proprietaryName: { contains: query, mode: 'insensitive' } },
-						{ labeler: { name: { contains: query, mode: 'insensitive' } } },
+						{ proprietaryName: { contains: term, mode: 'insensitive' } },
+						{ labeler: { name: { contains: term, mode: 'insensitive' } } },
 						{
 							productIngredients: {
-								some: { ingredient: { name: { contains: query, mode: 'insensitive' } } }
+								some: { ingredient: { name: { contains: term, mode: 'insensitive' } } }
 							}
 						}
 					]
@@ -193,14 +238,14 @@ export const GET: RequestHandler = async ({ url }) => {
 				where: {
 					entity: activeEntity,
 					OR: [
-						{ description: { contains: query, mode: 'insensitive' } },
+						{ description: { contains: term, mode: 'insensitive' } },
 						{
 							entity: {
 								relationshipsFrom: {
 									some: {
 										relationshipType: 'package_clinical_drug',
 										validTo: null,
-										toEntity: { clinicalDrug: { name: { contains: query, mode: 'insensitive' } } }
+										toEntity: { clinicalDrug: { name: { contains: term, mode: 'insensitive' } } }
 									}
 								}
 							}
@@ -230,7 +275,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			}),
 			prisma.formularyItem.findMany({
 				where: {
-					displayName: { contains: query, mode: 'insensitive' },
+					displayName: { contains: term, mode: 'insensitive' },
 					entity: activeEntity,
 					...(scopeId ? { scopeId } : {})
 				},
@@ -238,7 +283,7 @@ export const GET: RequestHandler = async ({ url }) => {
 				take: limit
 			}),
 			prisma.labeler.findMany({
-				where: { name: { contains: query, mode: 'insensitive' }, entity: activeEntity },
+				where: { name: { contains: term, mode: 'insensitive' }, entity: activeEntity },
 				select: { id: true, name: true },
 				take: limit
 			}),
@@ -265,7 +310,10 @@ export const GET: RequestHandler = async ({ url }) => {
 		const existing = results.get(result.id);
 		if (
 			!existing ||
-			rank(result, query, exactIdentifierIds) < rank(existing, query, exactIdentifierIds)
+			compareKeys(
+				rank(result, query, parsed, exactIdentifierIds),
+				rank(existing, query, parsed, exactIdentifierIds)
+			) < 0
 		) {
 			results.set(result.id, result);
 		}
@@ -302,7 +350,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		{ row: (typeof products)[number]; name: string; strength: string; doseForm: string; labelers: Set<string>; matched: boolean }
 	>();
 	for (const row of products) {
-		const needle = query.toLocaleLowerCase();
+		const needle = term.toLocaleLowerCase();
 		const matchedIngredient = row.productIngredients.find((item) =>
 			item.ingredient.name.toLocaleLowerCase().includes(needle)
 		)?.ingredient.name;
@@ -350,7 +398,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			href: ndc ? `/formulary/ndc/${ndc}` : null,
 			name: row.description ?? 'Unnamed package',
 			detail: [row.containerType, matchedDrug].filter(Boolean).join(' · ') || null,
-			matchedOn: row.description?.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+			matchedOn: row.description?.toLocaleLowerCase().includes(term.toLocaleLowerCase())
 				? 'description'
 				: 'ingredient',
 			identifiers: identifiersByEntity.get(row.id) ?? []
@@ -460,16 +508,27 @@ export const GET: RequestHandler = async ({ url }) => {
 		}
 	}
 
+	const all = [...results.values()];
+	// Rows missing part of the query (a strength or form the name lacks) are dropped,
+	// unless nothing matched completely: then the partial matches are all there is.
+	const complete = all.filter(
+		(result) =>
+			exactIdentifierIds.has(result.id) ||
+			result.matchedOn === 'identifier' ||
+			fitOf(result, parsed).matched
+	);
+	const ranked = (complete.length ? complete : all).sort(
+		(a, b) =>
+			compareKeys(
+				rank(a, query, parsed, exactIdentifierIds),
+				rank(b, query, parsed, exactIdentifierIds)
+			) || naturalCompare(a.name, b.name)
+	);
+
 	return json({
 		query,
 		sync,
 		staged,
-		results: [...results.values()]
-			.sort(
-				(a, b) =>
-					rank(a, query, exactIdentifierIds) - rank(b, query, exactIdentifierIds) ||
-					naturalCompare(a.name, b.name)
-			)
-			.slice(0, limit)
+		results: ranked.slice(0, limit)
 	});
 };

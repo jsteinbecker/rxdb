@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { labelProductName, packageDisplayTitle, rxNormPackageTitle } from '../package-title';
+import { labelProductName, packageDisplayTitle, packageStrengthText, packageTitle, rxNormPackageTitle } from '../package-title';
+import { splitBrand } from '../brand-name';
 
 const rxnav = (conceptName: string) => ({ rxnav: { conceptName } });
 
@@ -16,7 +17,7 @@ test('title is generated from ingredients, strength and dose form', () => {
       isMultiDose: false,
       details: rxnav('150 ML vancomycin 5 MG/ML Injection')
     }),
-    'Vancomycin hydrochloride 750 mg/150 mL injection, solution'
+    'Vancomycin hydrochloride 5 mg/mL injection, solution'
   );
 });
 
@@ -37,11 +38,11 @@ test('a dry fill takes the label per-vial strength and drops lyophilized', () =>
         }
       }
     }),
-    'Vancomycin hydrochloride 1 g injection, powder, for solution CARTON of 10 VIAL, [Example Labs]'
+    'Vancomycin hydrochloride 1 g injection, powder, for solution CARTON of 10 VIAL'
   );
 });
 
-test('a distinct brand leads, with the ingredients in parentheses', () => {
+test('a distinct brand closes the title in brackets, after its packaging', () => {
   assert.equal(
     packageDisplayTitle({
       doseForm: 'INJECTION, SOLUTION',
@@ -51,7 +52,7 @@ test('a distinct brand leads, with the ingredients in parentheses', () => {
       size: { kind: 'volume', value: 10, unit: 'mL', container: 'VIAL, MULTI-DOSE', packQty: 1 },
       isMultiDose: true
     }),
-    'Humulin R (insulin human 100 units/mL) injection, solution MDV'
+    'Insulin human 100 units/mL injection, solution MDV [Humulin R]'
   );
 });
 
@@ -63,7 +64,7 @@ test('an absolute amount in a liquid package reads over its volume', () => {
       size: { kind: 'volume', value: 236, unit: 'mL', container: 'BOTTLE', packQty: 1 },
       details: { spl: { ingredients: [{ name: 'ALCOHOL', kind: 'active', strength: '165.2 mL' }] } }
     }),
-    'Alcohol 165.2 mL/236 mL solution'
+    'Alcohol 0.7 mL/mL solution'
   );
 });
 
@@ -87,7 +88,7 @@ test('falls back to the RxNorm name without ingredients, and null without either
       labelerName: 'Pfizer',
       details: rxnav('atorvastatin 10 MG Oral Tablet [Lipitor]')
     }),
-    'Atorvastatin 10 MG Oral Tablet [Lipitor] [Pfizer]'
+    'Atorvastatin 10 MG Oral Tablet [Lipitor]'
   );
   assert.equal(packageDisplayTitle({ ingredients: [], brandName: 'Lipitor' }), null);
 });
@@ -136,4 +137,79 @@ test('the label name is the generic alone when the brand only restates it', () =
     'vancomycin hydrochloride'
   );
   assert.equal(labelProductName({}), null);
+});
+
+test('packageTitle falls back from the RxNorm title to brand, generic, listing, then NDC', () => {
+  // A loader's precomputed title wins, even when it is null.
+  assert.equal(packageTitle({ ndc: '50633011011', displayTitle: 'CroFab', brandName: 'X' }), 'CroFab');
+  assert.equal(packageTitle({ ndc: '50633011011', displayTitle: null, brandName: 'CroFab' }), 'CroFab');
+  assert.equal(
+    packageTitle({ ndc: '50633011011', genericName: 'crotalidae fab', brandName: 'CroFab' }),
+    'crotalidae fab [CroFab]'
+  );
+  assert.equal(packageTitle({ ndc: '50633011011', genericName: 'crotalidae fab' }), 'crotalidae fab');
+  assert.equal(packageTitle({ ndc: '50633011011', description: '1 VIAL in 1 CARTON' }), '1 VIAL in 1 CARTON');
+  assert.equal(packageTitle({ ndc: '50633011011' }), 'NDC 50633-0110-11');
+});
+
+test('splitBrand takes a trailing bracket as the brand', () => {
+  assert.deepEqual(splitBrand('atorvastatin 10 MG Oral Tablet [Lipitor]'), {
+    name: 'atorvastatin 10 MG Oral Tablet',
+    brand: 'Lipitor'
+  });
+  assert.deepEqual(splitBrand('insulin human 100 [iU]/mL injection'), {
+    name: 'insulin human 100 [iU]/mL injection',
+    brand: null
+  });
+});
+
+test('a corrected strength that contradicts RxNorm titles the package from its ingredients', () => {
+  const trophamine = {
+    ndc: '0264-1933-55',
+    brandName: 'TrophAmine',
+    doseForm: 'INJECTION, SOLUTION',
+    ingredients: [{ name: 'LYSINE ACETATE', strength: '0.85 g/100mL' }],
+    details: {
+      rxnav: { conceptName: 'lysine 12 MG/ML Injectable Solution [TrophAmine]' },
+      spl: { ingredients: [{ name: 'LYSINE ACETATE', kind: 'active', strength: '0.85 g/100mL' }] }
+    }
+  };
+  assert.equal(rxNormPackageTitle(trophamine), packageDisplayTitle(trophamine));
+  assert.match(rxNormPackageTitle(trophamine)!, /0\.85|8\.5/);
+});
+
+test('a corrected strength that agrees with RxNorm keeps the RxNorm title', () => {
+  assert.equal(
+    rxNormPackageTitle({
+      ingredients: [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '500 mg/1' }],
+      details: {
+        rxnav: { conceptName: 'vancomycin 500 MG Injection' },
+        spl: { ingredients: [{ name: 'VANCOMYCIN HYDROCHLORIDE', kind: 'active', strength: '500 mg/1' }] }
+      }
+    }),
+    'Vancomycin 500 MG Injection'
+  );
+});
+
+test('a converted strength is rounded to the precision the others are written in', () => {
+  assert.equal(
+    packageStrengthText({
+      ingredients: [
+        { name: 'LEUCINE', strength: '1.4 g/100mL' },
+        { name: 'ISOLEUCINE', strength: '.82 g/100mL' },
+        { name: 'CYSTEINE HYDROCHLORIDE', strength: '0.016556 g/100mL' },
+        { name: 'LYSINE ACETATE', strength: '0.850589 g/100mL' }
+      ]
+    }),
+    'leucine 14 mg/mL / isoleucine 8.2 mg/mL / cysteine hydrochloride 0.17 mg/mL / lysine acetate 8.5 mg/mL'
+  );
+  assert.equal(
+    packageStrengthText({
+      ingredients: [
+        { name: 'SULFAMETHOXAZOLE', strength: '800 mg/1' },
+        { name: 'TRIMETHOPRIM', strength: '160 mg/1' }
+      ]
+    }),
+    'sulfamethoxazole 800 mg / trimethoprim 160 mg'
+  );
 });

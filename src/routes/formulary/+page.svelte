@@ -1,23 +1,16 @@
 <script lang="ts">
       import {page} from '$app/state';
+      import BrandedName from '$lib/components/BrandedName.svelte';
+      import {formatNdc} from '$lib/ndc';
+      import {packageTitle} from '$lib/package-title';
+      import PageHeader from '$lib/components/PageHeader.svelte';
       import {onMount, untrack} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {resolve} from '$app/paths';
       import {SvelteSet} from 'svelte/reactivity';
       import {
-            buildTree,
-            type ComboDoseDisplay,
-            comboKey,
-            DIMENSION_BY_KEY,
-            type FormularyRow,
-            levelLabel,
-            MERGE_SEPARATOR,
-            packageSize,
-            parseLevels,
-            routeOfLabel,
-            strengthOf,
-            summedDescription,
-            type TreeNode
+            buildTree, type ComboDoseDisplay, comboKey, DIMENSION_BY_KEY, type FormularyRow, levelLabel, MERGE_SEPARATOR,
+            packageSize, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
       } from '$lib/formulary-hierarchy';
       import RouteBadge from '$lib/components/RouteBadge.svelte';
 
@@ -181,7 +174,6 @@
 		else expanded.add(id);
 	}
 
-	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 </script>
 
@@ -215,16 +207,15 @@
 					class="package"
                               onmousedown={() => snapshot.capture()}
 					href={resolve('/formulary/ndc/[ndc]', { ndc: row.ndc })}
-					data-nav-title={row.displayTitle ?? row.brandName ?? row.genericName ?? row.description ?? row.formularyItem}
+					data-nav-title={packageTitle(row)}
 				>
 					<span class="mono ndc">{formatNdc(row.ndc)}</span>
 					<span class="desc">
-						{@render summedText(
-							row.displayTitle ?? row.description ?? row.formularyItem,
-							row.doseDisplay
-						)}
+						<BrandedName text={packageTitle(row)}>
+							{#snippet name(text)}{@render summedText(text, row.doseDisplay)}{/snippet}
+						</BrandedName>
 						<span class="small">
-							{[row.brandName, strengthOf(row), packageSize(row), row.labeler]
+							{[strengthOf(row), packageSize(row), row.labeler]
 								.filter(Boolean)
 								.join(' · ')}
 						</span>
@@ -243,10 +234,9 @@
 		(depth || node.merged?.length) && segment.dimension === 'route'
 			? routeOfLabel(segment.label)
 			: null}
-	{#if segment.dimension === 'formularyItem'}{@render summedText(
-			segment.label,
-			firstRow(node)?.doseDisplay
-		)}{:else if route}<RouteBadge {route} />{:else}{segment.label}{/if}
+	{#if segment.dimension === 'formularyItem'}<BrandedName text={segment.label}
+			>{#snippet name(text)}{@render summedText(text, firstRow(node)?.doseDisplay)}{/snippet}</BrandedName
+		>{:else if route}<RouteBadge {route} />{:else}{segment.label}{/if}
 {/snippet}
 
 {#snippet branch(nodes: TreeNode[], depth: number)}
@@ -344,22 +334,21 @@
 			<button aria-label="Dismiss" onclick={() => (saveError = null)}>×</button>
 		</div>
 	{/if}
-	<header>
-		<p class="eyebrow">
+	<PageHeader title={data.scope.name}>
+		{#snippet eyebrow()}
 			<a href={resolve('/')}>RxDB</a> / Formulary · <a href={resolve('/formulary/items')}>Manage loaded items →</a> ·
 			<a href={resolve('/formulary/pharm-classes')}>Class rules</a> ·
 			<a href={resolve('/formulary/local-concepts')}>Local concepts</a> ·
 			<a href={resolve('/compounds')}>Compounds</a> ·
 			<a href={resolve('/settings')}>Settings</a>
-		</p>
-		<h1>{data.scope.name}</h1>
+		{/snippet}
 		<p>
 			{plural(data.rows.length, 'package')} across {plural(
 				new Set(data.rows.map((row: FormularyRow) => row.formularyItemId)).size,
 				'formulary item'
 			)}. Pick a view to choose how the formulary splits; build new views in Settings.
 		</p>
-	</header>
+	</PageHeader>
 
 	<section class="builder" aria-label="View">
 		<div class="builder-head">
@@ -417,31 +406,6 @@
 		max-width: 1040px;
 		margin: 0 auto;
 		padding: 4rem 1.5rem;
-	}
-
-	header p:last-child {
-		color: #5c6777;
-		line-height: 1.55;
-		max-width: 46rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
 	}
 
 	h2 {

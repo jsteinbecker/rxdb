@@ -2,7 +2,7 @@
 import type {PillAppearance} from '$lib/spl-characteristics';
 import {appearanceText, swatchOf} from '$lib/spl-characteristics';
 import {SECTION_TITLES} from '$lib/spl-appearance-text';
-import {drawPill, type ShellLook, holeBevel, holeCounter, holeStroke, markTransform, symbolPath} from '$lib/imprints/iln-render';
+import {drawPill, type ShellLook, holeBevel, markTransform, symbolPath} from '$lib/imprints/iln-render';
 import type {PillImageLayout} from '$lib/pill-image-layout';
 import {page} from '$app/state';
 
@@ -220,18 +220,9 @@ const tooltip = $derived(
 
 <!-- A hole's outline grown by `grow`, so one shape serves as the cut, its wall and its lip. -->
 {#snippet holeShape(mark: SymbolMark, grow: number, paint: string, alpha: number, offset: number)}
-      {@const width = holeStroke(mark)}
-      {@const counter = holeCounter(mark)}
       <g transform={offset ? `translate(${offset} ${offset})` : undefined} opacity={alpha}>
             <g transform={markTransform(mark)} stroke={paint} stroke-linecap="round" stroke-linejoin="round">
-                  {#if width}
-                        <path d={symbolPath(mark)} fill="none" stroke-width={width + grow}/>
-                        {#if counter}
-                              <path d={counter} fill={paint} stroke-width={grow || 0.01}/>
-                        {/if}
-                  {:else}
-                        <path d={symbolPath(mark)} fill={paint} stroke-width={grow || 0.01}/>
-                  {/if}
+                  <path d={symbolPath(mark)} fill={paint} stroke-width={grow || 0.01}/>
             </g>
       </g>
 {/snippet}

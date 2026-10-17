@@ -20,7 +20,9 @@ import { mgPer, mlPer, toMg } from './units';
 //      hydrochloride), where RxNorm often copied the label's number and so
 //      cannot arbitrate. The FDA directory naming the salt at the very mass the
 //      label calls moiety strength is the signature; GSRS molecular weights
-//      give the moiety's share.
+//      give the moiety's share. A light salt or hydrate (citric acid
+//      monohydrate coded ACTIM as anhydrous citric acid) gets the same
+//      treatment when RxNorm states no strength for its moiety to arbitrate.
 //
 // Corrections are returned alongside the stated values, never instead of them:
 // the caller shows the corrected strength and a note naming what the label said.
@@ -30,6 +32,8 @@ export type StrengthCorrectionKind = 'presentation-unit' | 'salt-equivalent' | '
 export interface StrengthCorrection {
   kind: StrengthCorrectionKind;
   note: string;
+  /** A salt correction's number as the label printed it, the salt's own mass. */
+  stated?: number;
 }
 
 export interface CheckedStrength extends StatedStrength {
@@ -116,7 +120,13 @@ export function checkProductStrengths(
 
   correctMassDenominators(product, checked);
   correctSaltAsMoiety(product.ingredients, checked, options.rxNormName ?? null);
-  correctHeavySaltAsMoiety(product.ingredients, checked, options.moietyFactors, options.directory);
+  correctHeavySaltAsMoiety(
+    product.ingredients,
+    checked,
+    options.moietyFactors,
+    options.directory,
+    options.rxNormName ?? null
+  );
   return checked;
 }
 
@@ -192,11 +202,13 @@ function correctSaltAsMoiety(
     if (ratio <= MIN_SALT_RATIO || ratio > MAX_SALT_RATIO) return;
 
     const stated = strengthText({ ...row, per: null, perUnit: null })!;
+    const printed = row.strength;
     const corrected = round(rxMg / (mgPer(row.strengthUnit) ?? 1));
     row.strength = corrected;
     const counterion = counterionOf(ingredient.name, moiety.name);
     row.corrections.push({
       kind: 'salt-equivalent',
+      stated: printed,
       note:
         `Strength corrected from stated value of ${stated}, equivalent to ` +
         `${corrected} ${row.strengthUnit} ${moiety.name.toLowerCase()}` +
@@ -240,9 +252,11 @@ function correctHeavySaltAsMoiety(
   ingredients: SplIngredient[],
   checked: CheckedStrength[],
   factors: ReadonlyMap<string, MoietyFactor> | undefined,
-  directory: readonly { name: string; strength: string | null }[] | undefined
+  directory: readonly { name: string; strength: string | null }[] | undefined,
+  rxNormName: string | null
 ): void {
   if (!factors?.size || !directory?.length) return;
+  const rx = rxNormStrengths(rxNormName);
   ingredients.forEach((ingredient, index) => {
     const row = checked[index];
     if (ingredient.kind !== 'active' || ingredient.basis !== 'moiety' || !ingredient.unii) return;
@@ -252,8 +266,11 @@ function correctHeavySaltAsMoiety(
     const known = factors.get(ingredient.unii);
     if (!known || known.moietyUnii !== moiety.unii) return;
     const factor = Number(known.factor);
-    // Small counterions are rule 2's, where RxNorm can arbitrate.
-    if (!(factor > 0) || 1 / factor <= MAX_SALT_RATIO) return;
+    if (!(factor > 0)) return;
+    // Small counterions are rule 2's where RxNorm states the moiety and can
+    // arbitrate. Without that (a hydrate whose name does not contain its
+    // moiety's), nothing else would convert it.
+    if (1 / factor <= MAX_SALT_RATIO && rx.some((entry) => sameName(entry.name, moiety.name))) return;
 
     const label = concentration(row.strength, row.strengthUnit, row.per, row.perUnit);
     if (!label || label.mg <= 0) return;
@@ -265,10 +282,12 @@ function correctHeavySaltAsMoiety(
     const converted = convertStrength(row.strength, known.factor);
     if (!converted) return;
     const before = strengthText({ ...row, per: null, perUnit: null })!;
+    const printed = row.strength;
     row.strength = Number(roundSignificant(converted));
     const counterion = counterionOf(ingredient.name, moiety.name);
     row.corrections.push({
       kind: 'moiety-equivalent',
+      stated: printed,
       note:
         `Strength corrected from stated value of ${before}, the mass of the ` +
         `${counterion ? `${counterion} salt` : 'salt'}, to its equivalent of ` +

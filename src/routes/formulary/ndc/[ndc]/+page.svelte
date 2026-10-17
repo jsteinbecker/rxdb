@@ -3,6 +3,10 @@
       import {tick} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {page} from '$app/state';
+      import BrandedName from '$lib/components/BrandedName.svelte';
+      import {formatNdc} from '$lib/ndc';
+      import PageHeader from '$lib/components/PageHeader.svelte';
+      import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
       import {enhance} from '$app/forms';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
       import ReinterpretDialog from '$lib/components/ReinterpretDialog.svelte';
@@ -11,7 +15,7 @@
       import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
       import LocalConceptDialog from '$lib/components/LocalConceptDialog.svelte';
       import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
-      import {labelProductName, rxNormPackageTitle} from '$lib/package-title';
+      import {labelProductName, packageTitle, rxNormPackageTitle} from '$lib/package-title';
 
       let {data, form} = $props();
 
@@ -76,7 +80,6 @@
       }
 
       const item = $derived(data.item);
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
       const displayTitle = $derived(rxNormPackageTitle(item));
       const labelName = $derived(labelProductName(item));
       // The header is usually the formulary item's own RxNorm name; it isn't repeated.
@@ -91,44 +94,46 @@
       <a class="back" href={resolve('/formulary')} onclick={back}>
             <span aria-hidden="true">←</span> Formulary
       </a>
-      <header>
-            <p class="eyebrow">NDC · <span class="mono">{formatNdc(item.ndc)}</span></p>
-            <h1>
-                  {displayTitle ?? item.brandName ?? item.genericName ?? item.description ?? `NDC ${item.ndc}`}
-            </h1>
-            {#if labelName}<p class="sub label-name">Labeled as {labelName}</p>{/if}
-            {#if item.labelerName}<p class="sub"><a href={resolve('/formulary/labeler/[code]', {code: item.ndc.slice(0, 5)})}>{item.labelerName}</a></p>{/if}
+      <PageHeader title={packageTitle(item)} compact>
+            {#snippet name(text: string)}
+                  {#each text.split(/(\d+(?:[.,]\d+)*)\s*mg\/ml/gi) as part, i (i)}{#if i % 2 === 1}<MgPerMl value={part}/>{:else}{part}{/if}{/each}
+            {/snippet}
+            {#snippet eyebrow()}NDC · <span class="mono">{formatNdc(item.ndc)}</span>{/snippet}
+            {#snippet actions()}
+                  <div class="menu">
+                        <button class="ellipsis" popovertarget="ndc-actions" type="button" aria-label="More actions" title="More actions">⋯</button>
+                        <div id="ndc-actions" class="menu-popover" popover bind:this={actionsMenu} role="menu">
+                              <button role="menuitem" type="button" onclick={() => { actionsMenu.hidePopover(); reinterpret.open(); }}>
+                                    Reload &amp; Reinterpret Results
+                              </button>
+                              {#if !item.manualExclusion}
+                                    <button class="danger" role="menuitem" type="button" onclick={() => { actionsMenu.hidePopover(); excludeDialog.showModal(); }}>
+                                          Exclude from formulary…
+                                    </button>
+                              {/if}
+                        </div>
+                  </div>
+            {/snippet}
+            {#if labelName}<p class="label-name">Labeled as {labelName}</p>{/if}
+            {#if item.labelerName}<p><a href={resolve('/formulary/labeler/[code]', {code: item.ndc.slice(0, 5)})}>{item.labelerName}</a></p>{/if}
             {#if data.formularyItems.length}
-                  <p class="sub">
+                  <p>
                         On formulary as
                         {#each data.formularyItems as formularyItem, index (formularyItem.id)}
                               {index ? ', ' : ''}
-                              <a href={resolve('/formulary/items/[id]', {id: formularyItem.id})}>
-                                    {sameName(formularyItem.displayName) ? 'this item' : formularyItem.displayName}
+                              <a href={resolve('/formulary/items/[id]', {id: formularyItem.id})} data-nav-title={formularyItem.displayName}>
+                                    {#if sameName(formularyItem.displayName)}this item{:else}<BrandedName text={formularyItem.displayName} />{/if}
                               </a>
                         {/each}
                   </p>
             {/if}
             {#if item.manualExclusion}
-                  <form class="sub exclusion" method="POST" action="?/include" use:enhance>
+                  <form class="exclusion" method="POST" action="?/include" use:enhance>
                         <span class="excluded">Excluded from formulary:</span> {item.manualExclusion}
                         <button class="link" type="submit">Include again</button>
                   </form>
             {/if}
-            <div class="menu">
-                  <button class="ellipsis" popovertarget="ndc-actions" type="button" aria-label="More actions" title="More actions">⋯</button>
-                  <div id="ndc-actions" class="menu-popover" popover bind:this={actionsMenu} role="menu">
-                        <button role="menuitem" type="button" onclick={() => { actionsMenu.hidePopover(); reinterpret.open(); }}>
-                              Reload &amp; Reinterpret Results
-                        </button>
-                        {#if !item.manualExclusion}
-                              <button class="danger" role="menuitem" type="button" onclick={() => { actionsMenu.hidePopover(); excludeDialog.showModal(); }}>
-                                    Exclude from formulary…
-                              </button>
-                        {/if}
-                  </div>
-            </div>
-      </header>
+      </PageHeader>
       <dialog bind:this={excludeDialog}>
             <form
                   method="POST"
@@ -194,6 +199,7 @@
       .back {
             display: inline-flex;
             gap: 0.4rem;
+            margin-bottom: 1.5rem;
             color: #3464a5;
             font-weight: 650;
             text-decoration: none;
@@ -201,18 +207,6 @@
 
       .back:hover {
             text-decoration: underline;
-      }
-
-      header {
-            position: relative;
-            margin: 1.5rem 0 1.25rem;
-            padding-right: 3rem;
-      }
-
-      .menu {
-            position: absolute;
-            top: 0;
-            right: 0;
       }
 
       .ellipsis {
@@ -301,33 +295,6 @@
             .panel-slot :global(aside) {
                   max-height: 45vh;
             }
-      }
-
-      @media (max-width: 640px) {
-
-            .menu {
-                  top: 0;
-            }
-      }
-
-      h1 {
-            margin: 0;
-            font-size: 1.6rem;
-            line-height: 1.25;
-      }
-
-      .eyebrow {
-            margin: 0 0 0.5rem;
-            color: #3464a5;
-            font-size: 0.8rem;
-            font-weight: 750;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-      }
-
-      .sub {
-            margin: 0.4rem 0 0;
-            color: #5c6777;
       }
 
       .link {

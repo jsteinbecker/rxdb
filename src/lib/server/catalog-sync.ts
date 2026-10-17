@@ -1,5 +1,13 @@
+import {
+	filtersQuery,
+	type ConceptMatch,
+	type SearchFacets,
+	type SearchFilters
+} from '../search-relevance';
 import { env } from '$env/dynamic/private';
-import { gsrsMoieties, gsrsMoietyFactor, prismaSubstanceTable } from './unii-substance-store';
+import { gsrsMoieties, gsrsMoietyFactor, gsrsSalt, prismaSubstanceTable } from './unii-substance-store';
+import { jobNote, jobStage } from './jobs';
+import { cmsBilling, ensureCrosswalk } from './cms-billing';
 import { prisma } from '$lib/server/prisma';
 import { toNdc11 } from '../ndc';
 import {
@@ -7,14 +15,17 @@ import {
 	discoverRxNavPage,
 	enrichPackages,
 	expireProviderResponses,
+	searchFdaProducts,
 	type ExternalPackage,
 	type PackageHints,
 	type RxConcept
 } from './catalog-providers';
 import { collectPackages } from './catalog-collection';
+import { productSet, setPackageNdcs } from './product-sets';
 import { exclusionReason } from './catalog-facts';
 import {
 	loadConceptSnapshots,
+	latestPropertyOverrides,
 	loadPackageSnapshots,
 	loadStoredConcepts,
 	refreshPackageEligibility,
@@ -30,6 +41,7 @@ import {
 } from './catalog-formulary';
 
 const SEARCH_TTL_MS = 12 * 60 * 60 * 1000;
+const APPROXIMATE_SEARCH_TTL_MS = 5 * 60 * 1000;
 const recentSearches = new Map<string, { expiresAt: number; promise: Promise<SyncSummary> }>();
 export type SyncSummary = {
 	concepts: number;
@@ -42,6 +54,12 @@ export type SyncSummary = {
 	/** Ranked RxNav roots available across all pages, and this page's offset. */
 	total: number;
 	offset: number;
+	/** Why each concept on the page is listed, by RxCUI. */
+	matches: Record<string, ConceptMatch>;
+	facets: SearchFacets | null;
+	/** RxNav's spelling of a query it could only match approximately. */
+	suggestion: string | null;
+	approximate: boolean;
 	staged: { concepts: RxConcept[]; packages: ExternalPackage[] };
 };
 
@@ -56,10 +74,12 @@ export async function syncExternalPackages(
 		ndcs,
 		{
 			load: (ndcs) => loadPackageSnapshots(prisma, ndcs),
+			loadOverrides: (ndcs) => latestPropertyOverrides(prisma, ndcs),
 			fetch: (ndcs) => enrichPackages(ndcs, env.OPENFDA_API_KEY2, undefined, {
 					...hints,
 					moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma)),
-					moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma))
+					moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma)),
+					saltOf: gsrsSalt(prismaSubstanceTable(prisma))
 				}),
 			save: (items) => stageCollection(prisma, [], items)
 		},
@@ -71,22 +91,38 @@ export async function syncExternalPackages(
 	return packages;
 }
 
-async function runExternalSearchSync(query: string, offset: number): Promise<SyncSummary> {
+async function runExternalSearchSync(
+	query: string,
+	offset: number,
+	filters: SearchFilters
+): Promise<SyncSummary> {
 	const directNdc = toNdc11(query);
 	// BUD is an established abbreviation for beyond-use dating in this app's
 	// compounding domain. Sending the bare acronym to RxNav's approximate-term
 	// endpoint produces unrelated lexical matches (including botanical terms).
 	const isBeyondUseDateQuery = /^B\.?U\.?D\.?$/i.test(query.trim());
 	let discoveryFailed = false;
-	const { concepts, total, reused } = isBeyondUseDateQuery
-		? { concepts: [], total: 0, reused: [] as string[] }
-		: await discoverRxNavPage(query, offset, (rxcuis) => loadStoredConcepts(prisma, rxcuis)).catch(
-				(error) => {
-					if (!directNdc) throw error;
-					discoveryFailed = true;
-					return { concepts: [], total: 0, reused: [] as string[] };
-				}
-			);
+	const nothing = {
+		concepts: [],
+		total: 0,
+		reused: [] as string[],
+		matches: {},
+		facets: null,
+		suggestion: null,
+		approximate: false
+	};
+	const { concepts, total, reused, matches, facets, suggestion, approximate } = isBeyondUseDateQuery
+		? nothing
+		: await discoverRxNavPage(
+				query,
+				offset,
+				(rxcuis) => loadStoredConcepts(prisma, rxcuis),
+				filters
+			).catch((error) => {
+				if (!directNdc) throw error;
+				discoveryFailed = true;
+				return nothing;
+			});
 	// Later pages list only RxNav concepts; a direct NDC hit belongs to page one.
 	const includeDirect = directNdc && offset === 0;
 	// Reused snapshots are not restaged: that would renew their freshness without a fetch.
@@ -112,6 +148,10 @@ async function runExternalSearchSync(query: string, offset: number): Promise<Syn
 		partial: discoveryFailed || packages.some((item) => !item.complete),
 		total,
 		offset,
+		matches,
+		facets,
+		suggestion,
+		approximate,
 		// Direct packages stay unclaimed: no concept on this page has fetched them.
 		staged: { concepts, packages }
 	};
@@ -164,19 +204,31 @@ export async function stagedConceptPackages(rxcui: string) {
 	};
 }
 
-export function syncExternalSearch(query: string, offset = 0): Promise<SyncSummary> {
-	const key = `${toNdc11(query) ?? query.trim().toLocaleLowerCase()}@${offset}`;
+export function syncExternalSearch(
+	query: string,
+	offset = 0,
+	filters: SearchFilters = {}
+): Promise<SyncSummary> {
+	const key = `${toNdc11(query) ?? query.trim().toLocaleLowerCase()}@${offset}${filtersQuery(filters)}`;
 	const cached = recentSearches.get(key);
 	if (cached && cached.expiresAt > Date.now()) return cached.promise;
 	for (const [entry, value] of recentSearches) {
 		if (value.expiresAt <= Date.now()) recentSearches.delete(entry);
 	}
 	if (recentSearches.size >= 128) recentSearches.delete(recentSearches.keys().next().value!);
-	const promise = runExternalSearchSync(query, offset).catch((error) => {
+	const promise = runExternalSearchSync(query, offset, filters).catch((error) => {
 		recentSearches.delete(key);
 		throw error;
 	});
-	recentSearches.set(key, { expiresAt: Date.now() + SEARCH_TTL_MS, promise });
+	const entry = { expiresAt: Date.now() + SEARCH_TTL_MS, promise };
+	recentSearches.set(key, entry);
+	// An approximate match is often a word still being typed; don't hold it for hours.
+	void promise.then(
+		(summary) => {
+			if (summary.approximate) entry.expiresAt = Date.now() + APPROXIMATE_SEARCH_TTL_MS;
+		},
+		() => {}
+	);
 	return promise;
 }
 
@@ -191,11 +243,19 @@ export async function loadStagedNode(
 		: await defaultScope(prisma);
 	let concept: RxConcept | null = null;
 	let ndcs: string[];
-	if (target.kind === 'concept') {
+	const set = target.kind === 'set' ? productSet(target.key) : null;
+	if (target.kind === 'set') {
+		if (!set) throw new Error(`There is no curated product set "${target.key}".`);
+		jobStage(`Finding ${set.name} products in the openFDA NDC directory`);
+		ndcs = setPackageNdcs(set, await searchFdaProducts(set.search, env.OPENFDA_API_KEY2));
+		if (!ndcs.length) throw new Error(`openFDA listed no qualifying ${set.name} packages.`);
+		jobNote(`${set.name}: ${ndcs.length} NDC${ndcs.length === 1 ? '' : 's'}`);
+	} else if (target.kind === 'concept') {
 		concept = force
 			? null
 			: ((await loadConceptSnapshots(prisma, [target.rxcui])).get(target.rxcui) ?? null);
 		if (!concept) {
+			jobStage(`Looking up RxCUI ${target.rxcui} in RxNav`);
 			const found = await discoverRxNav(target.rxcui);
 			concept = found.find((item) => item.rxcui === target.rxcui) ?? null;
 			if (concept) await stageCollection(prisma, [concept], []);
@@ -203,15 +263,30 @@ export async function loadStagedNode(
 		if (!concept) throw new Error(`RxCUI ${target.rxcui} could not be found.`);
 		if (concept.vetOnly) throw new Error('Veterinary-only concepts cannot be loaded.');
 		ndcs = concept.ndcs;
+		jobNote(`${concept.name}: ${ndcs.length} NDC${ndcs.length === 1 ? '' : 's'}`);
 	} else ndcs = [target.ndc];
+	jobStage(
+		force
+			? `Re-fetching ${ndcs.length} package${ndcs.length === 1 ? '' : 's'} from openFDA, DailyMed & RxNav`
+			: `Collecting ${ndcs.length} package${ndcs.length === 1 ? '' : 's'}`
+	);
 	// Joins a search warm-up already collecting this concept's packages.
 	const packages =
 		concept && !force
 			? await conceptPackages(concept)
 			: await syncExternalPackages(ndcs, { force });
-	const result = await loadToFormulary(prisma, scope.id, target, concept, packages);
+	jobNote(`${packages.length} of ${ndcs.length} packages returned by sources`);
+	jobStage('Linking packages to the formulary');
+	const result = await loadToFormulary(prisma, scope.id, target, concept, packages, set?.name);
+	jobStage('Checking package eligibility');
 	await refreshPackageEligibility(prisma, packages);
-	return { ...result, scope: { id: scope.id, name: scope.name } };
+	if (typeof result.packagesLinked === 'number') jobNote(`${result.packagesLinked} packages linked`);
+	jobStage('Looking up CMS billing codes');
+	// A refresh re-checks cms.gov for a newer quarter; an add uses the daily check.
+	await ensureCrosswalk(prisma, { force });
+	const billed = await cmsBilling(prisma, packages);
+	jobNote(`${billed.size} of ${packages.length} packages in the CMS NDC–HCPCS crosswalk`);
+	return { ...result, cmsBilled: billed.size, scope: { id: scope.id, name: scope.name } };
 }
 
 /** Mark which staged nodes are already on the formulary. */
@@ -233,6 +308,8 @@ export type StagedPackage = Omit<ExternalPackage, 'evidence' | 'splXml'> & {
 	formularyItemId: string | null;
 };
 export type StagedConcept = Omit<RxConcept, 'evidence'> & {
+	/** Why a live search listed it; absent outside a search. */
+	match?: ConceptMatch;
 	loaded: boolean;
 	formularyItemId: string | null;
 	packages: StagedPackage[];

@@ -126,6 +126,26 @@ test('summarizeItem folds directory-only ingredients into the same-named SPL ing
 	assert.deepEqual(summary.active[0].strengths.map((s) => s.value), ['10 mg', '10 mg/1']);
 });
 
+test('summarizeItem does not flag an unlisted NDC enriched through a listed sibling', () => {
+	const unlisted = (ndc: string, siblings: string[]) => {
+		const item = snapshot(ndc, {});
+		Object.assign(item, { listed: false });
+		item.details!.packaging = {
+			marketingStartDate: null,
+			sample: null,
+			siblings: siblings.map((sibling) => ({ ndc: sibling, description: null }))
+		};
+		return item;
+	};
+	const bag = unlisted('1', ['2']);
+	const orphan = unlisted('3', []);
+	const summary = summarizeItem(
+		[row('1'), row('2'), row('3')],
+		new Map([['1', bag], ['2', snapshot('2', {})], ['3', orphan]])
+	);
+	assert.deepEqual(summary.unlisted, ['3']);
+});
+
 test('nominalStrength restates label strengths in the title unit', () => {
 	const cases: [string, string][] = [
 		['10 g', '10000 mg'],

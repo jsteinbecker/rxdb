@@ -1,5 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
+import { trackJob } from '$lib/server/jobs';
 import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
 import { formularyRows } from '$lib/server/formulary-view';
 import { addBrandTag, itemBrands, removeBrandTag, restoreBrandTag } from '$lib/server/brand-tag-store';
@@ -10,6 +11,7 @@ import { parseNameOverride } from '$lib/item-name';
 import { summarizeItem } from '$lib/item-summary';
 import { loadPackageSnapshots } from '$lib/server/catalog-store';
 import { loadStagedNode } from '$lib/server/catalog-sync';
+import { cmsBilling } from '$lib/server/cms-billing';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
 import { withLocalConcepts } from '$lib/server/local-concept-view';
 import { hasAppearance, isSolidDoseForm, type PillAppearance } from '$lib/spl-characteristics';
@@ -102,9 +104,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		)
 	);
 	const summaryItems = new Map(snapshotNdcs.map((ndc, index) => [ndc, resolved[index]]));
+	const billing = await cmsBilling(
+		prisma,
+		packages.map((row) => ({ ndc: row.ndc, doseForm: row.doseForm ?? snapshots.get(row.ndc)?.item.doseForm ?? null }))
+	);
 	return {
 		appearances,
 		layouts,
+		cmsBilling: Object.fromEntries(billing),
 		scope: { id: scope.id, name: scope.name },
 		item,
 		brands: await itemBrands(prisma, item.formularyItemId),
@@ -123,7 +130,9 @@ export const actions: Actions = {
 		const { scope, item } = await itemInScope(params.id);
 		if (!item) error(404, 'That item is not on this formulary.');
 		try {
-			const result = await loadStagedNode(item.target, scope.id, { force: true });
+			const result = await trackJob(`Refreshing ${item.displayName}`, () =>
+				loadStagedNode(item.target, scope.id, { force: true })
+			);
 			return { refreshed: { packagesLinked: result.packagesLinked } };
 		} catch (e) {
 			return fail(422, {

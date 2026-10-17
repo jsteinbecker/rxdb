@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { racemicDisplayName } from '$lib/ingredient-group';
+	import {formatNdc} from '$lib/ndc';
 	import { constituentName } from '$lib/ions';
 	import RxCui from '$lib/components/RxCui.svelte';
       import {nestTallies, type ItemSummary, type Tally, type TallyNode} from '$lib/item-summary';
@@ -10,7 +11,6 @@
       let labelsOpen = $state(false);
       const total = $derived(summary.packageCount);
       const today = new Date().toISOString().slice(0, 10);
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
       const ndcList = (ndcs: string[]) => ndcs.map(formatNdc).join(', ');
       const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
       const range = (span: { earliest: string; latest: string }) =>
@@ -138,6 +138,7 @@
                                                       <span class="name">{racemicDisplayName(ingredient.name)}</span>
                                                       {#if ingredient.unii}<a class="mono small"
                                                                               href="/formulary/unii/{ingredient.unii}"
+                                                                              data-nav-title={ingredient.name}
                                                       >{ingredient.unii}</a
                                                       >{/if}
                                                       {#if ingredient.moieties.length && !ingredient.moieties.includes(ingredient.name)}

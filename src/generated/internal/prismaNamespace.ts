@@ -459,7 +459,8 @@ export const ModelName = {
   PillImageLayout: 'PillImageLayout',
   PillPhoto: 'PillPhoto',
   UniiSubstance: 'UniiSubstance',
-  PharmClassRule: 'PharmClassRule'
+  PharmClassRule: 'PharmClassRule',
+  CmsCrosswalkRow: 'CmsCrosswalkRow'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -475,7 +476,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -5141,6 +5142,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CmsCrosswalkRow: {
+      payload: Prisma.$CmsCrosswalkRowPayload<ExtArgs>
+      fields: Prisma.CmsCrosswalkRowFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CmsCrosswalkRowFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CmsCrosswalkRowFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>
+        }
+        findFirst: {
+          args: Prisma.CmsCrosswalkRowFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CmsCrosswalkRowFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>
+        }
+        findMany: {
+          args: Prisma.CmsCrosswalkRowFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>[]
+        }
+        create: {
+          args: Prisma.CmsCrosswalkRowCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>
+        }
+        createMany: {
+          args: Prisma.CmsCrosswalkRowCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CmsCrosswalkRowCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>[]
+        }
+        delete: {
+          args: Prisma.CmsCrosswalkRowDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>
+        }
+        update: {
+          args: Prisma.CmsCrosswalkRowUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>
+        }
+        deleteMany: {
+          args: Prisma.CmsCrosswalkRowDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CmsCrosswalkRowUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CmsCrosswalkRowUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>[]
+        }
+        upsert: {
+          args: Prisma.CmsCrosswalkRowUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CmsCrosswalkRowPayload>
+        }
+        aggregate: {
+          args: Prisma.CmsCrosswalkRowAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCmsCrosswalkRow>
+        }
+        groupBy: {
+          args: Prisma.CmsCrosswalkRowGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CmsCrosswalkRowGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CmsCrosswalkRowCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CmsCrosswalkRowCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -6168,6 +6243,26 @@ export const PharmClassRuleScalarFieldEnum = {
 export type PharmClassRuleScalarFieldEnum = (typeof PharmClassRuleScalarFieldEnum)[keyof typeof PharmClassRuleScalarFieldEnum]
 
 
+export const CmsCrosswalkRowScalarFieldEnum = {
+  ndc11: 'ndc11',
+  hcpcs: 'hcpcs',
+  file: 'file',
+  descriptor: 'descriptor',
+  labelerName: 'labelerName',
+  drugName: 'drugName',
+  hcpcsDosage: 'hcpcsDosage',
+  pkgSize: 'pkgSize',
+  pkgQty: 'pkgQty',
+  billUnits: 'billUnits',
+  billUnitsPkg: 'billUnitsPkg',
+  quarter: 'quarter',
+  sourceUrl: 'sourceUrl',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type CmsCrosswalkRowScalarFieldEnum = (typeof CmsCrosswalkRowScalarFieldEnum)[keyof typeof CmsCrosswalkRowScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -6736,6 +6831,7 @@ export type GlobalOmitConfig = {
   pillPhoto?: Prisma.PillPhotoOmit
   uniiSubstance?: Prisma.UniiSubstanceOmit
   pharmClassRule?: Prisma.PharmClassRuleOmit
+  cmsCrosswalkRow?: Prisma.CmsCrosswalkRowOmit
 }
 
 /* Types for Logging */

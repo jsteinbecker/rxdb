@@ -1,14 +1,18 @@
 <script lang="ts">
 	import RxCui from '$lib/components/RxCui.svelte';
+	import BrandedName from '$lib/components/BrandedName.svelte';
+	import {formatNdc} from '$lib/ndc';
+	import PageHeader from '$lib/components/PageHeader.svelte';
       import {enhance} from '$app/forms';
       import {SvelteMap} from 'svelte/reactivity';
       import {naturalCompare} from '$lib/natural-sort';
       import type {LoadedItem} from '$lib/server/catalog-formulary';
+      import {targetValue} from '$lib/load-target';
 
       let { data, form } = $props();
 
 	let filter = $state('');
-	let level = $state<'all' | 'concept' | 'package'>('all');
+	let level = $state<'all' | 'concept' | 'package' | 'set'>('all');
 	// Per-row actions in flight, so several rows can refresh at once without resetting each other.
 	const pending = new SvelteMap<string, 'update' | 'remove'>();
 	let reloadingAll = $state(false);
@@ -26,7 +30,10 @@
 	};
 
 	const levelOf = (item: LoadedItem) =>
-		item.target.kind === 'concept' ? (item.tty ?? 'Concept') : 'NDC';
+		item.target.kind === 'concept' ? (item.tty ?? 'Concept') : item.target.kind === 'set' ? 'Set' : 'NDC';
+	const loadedSets = $derived(
+		new Set(data.items.flatMap((item: LoadedItem) => (item.target.kind === 'set' ? [item.target.key] : [])))
+	);
 
 	const items = $derived.by(() => {
 		const term = filter.trim().toLowerCase();
@@ -37,7 +44,7 @@
 					!term ||
 					[
 						item.displayName,
-						item.target.kind === 'concept' ? item.target.rxcui : item.target.ndc
+						targetValue(item.target)
 					].some((value) => value.toLowerCase().includes(term))
 			)
 			.sort((a: LoadedItem, b: LoadedItem) => naturalCompare(a.displayName, b.displayName));
@@ -65,7 +72,6 @@
 		selected = next;
 	};
 
-	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 </script>
 
@@ -74,17 +80,16 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow">
+	<PageHeader title={data.scope.name}>
+		{#snippet eyebrow()}
 			<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Loaded items ·
 			<a href="/settings">Settings</a>
-		</p>
-		<h1>{data.scope.name}</h1>
+		{/snippet}
 		<p>
 			Each row is one load, at the level it was loaded. Removing a concept (SCD, SBD, pack…) takes
 			off every package it brought in; removing an NDC takes off just that package.
 		</p>
-	</header>
+	</PageHeader>
 
 	{#if form?.removed}
 		<p class="notice" role="status">
@@ -111,7 +116,18 @@
 			<option value="all">All levels</option>
 			<option value="concept">Concepts</option>
 			<option value="package">Packages</option>
+			<option value="set">Curated sets</option>
 		</select>
+		{#each data.productSets.filter((set) => !loadedSets.has(set.key)) as set (set.key)}
+			<form method="POST" action="?/addSet" use:enhance>
+				<input type="hidden" name="set" value={set.key} />
+				<button
+					disabled={busy}
+					title="Products RxNorm doesn't link: every listed, approved package found in the openFDA NDC directory"
+					>Add {set.name}</button
+				>
+			</form>
+		{/each}
 		<form
 			method="POST"
 			action="?/reloadAll"
@@ -203,9 +219,11 @@
 					/>
 					<span class="level" class:package={item.target.kind === 'package'}>{levelOf(item)}</span>
 					<span class="desc">
-						<a href="/formulary/items/{item.formularyItemId}">{item.displayName}</a>
+						<a href="/formulary/items/{item.formularyItemId}" data-nav-title={item.displayName}
+							><BrandedName text={item.displayName} /></a
+						>
 						<span class="small mono">
-							{#if item.target.kind === 'concept'}RxCUI <RxCui rxcui={item.target.rxcui} />{:else}NDC {formatNdc(item.target.ndc)}{/if}· {plural(item.packages, 'package')}{#if item.excludedPackages}<span
+							{#if item.target.kind === 'concept'}RxCUI <RxCui rxcui={item.target.rxcui} />{:else if item.target.kind === 'set'}Curated set · openFDA{:else}NDC {formatNdc(item.target.ndc)}{/if}· {plural(item.packages, 'package')}{#if item.excludedPackages}<span
 								title="Linked by the load but excluded from the catalog (veterinary or ineligible), so never listed"
 							>{" "}(+{item.excludedPackages} excluded)</span
 							>{/if} · loaded
@@ -232,7 +250,7 @@
 						<input
 							type="hidden"
 							name="target"
-							value={item.target.kind === 'concept' ? item.target.rxcui : item.target.ndc}
+							value={targetValue(item.target)}
 						/>
 						<button disabled={busy || pending.has(item.formularyItemId)}>
 							{pending.get(item.formularyItemId) === 'update'
@@ -245,7 +263,7 @@
 						action="?/remove"
 						use:enhance={({ cancel }) => {
 							const scope =
-								item.target.kind === 'concept'
+								item.target.kind !== 'package'
 									? `${levelOf(item)} "${item.displayName}" and its ${plural(item.packages + item.excludedPackages, 'package')}`
 									: `NDC ${formatNdc(item.target.ndc)}`;
 							if (data.settings.confirmRemove && !confirm(`Remove ${scope} from the formulary?`))
@@ -277,31 +295,6 @@
 		max-width: 1040px;
 		margin: 0 auto;
 		padding: 4rem 1.5rem;
-	}
-
-	header p:last-child {
-		color: #5c6777;
-		line-height: 1.55;
-		max-width: 46rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
 	}
 
 	.toolbar {

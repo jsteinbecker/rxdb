@@ -1,5 +1,6 @@
 import { quantifiedScdName } from '$lib/quantified-scd';
 import { itemName } from '$lib/item-name';
+import { scopeStrengthStyles } from './strength-styles';
 import { releasePeriod } from '$lib/time-release';
 import type { PrismaClient } from '../../generated/client';
 import type { LocalConceptView } from '../local-concept-view';
@@ -12,7 +13,8 @@ import { localConceptsByRxcui } from './local-concept-view';
 export const DEFAULT_FORMULARY = 'Default formulary';
 const ORIGIN = 'formulary_origin';
 
-export type LoadTarget = { kind: 'concept'; rxcui: string } | { kind: 'package'; ndc: string };
+import { targetValue, type LoadTarget } from '$lib/load-target';
+export { targetValue, type LoadTarget };
 export type LoadResult = {
 	formularyItemId: string;
 	displayName: string;
@@ -22,7 +24,7 @@ export type LoadResult = {
 };
 
 export const originKey = (scopeId: string, target: LoadTarget) =>
-	`${scopeId}:${target.kind === 'concept' ? `rxcui:${target.rxcui}` : `ndc:${target.ndc}`}`;
+	`${scopeId}:${target.kind === 'concept' ? 'rxcui' : target.kind === 'package' ? 'ndc' : 'set'}:${targetValue(target)}`;
 
 /** Any root formulary scope; the default one may have been renamed in Settings. */
 export const findDefaultScope = (db: PrismaClient) =>
@@ -68,7 +70,8 @@ export async function loadToFormulary(
 	scopeId: string,
 	target: LoadTarget,
 	concept: RxConcept | null,
-	packages: ExternalPackage[]
+	packages: ExternalPackage[],
+	setName?: string
 ): Promise<LoadResult> {
 	const skipped: { ndc: string; reason: string }[] = [];
 	const eligible = packages.filter((item) => {
@@ -81,7 +84,9 @@ export async function loadToFormulary(
 	const displayName =
 		target.kind === 'concept'
 			? (concept?.name ?? `RxCUI ${target.rxcui}`)
-			: [
+			: target.kind === 'set'
+				? (setName ?? target.key)
+				: [
 					eligible[0]?.genericName ?? eligible[0]?.brandName ?? packages[0]?.description,
 					`NDC ${target.ndc}`
 				]
@@ -112,7 +117,12 @@ export async function loadToFormulary(
 					data: {
 						id: entity.id,
 						scopeId,
-						kind: target.kind === 'concept' ? 'clinical_drug' : 'package',
+						kind:
+							target.kind === 'concept'
+								? 'clinical_drug'
+								: target.kind === 'set'
+									? 'product_set'
+									: 'package',
 						displayName
 					}
 				});
@@ -160,7 +170,9 @@ export async function loadToFormulary(
 				formularyItemId,
 				target.kind === 'concept'
 					? (concept?.details?.brands ?? []).map(({ name, rxcui }) => ({ name, rxcui }))
-					: [eligible[0]?.brandName].flatMap((name) => (name ? [{ name }] : []))
+					: target.kind === 'set'
+						? []
+						: [eligible[0]?.brandName].flatMap((name) => (name ? [{ name }] : []))
 			);
 			for (const item of eligible) {
 				if (!packageIds.some((row) => row.normalizedValue === item.ndc))
@@ -201,11 +213,13 @@ export type LoadedItem = {
 };
 
 function parseOrigin(scopeId: string, key: string): LoadTarget | null {
-	const match = key.slice(scopeId.length + 1).match(/^(rxcui|ndc):(.+)$/);
+	const match = key.slice(scopeId.length + 1).match(/^(rxcui|ndc|set):(.+)$/);
 	if (!key.startsWith(`${scopeId}:`) || !match) return null;
 	return match[1] === 'rxcui'
 		? { kind: 'concept', rxcui: match[2] }
-		: { kind: 'package', ndc: match[2] };
+		: match[1] === 'ndc'
+			? { kind: 'package', ndc: match[2] }
+			: { kind: 'set', key: match[2] };
 }
 
 /** Every live formulary item in the scope, at the level it was loaded. */
@@ -278,13 +292,14 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 		_count: true
 	});
 	const excludedBy = new Map(excluded.map((row) => [row.formularyItemId, row._count]));
+	const styles = await scopeStrengthStyles(db, scopeId);
 	return items.map(({ target, item, loadedAt }) => {
 		const local = target.kind === 'concept' ? locals.get(target.rxcui) : undefined;
 		// The local name replaces RxNorm's; the user's nameOverride still wins (itemName).
 		const baseName = local?.name ?? item.displayName;
 		return {
 		formularyItemId: item.id,
-		displayName: itemName(baseName, item),
+		displayName: itemName(baseName, item, styles),
 		sourceName: quantifiedScdName(baseName),
 		nameOverride: item.nameOverride,
 		strengthAsPercent: item.strengthAsPercent,

@@ -1591,3 +1591,29 @@ model PharmClassRule {
   @@index([scopeId, moietyKey])
   @@map("pharm_class_rule")
 }
+
+/// A row of the CMS quarterly NDC–HCPCS crosswalk for Medicare Part B (ASP, OPPS, AWP, PrEP files).
+/// Replaced whole when a newer quarter is published; see `cms-billing.ts`.
+model CmsCrosswalkRow {
+      ndc11        String
+      hcpcs        String
+      /// Which crosswalk file the row came from: ASP, OPPS, AWP or PrEP.
+      file         String
+      descriptor   String?
+      labelerName  String?  @map("labeler_name")
+      drugName     String?  @map("drug_name")
+      /// The HCPCS code's dosage descriptor ("1 MG", "0.5 ML").
+      hcpcsDosage  String?  @map("hcpcs_dosage")
+      pkgSize      Float?   @map("pkg_size")
+      pkgQty       Float?   @map("pkg_qty")
+      billUnits    Float?   @map("bill_units")
+      billUnitsPkg Float?   @map("bill_units_pkg")
+      /// "October 2026", the quarter the file covers.
+      quarter      String
+      sourceUrl    String   @map("source_url")
+      fetchedAt    DateTime @default(now()) @map("fetched_at") @db.Timestamptz(6)
+
+      @@id([ndc11, hcpcs, file])
+      @@index([ndc11])
+      @@map("cms_crosswalk_row")
+}

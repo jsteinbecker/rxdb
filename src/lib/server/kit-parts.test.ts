@@ -279,7 +279,7 @@ test('titles read an oral powder by its concentration and a kit by its drug bott
       ingredients: [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '250 mg/5mL' }],
       size: { kind: 'volume', value: 80, unit: 'mL', container: 'BOTTLE', packQty: 1 }
     }),
-    'Vancomycin hydrochloride 250 mg/5 mL powder, for solution'
+    'Vancomycin hydrochloride 50 mg/mL powder, for solution'
   );
   // A "brand" that is the generic and its dose form is not a brand.
   assert.equal(

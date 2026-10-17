@@ -474,6 +474,8 @@ export type ActivityInput = {
 	manualExclusion?: string | null;
 	/** The directory product found for the NDC's product code, listed or not. */
 	productCode?: string | null;
+	/** Other packages of the same product; an inner package matches through one of these. */
+	details?: { packaging?: { siblings?: unknown[] } | null } | null;
 };
 
 /**
@@ -494,6 +496,7 @@ export type ExclusionReason =
 	| 'marketing-ended'
 	| 'rxnav-inactive'
 	| 'inactive-unlisted'
+	| 'unlisted'
 	| 'no-spl'
 	| 'spl-inactivated';
 const INACTIVE = new Set(['OBSOLETE', 'ALIEN', 'RETIRED', 'UNKNOWN', 'NON-RXNORM']);
@@ -513,8 +516,10 @@ export function exclusionReason(item: ActivityInput, now = new Date()): Exclusio
 		return 'marketing-ended';
 	const listed = directoryListed(item);
 	if (listed === true) return null;
-	if (item.splPresent === true) return null;
 	if (listed === false && item.splPresent === false) return 'no-spl';
+	// Unlisted with no sibling it could have matched through: a lingering SPL doesn't keep it.
+	const unlisted = listed === false && !item.details?.packaging?.siblings?.length;
+	if (item.splPresent === true) return unlisted ? 'unlisted' : null;
 	if (INACTIVE.has(item.rxcuiStatus?.toUpperCase() ?? '')) return 'rxnav-inactive';
-	return null;
+	return unlisted ? 'unlisted' : null;
 }

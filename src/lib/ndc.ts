@@ -20,6 +20,10 @@ const DIGITS_ONLY = /^\d{11}$/;
 /** True for the canonical 11-digit unhyphenated form RxNorm returns. */
 export const isNdc11 = (ndc: string): boolean => DIGITS_ONLY.test(ndc);
 
+/** `50633011011` → `50633-0110-11`, the 5-4-2 form the app displays; anything else as given. */
+export const formatNdc = (ndc: string): string =>
+	isNdc11(ndc) ? `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}` : ndc;
+
 /**
  * Normalize a hyphenated NDC (4-4-2, 5-3-2, 5-4-1, or already 5-4-2) to the
  * canonical 11-digit form by zero-padding each segment to 5-4-2.

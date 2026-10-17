@@ -80,12 +80,13 @@ export const load: PageServerLoad = async ({ params }) => {
 		select: { formularyItem: { select: { id: true, displayName: true, nameOverride: true, strengthAsPercent: true } } }
 	});
 	const scope = await defaultScope(prisma);
+	const styles = parseSettings(scope.settings).strengthStyles;
 	const scopeId = scope.id;
 	// A superseded concept's item reads by its local name; a nameOverride still wins (itemName).
 	const localNames = links.length ? localNamesOf(await loadedItems(prisma, scopeId)) : new Map<string, string>();
 	const formularyItems = links.map(({ formularyItem }) => ({
 		id: formularyItem.id,
-		displayName: itemName(localNames.get(formularyItem.id) ?? formularyItem.displayName, formularyItem)
+		displayName: itemName(localNames.get(formularyItem.id) ?? formularyItem.displayName, formularyItem, styles)
 	}));
 	const [shown] = await withLocalConcepts(
 		prisma,

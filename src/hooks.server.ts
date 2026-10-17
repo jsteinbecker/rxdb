@@ -2,6 +2,11 @@ import type { Handle, ServerInit } from '@sveltejs/kit';
 import { logger } from '$lib/server/log';
 import { prisma } from '$lib/server/prisma';
 import { reconcileFormularyEligibility } from '$lib/server/catalog-store';
+import { fdaApiKeysFrom, setFdaApiKeys } from '$lib/server/catalog-providers';
+import { env } from '$env/dynamic/private';
+
+// openFDA requests rotate through every configured key when one is rate limited.
+setFdaApiKeys(fdaApiKeysFrom(env));
 
 const log = logger('http');
 

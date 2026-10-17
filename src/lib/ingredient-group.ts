@@ -311,3 +311,47 @@ export function ingredientGroup(name: string): string {
 	if (SALT_SENSITIVE.has(base.map(lower).join(' '))) return salt;
 	return resolved(base.join(' '));
 }
+
+// ── A racemate beside one of its own enantiomers ────────────────────────────
+// `AMPHETAMINE` is half `DEXTROAMPHETAMINE`, half `LEVOAMPHETAMINE`. Only split
+// where the product also names one of the enantiomers, so the halves have a
+// whole to join; a racemate on its own stays the racemate.
+
+const ENANTIOMER = /^(dextro|levo)(.+)$/i;
+
+/** `word` with its `dextro`/`levo` prefix swapped for `prefix`, in the word's casing. */
+const withPrefix = (word: string, prefix: 'dextro' | 'levo') => {
+	const swapped = word.replace(/^(?:dextro|levo)/i, prefix);
+	if (word === word.toUpperCase()) return swapped.toUpperCase();
+	return /^[A-Z]/.test(word) ? swapped.replace(/^./, (c) => c.toUpperCase()) : swapped;
+};
+
+/**
+ * Per name, the enantiomers it counts toward and its share of each; null when
+ * no racemate in the list has an enantiomer beside it.
+ */
+export function enantiomerShares(names: string[]): { name: string; share: number }[][] | null {
+	const heads = names.map((name) => ingredientGroup(name).trim().split(/\s+/)[0] ?? '');
+	const lower = heads.map((head) => head.toLowerCase());
+	// Racemate stem → the spelling its enantiomers take, from the first one listed.
+	const stems = new Map<string, string>();
+	for (const head of heads) {
+		const match = head.match(ENANTIOMER);
+		if (match && lower.includes(match[2].toLowerCase()) && !stems.has(match[2].toLowerCase()))
+			stems.set(match[2].toLowerCase(), head);
+	}
+	if (!stems.size) return null;
+	return heads.map((head, index) => {
+		const stem = lower[index].match(ENANTIOMER)?.[2] ?? lower[index];
+		const spelling = stems.get(stem);
+		if (!spelling) return [{ name: names[index], share: 1 }];
+		const dextro = withPrefix(spelling, 'dextro');
+		const levo = withPrefix(spelling, 'levo');
+		if (lower[index] === stem)
+			return [
+				{ name: dextro, share: 0.5 },
+				{ name: levo, share: 0.5 }
+			];
+		return [{ name: /^dextro/i.test(head) ? dextro : levo, share: 1 }];
+	});
+}

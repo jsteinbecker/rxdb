@@ -1,10 +1,11 @@
 import { itemName } from '$lib/item-name';
 import type {PrismaClient} from '../../generated/client';
-import type {FormularyRow} from '../formulary-hierarchy';
+import {resolveRacemates, type FormularyRow} from '../formulary-hierarchy';
 import {loadPackageSnapshots} from './catalog-store';
 import {correctedIngredients, packageDisplayTitle} from '../package-title';
 import {PACKAGE_PSEUDO_SCD} from './pseudo-scd-store';
 import {fillFromConcept} from '../concept-fill';
+import {scopeStrengthStyles} from './strength-styles';
 
 /**
  * Every package currently linked into a formulary scope, flattened with the
@@ -21,6 +22,7 @@ export async function formularyRows(
    */
   localNames: Map<string, string> | Promise<Map<string, string>> = new Map()
 ): Promise<FormularyRow[]> {
+  const styles = await scopeStrengthStyles(db, scopeId);
   const links = await db.formularyItemPackage.findMany({
     where: {
       validTo: null,
@@ -76,7 +78,8 @@ export async function formularyRows(
   const directory = await productDirectory(db);
   const names = await localNames;
 
-  // Packages never enriched are placed by their concept rather than left "Not specified".
+  // Packages never enriched are placed by their concept rather than left "Not specified";
+  // a racemate beside its own enantiomer then reads as the two enantiomers.
   return fillFromConcept(links.flatMap((link) => {
     const ndc = link.package.entity.externalIdentifiers[0]?.normalizedValue;
     if (!ndc) return [];
@@ -113,7 +116,8 @@ export async function formularyRows(
         formularyItemId: link.formularyItem.id,
         formularyItem: itemName(
           names.get(link.formularyItem.id) ?? pseudo?.name ?? link.formularyItem.displayName,
-          link.formularyItem
+          link.formularyItem,
+          styles
         ),
         description: facts.description,
         displayTitle: packageDisplayTitle(facts),
@@ -131,7 +135,7 @@ export async function formularyRows(
         enriched: Boolean(item)
       }
     ];
-  }));
+  })).map((row) => ({ ...row, ingredients: resolveRacemates(row.ingredients) }));
 }
 
 /** The NDCs `formularyRows` would list, without loading anything else about them. */

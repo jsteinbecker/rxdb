@@ -88,6 +88,7 @@ export const isProductLevelKey = (key: string): boolean =>
     'isVeterinary'
   ].includes(key) ||
   key.startsWith('details.product.') ||
+  key === TOTAL_SHARED_KEY ||
   key.startsWith('details.spl.appearances.') ||
   key.startsWith('details.spl.ingredients.');
 
@@ -224,6 +225,9 @@ const volumeFields = [
 export const RECONSTITUTION_OVERRIDE_KEY =
   /^reconstitution\.(r[0-9a-f]{8}(?:-\d+)?|a\d+|\d+)\.(vialMassMg|diluentMl|finalVolumeMl|concentrations\.(\d+)\.mgPerMl|routes|diluents|removed)$/;
 
+/** Whether ingredients sharing a moiety get a total row; unset follows RxNorm. */
+export const TOTAL_SHARED_KEY = 'details.spl.totalSharedMoieties';
+
 /** `details.spl.ingredients.<index>.strength`: an ingredient's labeled amount. */
 export const INGREDIENT_STRENGTH_KEY = /^details\.spl\.ingredients\.(\d+)\.strength$/;
 
@@ -303,6 +307,9 @@ export function overrideTargets(
       ? [{ key: 'details.product.routes', label: 'Routes (choose any)' }]
       : []),
     ...booleanFields.map(([key, label]) => ({ key, label })),
+    ...(item.details?.spl
+      ? [{ key: TOTAL_SHARED_KEY, label: 'Total ingredients sharing a moiety (true or false)' }]
+      : []),
     ...(item.size
       ? [
           { key: 'size.value', label: 'Unit-of-use quantity' },
@@ -500,6 +507,18 @@ function resolveField(key: string): OverrideField | null {
       replacesCorrection: key === 'description'
     });
   }
+  if (key === TOTAL_SHARED_KEY)
+    return field({
+      choices: BOOLEAN,
+      valid: isBoolean,
+      get: (item) => {
+        const value = item.details?.spl?.totalSharedMoieties;
+        return value === undefined ? null : String(value);
+      },
+      set: (item, value) => {
+        if (item.details?.spl) item.details.spl.totalSharedMoieties = value === 'true';
+      }
+    });
   if (BOOLEAN_KEYS.has(key))
     return field({
       choices: BOOLEAN,

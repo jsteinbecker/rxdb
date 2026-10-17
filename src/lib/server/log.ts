@@ -17,7 +17,8 @@ function write(level: Level, scope: string, message: string, data?: Record<strin
 /** A logger tagged with `scope`, filtered by the `LOG_LEVEL` env var (default `info`). */
 export function logger(scope: string) {
 	return {
-		debug: (message: string, data?: Record<string, unknown>) => write('debug', scope, message, data),
+		debug: (message: string, data?: Record<string, unknown>) =>
+			write('debug', scope, message, data),
 		info: (message: string, data?: Record<string, unknown>) => write('info', scope, message, data),
 		warn: (message: string, data?: Record<string, unknown>) => write('warn', scope, message, data),
 		error: (message: string, data?: Record<string, unknown>) => write('error', scope, message, data)
@@ -26,9 +27,30 @@ export function logger(scope: string) {
 
 const fetchLog = logger('fetch');
 
-/** `fetch` that logs each outbound request with its status, duration and size, or its failure. */
-export async function loggedFetch(input: string | URL, init?: RequestInit): Promise<Response> {
-	const url = String(input);
+const SECRET_PARAMS = ['api_key', 'apikey', 'key', 'token', 'access_token'];
+
+/** The URL as it may appear in a log line: secret query parameters masked. */
+export function redactUrl(input: string | URL): string {
+	try {
+		const url = new URL(String(input));
+		for (const name of SECRET_PARAMS)
+			if (url.searchParams.has(name)) url.searchParams.set(name, 'REDACTED');
+		return url.href;
+	} catch {
+		return String(input);
+	}
+}
+
+/**
+ * `fetch` that logs each outbound request with its status, duration and size, or its failure.
+ * Statuses in `expected` (say, a search API's 404 for "no matches") log at info, not warn.
+ */
+export async function loggedFetch(
+	input: string | URL,
+	init?: RequestInit,
+	expected: number[] = []
+): Promise<Response> {
+	const url = redactUrl(input);
 	const method = init?.method ?? 'GET';
 	const started = performance.now();
 	fetchLog.debug(`→ ${method} ${url}`);
@@ -37,7 +59,7 @@ export async function loggedFetch(input: string | URL, init?: RequestInit): Prom
 		const ms = Math.round(performance.now() - started);
 		const size = response.headers.get('content-length');
 		const summary = `← ${response.status} ${method} ${url} ${ms}ms${size ? ` ${size}b` : ''}`;
-		if (response.ok) fetchLog.info(summary);
+		if (response.ok || expected.includes(response.status)) fetchLog.info(summary);
 		else fetchLog.warn(summary);
 		return response;
 	} catch (caught) {

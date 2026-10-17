@@ -113,7 +113,8 @@ export const ModelName = {
   PillImageLayout: 'PillImageLayout',
   PillPhoto: 'PillPhoto',
   UniiSubstance: 'UniiSubstance',
-  PharmClassRule: 'PharmClassRule'
+  PharmClassRule: 'PharmClassRule',
+  CmsCrosswalkRow: 'CmsCrosswalkRow'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1114,6 +1115,26 @@ export const PharmClassRuleScalarFieldEnum = {
 } as const
 
 export type PharmClassRuleScalarFieldEnum = (typeof PharmClassRuleScalarFieldEnum)[keyof typeof PharmClassRuleScalarFieldEnum]
+
+
+export const CmsCrosswalkRowScalarFieldEnum = {
+  ndc11: 'ndc11',
+  hcpcs: 'hcpcs',
+  file: 'file',
+  descriptor: 'descriptor',
+  labelerName: 'labelerName',
+  drugName: 'drugName',
+  hcpcsDosage: 'hcpcsDosage',
+  pkgSize: 'pkgSize',
+  pkgQty: 'pkgQty',
+  billUnits: 'billUnits',
+  billUnitsPkg: 'billUnitsPkg',
+  quarter: 'quarter',
+  sourceUrl: 'sourceUrl',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type CmsCrosswalkRowScalarFieldEnum = (typeof CmsCrosswalkRowScalarFieldEnum)[keyof typeof CmsCrosswalkRowScalarFieldEnum]
 
 
 export const SortOrder = {
