@@ -1,5 +1,6 @@
 import { loggedFetch } from './log';
-import { balanceIon, ionDisplayName } from '../ions';
+import { cationsNamedIn } from '../ions';
+import { type IonDeclaration, ionDeclarationsFromLabel, ionRows, type SaltFacts } from './ion-content';
 import { naturalCompare } from '../natural-sort';
 import { type PackageFacts, parsePackageFacts } from './catalog-facts';
 import type { PropertyOverride } from '../property-override-fields';
@@ -83,6 +84,13 @@ export type LabelIngredient = {
 	productCode: string | null;
 	/** Why `strength` differs from what the label coded — see $lib/spl-strength-checks.ts. */
 	strengthNotes?: string[];
+	/**
+	 * What `strength` read before a salt correction changed the label's number,
+	 * that number being the mass of `unii`, the salt itself. Undoing the
+	 * correction restores it exactly instead of converting the rounded moiety
+	 * strength back.
+	 */
+	labelStrength?: { strength: string; unii: string | null };
 	/** The kit part the ingredient is in: `GRAPE FLAVORED DILUENT (145 mL)`. */
 	part?: string;
 	/** Label-declared elemental content supplied by one or more salt ingredients. */
@@ -384,11 +392,17 @@ function labelIngredientOf(
 	const part = product.part
 		? `${product.name ?? 'Kit part'}${product.part.amount !== null ? ` (${product.part.amount}${product.part.amountUnit ? ` ${product.part.amountUnit}` : ''})` : ''}`
 		: null;
+	// The row as the label printed it, before any salt correction.
+	const printed = checked.corrections.find((correction) => correction.stated !== undefined)?.stated;
+	const asPrinted = printed === undefined ? null : { ...checked, strength: printed };
+	const labelStrengthOf = (strength: string | null) =>
+		strength ? { labelStrength: { strength, unii: ingredient.unii } } : {};
 	// A kit part states its strength per its own measure: `1 g/1 g` of a 7.5 g
 	// bottle of powder is 7.5 g. Read as written it says nothing about content.
 	const content =
 		product.part && ingredient.kind === 'active' ? partContent(checked, product.part) : null;
 	if (content) {
+		const printedContent = asPrinted && partContent(asPrinted, product.part);
 		return {
 			name: ingredient.name,
 			unii: ingredient.unii,
@@ -401,25 +415,22 @@ function labelIngredientOf(
 				...checked.corrections.map((correction) => correction.note),
 				`Stated as ${strengthText(checked)} of the ${(product.doseForm ?? 'part').toLowerCase()}; the kit holds ${product.part!.amount} ${product.part!.amountUnit ?? ''}`.trim()
 			],
+			...labelStrengthOf(printedContent ? `${printedContent.value} ${printedContent.unit}` : null),
 			...(part ? { part } : {})
 		};
 	}
-	const statedStrength = strengthText(checked);
-	const totalStrength =
-		!dryFill &&
-		fillVolumeMl !== null &&
-		checked.strength !== null &&
-		checked.per !== null &&
-		checked.per > 0 &&
-		/^(?:mL|L)$/i.test(checked.perUnit ?? '')
-			? `${Number(((checked.strength * fillVolumeMl * (checked.perUnit!.toLowerCase() === 'l' ? 0.001 : 1)) / checked.per).toPrecision(12))}${checked.strengthUnit ? ` ${checked.strengthUnit}` : ''}`
-			: null;
-	return {
-		name: ingredient.name,
-		unii: ingredient.unii,
-		kind: ingredient.kind,
-		basis: ingredient.basis,
-		strength: dryFill
+	const strengthOf = (row: CheckedStrength) => {
+		const statedStrength = strengthText(row);
+		const totalStrength =
+			!dryFill &&
+			fillVolumeMl !== null &&
+			row.strength !== null &&
+			row.per !== null &&
+			row.per > 0 &&
+			/^(?:mL|L)$/i.test(row.perUnit ?? '')
+				? `${Number(((row.strength * fillVolumeMl * (row.perUnit!.toLowerCase() === 'l' ? 0.001 : 1)) / row.per).toPrecision(12))}${row.strengthUnit ? ` ${row.strengthUnit}` : ''}`
+				: null;
+		return dryFill
 			? dryFillStrength(
 					statedStrength,
 					// The package's form, corrected where the SPL miscoded the powder as
@@ -428,12 +439,20 @@ function labelIngredientOf(
 					bulkFillMl,
 					fillVolumeMl
 				)
-			: (totalStrength ?? statedStrength),
+			: (totalStrength ?? statedStrength);
+	};
+	return {
+		name: ingredient.name,
+		unii: ingredient.unii,
+		kind: ingredient.kind,
+		basis: ingredient.basis,
+		strength: strengthOf(checked),
 		moieties: ingredient.moieties,
 		productCode,
 		...(checked.corrections.length
 			? { strengthNotes: checked.corrections.map((correction) => correction.note) }
 			: {}),
+		...labelStrengthOf(asPrinted && strengthOf(asPrinted)),
 		...(part ? { part } : {})
 	};
 }
@@ -447,64 +466,6 @@ function splDocumentTitle(xml: string | null): string | null {
 		.replace(/\s+/g, ' ')
 		.trim();
 	return text || null;
-}
-
-/** GSRS's SODIUM CATION. */
-const SODIUM_ION_UNII = 'LYR4M0NH37';
-
-/** Extract a label-stated total sodium amount for the exact package NDC. */
-function sodiumContentFromLabel(
-	text: string | null,
-	ndc: string,
-	saltIngredients: string[]
-): LabelIngredient | null {
-	if (!text || !saltIngredients.length) return null;
-	const plain = text
-		.replace(/<[^>]*>/g, ' ')
-		.replace(/&#x([\da-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
-		.replace(/&#(\d+);/g, (_, decimal: string) => String.fromCodePoint(Number(decimal)))
-		.replace(/&nbsp;/gi, ' ')
-		.replace(/&amp;/gi, '&')
-		.replace(/\s+/g, ' ');
-	// "contains 2.5 mEq (57.5 mg) of sodium" or "contains 57.5 mg (2.5 mEq) of sodium".
-	const declarations =
-		/(?:contains|provides)\s+(?:([\d,.]+)\s*mEq\s*\(\s*([\d,.]+)\s*mg\s*\)|([\d,.]+)\s*mg\s*\(\s*([\d,.]+)\s*mEq\s*\))\s*(?:of\s+)?sodium\b/gi;
-	const matches = [...plain.matchAll(declarations)];
-	for (let index = 0; index < matches.length; index++) {
-		const match = matches[index];
-		const start = (match.index ?? 0) + match[0].length;
-		const end = Math.min(matches[index + 1]?.index ?? start + 240, start + 240);
-		const ndcMatch = plain.slice(start, end).match(/\bNDC\s*[:#]?\s*([\d-]{10,})/i);
-		if (!ndcMatch || toNdc11(ndcMatch[1]) !== ndc) continue;
-		const mEq = Number((match[1] ?? match[4]).replaceAll(',', ''));
-		const massMg = Number((match[2] ?? match[3]).replaceAll(',', ''));
-		if (!Number.isFinite(mEq) || mEq <= 0 || !Number.isFinite(massMg) || massMg <= 0) continue;
-		const balance = balanceIon('sodium', massMg, mEq);
-		return {
-			name: ionDisplayName('sodium'),
-			unii: SODIUM_ION_UNII,
-			kind: 'ionic',
-			basis: 'ion constituent (label total)',
-			strength: `${massMg} mg (${mEq} mEq)`,
-			moieties: [],
-			productCode: null,
-			...(balance && !balance.balanced
-				? {
-						strengthNotes: [
-							`The label states ${massMg} mg and ${mEq} mEq of sodium, which disagree: ${massMg} mg is ${balance.expectedMEq} mEq`
-						]
-					}
-				: {}),
-			ionicContent: {
-				element: 'sodium',
-				massMg,
-				mEq,
-				sourceIngredients: saltIngredients,
-				nonAdditive: true
-			}
-		};
-	}
-	return null;
 }
 
 /** A provider answered with a non-OK status; `status` 429 is a rate limit. */
@@ -1053,6 +1014,8 @@ export type PackageHints = {
 	moietiesOf?: (unii: string) => Promise<{ unii: string; name: string }[] | null>;
 	/** GSRS's salt-to-moiety mass factor for a UNII; corrects a heavy salt's mass labeled as moiety. */
 	moietyFactorOf?: (unii: string) => Promise<MoietyFactor | null>;
+	/** GSRS's formula and molecular weight for a UNII; how much of each ion a salt delivers. */
+	saltOf?: (unii: string) => Promise<SaltFacts | null>;
 };
 
 /**
@@ -1103,6 +1066,39 @@ async function moietyFactorsOf(
 		})
 	);
 	return factors;
+}
+
+/** GSRS's formula and weight for every active salt named for a cation, by UNII. */
+async function saltsOf(
+	products: { ingredients: SplIngredient[] }[],
+	saltOf: PackageHints['saltOf']
+): Promise<Map<string, SaltFacts>> {
+	const salts = new Map<string, SaltFacts>();
+	if (!saltOf) return salts;
+	const uniis = new Set(
+		products
+			.flatMap((product) => product.ingredients)
+			.filter((i) => i.kind === 'active' && i.unii && cationsNamedIn(i.name).length)
+			.map((i) => i.unii!)
+	);
+	await Promise.all(
+		[...uniis].map(async (unii) => {
+			const salt = await saltOf(unii).catch(() => null);
+			if (salt) salts.set(unii, salt);
+		})
+	);
+	return salts;
+}
+
+/** The label's rows followed by the ions its salts deliver. */
+function withIonRows(
+	ingredients: LabelIngredient[],
+	salts: Map<string, SaltFacts>,
+	moietyFactors: Map<string, MoietyFactor>,
+	declared: IonDeclaration[]
+): LabelIngredient[] {
+	const factors = new Map([...moietyFactors].map(([unii, { factor }]) => [unii, Number(factor)]));
+	return [...ingredients, ...ionRows(ingredients, salts, factors, declared)];
 }
 
 /**
@@ -1591,17 +1587,11 @@ export async function enrichPackages(
 				? dryFillStrength(ingredient.strength, doseForm, bulkFillMl, fillVolumeMl)
 				: ingredient.strength
 		}));
-		const saltIngredients = [
-			...new Set(
-				labelProducts
-					.flatMap((item) => item.ingredients)
-					.filter(
-						(ingredient) => ingredient.kind === 'active' && /\bsodium\b/i.test(ingredient.name)
-					)
-					.map((ingredient) => ingredient.name)
-			)
-		];
-		const ionicContent = sodiumContentFromLabel(labelText('how_supplied'), ndc, saltIngredients);
+		const ionSalts = await saltsOf(labelProducts, hints.saltOf);
+		const ionDeclarations = ionDeclarationsFromLabel(
+			['how_supplied', 'description', 'dosage_and_administration'].map(labelText),
+			ndc
+		);
 		const hasProductFacts = Boolean(
 			product || rxRoutes.length || labelRoutes.length || doseForm || openfda.rxcui || rxNormTitle
 		);
@@ -1665,7 +1655,8 @@ export async function enrichPackages(
 						version: splHit.spl_version != null ? String(splHit.spl_version) : null,
 						publishedDate: splHit.published_date ?? null,
 						doseForm: ownProducts.find((item) => item.doseForm)?.doseForm ?? null,
-						ingredients: [
+						ingredients: withIonRows(
+							[
 							...labelProducts.flatMap((item) => {
 								const checked = checkProductStrengths(item, {
 							rxNormName: rxNormTitle,
@@ -1683,9 +1674,12 @@ export async function enrichPackages(
 										bulkFillMl
 									)
 								);
-							}),
-							...(ionicContent ? [ionicContent] : [])
-						],
+							})
+							],
+							ionSalts,
+							moietyFactors,
+							ionDeclarations
+						),
 						appearances,
 						siblingNdc: splSiblingNdc,
 						otherLabels: splRows

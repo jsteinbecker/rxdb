@@ -8,6 +8,7 @@ import {
   DEFAULT_LEVELS,
   DIMENSION_BY_KEY,
   ingredientLabel,
+  racemateNames,
   validLevelKeys
 } from './formulary-hierarchy';
 import { type EquivalenceGroup, parseEquivalenceGroups } from './equivalence';
@@ -65,9 +66,14 @@ export function parseComboDoseDisplay(value: unknown): ComboDoseDisplay | null {
 }
 
 
-/** Keys saved before salts were grouped (`Piperacillin Sodium / …`) read as `comboKey` now makes them. */
+/**
+ * Keys saved before salts were grouped (`Piperacillin Sodium / …`), or before
+ * racemates split (`Amphetamine / … / Dextroamphetamine`), read as `comboKey` now makes them.
+ */
 function canonicalComboKey(key: string): string {
-	return [...new Set(key.split(' / ').map(ingredientLabel))].sort(naturalCompare).join(' / ');
+	return [...new Set(racemateNames(key.split(' / ')).map(ingredientLabel))]
+		.sort(naturalCompare)
+		.join(' / ');
 }
 
 const EXPAND_DEPTHS: ExpandDepth[] = ['none', 'first', 'all'];

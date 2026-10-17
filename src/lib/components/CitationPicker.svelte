@@ -1,5 +1,6 @@
 <script lang="ts">
       import SplPassagePicker from './SplPassagePicker.svelte';
+      import { formatNdc } from '$lib/ndc';
       import type {CitationDraft} from '$lib/citation-form';
       import type {EquivalentPackage} from '$lib/property-override-fields';
       import type {StagedPackage} from '$lib/server/catalog-sync';
@@ -20,7 +21,6 @@
 
       const sections = $derived(item.details?.label?.sections ?? []);
       const hasSpl = $derived(!!item.splSetId && sections.length > 0);
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 </script>
 
 <div class="cite">

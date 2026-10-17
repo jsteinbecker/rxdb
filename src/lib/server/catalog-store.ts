@@ -96,6 +96,33 @@ function rememberLabelFree(id: string, observedAt: number, payload: unknown) {
 }
 
 /**
+ * Each NDC's property overrides as its latest snapshot holds them, of any
+ * CATALOG_VERSION: a version bump makes old snapshots unreadable, and the
+ * overrides would otherwise go with them. NDCs whose latest has none are absent.
+ */
+export async function latestPropertyOverrides(
+	db: Pick<PrismaClient, '$queryRaw'>,
+	ndcs: string[]
+): Promise<Map<string, ExternalPackage['propertyOverrides']>> {
+	if (!ndcs.length) return new Map();
+	const rows = await db.$queryRaw<{ ndc: string; overrides: ExternalPackage['propertyOverrides'] | null }[]>`
+    SELECT DISTINCT ON (r.source_native_id)
+      r.source_native_id AS ndc, r.payload -> 'item' -> 'propertyOverrides' AS overrides
+    FROM source_record r
+    JOIN ingestion_run run ON run.id = r.ingestion_run_id
+    WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'
+      AND r.source_native_id = ANY(${ndcs}::text[])
+    ORDER BY r.source_native_id, r.observed_at DESC`;
+	return new Map(
+		rows.flatMap((row) =>
+			row.overrides && typeof row.overrides === 'object' && Object.keys(row.overrides).length
+				? [[row.ndc, row.overrides] as const]
+				: []
+		)
+	);
+}
+
+/**
  * Concepts staged by earlier searches, each marked fresh while its snapshot has
  * not reached its refresh time. Stale ones still say whether a concept has NDCs.
  */
@@ -665,7 +692,9 @@ export async function reconcileFormularyEligibility(db: PrismaClient) {
       (r.payload #>> '{item,isVeterinary}')::boolean AS "isVeterinary",
       r.payload #>> '{item,rxcuiStatus}' AS "rxcuiStatus",
       r.payload #>> '{item,marketingEndDate}' AS "marketingEndDate",
-      r.payload #>> '{item,manualExclusion}' AS "manualExclusion"
+      r.payload #>> '{item,manualExclusion}' AS "manualExclusion",
+      jsonb_build_object('packaging', jsonb_build_object('siblings',
+        COALESCE(r.payload #> '{item,details,packaging,siblings}', '[]'::jsonb))) AS details
     FROM source_record r
     JOIN ingestion_run run ON run.id = r.ingestion_run_id
     WHERE run.source = ${CACHE_SOURCE} AND run.status = 'completed'

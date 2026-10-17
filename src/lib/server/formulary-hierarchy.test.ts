@@ -12,8 +12,37 @@ import {
 	routeClass,
 	NOT_SPECIFIED,
 	hierarchyDoseForm,
+	resolveRacemates,
+	racemateNames,
 	type FormularyRow
 } from '../formulary-hierarchy';
+
+test('a racemate beside its enantiomer splits into dextro and levo, salts summed', () => {
+	const adderall = [
+		{ name: 'DEXTROAMPHETAMINE SACCHARATE', strength: '1.25 mg' },
+		{ name: 'AMPHETAMINE ASPARTATE MONOHYDRATE', strength: '1.25 mg' },
+		{ name: 'DEXTROAMPHETAMINE SULFATE', strength: '1.25 mg' },
+		{ name: 'AMPHETAMINE SULFATE', strength: '1.25 mg' }
+	];
+	assert.deepEqual(resolveRacemates(adderall), [
+		{ name: 'DEXTROAMPHETAMINE', strength: '3.75 mg' },
+		{ name: 'LEVOAMPHETAMINE', strength: '1.25 mg' }
+	]);
+	assert.equal(comboKey(row({ ingredients: resolveRacemates(adderall) })), 'Dextroamphetamine / Levoamphetamine');
+	assert.equal(strengthOf(row({ ingredients: resolveRacemates(adderall) })), '3.75mg / 1.25mg');
+	assert.deepEqual(
+		racemateNames(['Amphetamine', 'Amphetamine Aspartate', 'Dextroamphetamine', 'Dextroamphetamine Saccharate']),
+		['Dextroamphetamine', 'Levoamphetamine']
+	);
+	// A racemate alone, or salts that cannot be added, stay as listed.
+	const evekeo = [{ name: 'AMPHETAMINE SULFATE', strength: '5 mg' }];
+	assert.equal(resolveRacemates(evekeo), evekeo);
+	const mixed = [
+		{ name: 'DEXTROAMPHETAMINE SULFATE', strength: '1 mg' },
+		{ name: 'AMPHETAMINE SULFATE', strength: '1 mg/mL' }
+	];
+	assert.equal(resolveRacemates(mixed), mixed);
+});
 
 const row = (overrides: Partial<FormularyRow>): FormularyRow => ({
 	packageId: overrides.ndc ?? 'p',

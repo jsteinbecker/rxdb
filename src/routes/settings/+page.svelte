@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { untrack } from 'svelte';
 	import { DEFAULT_LEVELS, levelLabel } from '$lib/formulary-hierarchy';
 	import HierarchyBuilder from '$lib/components/HierarchyBuilder.svelte';
@@ -41,11 +42,10 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow"><a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Settings</p>
-		<h1>Settings</h1>
+	<PageHeader title="Settings">
+		{#snippet eyebrow()}<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Settings{/snippet}
 		<p>Preferences for {data.scope.name}.</p>
-	</header>
+	</PageHeader>
 
 	<form
 		method="POST"
@@ -294,29 +294,9 @@
 		padding: 4rem 1.5rem;
 	}
 
-	header p:last-child,
 	.hint {
 		color: #5c6777;
 		line-height: 1.55;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
 	}
 
 	h2 {

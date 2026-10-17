@@ -30,6 +30,8 @@ export type StrengthCorrectionKind = 'presentation-unit' | 'salt-equivalent' | '
 export interface StrengthCorrection {
   kind: StrengthCorrectionKind;
   note: string;
+  /** A salt correction's number as the label printed it, the salt's own mass. */
+  stated?: number;
 }
 
 export interface CheckedStrength extends StatedStrength {
@@ -192,11 +194,13 @@ function correctSaltAsMoiety(
     if (ratio <= MIN_SALT_RATIO || ratio > MAX_SALT_RATIO) return;
 
     const stated = strengthText({ ...row, per: null, perUnit: null })!;
+    const printed = row.strength;
     const corrected = round(rxMg / (mgPer(row.strengthUnit) ?? 1));
     row.strength = corrected;
     const counterion = counterionOf(ingredient.name, moiety.name);
     row.corrections.push({
       kind: 'salt-equivalent',
+      stated: printed,
       note:
         `Strength corrected from stated value of ${stated}, equivalent to ` +
         `${corrected} ${row.strengthUnit} ${moiety.name.toLowerCase()}` +
@@ -265,10 +269,12 @@ function correctHeavySaltAsMoiety(
     const converted = convertStrength(row.strength, known.factor);
     if (!converted) return;
     const before = strengthText({ ...row, per: null, perUnit: null })!;
+    const printed = row.strength;
     row.strength = Number(roundSignificant(converted));
     const counterion = counterionOf(ingredient.name, moiety.name);
     row.corrections.push({
       kind: 'moiety-equivalent',
+      stated: printed,
       note:
         `Strength corrected from stated value of ${before}, the mass of the ` +
         `${counterion ? `${counterion} salt` : 'salt'}, to its equivalent of ` +

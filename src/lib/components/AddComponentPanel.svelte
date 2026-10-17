@@ -1,5 +1,7 @@
 <script lang="ts">
       import {enhance} from '$app/forms';
+      import BrandedName from '$lib/components/BrandedName.svelte';
+      import {formatNdc} from '$lib/ndc';
 
       type Candidate = {
             packageId: string;
@@ -25,7 +27,6 @@
                   })
                   .slice(0, LIMIT);
       });
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 </script>
 
 <div class="panel">
@@ -63,7 +64,7 @@
                 doseUnit: candidate.doseUnit
               })}
                                     >
-                                          <span class="title">{candidate.title}</span>
+                                          <span class="title"><BrandedName text={candidate.title} /></span>
                                           <span class="ndc">{formatNdc(candidate.ndc)}</span>
                                           <span class="plus" aria-hidden="true">⊕</span>
                                     </button>

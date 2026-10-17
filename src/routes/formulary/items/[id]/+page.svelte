@@ -1,5 +1,8 @@
 <script lang="ts">
       import RxCui from '$lib/components/RxCui.svelte';
+      import BrandedName from '$lib/components/BrandedName.svelte';
+      import {formatNdc} from '$lib/ndc';
+      import PageHeader from '$lib/components/PageHeader.svelte';
       import {enhance} from '$app/forms';
       import {packageLayout, type PackageLine, runSpans} from '$lib/formulary-item';
       import ItemSummary from '$lib/components/ItemSummary.svelte';
@@ -9,6 +12,8 @@
       import {pillImageKey, pillPhotoUrl} from '$lib/pill-image-layout';
       import {abbreviatedRelease} from '$lib/time-release';
       import {strengthAsPercent} from '$lib/item-name';
+      import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
+      import type {FormularyItem} from "../../../../generated/client.ts";
 
       let {data, form} = $props();
 
@@ -34,23 +39,33 @@
       const appearanceSpans = (packages: PackageLine[]) =>
             runSpans(packages.map((pkg) => appearanceKey(pkg.ndc)));
       const level = $derived(item.target.kind === 'concept' ? (item.tty ?? 'Concept') : 'NDC');
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
       const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
       const columns = $derived(2 + Number(showAppearance) + Number(layout.showDoseForm) + Number(layout.showRoutes));
 </script>
+
+{#snippet displayName(item: {displayName: string})}
+      {@const parts = item.displayName.split(/(\d+(?:[.,]\d+)*)\s*mg\/ml/gi)}
+
+      {#each parts as part, i}
+            {#if i % 2 === 1} <MgPerMl value={part} />
+            {:else} {part}
+            {/if}
+      {/each}
+{/snippet}
+
 
 <svelte:head>
       <title>{item.displayName} · RxDB</title>
 </svelte:head>
 
 <main>
-      <header>
-            <p class="eyebrow">
+      <PageHeader>
+            {#snippet eyebrow()}
                   <a href="/">RxDB</a> / <a href="/formulary">Formulary</a> /
                   <a href="/formulary/items">Loaded items</a> / {level}
-            </p>
-            <h1>{item.displayName}</h1>
-            <p class="meta">
+            {/snippet}
+            {#snippet title()}<h1>{@render displayName(item)}</h1>{/snippet}
+            <p>
                   <span class="level">{level}</span>
                   <span class="mono">
         {#if item.target.kind === 'concept'}RxCUI <RxCui
@@ -70,15 +85,13 @@
                   use:enhance={() => {
                         refreshing = true;
                         return async ({update}) => {
-                              try {
-                                    await update();
-                              } finally {
-                                    refreshing = false;
-                              }
+                              try { await update(); } finally { refreshing = false; }
                         };
                   }}
             >
-                  <button disabled={refreshing}>{refreshing ? 'Refreshing…' : 'Refresh'}</button>
+                  <button disabled={refreshing}>
+                        {refreshing ? 'Refreshing…' : 'Refresh'}
+                  </button>
                   {#if form?.refreshMessage}
                         <span class="error" role="alert">{form.refreshMessage}</span>
                   {:else if form?.refreshed}
@@ -95,8 +108,8 @@
                         <ul>
                               {#each data.related.items as related (related.id)}
                                     <li>
-                                          <a href="/formulary/items/{related.id}"
-                                          >{related.name}
+                                          <a href="/formulary/items/{related.id}" data-nav-title={related.name}
+                                          ><BrandedName text={related.name} />
                                                 {#if data.related.basis === 'ingredient' && related.doseForm}
                                                       <small>{related.doseForm}</small>{/if}
                                           </a
@@ -106,7 +119,7 @@
                         </ul>
                   </nav>
             {/if}
-      </header>
+      </PageHeader>
 
       <section aria-labelledby="name-heading" class="brands">
             <div class="brands-head">
@@ -313,7 +326,7 @@
                   {#each packages as pkg, row (pkg.packageId)}
                         <tr>
                               <td class="mono"><a
-                                    href="/formulary/ndc/{pkg.ndc}">{formatNdc(pkg.ndc)}</a></td>
+                                    href="/formulary/ndc/{pkg.ndc}" data-nav-title={pkg.title}>{formatNdc(pkg.ndc)}</a></td>
                               <td>
                                     {pkg.pack ?? '—'}
                                     {#if pkg.multiDose}<span class="tag">multi-dose</span>{/if}
@@ -509,30 +522,6 @@
             max-width: 1040px;
             margin: 0 auto;
             padding: 4rem 1.5rem;
-      }
-
-      .eyebrow {
-            margin: 0 0 0.5rem;
-            color: #3464a5;
-            font-size: 0.8rem;
-            font-weight: 750;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-      }
-
-      .eyebrow a {
-            color: inherit;
-      }
-
-      h1 {
-            margin: 0;
-            font-size: clamp(2rem, 6vw, 3rem);
-            letter-spacing: -0.045em;
-      }
-
-      .meta {
-            color: #5c6777;
-            line-height: 1.55;
       }
 
       .related {

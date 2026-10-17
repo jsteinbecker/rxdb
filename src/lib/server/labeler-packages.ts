@@ -1,4 +1,5 @@
 import type { PrismaClient } from '../../generated/client';
+import { packageStrengthText, packageTitle } from '../package-title';
 import { CACHE_SOURCE, readSnapshot } from './catalog-cache';
 
 /** A labeler code is the first five digits of an 11-digit NDC. */
@@ -12,12 +13,16 @@ export const labelerCodeOf = (ndc: string) => ndc.slice(0, 5);
 
 export type LabelerPackage = {
 	ndc: string;
+	/** The title the package's NDC page shows. */
+	title: string;
 	description: string | null;
 	brandName: string | null;
 	genericName: string | null;
 	labelerName: string | null;
 	doseForm: string | null;
 	productCode: string | null;
+	/** Ingredients with strengths, e.g. "vancomycin 1.25 g/250 mL". */
+	strength: string | null;
 };
 
 /** The 10-digit layouts an NDC is labeled in; each pads one segment to reach 5-4-2. */
@@ -101,6 +106,18 @@ export async function labelerPackages(db: PrismaClient, code: string): Promise<L
 		if (!snapshot || snapshot.item.ndc !== ndc) return [];
 		const { description, brandName, genericName, labelerName, doseForm, productCode } =
 			snapshot.item;
-		return [{ ndc, description, brandName, genericName, labelerName, doseForm, productCode }];
+		return [
+			{
+				ndc,
+				title: packageTitle(snapshot.item),
+				description,
+				brandName,
+				genericName,
+				labelerName,
+				doseForm,
+				productCode,
+				strength: packageStrengthText(snapshot.item)
+			}
+		];
 	});
 }

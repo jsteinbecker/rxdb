@@ -125,11 +125,19 @@
       );
 
       // ── Convert ───────────────────────────────────────────────────────────────
-      const originalText = $derived(existing?.conversion?.original ?? row?.strength ?? null);
+      // A salt correction already moved the label's number onto the moiety, and
+      // rounded it. Starting from the number as printed, measured as the salt,
+      // means measuring it as the salt again restores it exactly, with no factor.
+      const printed = $derived(row?.labelStrength ?? null);
+      const originalText = $derived(
+            printed?.strength ?? existing?.conversion?.original ?? row?.strength ?? null
+      );
       const original = $derived(parseStrengthText(originalText));
       const measuredTo = $derived(basis === 'ingredient' ? ingFinal : moietyFinalUnii);
       const fromDefault = $derived(
-            existing?.conversion?.from.unii ?? (rowMoiety && row?.basis !== 'ingredient' ? rowMoiety.unii : row?.unii) ?? ''
+            (printed ? printed.unii : existing?.conversion?.from.unii) ??
+            (rowMoiety && row?.basis !== 'ingredient' ? rowMoiety.unii : row?.unii) ??
+            ''
       );
       const fromFinal = $derived(cleanUnii(fromUnii ?? fromDefault ?? ''));
       const needsConversion = $derived(
@@ -278,10 +286,17 @@
             moietyUnii = prior?.moiety?.unii ?? null;
             moietyName = prior?.moiety?.name ?? null;
             fromUnii = null;
-            mwFromInput = prior?.conversion ? String(prior.conversion.from.mw) : null;
-            mwToInput = prior?.conversion ? String(prior.conversion.to.mw) : null;
-            nInput = prior?.conversion ? String(prior.conversion.n) : null;
-            valueInput = prior?.conversion ? prior.strength.value : null;
+            // A conversion made from another starting number (the rounded moiety
+            // strength, before rows kept the label's own) is not reused.
+            const reused =
+                  prior?.conversion &&
+                  (!target?.labelStrength || prior.conversion.original === target.labelStrength.strength)
+                        ? prior.conversion
+                        : null;
+            mwFromInput = reused ? String(reused.from.mw) : null;
+            mwToInput = reused ? String(reused.to.mw) : null;
+            nInput = reused ? String(reused.n) : null;
+            valueInput = reused ? prior!.strength.value : null;
             relabelOnly = false;
             kind = prior ? 'basis' : null;
             citation = emptyCitation(!!item.splSetId && !!item.details?.label?.sections.length);
@@ -390,6 +405,9 @@
             {:else if step === 'kind'}
                   <p class="current"><span>Current row</span> {rowText(row.name, row.strength, row.basis)}
                         {#if row.unii}<span class="mono"> · {row.unii}</span>{/if}</p>
+                  {#if printed}
+                        <p class="hint">The label printed {printed.strength}; corrections start from that number.</p>
+                  {/if}
                   {#if !original}
                         <p class="warn">This row’s strength ({row.strength ?? 'none'}) is not a number and unit, so it cannot be corrected here. Use the strength override.</p>
                   {/if}

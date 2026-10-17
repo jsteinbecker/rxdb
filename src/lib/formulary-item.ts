@@ -1,4 +1,5 @@
 import { naturalCompare } from './natural-sort';
+import { packageTitle } from './package-title';
 import {
 	hierarchyDoseForm,
 	ingredientLabel,
@@ -62,6 +63,8 @@ export function relatedItems(rows: FormularyRow[], formularyItemId: string): Rel
 export type PackageLine = {
 	packageId: string;
 	ndc: string;
+	/** The package's own title, which its NDC link names for the page it opens. */
+	title: string;
 	pack: string | null;
 	multiDose: boolean | null;
 	/** Dose form and routes, only when they differ between this item's packages. */
@@ -145,6 +148,7 @@ export function packageLayout(packages: FormularyRow[]): PackageLayout {
 		lines.push({
 			packageId: row.packageId,
 			ndc: row.ndc,
+			title: packageTitle(row),
 			pack: packageSize(row),
 			multiDose: row.isMultiDose,
 			doseForm: row.doseForm,

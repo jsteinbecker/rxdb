@@ -1,5 +1,8 @@
 <script lang="ts">
 	import RxCui from '$lib/components/RxCui.svelte';
+	import BrandedName from '$lib/components/BrandedName.svelte';
+	import {formatNdc} from '$lib/ndc';
+	import PageHeader from '$lib/components/PageHeader.svelte';
       import {enhance} from '$app/forms';
       import {SvelteMap} from 'svelte/reactivity';
       import {naturalCompare} from '$lib/natural-sort';
@@ -65,7 +68,6 @@
 		selected = next;
 	};
 
-	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 </script>
 
@@ -74,17 +76,16 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow">
+	<PageHeader title={data.scope.name}>
+		{#snippet eyebrow()}
 			<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Loaded items ·
 			<a href="/settings">Settings</a>
-		</p>
-		<h1>{data.scope.name}</h1>
+		{/snippet}
 		<p>
 			Each row is one load, at the level it was loaded. Removing a concept (SCD, SBD, pack…) takes
 			off every package it brought in; removing an NDC takes off just that package.
 		</p>
-	</header>
+	</PageHeader>
 
 	{#if form?.removed}
 		<p class="notice" role="status">
@@ -203,7 +204,9 @@
 					/>
 					<span class="level" class:package={item.target.kind === 'package'}>{levelOf(item)}</span>
 					<span class="desc">
-						<a href="/formulary/items/{item.formularyItemId}">{item.displayName}</a>
+						<a href="/formulary/items/{item.formularyItemId}" data-nav-title={item.displayName}
+							><BrandedName text={item.displayName} /></a
+						>
 						<span class="small mono">
 							{#if item.target.kind === 'concept'}RxCUI <RxCui rxcui={item.target.rxcui} />{:else}NDC {formatNdc(item.target.ndc)}{/if}· {plural(item.packages, 'package')}{#if item.excludedPackages}<span
 								title="Linked by the load but excluded from the catalog (veterinary or ineligible), so never listed"
@@ -277,31 +280,6 @@
 		max-width: 1040px;
 		margin: 0 auto;
 		padding: 4rem 1.5rem;
-	}
-
-	header p:last-child {
-		color: #5c6777;
-		line-height: 1.55;
-		max-width: 46rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
 	}
 
 	.toolbar {

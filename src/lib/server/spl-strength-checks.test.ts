@@ -117,6 +117,9 @@ test('a heavy salt stated as moiety strength converts when the directory names t
 	assert.equal(strengthText(row), '0.8506 g/100 mL');
 	assert.equal(row.corrections[0].kind, 'moiety-equivalent');
 	assert.match(row.corrections[0].note, /1\.2 g, the mass of the acetate salt.*0\.8506 g lysine/);
+	// Kept exactly, so undoing the correction restores the label's number
+	// instead of converting the rounded one back.
+	assert.equal(row.corrections[0].stated, 1.2);
 });
 
 test('a heavy salt is left alone without the directory agreeing on its mass', () => {

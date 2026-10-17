@@ -1,5 +1,6 @@
 import { env } from '$env/dynamic/private';
-import { gsrsMoieties, gsrsMoietyFactor, prismaSubstanceTable } from './unii-substance-store';
+import { gsrsMoieties, gsrsMoietyFactor, gsrsSalt, prismaSubstanceTable } from './unii-substance-store';
+import { jobNote, jobStage } from './jobs';
 import { prisma } from '$lib/server/prisma';
 import { toNdc11 } from '../ndc';
 import {
@@ -15,6 +16,7 @@ import { collectPackages } from './catalog-collection';
 import { exclusionReason } from './catalog-facts';
 import {
 	loadConceptSnapshots,
+	latestPropertyOverrides,
 	loadPackageSnapshots,
 	loadStoredConcepts,
 	refreshPackageEligibility,
@@ -56,10 +58,12 @@ export async function syncExternalPackages(
 		ndcs,
 		{
 			load: (ndcs) => loadPackageSnapshots(prisma, ndcs),
+			loadOverrides: (ndcs) => latestPropertyOverrides(prisma, ndcs),
 			fetch: (ndcs) => enrichPackages(ndcs, env.OPENFDA_API_KEY2, undefined, {
 					...hints,
 					moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma)),
-					moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma))
+					moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma)),
+					saltOf: gsrsSalt(prismaSubstanceTable(prisma))
 				}),
 			save: (items) => stageCollection(prisma, [], items)
 		},
@@ -196,6 +200,7 @@ export async function loadStagedNode(
 			? null
 			: ((await loadConceptSnapshots(prisma, [target.rxcui])).get(target.rxcui) ?? null);
 		if (!concept) {
+			jobStage(`Looking up RxCUI ${target.rxcui} in RxNav`);
 			const found = await discoverRxNav(target.rxcui);
 			concept = found.find((item) => item.rxcui === target.rxcui) ?? null;
 			if (concept) await stageCollection(prisma, [concept], []);
@@ -203,14 +208,24 @@ export async function loadStagedNode(
 		if (!concept) throw new Error(`RxCUI ${target.rxcui} could not be found.`);
 		if (concept.vetOnly) throw new Error('Veterinary-only concepts cannot be loaded.');
 		ndcs = concept.ndcs;
+		jobNote(`${concept.name}: ${ndcs.length} NDC${ndcs.length === 1 ? '' : 's'}`);
 	} else ndcs = [target.ndc];
+	jobStage(
+		force
+			? `Re-fetching ${ndcs.length} package${ndcs.length === 1 ? '' : 's'} from openFDA, DailyMed & RxNav`
+			: `Collecting ${ndcs.length} package${ndcs.length === 1 ? '' : 's'}`
+	);
 	// Joins a search warm-up already collecting this concept's packages.
 	const packages =
 		concept && !force
 			? await conceptPackages(concept)
 			: await syncExternalPackages(ndcs, { force });
+	jobNote(`${packages.length} of ${ndcs.length} packages returned by sources`);
+	jobStage('Linking packages to the formulary');
 	const result = await loadToFormulary(prisma, scope.id, target, concept, packages);
+	jobStage('Checking package eligibility');
 	await refreshPackageEligibility(prisma, packages);
+	if (typeof result.packagesLinked === 'number') jobNote(`${result.packagesLinked} packages linked`);
 	return { ...result, scope: { id: scope.id, name: scope.name } };
 }
 

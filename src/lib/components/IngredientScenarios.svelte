@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ItemSummary } from '$lib/item-summary';
+  import { formatNdc } from '$lib/ndc';
   import { ingredientScenarios, profileNames, remainingNdcs } from '$lib/ingredient-scenarios';
 
   let { summary }: { summary: ItemSummary } = $props();
@@ -11,7 +12,6 @@
     ingredientScenarios(summary).columns.some((entry) => entry.listed.length > 1)
   );
   const unknown = $derived(summary.packageCount - scenarios.ndcs.length - scenarios.incomplete.length);
-  const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
   const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
   let avoid = $state<string[]>([]);

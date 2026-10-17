@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { isIonName } from '$lib/ions';
+	import {formatNdc} from '$lib/ndc';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 import {resolve} from '$app/paths';
 
 let { data } = $props();
 
-const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 
 const counts = $derived({
       active: data.usages.filter((u) => u.roles.some((r) => r.kind === 'active')).length,
@@ -19,20 +20,17 @@ const counts = $derived({
 
 <main>
 	<a class="back" href={resolve('/formulary')}><span aria-hidden="true">←</span> Formulary</a>
-	<header>
-		<p class="eyebrow">Ingredient · UNII · <span class="mono">{data.unii}</span></p>
-		<h1>{data.names[0] ?? `UNII ${data.unii}`}</h1>
-		{#if data.names.length > 1}<p class="sub">
-				Also labeled as {data.names.slice(1).join(', ')}
-			</p>{/if}
-		<p class="external">
+	<PageHeader title={data.names[0] ?? `UNII ${data.unii}`} compact>
+		{#snippet eyebrow()}Ingredient · UNII · <span class="mono">{data.unii}</span>{/snippet}
+		{#if data.names.length > 1}<p>Also labeled as {data.names.slice(1).join(', ')}</p>{/if}
+		<p>
 			<a
 				href="https://precision.fda.gov/uniisearch/srs/unii/{data.unii}"
 				target="_blank"
 				rel="noreferrer">FDA GSRS record ↗</a
 			>
 		</p>
-	</header>
+	</PageHeader>
 
 	<dl class="stats">
 		<div><dt>Packages</dt><dd>{data.usages.length}</dd></div>
@@ -48,7 +46,7 @@ const counts = $derived({
 				{#each data.usages as usage (usage.ndc)}
                         <tr>
                               <td class="mono">
-                                    <a href={resolve('/formulary/ndc/[ndc]', { ndc: usage.ndc })}>{formatNdc(usage.ndc)}</a>
+                                    <a href={resolve('/formulary/ndc/[ndc]', { ndc: usage.ndc })} data-nav-title={usage.title}>{formatNdc(usage.ndc)}</a>
                               </td>
                               <td>
                                     <div class="product-name">
@@ -101,13 +99,8 @@ const counts = $derived({
 <style>
 	main {max-width: 1040px;margin: 0 auto;padding: 2.5rem 1.5rem 4rem;}
 	a {color: #3464a5;}
-	.back {display: inline-flex;gap: 0.4rem;font-weight: 650;text-decoration: none;}
-	header {margin: 1.5rem 0 1.25rem;}
-	h1 {margin: 0;font-size: 1.6rem;line-height: 1.25;}
-	.eyebrow {margin: 0 0 0.5rem;color: #3464a5;font-size: 0.8rem;font-weight: 750;letter-spacing: 0.12em;text-transform: uppercase;}
-	.sub, .muted {color: #5c6777;}
-	.sub {margin: 0.4rem 0 0;}
-	.external {margin: 0.5rem 0 0;font-size: 0.875rem;}
+	.back {display: inline-flex;gap: 0.4rem;margin-bottom: 1.5rem;font-weight: 650;text-decoration: none;}
+	.muted {color: #5c6777;}
 	.stats {display: flex;flex-wrap: wrap;gap: 0.75rem;margin: 0 0 1.25rem;}
 	.stats div {background: #fff;border: 1px solid #e3e8ee;border-radius: 8px;padding: 0.5rem 0.9rem;}
 	.stats dt {color: #5c6777;font-size: 0.75rem;}

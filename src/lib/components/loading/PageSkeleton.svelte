@@ -12,6 +12,8 @@
 
 <script lang="ts">
 	import Bone from './Bone.svelte';
+	import { formatNdc } from '$lib/ndc';
+	import PageHeader from '../PageHeader.svelte';
 
 	/**
 	 * The header is the real thing wherever the destination is already known: static copy, the URL's
@@ -31,73 +33,69 @@
 		tempTitle?: string;
 	}>();
 
-	const formatNdc = (ndc: string) =>
-		ndc.length === 11 ? `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}` : ndc;
 	const ndc = $derived(formatNdc(params.ndc ?? ''));
+
+	/** The title the destination will show, or the width of the bone standing in for it. */
+	const heading = $derived(
+		{
+			formulary: { text: scopeName, bone: '46%' },
+			items: { text: scopeName, bone: '34%' },
+			item: { text: tempTitle, bone: '52%' },
+			package: { text: tempTitle, bone: '58%' },
+			usage: { text: tempTitle, bone: '42%' },
+			compounds: { text: 'Compounds', bone: '' },
+			compound: { text: tempTitle, bone: '44%' },
+			settings: { text: 'Settings', bone: '' }
+		}[kind as SkeletonKind]
+	);
 
 	const rows = (n: number) => Array.from({ length: n }, (_, i) => i);
 	const widths = ['72%', '58%', '84%', '64%', '76%', '52%', '68%'];
 </script>
 
-{#snippet title(text: string, bone: string)}
-	{#if text}<h1>{text}</h1>{:else}<Bone w={bone} h="2.6rem" class="title" />{/if}
-{/snippet}
+{#snippet titleBone()}<Bone w={heading.bone} h="2.4rem" />{/snippet}
 
 {#snippet header()}
-	<header>
-		{#if kind === 'formulary'}
-			<p class="eyebrow">
+	<PageHeader
+		compact={kind === 'package' || kind === 'usage' || kind === 'compound'}
+		title={heading.text || titleBone}
+	>
+		{#snippet eyebrow()}
+			{#if kind === 'formulary'}
 				<a href="/">RxDB</a> / Formulary · <a href="/formulary/items">Manage loaded items →</a> ·
 				<a href="/compounds">Compounds</a> · <a href="/settings">Settings</a>
-			</p>
-			{@render title(scopeName, '46%')}
-			<p>Drag attributes into the hierarchy to decide how the formulary splits; each one nests under the one before it.</p>
-		{:else if kind === 'items'}
-			<p class="eyebrow">
+			{:else if kind === 'items'}
 				<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Loaded items ·
 				<a href="/settings">Settings</a>
-			</p>
-			{@render title(scopeName, '34%')}
+			{:else if kind === 'item'}
+				<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> /
+				<a href="/formulary/items">Loaded items</a>
+			{:else if kind === 'package'}
+				NDC · <span class="mono">{ndc}</span>
+			{:else if kind === 'usage'}
+				{params.unii ? 'Ingredient · UNII' : 'Labeler'} ·
+				<span class="mono">{params.unii ?? params.code}</span>
+			{:else if kind === 'compounds'}
+				<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Compounds
+			{:else if kind === 'compound'}
+				<a href="/">RxDB</a> / <a href="/compounds">Compounds</a>{scopeName ? ` / ${scopeName}` : ''}
+			{:else}
+				<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Settings
+			{/if}
+		{/snippet}
+		{#if kind === 'formulary'}
+			<p>Drag attributes into the hierarchy to decide how the formulary splits; each one nests under the one before it.</p>
+		{:else if kind === 'items'}
 			<p>
 				Each row is one load, at the level it was loaded. Removing a concept (SCD, SBD, pack…)
 				takes off every package it brought in; removing an NDC takes off just that package.
 			</p>
-		{:else if kind === 'item'}
-			<p class="eyebrow">
-				<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> /
-				<a href="/formulary/items">Loaded items</a>
-			</p>
-			{@render title(tempTitle, '52%')}
-			<Bone w="60%" h="0.9rem" class="line" />
-		{:else if kind === 'package'}
-			<p class="eyebrow">NDC · <span class="mono">{ndc}</span></p>
-			{@render title(tempTitle, '58%')}
-			<Bone w="30%" h="0.9rem" class="line" />
-		{:else if kind === 'usage'}
-			<p class="eyebrow">
-				{params.unii ? 'Ingredient · UNII' : 'Labeler'} ·
-				<span class="mono">{params.unii ?? params.code}</span>
-			</p>
-			{@render title(tempTitle, '42%')}
-		{:else if kind === 'compounds'}
-			<p class="eyebrow">
-				<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Compounds
-			</p>
-			<h1>Compounds</h1>
-			{#if scopeName}<p class="meta">{scopeName}</p>{/if}
-		{:else if kind === 'compound'}
-			<p class="eyebrow">
-				<a href="/">RxDB</a> / <a href="/compounds">Compounds</a>{scopeName ? ` / ${scopeName}` : ''}
-			</p>
-			{@render title(tempTitle, '44%')}
-		{:else}
-			<p class="eyebrow">
-				<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Settings
-			</p>
-			<h1>Settings</h1>
-			{#if scopeName}<p>Preferences for {scopeName}.</p>{/if}
+		{:else if kind === 'item' || kind === 'package'}
+			<p><Bone w={kind === 'item' ? '60%' : '30%'} h="0.9rem" /></p>
+		{:else if kind === 'compounds' || kind === 'settings'}
+			{#if scopeName}<p>{kind === 'settings' ? `Preferences for ${scopeName}.` : scopeName}</p>{/if}
 		{/if}
-	</header>
+	</PageHeader>
 {/snippet}
 
 {#snippet list(count: number)}
@@ -249,38 +247,6 @@
 		max-width: 880px;
 	}
 
-	header {
-		display: grid;
-		gap: 0.7rem;
-		margin-bottom: 1.6rem;
-	}
-
-	header p {
-		margin: 0;
-		color: #5c6777;
-		line-height: 1.55;
-		max-width: 46rem;
-	}
-
-	header .eyebrow {
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	header .eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
-		color: #18212f;
-	}
-
 	.mono {
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		letter-spacing: 0.02em;
@@ -288,7 +254,7 @@
 
 	.back {
 		display: inline-block;
-		margin-bottom: 1.4rem;
+		margin-bottom: 1.5rem;
 		color: #3464a5;
 		font-size: 0.9rem;
 		text-decoration: none;

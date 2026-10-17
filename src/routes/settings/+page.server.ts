@@ -93,7 +93,9 @@ export const actions: Actions = {
 			return fail(400, { section: 'groups', message: 'A group needs a display name.' });
 		if (!group.members.length)
 			return fail(400, { section: 'groups', message: 'Add at least one value to merge.' });
-		const index = Number(form.get('index'));
+		const rawIndex = form.get('index');
+		// A new group sends no index; Number(null) would be 0 and overwrite the first group.
+		const index = rawIndex === null || rawIndex === '' ? NaN : Number(rawIndex);
 		return updateSettings((settings) => {
 			const groups = [...settings.equivalenceGroups];
 			if (Number.isInteger(index) && index >= 0 && index < groups.length) groups[index] = group;

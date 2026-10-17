@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { toNdc11 } from '$lib/ndc';
 import { loadStagedNode } from '$lib/server/catalog-sync';
+import { trackJob } from '$lib/server/jobs';
 import type { LoadTarget } from '$lib/server/catalog-formulary';
 import type { RequestHandler } from './$types';
 
@@ -18,6 +19,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		rxcui?: unknown;
 		ndc?: unknown;
 		scopeId?: unknown;
+		label?: unknown;
 	} | null;
 	let target: LoadTarget | null = null;
 	if (typeof body?.rxcui === 'string' && /^\d{1,8}$/.test(body.rxcui))
@@ -31,7 +33,13 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (scopeId !== undefined && (typeof scopeId !== 'string' || !UUID.test(scopeId)))
 		return json({ message: 'scopeId must be a UUID.' }, { status: 400 });
 	try {
-		return json(await loadStagedNode(target, scopeId as string | undefined));
+		const label = typeof body?.label === 'string' && body.label ? body.label.slice(0, 120) : null;
+		const what = label ?? (target.kind === 'concept' ? `RxCUI ${target.rxcui}` : `NDC ${target.ndc}`);
+		return json(
+			await trackJob(`Adding ${what} to the formulary`, () =>
+				loadStagedNode(target, scopeId as string | undefined)
+			)
+		);
 	} catch (error) {
 		return json(
 			{ message: error instanceof Error ? error.message : 'The node could not be loaded.' },

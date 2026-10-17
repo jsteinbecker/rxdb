@@ -3,18 +3,29 @@ import { prisma } from '$lib/server/prisma';
 import { defaultScope, loadedItems, removeFromFormulary } from '$lib/server/catalog-formulary';
 import { loadStagedNode } from '$lib/server/catalog-sync';
 import { parseSettings } from '$lib/settings';
+import { jobFailure, jobItem, trackJob } from '$lib/server/jobs';
 import type { LoadedItem } from '$lib/server/catalog-formulary';
 import type { Actions, PageServerLoad } from './$types';
 
-async function reloadItems(scopeId: string, items: LoadedItem[]) {
+function reloadItems(scopeId: string, items: LoadedItem[]) {
+	return trackJob(
+		`Refreshing ${items.length} item${items.length === 1 ? '' : 's'}`,
+		() => reloadEach(scopeId, items),
+		{ total: items.length }
+	);
+}
+
+async function reloadEach(scopeId: string, items: LoadedItem[]) {
 	let reloaded = 0;
 	const failures: string[] = [];
-	for (const item of items) {
+	for (const [index, item] of items.entries()) {
+		jobItem(item.displayName, index);
 		try {
 			await loadStagedNode(item.target, scopeId, { force: true });
 			reloaded++;
 		} catch (error) {
 			failures.push(`${item.displayName}: ${error instanceof Error ? error.message : 'Could not reload.'}`);
+			jobFailure(failures.at(-1)!);
 		}
 	}
 	return { reloaded, total: items.length, failures };

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import PageHeader from '$lib/components/PageHeader.svelte';
   import { invalidateAll } from '$app/navigation';
   import { resolve } from '$app/paths';
   import AddComponentPanel from '$lib/components/AddComponentPanel.svelte';
@@ -103,70 +104,72 @@
 />
 
 <main>
-  <header>
-    <p class="eyebrow">
+  <PageHeader compact>
+    {#snippet eyebrow()}
       <a href={resolve('/')}>RxDB</a> / <a href={resolve('/compounds')}>Compounds</a> /
       {data.scope.name}
-    </p>
-    <div class="titlebar">
-      {#if locked}
-        <h1>{compound.name}</h1>
-      {:else}
-        <form method="POST" action="?/rename" use:enhance={() => async ({ update }) => update({ reset: false })}>
-          <input
-            class="name"
-            name="name"
-            value={compound.name}
-            aria-label="Compound name"
-            onchange={(event) => event.currentTarget.form?.requestSubmit()}
-          />
-        </form>
-      {/if}
-      <span class="count">{plural(compound.lines.length, 'component')}</span>
-      {#if locked}<span class="badge">Saved</span>{/if}
-
-      <div class="actions">
+    {/snippet}
+    {#snippet title()}
+      <div class="titlebar">
         {#if locked}
-          <form method="POST" action="?/setSaved" use:enhance>
-            <input type="hidden" name="saved" value="false" />
-            <button>Edit</button>
-          </form>
+          <h1>{compound.name}</h1>
         {:else}
-          <button type="button" onclick={() => (pickerOpen = !pickerOpen)}>
-            {pickerOpen ? '× Close' : '+ Component'}
-          </button>
-          <form method="POST" action="?/setSaved" use:enhance>
-            <input type="hidden" name="saved" value="true" />
-            <button class="primary" disabled={!compound.lines.length}>Save</button>
+          <form method="POST" action="?/rename" use:enhance={() => async ({ update }) => update({ reset: false })}>
+            <input
+              class="name"
+              name="name"
+              value={compound.name}
+              aria-label="Compound name"
+              onchange={(event) => event.currentTarget.form?.requestSubmit()}
+            />
           </form>
-          <div class="row-menu" class:open={menuFor === 'header'}>
-            <button
-              type="button"
-              class="menu-trigger"
-              aria-label="Compound options"
-              aria-haspopup="menu"
-              aria-expanded={menuFor === 'header'}
-              onclick={() => (menuFor = menuFor === 'header' ? null : 'header')}>⋯</button
-            >
-            {#if menuFor === 'header'}
-              <div class="menu" role="menu">
-                <form
-                  method="POST"
-                  action="?/delete"
-                  use:enhance={({ cancel }) => {
-                    if (!confirm(`Delete "${compound.name}" and its components?`)) cancel();
-                  }}
-                >
-                  <button role="menuitem">Delete compound</button>
-                </form>
-              </div>
-            {/if}
-          </div>
         {/if}
+        <span class="count">{plural(compound.lines.length, 'component')}</span>
+        {#if locked}<span class="badge">Saved</span>{/if}
+
+        <div class="actions">
+          {#if locked}
+            <form method="POST" action="?/setSaved" use:enhance>
+              <input type="hidden" name="saved" value="false" />
+              <button>Edit</button>
+            </form>
+          {:else}
+            <button type="button" onclick={() => (pickerOpen = !pickerOpen)}>
+              {pickerOpen ? '× Close' : '+ Component'}
+            </button>
+            <form method="POST" action="?/setSaved" use:enhance>
+              <input type="hidden" name="saved" value="true" />
+              <button class="primary" disabled={!compound.lines.length}>Save</button>
+            </form>
+            <div class="row-menu" class:open={menuFor === 'header'}>
+              <button
+                type="button"
+                class="menu-trigger"
+                aria-label="Compound options"
+                aria-haspopup="menu"
+                aria-expanded={menuFor === 'header'}
+                onclick={() => (menuFor = menuFor === 'header' ? null : 'header')}>⋯</button
+              >
+              {#if menuFor === 'header'}
+                <div class="menu" role="menu">
+                  <form
+                    method="POST"
+                    action="?/delete"
+                    use:enhance={({ cancel }) => {
+                      if (!confirm(`Delete "${compound.name}" and its components?`)) cancel();
+                    }}
+                  >
+                    <button role="menuitem">Delete compound</button>
+                  </form>
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
-    </div>
+    {/snippet}
     {#if form?.message}<p class="notice" role="alert">{form.message}</p>{/if}
-  </header>
+  </PageHeader>
 
   {#if pickerOpen && !locked}
     <AddComponentPanel candidates={data.candidates} />
@@ -245,37 +248,22 @@
     margin: 0 auto;
     padding: 3rem 1.5rem 5rem;
   }
-  .eyebrow {
-    margin: 0 0 0.5rem;
-    color: #3464a5;
-    font-size: 0.8rem;
-    font-weight: 750;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-  .eyebrow a {
-    color: inherit;
-  }
   .titlebar {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
   }
-  h1,
-  .name {
-    margin: 0;
-    font-size: clamp(1.6rem, 4vw, 2.2rem);
-    font-weight: 750;
-    letter-spacing: -0.03em;
-  }
   .name {
     min-width: 16rem;
+    margin: 0;
     padding: 0.1rem 0.3rem;
     border: 1px solid transparent;
     border-radius: 6px;
     background: transparent;
-    font-family: inherit;
+    font: inherit;
+    font-size: 1.6rem;
+    font-weight: 700;
   }
   .name:hover,
   .name:focus {

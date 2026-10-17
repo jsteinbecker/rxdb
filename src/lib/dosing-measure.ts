@@ -7,6 +7,7 @@
 import { ingredientGroup } from './ingredient-group';
 import { pseudoScdFor, type PseudoScdSource } from './pseudo-scd';
 import { mgPer, mlPer } from './units';
+import { strengthDisplay } from './package-title';
 
 export type DosingMeasure =
 	/** `ingredients` lists the moiety groups summed; absent sums them all. */
@@ -113,11 +114,13 @@ export function dosingMeasureText(
 	const ingredients = item.ingredients ?? [];
 	if (measure.mode === 'ingredient') {
 		const match = ingredients.find((i) => group(i.name) === measure.ingredient);
-		return match ? `${ingredientGroup(match.name)}${match.strength ? ` ${match.strength}` : ''}` : null;
+		return match ? `${ingredientGroup(match.name)}${match.strength ? ` ${strengthDisplay(match.strength)}` : ''}` : null;
 	}
 	const sum = summedMass(item, measure.ingredients);
 	if (!sum) return null;
 	const { base } = sum;
-	const per = base.unit === '1' ? (base.per === 1 ? '' : `/${base.per}`) : `/${base.per === 1 ? '' : `${base.per} `}mL`;
-	return `${Number(sum.mg.toPrecision(6))} mg${per} (${measure.ingredients ? `sum of ${measure.ingredients.length}` : 'sum'})`;
+	// Per mL, as titles read; a per-unit sum keeps its count (`/2` tablets).
+	const [mg, per] =
+		base.unit === 'mL' ? [sum.mg / base.per, '/mL'] : [sum.mg, base.per === 1 ? '' : `/${base.per}`];
+	return `${Number(mg.toPrecision(6))} mg${per} (${measure.ingredients ? `sum of ${measure.ingredients.length}` : 'sum'})`;
 }

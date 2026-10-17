@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { watchJobs } from '$lib/jobs-watch';
 	import RxCui from '$lib/components/RxCui.svelte';
+	import BrandedName from '$lib/components/BrandedName.svelte';
       import {resolve} from '$app/paths';
       import {onDestroy, onMount} from 'svelte';
       import {replaceState} from '$app/navigation';
@@ -7,7 +9,8 @@
       import {ttyLabel, ttyTitle} from '$lib/rxnorm-tty';
       import {SvelteMap, SvelteSet} from 'svelte/reactivity';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
-      import {packageDisplayTitle} from '$lib/package-title';
+      import PageHeader from '$lib/components/PageHeader.svelte';
+      import {packageTitle} from '$lib/package-title';
       import type {StagedConcept, StagedPackage} from '$lib/server/catalog-sync';
 
       type Result = {
@@ -303,8 +306,9 @@
 		}
 	}
 
-	async function load(key: string, body: { rxcui: string } | { ndc: string }) {
+	async function load(key: string, body: ({ rxcui: string } | { ndc: string }) & { label?: string }) {
 		pending.add(key);
+		watchJobs();
 		try {
 			const response = await fetch('/api/v1/formulary/load', {
 				method: 'POST',
@@ -380,13 +384,6 @@
 			(counterpart) => !details.brandedProducts.some((brand) => brand.rxcui === counterpart.rxcui)
 		);
 
-	const packageTitle = (item: StagedPackage) =>
-		packageDisplayTitle(item) ??
-		item.description ??
-		item.genericName ??
-		item.brandName ??
-		`NDC ${item.ndc}`;
-
 	onMount(() => {
 		const linked = page.url.searchParams.get('q')?.trim();
 		// After a snapshot restore the results are already back; only a fresh visit searches.
@@ -413,16 +410,15 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow">
+	<PageHeader title="Search and import medications">
+		{#snippet eyebrow()}
 			RxDB · <a href={resolve('/formulary')}>View formulary →</a> · <a href={resolve('/settings')}>Settings</a>
-		</p>
-		<h1>Search and import medications</h1>
+		{/snippet}
 		<p>
 			Search RxNav, openFDA, and DailyMed. Results are only for review until you add a drug or a
 			package to the formulary.
 		</p>
-	</header>
+	</PageHeader>
 
 	<form
 		onsubmit={(event) => {
@@ -513,7 +509,7 @@
 						<button
 							class="load"
 							disabled={pending.has(key) || !!concept.vetOnly}
-							onclick={() => void load(key, { rxcui: concept.rxcui })}
+							onclick={() => void load(key, { rxcui: concept.rxcui, label: concept.name })}
 							type="button"
 							title={concept.loaded ? 'Fetch its packages again and update the formulary item' : undefined}
 							>{pending.has(key)
@@ -646,7 +642,7 @@
 			>
 			<div class="node-title">
 				<span class="kind">package</span>
-				<h3>{packageTitle(item)}</h3>
+				<h3><BrandedName text={packageTitle(item)} /></h3>
 				<p class="meta">
 					<span class="mono">{item.ndc}</span>
 					{[
@@ -684,30 +680,6 @@
 		max-width: 1040px;
 		margin: 0 auto;
 		padding: 5rem 1.5rem;
-	}
-
-	header {
-		margin-bottom: 2.5rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3.25rem);
-		letter-spacing: -0.045em;
-	}
-
-	header p:last-child {
-		color: #5c6777;
-		line-height: 1.55;
 	}
 
 	label {

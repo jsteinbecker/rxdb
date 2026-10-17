@@ -49,7 +49,7 @@ test('measure text reads the sum or the chosen ingredient', () => {
 	assert.equal(dosingMeasureText(smxTmp(), { mode: 'sum' }), '960 mg (sum)');
 	assert.equal(
 		dosingMeasureText(smxTmp(), { mode: 'ingredient', ingredient: 'trimethoprim' }),
-		'TRIMETHOPRIM 160 mg/1'
+		'TRIMETHOPRIM 160 mg'
 	);
 });
 
@@ -62,7 +62,7 @@ test('sum puts every strength on a common denominator', () => {
 		]
 	};
 	// 1400 + 194.8 + 25 mg per 100 mL
-	assert.equal(dosingMeasureText(amino, { mode: 'sum' }), '1619.8 mg/100 mL (sum)');
+	assert.equal(dosingMeasureText(amino, { mode: 'sum' }), '16.198 mg/mL (sum)');
 	assert.ok('error' in parseDosingMeasure(
 		{ ingredients: [{ name: 'A', strength: '1 g/100 mL' }, { name: 'B', strength: '5 mg/1' }] },
 		'sum',
@@ -80,7 +80,7 @@ test('sum may cover a subset of ingredient groups', () => {
 	};
 	const parsed = parseDosingMeasure(amino, 'sum', null, ['Leucine', 'lysine acetate']);
 	assert.ok('measure' in parsed);
-	assert.equal(dosingMeasureText(amino, parsed.measure), '2600 mg/100 mL (sum of 2)');
+	assert.equal(dosingMeasureText(amino, parsed.measure), '26 mg/mL (sum of 2)');
 	assert.deepEqual(parseDosingMeasure(smxTmp(), 'sum', null, ['sulfamethoxazole', 'trimethoprim']), {
 		measure: { mode: 'sum' }
 	});

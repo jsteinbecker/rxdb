@@ -2,6 +2,7 @@
       import favicon from '$lib/assets/favicon.svg';
       import {navigating, page} from '$app/state';
       import NavProgress from '$lib/components/loading/NavProgress.svelte';
+      import JobProgress from '$lib/components/loading/JobProgress.svelte';
       import PageSkeleton from '$lib/components/loading/PageSkeleton.svelte';
       import {skeletonFor} from '$lib/components/loading/skeleton-route';
 
@@ -20,7 +21,7 @@
 		const link = (event.target as Element | null)?.closest?.('a[href]');
 		if (!(link instanceof HTMLAnchorElement) || link.origin !== location.origin) return;
 		const text = link.children.length ? '' : (link.textContent ?? '').replace(/\s+/g, ' ').trim();
-		const title = (link.dataset.navTitle ?? (/^[\d\s-]*$|^[→←›]|[→↗]$/.test(text) ? '' : text)).trim();
+		const title = (link.dataset.navTitle ?? (/^[\d\s-]*$|^[A-Z\d]{10}$|^[→←›]|[→↗]$/.test(text) ? '' : text)).trim();
 		clicked = title ? { path: link.pathname, title } : null;
 	}
 
@@ -54,6 +55,7 @@
 <svelte:window onclickcapture={rememberClick} />
 
 <NavProgress active={pending} />
+<JobProgress />
 
 {#if showSkeleton && kind}
 	<PageSkeleton {kind} {tempTitle} params={navigating.to?.params ?? {}} scopeName={page.data.scope?.name ?? ''} />

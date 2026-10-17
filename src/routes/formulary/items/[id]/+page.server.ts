@@ -1,5 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
+import { trackJob } from '$lib/server/jobs';
 import { defaultScope, loadedItems } from '$lib/server/catalog-formulary';
 import { formularyRows } from '$lib/server/formulary-view';
 import { addBrandTag, itemBrands, removeBrandTag, restoreBrandTag } from '$lib/server/brand-tag-store';
@@ -119,7 +120,9 @@ export const actions: Actions = {
 		const { scope, item } = await itemInScope(params.id);
 		if (!item) error(404, 'That item is not on this formulary.');
 		try {
-			const result = await loadStagedNode(item.target, scope.id, { force: true });
+			const result = await trackJob(`Refreshing ${item.displayName}`, () =>
+				loadStagedNode(item.target, scope.id, { force: true })
+			);
 			return { refreshed: { packagesLinked: result.packagesLinked } };
 		} catch (e) {
 			return fail(422, {

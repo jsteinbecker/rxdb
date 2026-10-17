@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { formatNdc } from '$lib/ndc';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import FormularyIcon from '$lib/components/FormularyIcon.svelte';
 	import { doseFormAbbreviation, packageDescriptionCase, productNameCase } from '$lib/package-text';
 
 	let { data } = $props();
 
-	const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 	const titleCase = (value: string) =>
 		value.toLowerCase().replace(/(^|[\s,/(-])([a-z])/g, (_, lead, char) => lead + char.toUpperCase());
 	const counts = $derived({
@@ -74,20 +75,17 @@
 
 <main>
 	<a class="back" href={resolve('/formulary')}><span aria-hidden="true">←</span> Formulary</a>
-	<header>
-		<p class="eyebrow">Labeler · <span class="mono">{data.code}</span></p>
-		<h1>{data.names[0] ?? `Labeler ${data.code}`}</h1>
-		{#if data.names.length > 1}<p class="sub">
-				Also labeled as {data.names.slice(1).join(', ')}
-			</p>{/if}
-		<p class="external">
+	<PageHeader title={data.names[0] ?? `Labeler ${data.code}`} compact>
+		{#snippet eyebrow()}Labeler · <span class="mono">{data.code}</span>{/snippet}
+		{#if data.names.length > 1}<p>Also labeled as {data.names.slice(1).join(', ')}</p>{/if}
+		<p>
 			<a
 				href="https://api.fda.gov/drug/ndc.json?search=product_ndc:{data.code}-*&limit=100"
 				target="_blank"
 				rel="noreferrer">openFDA NDC products ↗</a
 			>
 		</p>
-	</header>
+	</PageHeader>
 
 	<dl class="stats">
 		<div>
@@ -142,6 +140,7 @@
 								<FormularyIcon status={pkg.formularyStatus} />
 								<a
 									href={resolve('/formulary/ndc/[ndc]', { ndc: pkg.ndc })}
+									data-nav-title={pkg.title}
 									title="NDC11 {formatNdc(pkg.ndc)}">{tenDigit(pkg.ndc, pkg.zeroSegment) ?? formatNdc(pkg.ndc)}</a
 								>
 								{#if pkg.zeroBasis && pkg.zeroBasis !== 'labeled'}<span
@@ -158,6 +157,7 @@
 							<td>
 								<div class="product-name">
 									{productNameCase(pkg.brandName ?? pkg.genericName ?? 'Unknown product')}
+									{#if pkg.strength}<span class="strength">{pkg.strength}</span>{/if}
 								</div>
 								<div class="package-detail">
 									{pkg.description ? packageDescriptionCase(pkg.description) : 'Package details unavailable'}
@@ -192,35 +192,12 @@
 	.back {
 		display: inline-flex;
 		gap: 0.4rem;
+		margin-bottom: 1.5rem;
 		font-weight: 650;
 		text-decoration: none;
 	}
-	header {
-		margin: 1.5rem 0 1.25rem;
-	}
-	h1 {
-		margin: 0;
-		font-size: 1.6rem;
-		line-height: 1.25;
-	}
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-	.sub,
 	.muted {
 		color: #5c6777;
-	}
-	.sub {
-		margin: 0.4rem 0 0;
-	}
-	.external {
-		margin: 0.5rem 0 0;
-		font-size: 0.875rem;
 	}
 	.stats {
 		display: flex;
@@ -266,6 +243,11 @@
 	}
 	.product-name {
 		font-weight: 650;
+	}
+	.strength {
+		margin-left: 0.35rem;
+		font-weight: 500;
+		color: #3a4556;
 	}
 	.package-detail {
 		margin-top: 0.15rem;
