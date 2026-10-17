@@ -28,10 +28,18 @@ test('a racemate beside its enantiomer splits into dextro and levo, salts summed
 		{ name: 'DEXTROAMPHETAMINE', strength: '3.75 mg' },
 		{ name: 'LEVOAMPHETAMINE', strength: '1.25 mg' }
 	]);
-	assert.equal(comboKey(row({ ingredients: resolveRacemates(adderall) })), 'Dextroamphetamine / Levoamphetamine');
+	assert.equal(
+		comboKey(row({ ingredients: resolveRacemates(adderall) })),
+		'Dextroamphetamine / Levoamphetamine'
+	);
 	assert.equal(strengthOf(row({ ingredients: resolveRacemates(adderall) })), '3.75mg / 1.25mg');
 	assert.deepEqual(
-		racemateNames(['Amphetamine', 'Amphetamine Aspartate', 'Dextroamphetamine', 'Dextroamphetamine Saccharate']),
+		racemateNames([
+			'Amphetamine',
+			'Amphetamine Aspartate',
+			'Dextroamphetamine',
+			'Dextroamphetamine Saccharate'
+		]),
 		['Dextroamphetamine', 'Levoamphetamine']
 	);
 	// A racemate alone, or salts that cannot be added, stay as listed.
@@ -75,6 +83,45 @@ test('unit-dose packaging is recognized from the description', () => {
 		'Unit-dose packaging'
 	);
 	assert.equal(packagingClass(row({})), 'Bulk packaging');
+});
+
+test('single-use vials, bags and premix containers are unit dose', () => {
+	for (const description of [
+		'10 VIAL, SINGLE-USE in 1 CARTON (0409-3383-02)  / 10 mL in 1 VIAL, SINGLE-USE (0409-3383-11)',
+		'12 BAG in 1 CARTON (14537-817-75)  / 750 mL in 1 BAG',
+		'24 CONTAINER in 1 CASE (0264-3446-11)  / 50 mL in 1 CONTAINER'
+	])
+		assert.equal(packagingClass(row({ description })), 'Unit-dose packaging', description);
+});
+
+test('a vial is classed by its dose type, not defaulted to bulk', () => {
+	const vial = '10 VIAL in 1 TRAY (44567-104-10)  / 100 mL in 1 VIAL';
+	assert.equal(
+		packagingClass(row({ description: vial, isMultiDose: false })),
+		'Unit-dose packaging'
+	);
+	assert.equal(packagingClass(row({ description: vial, isMultiDose: true })), 'Bulk packaging');
+	assert.equal(packagingClass(row({ description: vial })), 'Not specified');
+});
+
+test('pharmacy bulk packages and stock containers are bulk', () => {
+	assert.equal(
+		packagingClass(
+			row({ description: '1 INJECTION in 1 VIAL, PHARMACY BULK PACKAGE', isMultiDose: false })
+		),
+		'Bulk packaging'
+	);
+	assert.equal(
+		packagingClass(row({ description: '8 CAPSULE in 1 PAIL (81964-350-98)' })),
+		'Bulk packaging'
+	);
+});
+
+test('text that is not package text is not specified', () => {
+	assert.equal(
+		packagingClass(row({ description: 'Ampicillin Sodium', size: null })),
+		'Not specified'
+	);
 });
 
 test('package size omits single- and multi-dose container qualifiers', () => {
@@ -262,12 +309,20 @@ test('equal strengths share one node however they are written', () => {
 	const cefepime = (strength: string, ndc: string) =>
 		row({ ndc, ingredients: [{ name: 'CEFEPIME HYDROCHLORIDE', strength }] });
 	const tree = buildTree(
-		[cefepime('1 g/1', '1'), cefepime('1000 mg/1', '2'), cefepime('1 g', '3'), cefepime('2 g/1', '4')],
+		[
+			cefepime('1 g/1', '1'),
+			cefepime('1000 mg/1', '2'),
+			cefepime('1 g', '3'),
+			cefepime('2 g/1', '4')
+		],
 		['ingredient', 'strength']
 	);
 	assert.deepEqual(
 		tree[0].children.map((node) => [node.label, node.count]),
-		[['1g', 3], ['2g', 1]]
+		[
+			['1g', 3],
+			['2g', 1]
+		]
 	);
 });
 
@@ -277,10 +332,14 @@ test('a merging level absorbs an only child, radix-tree style', () => {
 	const rows = [
 		thiamine('1', ['INTRAVENOUS'], [{ name: 'THIAMINE', strength: '100 mg/mL' }]),
 		thiamine('2', ['ORAL'], [{ name: 'THIAMINE', strength: '200 mg/1' }]),
-		thiamine('3', ['ORAL'], [
-			{ name: 'THIAMINE', strength: '200 mg/1' },
-			{ name: 'FOLIC ACID', strength: '1 mg/1' }
-		])
+		thiamine(
+			'3',
+			['ORAL'],
+			[
+				{ name: 'THIAMINE', strength: '200 mg/1' },
+				{ name: 'FOLIC ACID', strength: '1 mg/1' }
+			]
+		)
 	];
 	const read = (nodes: ReturnType<typeof buildTree>): unknown[] =>
 		nodes.map((node) => {
@@ -304,9 +363,15 @@ test('a merging level absorbs an only child, radix-tree style', () => {
 	]);
 
 	const [iv] = buildTree(rows, ['route~', 'ingredientCombo~', 'strength']);
-	assert.deepEqual(iv.merged?.map((part) => part.dimension), ['route', 'ingredientCombo']);
+	assert.deepEqual(
+		iv.merged?.map((part) => part.dimension),
+		['route', 'ingredientCombo']
+	);
 	assert.equal(iv.dimension, 'strength');
-	assert.deepEqual(iv.rows.map((item) => item.ndc), ['1']);
+	assert.deepEqual(
+		iv.rows.map((item) => item.ndc),
+		['1']
+	);
 });
 
 test('parseLevels keeps merge marks and drops a dimension given twice', () => {
@@ -345,7 +410,11 @@ test('a route group narrows rows to every route it gathers', () => {
 	const rows = [row({ routes: ['INTRAVENOUS', 'INTRAMUSCULAR', 'SUBCUTANEOUS'] })];
 	const tree = buildTree(rows, ['route', 'routeForm'], {
 		equivalenceGroups: [
-			{ dimension: 'route', display: 'Injection', members: ['Intravenous route', 'Intramuscular route'] }
+			{
+				dimension: 'route',
+				display: 'Injection',
+				members: ['Intravenous route', 'Intramuscular route']
+			}
 		]
 	});
 	assert.deepEqual(

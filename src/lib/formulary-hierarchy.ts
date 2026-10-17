@@ -85,7 +85,10 @@ const clean = (value: string | null | undefined) => value?.trim() || null;
 
 /** An ingredient as the hierarchy names it: `Cefepime`, never `Cefepime Hydrochloride`. */
 export const ingredientLabel = (name: string) =>
-	titleCase(ingredientGroup(name)).replace(/-([A-Za-z]{4})$/, (_, suffix) => `-${suffix.toLowerCase()}`);
+	titleCase(ingredientGroup(name)).replace(
+		/-([A-Za-z]{4})$/,
+		(_, suffix) => `-${suffix.toLowerCase()}`
+	);
 
 /**
  * A labeler as the hierarchy names it: `Teva`, for every spelling of Teva.
@@ -111,14 +114,35 @@ export function routeClass(route: string): string {
 	return ROUTE_CLASSES.find(([pattern]) => pattern.test(route))?.[1] ?? 'Other routes';
 }
 
-const UNIT_DOSE = /unit[-\s]?dose|\bU\.?D\.?\b|BLISTER|DOSE PACK|SINGLE-DOSE|AMPULE|PREFILLED/i;
+const PHARMACY_BULK = /PHARMACY BULK|MULTI-DOSE/i;
+const UNIT_DOSE =
+	/unit[-\s]?dose|\bU\.?D\.?\b|BLISTER|DOSE PACK|SINGLE-(?:DOSE|USE)|AMPULE|PREFILLED|SYRINGE|CARTRIDGE|\bPEN\b|POUCH|PACKET|\bCUP\b|\bBAG\b|CONTAINER/i;
+const STOCK = /BOTTLE|\bJAR\b|PAIL|\bCAN\b|\bTUBE\b|\bBOX\b/i;
 
-/** Unit-dose packaging versus bulk stock bottles, from the packaging text. */
+/**
+ * Unit-dose packaging versus bulk stock, from the innermost container in the
+ * package text ("10 VIAL in 1 CARTON / 10 mL in 1 VIAL, SINGLE-USE" is a vial).
+ * A plain vial is classed by its dose type; anything unrecognized is not specified
+ * rather than assumed bulk.
+ */
 export function packagingClass(row: FormularyRow): string {
-	if (row.description && UNIT_DOSE.test(row.description)) return 'Unit-dose packaging';
-	if (row.size && /BLISTER|CUP|POUCH|PACKET|AMPULE|SYRINGE/i.test(row.size.container))
+	const text = row.description && / in \d+ /i.test(row.description) ? row.description : null;
+	const inner =
+		text
+			?.split('/')
+			.pop()
+			?.replace(/^.* in \d+ /i, '') ??
+		row.size?.container ??
+		'';
+	if (PHARMACY_BULK.test(inner)) return 'Bulk packaging';
+	if (
+		(text && /unit[-\s]?dose|\bU\.?D\.?\b|BLISTER|DOSE PACK/i.test(text)) ||
+		UNIT_DOSE.test(inner)
+	)
 		return 'Unit-dose packaging';
-	return row.description ? 'Bulk packaging' : NOT_SPECIFIED;
+	if (/VIAL/i.test(inner) && row.isMultiDose !== null)
+		return row.isMultiDose ? 'Bulk packaging' : 'Unit-dose packaging';
+	return STOCK.test(inner) ? 'Bulk packaging' : NOT_SPECIFIED;
 }
 
 const amount = (value: number, unit: string | null) =>
@@ -208,13 +232,19 @@ export function resolveRacemates<T extends { name: string; strength: string | nu
 		if (parts.every((part) => !part.strength)) return { name, strength: null };
 		const parsed = parts.map((part) => (part.strength ? parseStrength(part.strength) : null));
 		const [first] = parsed;
-		if (!first || parsed.some((item) => !item || item.family !== first.family || item.per !== first.per))
+		if (
+			!first ||
+			parsed.some((item) => !item || item.family !== first.family || item.per !== first.per)
+		)
 			return null;
 		const total =
-			parsed.reduce((sum, item, at) => sum + item!.base * parts[at].share, 0) / (mgPer(first.unit) ?? 1);
+			parsed.reduce((sum, item, at) => sum + item!.base * parts[at].share, 0) /
+			(mgPer(first.unit) ?? 1);
 		return { name, strength: `${Number(total.toPrecision(6))} ${first.unit}${first.perLabel}` };
 	});
-	return resolved.every(Boolean) ? (resolved as { name: string; strength: string | null }[]) : ingredients;
+	return resolved.every(Boolean)
+		? (resolved as { name: string; strength: string | null }[])
+		: ingredients;
 }
 
 /** The ingredient names `resolveRacemates` would list, for keys built from names alone. */
@@ -222,7 +252,6 @@ export function racemateNames(names: string[]): string[] {
 	const shares = enantiomerShares(names);
 	return shares ? [...new Set(shares.flatMap((list) => list.map((entry) => entry.name)))] : names;
 }
-
 
 /** "500 mg", "5 mg/5 mL" → amount in a base unit over a denominator. */
 function parseStrength(strength: string) {
@@ -405,9 +434,9 @@ export const DIMENSIONS: Dimension[] = [
 		label: 'Labeler',
 		hint: 'Manufacturer or repackager',
 		values: (row) => {
-				const labeler = clean(row.labeler);
-				return labeler ? [labelerLabel(labeler)] : [];
-			}
+			const labeler = clean(row.labeler);
+			return labeler ? [labelerLabel(labeler)] : [];
+		}
 	}
 ];
 
@@ -499,11 +528,7 @@ export function buildTree(
  * A row as seen beneath an equivalence label: narrowed to every original
  * value that label gathers, its routes joined.
  */
-function narrowAll(
-	dimension: Dimension,
-	row: FormularyRow,
-	originals: string[]
-): FormularyRow {
+function narrowAll(dimension: Dimension, row: FormularyRow, originals: string[]): FormularyRow {
 	if (!dimension.narrow) return row;
 	const views = originals.map((value) => dimension.narrow!(row, value));
 	return views.length === 1
@@ -575,7 +600,10 @@ function grow(
 }
 
 /** Each value a dimension takes across the rows, with how many rows take it. */
-export function dimensionValues(rows: FormularyRow[], key: string): { label: string; count: number }[] {
+export function dimensionValues(
+	rows: FormularyRow[],
+	key: string
+): { label: string; count: number }[] {
 	const dimension = DIMENSION_BY_KEY.get(key);
 	if (!dimension) return [];
 	const counts = new Map<string, number>();
