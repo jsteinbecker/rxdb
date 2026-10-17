@@ -1,5 +1,5 @@
 import { prisma } from '$lib/server/prisma';
-import { defaultScope } from '$lib/server/catalog-formulary';
+import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
 import { formularyRows } from '$lib/server/formulary-view';
 import { syncExternalPackages } from '$lib/server/catalog-sync';
 import { toNdc11 } from '$lib/ndc';
@@ -12,7 +12,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		scope: { id: scope.id, name: scope.name },
 		settings: parseSettings(scope.settings),
-		rows: await formularyRows(prisma, scope.id)
+		rows: await formularyRows(prisma, scope.id, localNamesOf(await loadedItems(prisma, scope.id)))
 	};
 };
 

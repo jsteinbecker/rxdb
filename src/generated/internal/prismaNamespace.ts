@@ -403,6 +403,8 @@ export const ModelName = {
   Ingredient: 'Ingredient',
   Product: 'Product',
   ClinicalDrug: 'ClinicalDrug',
+  LocalConcept: 'LocalConcept',
+  LocalConceptIngredient: 'LocalConceptIngredient',
   Package: 'Package',
   FormularyItem: 'FormularyItem',
   FormularyItemBrand: 'FormularyItemBrand',
@@ -474,7 +476,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -919,6 +921,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ClinicalDrugCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ClinicalDrugCountAggregateOutputType> | number
+        }
+      }
+    }
+    LocalConcept: {
+      payload: Prisma.$LocalConceptPayload<ExtArgs>
+      fields: Prisma.LocalConceptFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LocalConceptFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LocalConceptFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>
+        }
+        findFirst: {
+          args: Prisma.LocalConceptFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LocalConceptFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>
+        }
+        findMany: {
+          args: Prisma.LocalConceptFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>[]
+        }
+        create: {
+          args: Prisma.LocalConceptCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>
+        }
+        createMany: {
+          args: Prisma.LocalConceptCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LocalConceptCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>[]
+        }
+        delete: {
+          args: Prisma.LocalConceptDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>
+        }
+        update: {
+          args: Prisma.LocalConceptUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>
+        }
+        deleteMany: {
+          args: Prisma.LocalConceptDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LocalConceptUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LocalConceptUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>[]
+        }
+        upsert: {
+          args: Prisma.LocalConceptUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptPayload>
+        }
+        aggregate: {
+          args: Prisma.LocalConceptAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLocalConcept>
+        }
+        groupBy: {
+          args: Prisma.LocalConceptGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LocalConceptGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LocalConceptCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LocalConceptCountAggregateOutputType> | number
+        }
+      }
+    }
+    LocalConceptIngredient: {
+      payload: Prisma.$LocalConceptIngredientPayload<ExtArgs>
+      fields: Prisma.LocalConceptIngredientFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LocalConceptIngredientFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LocalConceptIngredientFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>
+        }
+        findFirst: {
+          args: Prisma.LocalConceptIngredientFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LocalConceptIngredientFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>
+        }
+        findMany: {
+          args: Prisma.LocalConceptIngredientFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>[]
+        }
+        create: {
+          args: Prisma.LocalConceptIngredientCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>
+        }
+        createMany: {
+          args: Prisma.LocalConceptIngredientCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LocalConceptIngredientCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>[]
+        }
+        delete: {
+          args: Prisma.LocalConceptIngredientDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>
+        }
+        update: {
+          args: Prisma.LocalConceptIngredientUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>
+        }
+        deleteMany: {
+          args: Prisma.LocalConceptIngredientDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LocalConceptIngredientUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LocalConceptIngredientUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>[]
+        }
+        upsert: {
+          args: Prisma.LocalConceptIngredientUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocalConceptIngredientPayload>
+        }
+        aggregate: {
+          args: Prisma.LocalConceptIngredientAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLocalConceptIngredient>
+        }
+        groupBy: {
+          args: Prisma.LocalConceptIngredientGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LocalConceptIngredientGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LocalConceptIngredientCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LocalConceptIngredientCountAggregateOutputType> | number
         }
       }
     }
@@ -5173,6 +5323,42 @@ export const ClinicalDrugScalarFieldEnum = {
 export type ClinicalDrugScalarFieldEnum = (typeof ClinicalDrugScalarFieldEnum)[keyof typeof ClinicalDrugScalarFieldEnum]
 
 
+export const LocalConceptScalarFieldEnum = {
+  id: 'id',
+  genericId: 'genericId',
+  brandName: 'brandName',
+  doseForm: 'doseForm',
+  evidenceSetId: 'evidenceSetId',
+  evidenceVersion: 'evidenceVersion',
+  evidenceNdc: 'evidenceNdc',
+  ionicContent: 'ionicContent',
+  note: 'note',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LocalConceptScalarFieldEnum = (typeof LocalConceptScalarFieldEnum)[keyof typeof LocalConceptScalarFieldEnum]
+
+
+export const LocalConceptIngredientScalarFieldEnum = {
+  id: 'id',
+  localConceptId: 'localConceptId',
+  ordinal: 'ordinal',
+  substanceUnii: 'substanceUnii',
+  substanceName: 'substanceName',
+  basis: 'basis',
+  moietyUnii: 'moietyUnii',
+  moietyName: 'moietyName',
+  strengthNumMag: 'strengthNumMag',
+  strengthNumUom: 'strengthNumUom',
+  strengthDenMag: 'strengthDenMag',
+  strengthDenUom: 'strengthDenUom'
+} as const
+
+export type LocalConceptIngredientScalarFieldEnum = (typeof LocalConceptIngredientScalarFieldEnum)[keyof typeof LocalConceptIngredientScalarFieldEnum]
+
+
 export const PackageScalarFieldEnum = {
   id: 'id',
   type: 'type',
@@ -5502,7 +5688,8 @@ export const EntityMappingScalarFieldEnum = {
   validTo: 'validTo',
   recordedAt: 'recordedAt',
   supersededAt: 'supersededAt',
-  invalidatedReason: 'invalidatedReason'
+  invalidatedReason: 'invalidatedReason',
+  supersededName: 'supersededName'
 } as const
 
 export type EntityMappingScalarFieldEnum = (typeof EntityMappingScalarFieldEnum)[keyof typeof EntityMappingScalarFieldEnum]
@@ -6222,20 +6409,6 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'Decimal'
- */
-export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
-    
-
-
-/**
- * Reference to a field of type 'Decimal[]'
- */
-export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
-    
-
-
-/**
  * Reference to a field of type 'StrengthBasis'
  */
 export type EnumStrengthBasisFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StrengthBasis'>
@@ -6246,6 +6419,20 @@ export type EnumStrengthBasisFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'StrengthBasis[]'
  */
 export type ListEnumStrengthBasisFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StrengthBasis[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Decimal'
+ */
+export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+/**
+ * Reference to a field of type 'Decimal[]'
+ */
+export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
@@ -6587,6 +6774,8 @@ export type GlobalOmitConfig = {
   ingredient?: Prisma.IngredientOmit
   product?: Prisma.ProductOmit
   clinicalDrug?: Prisma.ClinicalDrugOmit
+  localConcept?: Prisma.LocalConceptOmit
+  localConceptIngredient?: Prisma.LocalConceptIngredientOmit
   package?: Prisma.PackageOmit
   formularyItem?: Prisma.FormularyItemOmit
   formularyItemBrand?: Prisma.FormularyItemBrandOmit

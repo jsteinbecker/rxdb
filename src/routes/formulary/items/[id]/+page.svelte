@@ -12,8 +12,8 @@
       import {pillImageKey, pillPhotoUrl} from '$lib/pill-image-layout';
       import {abbreviatedRelease} from '$lib/time-release';
       import {strengthAsPercent} from '$lib/item-name';
+      import {badgeText} from '$lib/local-concept-list';
       import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
-      import type {FormularyItem} from "../../../../generated/client.ts";
 
       let {data, form} = $props();
 
@@ -67,6 +67,9 @@
             {#snippet title()}<h1>{@render displayName(item)}</h1>{/snippet}
             <p>
                   <span class="level">{level}</span>
+                  {#if item.localConcept}
+                        <span class="level local" title={item.localConcept.name}>{badgeText(item.localConcept)}</span>
+                  {/if}
                   <span class="mono">
         {#if item.target.kind === 'concept'}RxCUI <RxCui
               rxcui={item.target.rxcui}/>{:else if item.target.kind === 'set'}Curated set · openFDA{:else}NDC {formatNdc(item.target.ndc)}{/if}
@@ -611,6 +614,11 @@
             padding: 0.15rem 0.5rem;
             font-size: 0.7rem;
             font-weight: 700;
+      }
+
+      .level.local {
+            background: #fdf1e0;
+            color: #8a4b0b;
       }
 
       .shared {

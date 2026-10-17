@@ -3,10 +3,12 @@ import { itemName } from '$lib/item-name';
 import { scopeStrengthStyles } from './strength-styles';
 import { releasePeriod } from '$lib/time-release';
 import type { PrismaClient } from '../../generated/client';
+import type { LocalConceptView } from '../local-concept-view';
 import type { ExternalPackage, RxConcept } from './catalog-providers';
 import { exclusionReason } from './catalog-facts';
 import { persistCollection } from './catalog-store';
 import { seedBrands } from './brand-tag-store';
+import { localConceptsByRxcui } from './local-concept-view';
 
 export const DEFAULT_FORMULARY = 'Default formulary';
 const ORIGIN = 'formulary_origin';
@@ -199,6 +201,8 @@ export type LoadedItem = {
 	nameOverride: string | null;
 	strengthAsPercent: boolean;
 	target: LoadTarget;
+	/** The local concept superseding this concept load's RxCUI in the scope, when one does. */
+	localConcept: { code: string; name: string; supersedes: { rxcui: string; name: string | null } } | null;
 	/** RxNorm term type of a concept load (SCD, SBD, GPCK…), when the catalog knows it. */
 	tty: string | null;
 	/** Packages the formulary shows for the item: the same set its hierarchy and item page list. */
@@ -270,6 +274,13 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 				}
 			})
 		: [];
+	// One lookup for every concept target; a failure leaves RxNorm's names showing.
+	const locals = rxcuis.length
+		? await localConceptsByRxcui(db, scopeId, rxcuis).catch((cause) => {
+				console.error('local concept lookup failed; showing RxNorm names', cause);
+				return new Map<string, LocalConceptView>();
+			})
+		: new Map<string, LocalConceptView>();
 	const tty = new Map(concepts.map((row) => [row.normalizedValue, row.entity.clinicalDrug?.tty]));
 	const excluded = await db.formularyItemPackage.groupBy({
 		by: ['formularyItemId'],
@@ -282,20 +293,33 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 	});
 	const excludedBy = new Map(excluded.map((row) => [row.formularyItemId, row._count]));
 	const styles = await scopeStrengthStyles(db, scopeId);
-	return items.map(({ target, item, loadedAt }) => ({
+	return items.map(({ target, item, loadedAt }) => {
+		const local = target.kind === 'concept' ? locals.get(target.rxcui) : undefined;
+		// The local name replaces RxNorm's; the user's nameOverride still wins (itemName).
+		const baseName = local?.name ?? item.displayName;
+		return {
 		formularyItemId: item.id,
-		displayName: itemName(item.displayName, item, styles),
-		sourceName: quantifiedScdName(item.displayName),
+		displayName: itemName(baseName, item, styles),
+		sourceName: quantifiedScdName(baseName),
 		nameOverride: item.nameOverride,
 		strengthAsPercent: item.strengthAsPercent,
-		releasePeriod: releasePeriod(item.displayName),
+		releasePeriod: releasePeriod(baseName),
 		releaseAbbreviation: item.releaseAbbreviation,
 		target,
+		localConcept: local
+			? { code: local.code, name: local.name, supersedes: local.supersedes }
+			: null,
 		tty: target.kind === 'concept' ? (tty.get(target.rxcui) ?? null) : null,
 		packages: item._count.formularyItemPackages,
 		excludedPackages: excludedBy.get(item.id) ?? 0,
 		loadedAt
-	}));
+		};
+	});
+}
+
+/** formularyItemId -> local concept name (before any nameOverride), for `formularyRows`. */
+export function localNamesOf(items: LoadedItem[]): Map<string, string> {
+	return new Map(items.flatMap((item) => (item.localConcept ? [[item.formularyItemId, item.localConcept.name] as const] : [])));
 }
 
 /**

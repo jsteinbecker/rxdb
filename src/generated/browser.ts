@@ -48,6 +48,16 @@ export type Product = Prisma.ProductModel
  */
 export type ClinicalDrug = Prisma.ClinicalDrugModel
 /**
+ * Model LocalConcept
+ * 
+ */
+export type LocalConcept = Prisma.LocalConceptModel
+/**
+ * Model LocalConceptIngredient
+ * 
+ */
+export type LocalConceptIngredient = Prisma.LocalConceptIngredientModel
+/**
  * Model Package
  * 
  */

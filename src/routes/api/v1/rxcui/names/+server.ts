@@ -1,6 +1,8 @@
 import { loggedFetch } from '$lib/server/log';
 import { prisma } from '$lib/server/prisma';
 import { loadConceptSnapshots } from '$lib/server/catalog-store';
+import { defaultScope } from '$lib/server/catalog-formulary';
+import { localConceptsByRxcui } from '$lib/server/local-concept-view';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -56,7 +58,7 @@ async function knownNames(ids: string[]): Promise<Map<string, Name>> {
 	return known;
 }
 
-/** GET ?ids=123,456 → { "123": { name, tty }, ... } */
+/** GET ?ids=123,456 → { "123": { name, tty, local: { code, name } | null }, ... } */
 export const GET: RequestHandler = async ({ url }) => {
 	const ids = [...new Set((url.searchParams.get('ids') ?? '').split(',').map((s) => s.trim()))]
 		.filter((id) => /^\d{1,10}$/.test(id))
@@ -65,5 +67,16 @@ export const GET: RequestHandler = async ({ url }) => {
 	const entries = await Promise.all(
 		ids.map(async (id) => [id, known.get(id) ?? (await lookup(id))] as const)
 	);
-	return json(Object.fromEntries(entries));
+	// Local superseding concepts are display-only; a failed lookup just means no `local`.
+	const locals = await defaultScope(prisma)
+		.then((scope) => localConceptsByRxcui(prisma, scope.id, ids))
+		.catch(() => new Map());
+	return json(
+		Object.fromEntries(
+			entries.map(([id, value]) => {
+				const local = locals.get(id);
+				return [id, { ...value, local: local ? { code: local.code, name: local.name } : null }];
+			})
+		)
+	);
 };

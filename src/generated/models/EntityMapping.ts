@@ -52,6 +52,7 @@ export type EntityMappingMinAggregateOutputType = {
   recordedAt: Date | null
   supersededAt: Date | null
   invalidatedReason: string | null
+  supersededName: string | null
 }
 
 export type EntityMappingMaxAggregateOutputType = {
@@ -72,6 +73,7 @@ export type EntityMappingMaxAggregateOutputType = {
   recordedAt: Date | null
   supersededAt: Date | null
   invalidatedReason: string | null
+  supersededName: string | null
 }
 
 export type EntityMappingCountAggregateOutputType = {
@@ -92,6 +94,7 @@ export type EntityMappingCountAggregateOutputType = {
   recordedAt: number
   supersededAt: number
   invalidatedReason: number
+  supersededName: number
   _all: number
 }
 
@@ -122,6 +125,7 @@ export type EntityMappingMinAggregateInputType = {
   recordedAt?: true
   supersededAt?: true
   invalidatedReason?: true
+  supersededName?: true
 }
 
 export type EntityMappingMaxAggregateInputType = {
@@ -142,6 +146,7 @@ export type EntityMappingMaxAggregateInputType = {
   recordedAt?: true
   supersededAt?: true
   invalidatedReason?: true
+  supersededName?: true
 }
 
 export type EntityMappingCountAggregateInputType = {
@@ -162,6 +167,7 @@ export type EntityMappingCountAggregateInputType = {
   recordedAt?: true
   supersededAt?: true
   invalidatedReason?: true
+  supersededName?: true
   _all?: true
 }
 
@@ -269,6 +275,7 @@ export type EntityMappingGroupByOutputType = {
   recordedAt: Date
   supersededAt: Date | null
   invalidatedReason: string | null
+  supersededName: string | null
   _count: EntityMappingCountAggregateOutputType | null
   _avg: EntityMappingAvgAggregateOutputType | null
   _sum: EntityMappingSumAggregateOutputType | null
@@ -312,6 +319,7 @@ export type EntityMappingWhereInput = {
   recordedAt?: Prisma.DateTimeFilter<"EntityMapping"> | Date | string
   supersededAt?: Prisma.DateTimeNullableFilter<"EntityMapping"> | Date | string | null
   invalidatedReason?: Prisma.StringNullableFilter<"EntityMapping"> | string | null
+  supersededName?: Prisma.StringNullableFilter<"EntityMapping"> | string | null
   subjectEntity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
   objectEntity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
   scope?: Prisma.XOR<Prisma.ScopeScalarRelationFilter, Prisma.ScopeWhereInput>
@@ -340,6 +348,7 @@ export type EntityMappingOrderByWithRelationInput = {
   recordedAt?: Prisma.SortOrder
   supersededAt?: Prisma.SortOrderInput | Prisma.SortOrder
   invalidatedReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  supersededName?: Prisma.SortOrderInput | Prisma.SortOrder
   subjectEntity?: Prisma.EntityOrderByWithRelationInput
   objectEntity?: Prisma.EntityOrderByWithRelationInput
   scope?: Prisma.ScopeOrderByWithRelationInput
@@ -371,6 +380,7 @@ export type EntityMappingWhereUniqueInput = Prisma.AtLeast<{
   recordedAt?: Prisma.DateTimeFilter<"EntityMapping"> | Date | string
   supersededAt?: Prisma.DateTimeNullableFilter<"EntityMapping"> | Date | string | null
   invalidatedReason?: Prisma.StringNullableFilter<"EntityMapping"> | string | null
+  supersededName?: Prisma.StringNullableFilter<"EntityMapping"> | string | null
   subjectEntity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
   objectEntity?: Prisma.XOR<Prisma.EntityScalarRelationFilter, Prisma.EntityWhereInput>
   scope?: Prisma.XOR<Prisma.ScopeScalarRelationFilter, Prisma.ScopeWhereInput>
@@ -399,6 +409,7 @@ export type EntityMappingOrderByWithAggregationInput = {
   recordedAt?: Prisma.SortOrder
   supersededAt?: Prisma.SortOrderInput | Prisma.SortOrder
   invalidatedReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  supersededName?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.EntityMappingCountOrderByAggregateInput
   _avg?: Prisma.EntityMappingAvgOrderByAggregateInput
   _max?: Prisma.EntityMappingMaxOrderByAggregateInput
@@ -427,6 +438,7 @@ export type EntityMappingScalarWhereWithAggregatesInput = {
   recordedAt?: Prisma.DateTimeWithAggregatesFilter<"EntityMapping"> | Date | string
   supersededAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EntityMapping"> | Date | string | null
   invalidatedReason?: Prisma.StringNullableWithAggregatesFilter<"EntityMapping"> | string | null
+  supersededName?: Prisma.StringNullableWithAggregatesFilter<"EntityMapping"> | string | null
 }
 
 export type EntityMappingCreateInput = {
@@ -440,6 +452,7 @@ export type EntityMappingCreateInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
@@ -468,6 +481,7 @@ export type EntityMappingUncheckedCreateInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -482,6 +496,7 @@ export type EntityMappingUpdateInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -510,6 +525,7 @@ export type EntityMappingUncheckedUpdateInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -531,6 +547,7 @@ export type EntityMappingCreateManyInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingUpdateManyMutationInput = {
@@ -544,6 +561,7 @@ export type EntityMappingUpdateManyMutationInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingUncheckedUpdateManyInput = {
@@ -564,6 +582,7 @@ export type EntityMappingUncheckedUpdateManyInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingListRelationFilter = {
@@ -594,6 +613,7 @@ export type EntityMappingCountOrderByAggregateInput = {
   recordedAt?: Prisma.SortOrder
   supersededAt?: Prisma.SortOrder
   invalidatedReason?: Prisma.SortOrder
+  supersededName?: Prisma.SortOrder
 }
 
 export type EntityMappingAvgOrderByAggregateInput = {
@@ -618,6 +638,7 @@ export type EntityMappingMaxOrderByAggregateInput = {
   recordedAt?: Prisma.SortOrder
   supersededAt?: Prisma.SortOrder
   invalidatedReason?: Prisma.SortOrder
+  supersededName?: Prisma.SortOrder
 }
 
 export type EntityMappingMinOrderByAggregateInput = {
@@ -638,6 +659,7 @@ export type EntityMappingMinOrderByAggregateInput = {
   recordedAt?: Prisma.SortOrder
   supersededAt?: Prisma.SortOrder
   invalidatedReason?: Prisma.SortOrder
+  supersededName?: Prisma.SortOrder
 }
 
 export type EntityMappingSumOrderByAggregateInput = {
@@ -974,6 +996,7 @@ export type EntityMappingCreateWithoutScopeInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   source: Prisma.SourceCreateNestedOneWithoutEntityMappingsInput
@@ -1000,6 +1023,7 @@ export type EntityMappingUncheckedCreateWithoutScopeInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -1050,6 +1074,7 @@ export type EntityMappingScalarWhereInput = {
   recordedAt?: Prisma.DateTimeFilter<"EntityMapping"> | Date | string
   supersededAt?: Prisma.DateTimeNullableFilter<"EntityMapping"> | Date | string | null
   invalidatedReason?: Prisma.StringNullableFilter<"EntityMapping"> | string | null
+  supersededName?: Prisma.StringNullableFilter<"EntityMapping"> | string | null
 }
 
 export type EntityMappingCreateWithoutSubjectEntityInput = {
@@ -1063,6 +1088,7 @@ export type EntityMappingCreateWithoutSubjectEntityInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
   source: Prisma.SourceCreateNestedOneWithoutEntityMappingsInput
@@ -1089,6 +1115,7 @@ export type EntityMappingUncheckedCreateWithoutSubjectEntityInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -1113,6 +1140,7 @@ export type EntityMappingCreateWithoutObjectEntityInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
   source: Prisma.SourceCreateNestedOneWithoutEntityMappingsInput
@@ -1139,6 +1167,7 @@ export type EntityMappingUncheckedCreateWithoutObjectEntityInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -1195,6 +1224,7 @@ export type EntityMappingCreateWithoutSourceInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
@@ -1221,6 +1251,7 @@ export type EntityMappingUncheckedCreateWithoutSourceInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -1261,6 +1292,7 @@ export type EntityMappingCreateWithoutFirstSeenRunInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
@@ -1287,6 +1319,7 @@ export type EntityMappingUncheckedCreateWithoutFirstSeenRunInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -1311,6 +1344,7 @@ export type EntityMappingCreateWithoutLastSeenRunInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
@@ -1337,6 +1371,7 @@ export type EntityMappingUncheckedCreateWithoutLastSeenRunInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -1393,6 +1428,7 @@ export type EntityMappingCreateWithoutSourceRecordInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
@@ -1419,6 +1455,7 @@ export type EntityMappingUncheckedCreateWithoutSourceRecordInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutMappingInput
 }
 
@@ -1459,6 +1496,7 @@ export type EntityMappingCreateWithoutReviewItemsInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
   subjectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsSubjectInput
   objectEntity: Prisma.EntityCreateNestedOneWithoutMappingsAsObjectInput
   scope: Prisma.ScopeCreateNestedOneWithoutEntityMappingsInput
@@ -1486,6 +1524,7 @@ export type EntityMappingUncheckedCreateWithoutReviewItemsInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingCreateOrConnectWithoutReviewItemsInput = {
@@ -1515,6 +1554,7 @@ export type EntityMappingUpdateWithoutReviewItemsInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -1542,6 +1582,7 @@ export type EntityMappingUncheckedUpdateWithoutReviewItemsInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingCreateManyScopeInput = {
@@ -1561,6 +1602,7 @@ export type EntityMappingCreateManyScopeInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingUpdateWithoutScopeInput = {
@@ -1574,6 +1616,7 @@ export type EntityMappingUpdateWithoutScopeInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   source?: Prisma.SourceUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -1600,6 +1643,7 @@ export type EntityMappingUncheckedUpdateWithoutScopeInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -1620,6 +1664,7 @@ export type EntityMappingUncheckedUpdateManyWithoutScopeInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingCreateManySubjectEntityInput = {
@@ -1639,6 +1684,7 @@ export type EntityMappingCreateManySubjectEntityInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingCreateManyObjectEntityInput = {
@@ -1658,6 +1704,7 @@ export type EntityMappingCreateManyObjectEntityInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingUpdateWithoutSubjectEntityInput = {
@@ -1671,6 +1718,7 @@ export type EntityMappingUpdateWithoutSubjectEntityInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
   source?: Prisma.SourceUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -1697,6 +1745,7 @@ export type EntityMappingUncheckedUpdateWithoutSubjectEntityInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -1717,6 +1766,7 @@ export type EntityMappingUncheckedUpdateManyWithoutSubjectEntityInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingUpdateWithoutObjectEntityInput = {
@@ -1730,6 +1780,7 @@ export type EntityMappingUpdateWithoutObjectEntityInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
   source?: Prisma.SourceUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -1756,6 +1807,7 @@ export type EntityMappingUncheckedUpdateWithoutObjectEntityInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -1776,6 +1828,7 @@ export type EntityMappingUncheckedUpdateManyWithoutObjectEntityInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingCreateManySourceInput = {
@@ -1795,6 +1848,7 @@ export type EntityMappingCreateManySourceInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingUpdateWithoutSourceInput = {
@@ -1808,6 +1862,7 @@ export type EntityMappingUpdateWithoutSourceInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -1834,6 +1889,7 @@ export type EntityMappingUncheckedUpdateWithoutSourceInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -1854,6 +1910,7 @@ export type EntityMappingUncheckedUpdateManyWithoutSourceInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingCreateManyFirstSeenRunInput = {
@@ -1873,6 +1930,7 @@ export type EntityMappingCreateManyFirstSeenRunInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingCreateManyLastSeenRunInput = {
@@ -1892,6 +1950,7 @@ export type EntityMappingCreateManyLastSeenRunInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingUpdateWithoutFirstSeenRunInput = {
@@ -1905,6 +1964,7 @@ export type EntityMappingUpdateWithoutFirstSeenRunInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -1931,6 +1991,7 @@ export type EntityMappingUncheckedUpdateWithoutFirstSeenRunInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -1951,6 +2012,7 @@ export type EntityMappingUncheckedUpdateManyWithoutFirstSeenRunInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingUpdateWithoutLastSeenRunInput = {
@@ -1964,6 +2026,7 @@ export type EntityMappingUpdateWithoutLastSeenRunInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -1990,6 +2053,7 @@ export type EntityMappingUncheckedUpdateWithoutLastSeenRunInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -2010,6 +2074,7 @@ export type EntityMappingUncheckedUpdateManyWithoutLastSeenRunInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EntityMappingCreateManySourceRecordInput = {
@@ -2029,6 +2094,7 @@ export type EntityMappingCreateManySourceRecordInput = {
   recordedAt?: Date | string
   supersededAt?: Date | string | null
   invalidatedReason?: string | null
+  supersededName?: string | null
 }
 
 export type EntityMappingUpdateWithoutSourceRecordInput = {
@@ -2042,6 +2108,7 @@ export type EntityMappingUpdateWithoutSourceRecordInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subjectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsSubjectNestedInput
   objectEntity?: Prisma.EntityUpdateOneRequiredWithoutMappingsAsObjectNestedInput
   scope?: Prisma.ScopeUpdateOneRequiredWithoutEntityMappingsNestedInput
@@ -2068,6 +2135,7 @@ export type EntityMappingUncheckedUpdateWithoutSourceRecordInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutMappingNestedInput
 }
 
@@ -2088,6 +2156,7 @@ export type EntityMappingUncheckedUpdateManyWithoutSourceRecordInput = {
   recordedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invalidatedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersededName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -2139,6 +2208,7 @@ export type EntityMappingSelect<ExtArgs extends runtime.Types.Extensions.Interna
   recordedAt?: boolean
   supersededAt?: boolean
   invalidatedReason?: boolean
+  supersededName?: boolean
   subjectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   objectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
@@ -2168,6 +2238,7 @@ export type EntityMappingSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   recordedAt?: boolean
   supersededAt?: boolean
   invalidatedReason?: boolean
+  supersededName?: boolean
   subjectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   objectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
@@ -2195,6 +2266,7 @@ export type EntityMappingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   recordedAt?: boolean
   supersededAt?: boolean
   invalidatedReason?: boolean
+  supersededName?: boolean
   subjectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   objectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
@@ -2222,9 +2294,10 @@ export type EntityMappingSelectScalar = {
   recordedAt?: boolean
   supersededAt?: boolean
   invalidatedReason?: boolean
+  supersededName?: boolean
 }
 
-export type EntityMappingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "subjectEntityId" | "objectEntityId" | "mappingType" | "scopeId" | "assertedBySource" | "firstSeenRunId" | "lastSeenRunId" | "sourceRecordId" | "confidence" | "approvedBy" | "approvedAt" | "validFrom" | "validTo" | "recordedAt" | "supersededAt" | "invalidatedReason", ExtArgs["result"]["entityMapping"]>
+export type EntityMappingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "subjectEntityId" | "objectEntityId" | "mappingType" | "scopeId" | "assertedBySource" | "firstSeenRunId" | "lastSeenRunId" | "sourceRecordId" | "confidence" | "approvedBy" | "approvedAt" | "validFrom" | "validTo" | "recordedAt" | "supersededAt" | "invalidatedReason" | "supersededName", ExtArgs["result"]["entityMapping"]>
 export type EntityMappingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   subjectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
   objectEntity?: boolean | Prisma.EntityDefaultArgs<ExtArgs>
@@ -2285,6 +2358,7 @@ export type $EntityMappingPayload<ExtArgs extends runtime.Types.Extensions.Inter
     recordedAt: Date
     supersededAt: Date | null
     invalidatedReason: string | null
+    supersededName: string | null
   }, ExtArgs["result"]["entityMapping"]>
   composites: {}
 }
@@ -2733,6 +2807,7 @@ export interface EntityMappingFieldRefs {
   readonly recordedAt: Prisma.FieldRef<"EntityMapping", 'DateTime'>
   readonly supersededAt: Prisma.FieldRef<"EntityMapping", 'DateTime'>
   readonly invalidatedReason: Prisma.FieldRef<"EntityMapping", 'String'>
+  readonly supersededName: Prisma.FieldRef<"EntityMapping", 'String'>
 }
     
 

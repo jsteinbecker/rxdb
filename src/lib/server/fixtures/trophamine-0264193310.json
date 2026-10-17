@@ -1,0 +1,463 @@
+{
+  "ndc": "00264193310",
+  "splSetId": "cb6d23ff-3ec5-445a-acbe-f88fd57949bf",
+  "doseForm": "SOLUTION",
+  "size": {
+    "kind": "volume",
+    "unit": "mL",
+    "value": 500,
+    "packQty": 12,
+    "container": "CONTAINER"
+  },
+  "ingredients": [
+    {
+      "name": "ISOLEUCINE",
+      "strength": ".82 g/100mL"
+    },
+    {
+      "name": "LEUCINE",
+      "strength": "1.4 g/100mL"
+    },
+    {
+      "name": "LYSINE ACETATE",
+      "strength": "0.850589 g/100mL"
+    },
+    {
+      "name": "METHIONINE",
+      "strength": ".34 g/100mL"
+    },
+    {
+      "name": "PHENYLALANINE",
+      "strength": ".48 g/100mL"
+    },
+    {
+      "name": "THREONINE",
+      "strength": ".42 g/100mL"
+    },
+    {
+      "name": "TRYPTOPHAN",
+      "strength": ".2 g/100mL"
+    },
+    {
+      "name": "VALINE",
+      "strength": ".78 g/100mL"
+    },
+    {
+      "name": "CYSTEINE HYDROCHLORIDE",
+      "strength": "0.016556 g/100mL"
+    },
+    {
+      "name": "HISTIDINE",
+      "strength": ".48 g/100mL"
+    },
+    {
+      "name": "TYROSINE",
+      "strength": ".044 g/100mL"
+    },
+    {
+      "name": "ACETYL L-TYROSINE",
+      "strength": "0.194804 g/100mL"
+    },
+    {
+      "name": "ALANINE",
+      "strength": ".54 g/100mL"
+    },
+    {
+      "name": "ARGININE",
+      "strength": "1.2 g/100mL"
+    },
+    {
+      "name": "PROLINE",
+      "strength": ".68 g/100mL"
+    },
+    {
+      "name": "SERINE",
+      "strength": ".38 g/100mL"
+    },
+    {
+      "name": "GLYCINE",
+      "strength": ".36 g/100mL"
+    },
+    {
+      "name": "ASPARTIC ACID",
+      "strength": ".32 g/100mL"
+    },
+    {
+      "name": "GLUTAMIC ACID",
+      "strength": ".5 g/100mL"
+    },
+    {
+      "name": "TAURINE",
+      "strength": ".025 g/100mL"
+    }
+  ],
+  "propertyOverrides": {
+    "details.spl.ingredients.11.correction": {
+      "value": "{\"basis\":\"moiety\",\"moiety\":{\"name\":\"TYROSINE\",\"unii\":\"42HK56048U\"},\"strength\":{\"value\":\"0.974\",\"unit\":\"g\",\"per\":\"1\",\"perUnit\":\"\"},\"conversion\":{\"from\":{\"unii\":\"DA8G610ZO5\",\"mw\":223.2256},\"to\":{\"unii\":\"42HK56048U\",\"mw\":181.1889},\"n\":1,\"factor\":\"0.81168512930416583\",\"original\":\"1.2 g\",\"gsrsFetchedAt\":\"2026-10-07T08:27:53.804Z\",\"mwEdited\":false}}",
+      "source": "none",
+      "createdAt": "2026-10-13T08:40:07.629Z"
+    }
+  },
+  "details": {
+    "spl": {
+      "version": "10",
+      "doseForm": "SOLUTION",
+      "siblingNdc": null,
+      "ingredients": [
+        {
+          "kind": "active",
+          "name": "ISOLEUCINE",
+          "unii": "04Y7590D77",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "ISOLEUCINE",
+              "unii": "04Y7590D77"
+            }
+          ],
+          "strength": "4.1 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "LEUCINE",
+          "unii": "GMW67QNF9C",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "LEUCINE",
+              "unii": "GMW67QNF9C"
+            }
+          ],
+          "strength": "7 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "LYSINE ACETATE",
+          "unii": "TTL6G7LIWZ",
+          "basis": "moiety",
+          "moieties": [
+            {
+              "name": "LYSINE",
+              "unii": "K3Z4F929H6"
+            }
+          ],
+          "strength": "4.253 g",
+          "productCode": "0264-1933",
+          "strengthNotes": [
+            "Strength corrected from stated value of 1.2 g, the mass of the acetate salt, to its equivalent of 0.8506 g lysine"
+          ]
+        },
+        {
+          "kind": "active",
+          "name": "METHIONINE",
+          "unii": "AE28F7PNPL",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "METHIONINE",
+              "unii": "AE28F7PNPL"
+            }
+          ],
+          "strength": "1.7 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "PHENYLALANINE",
+          "unii": "47E5O17Y3R",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "PHENYLALANINE",
+              "unii": "47E5O17Y3R"
+            }
+          ],
+          "strength": "2.4 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "THREONINE",
+          "unii": "2ZD004190S",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "THREONINE",
+              "unii": "2ZD004190S"
+            }
+          ],
+          "strength": "2.1 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "TRYPTOPHAN",
+          "unii": "8DUH1N11BX",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "TRYPTOPHAN",
+              "unii": "8DUH1N11BX"
+            }
+          ],
+          "strength": "1 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "VALINE",
+          "unii": "HG18B9YRS7",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "VALINE",
+              "unii": "HG18B9YRS7"
+            }
+          ],
+          "strength": "3.9 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "CYSTEINE HYDROCHLORIDE",
+          "unii": "ZT934N0X4W",
+          "basis": "moiety",
+          "moieties": [
+            {
+              "name": "CYSTEINE",
+              "unii": "K848JZ4886"
+            }
+          ],
+          "strength": "0.0828 g",
+          "productCode": "0264-1933",
+          "strengthNotes": [
+            "Strength corrected from stated value of 0.024 g, the mass of the hydrochloride salt, to its equivalent of 0.01656 g cysteine"
+          ]
+        },
+        {
+          "kind": "active",
+          "name": "HISTIDINE",
+          "unii": "4QD397987E",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "HISTIDINE",
+              "unii": "4QD397987E"
+            }
+          ],
+          "strength": "2.4 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "TYROSINE",
+          "unii": "42HK56048U",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "TYROSINE",
+              "unii": "42HK56048U"
+            }
+          ],
+          "strength": "0.22 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "ACETYL L-TYROSINE",
+          "unii": "DA8G610ZO5",
+          "basis": "moiety",
+          "moieties": [
+            {
+              "name": "TYROSINE",
+              "unii": "42HK56048U"
+            }
+          ],
+          "strength": "0.974 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "ALANINE",
+          "unii": "OF5P57N2ZX",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "ALANINE",
+              "unii": "OF5P57N2ZX"
+            }
+          ],
+          "strength": "2.7 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "ARGININE",
+          "unii": "94ZLA3W45F",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "ARGININE",
+              "unii": "94ZLA3W45F"
+            }
+          ],
+          "strength": "6 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "PROLINE",
+          "unii": "9DLQ4CIU6V",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "PROLINE",
+              "unii": "9DLQ4CIU6V"
+            }
+          ],
+          "strength": "3.4 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "SERINE",
+          "unii": "452VLY9402",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "SERINE",
+              "unii": "452VLY9402"
+            }
+          ],
+          "strength": "1.9 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "GLYCINE",
+          "unii": "TE7660XO1C",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "GLYCINE",
+              "unii": "TE7660XO1C"
+            }
+          ],
+          "strength": "1.8 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "ASPARTIC ACID",
+          "unii": "30KYC7MIAI",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "ASPARTIC ACID",
+              "unii": "30KYC7MIAI"
+            }
+          ],
+          "strength": "1.6 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "GLUTAMIC ACID",
+          "unii": "3KX376GY7L",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "GLUTAMIC ACID",
+              "unii": "3KX376GY7L"
+            }
+          ],
+          "strength": "2.5 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "active",
+          "name": "TAURINE",
+          "unii": "1EQV5MLY3D",
+          "basis": "ingredient",
+          "moieties": [
+            {
+              "name": "TAURINE",
+              "unii": "1EQV5MLY3D"
+            }
+          ],
+          "strength": "0.125 g",
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "inactive",
+          "name": "WATER",
+          "unii": "059QF0KO0R",
+          "basis": null,
+          "moieties": [],
+          "strength": null,
+          "productCode": "0264-1933"
+        },
+        {
+          "kind": "inactive",
+          "name": "ACETIC ACID",
+          "unii": "Q40Q9N063P",
+          "basis": null,
+          "moieties": [],
+          "strength": null,
+          "productCode": "0264-1933"
+        }
+      ],
+      "publishedDate": "Aug 24, 2026"
+    },
+    "rxnav": {
+      "rxcui": "1189640",
+      "status": "ACTIVE",
+      "history": [
+        {
+          "end": "202610",
+          "start": "202012",
+          "activeRxcui": "1189640",
+          "originalRxcui": "1189640"
+        }
+      ],
+      "packaging": [
+        "12 CONTAINER in 1 CASE (0264-1933-10)  / 500 mL in 1 CONTAINER"
+      ],
+      "properties": [
+        {
+          "name": "LABELER",
+          "value": "B. Braun Medical Inc."
+        },
+        {
+          "name": "LABEL_TYPE",
+          "value": "HUMAN PRESCRIPTION DRUG"
+        },
+        {
+          "name": "MARKETING_CATEGORY",
+          "value": "NDA"
+        },
+        {
+          "name": "MARKETING_EFFECTIVE_TIME_LOW",
+          "value": "20201027"
+        },
+        {
+          "name": "MARKETING_STATUS",
+          "value": "ACTIVE"
+        },
+        {
+          "name": "NDA",
+          "value": "NDA019018"
+        }
+      ],
+      "conceptName": "alanine 5.4 MG/ML / arginine 12 MG/ML / aspartate 3.2 MG/ML / cysteine 0.24 MG/ML / glutamate 5 MG/ML / glycine 3.6 MG/ML / histidine 4.8 MG/ML / isoleucine 8.2 MG/ML / leucine 1.4 MG/ML / lysine 1.2 MG/ML / methionine 3.4 MG/ML / phenylalanine 4.8 MG/ML / proline 6.8 MG/ML / serine 3.8 MG/ML / sodium acetate 0.097 MEQ/ML / sodium chloride 0.003 MEQ/ML / sodium metabisulfite 0.5 MG/ML / taurine 0.25 MG/ML / threonine 4.2 MG/ML / tryptophan 2 MG/ML / tyrosine 2.84 MG/ML / valine 7.8 MG/ML Injectable Solution [Trophamine 10 %]",
+      "conceptStatus": "ACTIVE"
+    },
+    "label": {
+      "setId": "cb6d23ff-3ec5-445a-acbe-f88fd57949bf",
+      "effectiveTime": "20260819",
+      "version": "10"
+    }
+  }
+}

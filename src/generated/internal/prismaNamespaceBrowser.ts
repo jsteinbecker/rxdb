@@ -57,6 +57,8 @@ export const ModelName = {
   Ingredient: 'Ingredient',
   Product: 'Product',
   ClinicalDrug: 'ClinicalDrug',
+  LocalConcept: 'LocalConcept',
+  LocalConceptIngredient: 'LocalConceptIngredient',
   Package: 'Package',
   FormularyItem: 'FormularyItem',
   FormularyItemBrand: 'FormularyItemBrand',
@@ -193,6 +195,42 @@ export const ClinicalDrugScalarFieldEnum = {
 } as const
 
 export type ClinicalDrugScalarFieldEnum = (typeof ClinicalDrugScalarFieldEnum)[keyof typeof ClinicalDrugScalarFieldEnum]
+
+
+export const LocalConceptScalarFieldEnum = {
+  id: 'id',
+  genericId: 'genericId',
+  brandName: 'brandName',
+  doseForm: 'doseForm',
+  evidenceSetId: 'evidenceSetId',
+  evidenceVersion: 'evidenceVersion',
+  evidenceNdc: 'evidenceNdc',
+  ionicContent: 'ionicContent',
+  note: 'note',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LocalConceptScalarFieldEnum = (typeof LocalConceptScalarFieldEnum)[keyof typeof LocalConceptScalarFieldEnum]
+
+
+export const LocalConceptIngredientScalarFieldEnum = {
+  id: 'id',
+  localConceptId: 'localConceptId',
+  ordinal: 'ordinal',
+  substanceUnii: 'substanceUnii',
+  substanceName: 'substanceName',
+  basis: 'basis',
+  moietyUnii: 'moietyUnii',
+  moietyName: 'moietyName',
+  strengthNumMag: 'strengthNumMag',
+  strengthNumUom: 'strengthNumUom',
+  strengthDenMag: 'strengthDenMag',
+  strengthDenUom: 'strengthDenUom'
+} as const
+
+export type LocalConceptIngredientScalarFieldEnum = (typeof LocalConceptIngredientScalarFieldEnum)[keyof typeof LocalConceptIngredientScalarFieldEnum]
 
 
 export const PackageScalarFieldEnum = {
@@ -524,7 +562,8 @@ export const EntityMappingScalarFieldEnum = {
   validTo: 'validTo',
   recordedAt: 'recordedAt',
   supersededAt: 'supersededAt',
-  invalidatedReason: 'invalidatedReason'
+  invalidatedReason: 'invalidatedReason',
+  supersededName: 'supersededName'
 } as const
 
 export type EntityMappingScalarFieldEnum = (typeof EntityMappingScalarFieldEnum)[keyof typeof EntityMappingScalarFieldEnum]

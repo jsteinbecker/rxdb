@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { defaultScope } from '$lib/server/catalog-formulary';
+import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
 import { formularyRows } from '$lib/server/formulary-view';
 import { packageTitle } from '$lib/package-title';
 import {
@@ -36,7 +36,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		if (cause instanceof CompoundError) error(cause.status, cause.message);
 		throw cause;
 	}
-	const rows = await formularyRows(prisma, scope.id);
+	const rows = await formularyRows(prisma, scope.id, localNamesOf(await loadedItems(prisma, scope.id)));
 	const byPackage = new Map(rows.map((row) => [row.packageId, row]));
 	const title = (packageId: string) => {
 		const row = byPackage.get(packageId);

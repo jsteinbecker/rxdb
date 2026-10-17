@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { trackJob } from '$lib/server/jobs';
-import { defaultScope, loadedItems } from '$lib/server/catalog-formulary';
+import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
 import { formularyRows } from '$lib/server/formulary-view';
 import { addBrandTag, itemBrands, removeBrandTag, restoreBrandTag } from '$lib/server/brand-tag-store';
 import { itemPackages, relatedItems } from '$lib/formulary-item';
@@ -13,6 +13,7 @@ import { loadPackageSnapshots } from '$lib/server/catalog-store';
 import { loadStagedNode } from '$lib/server/catalog-sync';
 import { cmsBilling } from '$lib/server/cms-billing';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
+import { withLocalConcepts } from '$lib/server/local-concept-view';
 import { hasAppearance, isSolidDoseForm, type PillAppearance } from '$lib/spl-characteristics';
 import { refineAppearances } from '$lib/spl-appearance-text';
 import type { PillImageLayout, PillPhotoRef } from '$lib/pill-image-layout';
@@ -31,16 +32,15 @@ import type { Actions, PageServerLoad } from './$types';
 
 async function itemInScope(id: string) {
 	const scope = await defaultScope(prisma);
-	const item = (await loadedItems(prisma, scope.id)).find(
-		(candidate) => candidate.formularyItemId === id
-	);
-	return { scope, item };
+	const all = await loadedItems(prisma, scope.id);
+	const item = all.find((candidate) => candidate.formularyItemId === id);
+	return { scope, item, localNames: localNamesOf(all) };
 }
 
 export const load: PageServerLoad = async ({ params }) => {
-	const { scope, item } = await itemInScope(params.id);
+	const { scope, item, localNames } = await itemInScope(params.id);
 	if (!item) error(404, 'That item is not on this formulary.');
-	const rows = await formularyRows(prisma, scope.id);
+	const rows = await formularyRows(prisma, scope.id, localNames);
 	const packages = itemPackages(rows, item.formularyItemId);
 	const snapshots = await loadPackageSnapshots(prisma, packages.map((row) => row.ndc));
 	// Pill mockups by NDC, only for solid forms: a vial's label never states an
@@ -94,10 +94,14 @@ export const load: PageServerLoad = async ({ params }) => {
 	queuePillImages(prisma, await unmeasured(prisma, targets));
 	// Display-time pharm-class rules; the snapshots themselves stay as sourced.
 	const snapshotNdcs = [...snapshots.keys()];
-	const resolved = await withPharmClassRules(
+	const resolved = await withLocalConcepts(
 		prisma,
 		scope.id,
-		snapshotNdcs.map((ndc) => snapshots.get(ndc)!.item)
+		await withPharmClassRules(
+			prisma,
+			scope.id,
+			snapshotNdcs.map((ndc) => snapshots.get(ndc)!.item)
+		)
 	);
 	const summaryItems = new Map(snapshotNdcs.map((ndc, index) => [ndc, resolved[index]]));
 	const billing = await cmsBilling(

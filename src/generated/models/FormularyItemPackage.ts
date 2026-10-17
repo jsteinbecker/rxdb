@@ -469,14 +469,6 @@ export type FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInp
   deleteMany?: Prisma.FormularyItemPackageScalarWhereInput | Prisma.FormularyItemPackageScalarWhereInput[]
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type FormularyItemPackageCreateWithoutPackageInput = {
   id?: string
   preferenceRank?: number

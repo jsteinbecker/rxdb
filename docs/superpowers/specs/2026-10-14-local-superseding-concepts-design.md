@@ -18,7 +18,7 @@ metabisulfite, and several of its amino-acid strengths are wrong. The current la
   `local_concept` namespace, so nothing a sync does can touch these rows.
 - **The ingredients live in their own table.** `ClinicalDrug` has no ingredient rows, and `ProductIngredient` hangs
   off a labeled `Product`. A new `local_concept_ingredient` table mirrors `ProductIngredient` (substance by UNII,
-  basis, numerator and denominator), so it gets the same generated `measure` columns for strength comparison.
+  basis, numerator and denominator). Strengths are compared in TypeScript, not with generated `measure` columns.
 - **Replacement is a scoped mapping.** An `EntityMapping` with a new `MappingType` value `supersedes` links the local
   concept (subject) to the RxNorm concept (object) in one `Scope`. It already carries an approver, validity,
   `supersededAt` and `invalidatedReason`, so a replacement can be switched off without deleting anything. The local
@@ -48,10 +48,10 @@ name, e.g. `Injectable Solution`), `evidence_set_id` (SPL set id), `evidence_ver
 `evidence_ndc` (nullable), `note` (nullable), `created_by`, `created_at`, `updated_at`.
 
 `local_concept_ingredient`: `id`, `local_concept_id` (FK), `ordinal`, `substance_unii`, `substance_name`, `basis`
-(`StrengthBasis`), `moiety_unii` / `moiety_name` (required when `basis` ≠ `ingredient`), `strength_num_mag`,
-`strength_num_uom`, `strength_den_mag` (default 1), `strength_den_uom`, plus the generated `strength_num`,
-`strength_den` and `strength` `measure` columns, using the same expressions as `product_ingredient`. Unique on
-`(local_concept_id, substance_unii)`.
+(`StrengthBasis`), `moiety_unii` / `moiety_name` (required when `basis` is `active_moiety`), `strength_num_mag`,
+`strength_num_uom`, `strength_den_mag` (default 1), `strength_den_uom`. There are no `measure` columns: the
+existing `product_ingredient.strength*` measure columns are plain composites that nothing fills. Strengths are compared
+in TypeScript on exact rationals normalized to mg/mL (or mEq/mL). Unique on `(local_concept_id, substance_unii)`.
 
 Ionic content (e.g. acetate mEq/L) is **not** an ingredient row. It is optional `ionic_content` JSON on
 `local_concept`, shaped like `LabelIngredient.ionicContent`, so the label's electrolyte statement can be shown without
@@ -73,21 +73,25 @@ concept view with `localConcept: { id, code, name, tty, ingredients, supersedes:
 `details.rxnav` is left alone. The UI and API decide what to show from `localConcept`.
 
 **SBD → SCD.** An NDC usually resolves to an SBD (TrophAmine NDC 0264-1933-10 → RxCUI 1189640). If the SBD itself has
-no mapping but its generic counterpart does (`RxConceptDetails.counterparts`, read with `loadConceptSnapshots`; the
-NDC snapshot only carries the SBD's RxCUI), the resolver returns a **derived** local SBD:
-the local SCD's ingredients, plus the RxNorm brand. It is marked `derived: true` and has no row of its own. A user
-can save it as a real local SBD later.
+no mapping but an SCD mapped in the scope lists it as a counterpart, the resolver returns a **derived** local SBD: the
+local SCD's ingredients, plus the RxNorm brand. It is marked `derived: true` and has no row of its own. SBD concept
+snapshots are never staged (brands roll up into their generic's node), so the link is read from the other side: the
+resolver loads the scope's active mappings first (and stops there when there are none), reads the mapped SCDs'
+snapshots with `loadConceptSnapshots`, and finds the requested SBD in their `details.counterparts`. The brand is parsed
+from the counterpart's name (`… [Trophamine 10 %]`). The NDC editor's supersede target, which has no mapping to start
+from, uses a reverse lookup over the cached SCD snapshots (`scdsForSbds`) instead.
 
 ## Where it is applied
-- **Formulary load** (`loadToFormulary`, concept targets): if the RxCUI resolves, the item's `displayName` comes from
-  the local concept. The origin key stays `rxcui:<RxCUI>`, so reloading the same RxCUI finds the same item.
+- **Formulary load** (`loadToFormulary`, concept targets): keeps storing RxNorm's name. Local names are applied when
+  read, so "Stop superseding" restores the RxNorm name everywhere at once. The origin key stays `rxcui:<RxCUI>`, so
+  reloading the same RxCUI finds the same item.
 - **Formulary item page** and `formulary-view.ts`: the name and ingredient list come from the local concept, with a
   "Local concept · supersedes RxCUI 800611" badge. The existing `nameOverride` still wins over the generated name.
 - **NDC page** (`PackageDetail.svelte`, RxNorm block): show the local concept first, with RxNorm's concept beneath it
   as "RxNorm says", and the differences highlighted (added, removed and changed ingredients).
 - **API**: `/api/v1/ndc/[ndc]`, `/api/v1/search`, `/api/v1/search/packages` add `localConcept`.
-  `/api/v1/rxcui/names` returns the local name with `superseded: true` alongside the RxNorm name. If the lookup fails,
-  responses fall back to RxNorm data, as the pharm-class lookup does in search.
+  `/api/v1/rxcui/names` keeps the RxNorm name for each id and adds `local: { code, name } | null`. If the lookup
+  fails, responses fall back to RxNorm data, as the pharm-class lookup does in search.
 - **Not applied** in sync, staging, `reinterpret`, override propagation or `findEquivalentPackages` matching. Those
   keep working on raw RxCUIs.
 
@@ -98,15 +102,14 @@ compared:
 - the concept's name changed → `ReviewItem` kind `local_concept_drift`, severity `info` ("RxNorm changed 800611; check
   whether the local concept is still needed")
 - the concept became inactive or remapped (`conceptStatus`, `history`) → same kind, severity `warning`
-- the RxNorm ingredients now equal the local ones (same UNIIs and `measure` strengths) → severity `info`, suggesting
+- the RxNorm ingredients now equal the local ones (same UNIIs and normalized strengths) → severity `info`, suggesting
   the user retire the local concept
 
 The review item sets `mappingId` (which reaches both concepts) and `entityId` = the local concept. Only one open
 drift item exists per mapping; a newer finding updates it. Nothing changes automatically.
 
 ## UI
-- **"Define local concept…"** in the ⋯ menu of the NDC page's RxNorm block and of a concept-backed formulary item.
-  It opens an editor:
+- **"Define local concept…"** in the ⋯ menu of the NDC page's RxNorm block. It opens an editor:
   - Pre-filled from this NDC's SPL active ingredients, after any ingredient corrections and moiety conversion
     (`IngredientCorrection` shape, GSRS molecular weights), converted to the per-mL strengths RxNorm uses.
   - Each row: substance (UNII type-ahead from `unii_substance`), basis, moiety, strength. Rows can be added or removed.
@@ -116,9 +119,19 @@ drift item exists per mapping; a newer finding updates it. Nothing changes autom
   - Evidence: the SPL set id and version are filled from the NDC and can't be blank.
   - Save creates the local SCD and, unless the box is unticked, an active `supersedes` mapping to the RxNorm SCD in
     the current scope.
-- **`/formulary/local-concepts`**: a table of local concepts (code, name, what each one supersedes, scope, open drift
-  reviews), with edit, "Stop superseding" (sets `valid_to` on the mapping) and retire. Linked from the formulary eyebrow
-  nav next to "Class rules".
+  - On an NDC showing a local concept the menu offers "Edit local concept…" and "Stop superseding…". A derived SBD
+    view offers **"Edit local SCD…"**, which edits the underlying local SCD.
+- **`/formulary/local-concepts`**: a table of every non-retired local concept with its latest supersede mapping in the
+  scope — active, stopped, or none (code, name, what it supersedes, scope, open drift reviews, evidence). Row actions:
+  - **Edit**, only with an active mapping and an evidence NDC: opens that NDC's page with `?localConcept=edit`, which
+    auto-opens the editor (for a derived SBD view too, editing its SCD).
+  - **Stop superseding** (active): sets `valid_to` on the mapping.
+  - **Supersede again** (stopped): re-creates the mapping to the RxCUI it superseded before.
+  - **Supersede…** (never mapped): supersedes the SCD the evidence NDC's editor would target, computed on the server;
+    when that target is blocked, the row shows why.
+  - **Retire**.
+
+  Linked from the formulary eyebrow nav next to "Class rules".
 
 ## First case: TrophAmine 10%
 Evidence: NDC 0264-1933-10 (B. Braun, 500 mL), SPL set `cb6d23ff-3ec5-445a-acbe-f88fd57949bf`, effective
@@ -152,20 +165,23 @@ local SBD "… [TrophAmine]", with no separate row needed.
   - derived SBD: an SBD with no mapping whose counterpart SCD is mapped
   - drift classification: name changed, concept retired/remapped, ingredients now match, nothing changed
   - the diff of RxNorm vs. local ingredients for the TrophAmine table above
-- Migration check: the generated `measure` columns on `local_concept_ingredient` compare equal to a `product_ingredient`
-  row with the same strength in different units (8.51 mg/mL vs 0.851 g/100 mL).
 - Dev-server check: create the TrophAmine local SCD from NDC 0264-1933-10, then confirm that
   - the NDC page shows the local concept, the RxNorm diff, and acetate as ionic content
-  - loading RxCUI 800611 into the formulary gives the local name, and reloading finds the same item
+  - loading RxCUI 800611 into the formulary shows the local name, and reloading finds the same item
   - `/api/v1/ndc/00264193310` has both `rxcui` and `localConcept`
   - "Stop superseding" brings back RxNorm's name everywhere without a reload of the cache
 
 ## Out of scope (follow-ups)
+- Saved local SBDs. The schema supports them (`generic_id`, `brand_name`), but this round only creates local SCDs;
+  SBD-coded NDCs get the derived SBD.
 - Local concepts with no RxNorm concept to supersede (new products RxNorm doesn't have yet).
 - Local versions of other term types (SCDC, GPCK/BPCK kits).
 - Mapping NDCs straight to a local concept when RxNav gives them no RxCUI.
 - Sharing local concepts across scopes, or exporting them as a FHIR `Medication` extension.
 - TrophAmine 6%, which isn't in the cache yet. It will need its own local SCD.
+- "Define local concept…" from a concept-backed formulary item's ⋯ menu, and the formulary item page's local
+  ingredient list (the item page shows the local name and badge only).
+- A derived SBD view's `supersedes` points at the SBD's own RxCUI (with no name), not at the mapped SCD.
 
 ## Open questions
 - **Scope:** per formulary scope (as written), or global once org scopes exist?

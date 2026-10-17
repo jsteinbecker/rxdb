@@ -67,6 +67,7 @@ enum MappingType {
       broader
       narrower
       candidate
+      supersedes
 
       @@map("mapping_type")
 }
@@ -275,10 +276,53 @@ model ClinicalDrug {
       name String
       tty  String?
 
-      entity Entity @relation(fields: [id, type], references: [id, type])
+      entity       Entity        @relation(fields: [id, type], references: [id, type])
+      localConcept LocalConcept?
 
       @@unique([id, type])
       @@map("clinical_drug")
+}
+
+model LocalConcept {
+      id              String   @id @db.Uuid
+      genericId       String?  @map("generic_id") @db.Uuid
+      brandName       String?  @map("brand_name")
+      doseForm        String   @map("dose_form")
+      evidenceSetId   String   @map("evidence_set_id")
+      evidenceVersion String   @map("evidence_version")
+      evidenceNdc     String?  @map("evidence_ndc")
+      ionicContent    Json?    @map("ionic_content")
+      note            String?
+      createdBy       String?  @map("created_by") @db.Uuid
+      createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+      updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+      clinicalDrug ClinicalDrug             @relation(fields: [id], references: [id])
+      generic      LocalConcept?            @relation("LocalConceptGeneric", fields: [genericId], references: [id])
+      brands       LocalConcept[]           @relation("LocalConceptGeneric")
+      ingredients  LocalConceptIngredient[]
+
+      @@map("local_concept")
+}
+
+model LocalConceptIngredient {
+      id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      localConceptId String        @map("local_concept_id") @db.Uuid
+      ordinal        Int
+      substanceUnii  String        @map("substance_unii")
+      substanceName  String        @map("substance_name")
+      basis          StrengthBasis @default(as_labeled)
+      moietyUnii     String?       @map("moiety_unii")
+      moietyName     String?       @map("moiety_name")
+      strengthNumMag Decimal       @map("strength_num_mag") @db.Decimal
+      strengthNumUom String        @map("strength_num_uom")
+      strengthDenMag Decimal       @default(1) @map("strength_den_mag") @db.Decimal
+      strengthDenUom String        @map("strength_den_uom")
+
+      localConcept LocalConcept @relation(fields: [localConceptId], references: [id], onDelete: Cascade)
+
+      @@unique([localConceptId, substanceUnii])
+      @@map("local_concept_ingredient")
 }
 
 model Package {
@@ -770,6 +814,7 @@ model EntityMapping {
       recordedAt        DateTime                  @default(now()) @map("recorded_at") @db.Timestamptz(6)
       supersededAt      DateTime?                 @map("superseded_at") @db.Timestamptz(6)
       invalidatedReason String?                   @map("invalidated_reason")
+      supersededName    String?                   @map("superseded_name")
 
       subjectEntity Entity        @relation("MappingSubject", fields: [subjectEntityId], references: [id])
       objectEntity  Entity        @relation("MappingObject", fields: [objectEntityId], references: [id])
