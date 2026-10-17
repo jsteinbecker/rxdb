@@ -156,7 +156,9 @@ export function summarizeItem(
 		const { product, packaging, label, spl, rxnav } = item.details ?? {};
 		if (item.isDryFill) dryFill.push(ndc);
 		if (packaging?.sample) samples.push(ndc);
-		if (item.listed === false) unlisted.push(ndc);
+		// An inner package (a carton's bag) has no entry of its own, but its product
+		// matched through a listed sibling and was enriched from it; nothing is missing.
+		if (item.listed === false && !packaging?.siblings.length) unlisted.push(ndc);
 		if (item.splInactivated) inactivated.push(ndc);
 		if (item.isVeterinary) veterinary.push(ndc);
 		ended.add(isoDate(item.marketingEndDate), ndc);

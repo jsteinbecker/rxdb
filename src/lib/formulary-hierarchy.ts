@@ -6,7 +6,7 @@
 // none lands in a "Not specified" bucket rather than disappearing.
 
 import type { KitComposition } from './kit-parts';
-import { ingredientGroup } from './ingredient-group';
+import { enantiomerShares, ingredientGroup } from './ingredient-group';
 import { labelerGroup } from './labeler-group';
 import { naturalCompare } from './natural-sort';
 import { mgPer } from './units';
@@ -171,6 +171,56 @@ export function comboKey(row: FormularyRow): string | null {
 		compare
 	);
 	return names.length > 1 ? names.join(' / ') : null;
+}
+
+// ── Racemates beside one of their own enantiomers ────────────────────────────
+// Mixed amphetamine salts list `AMPHETAMINE SULFATE` and `AMPHETAMINE ASPARTATE`
+// (racemic) beside `DEXTROAMPHETAMINE SULFATE` and `… SACCHARATE`, so read by
+// salt they are four ingredients of two names that overlap. What the product
+// delivers is two enantiomers: a racemate is half dextro, half levo. So when a
+// product carries `dextroX` or `levoX` beside `X`, every salt of `X` splits
+// evenly between the two, and every salt of an enantiomer joins its whole —
+// Adderall's four 1.25 mg salts read Dextroamphetamine 3.75 mg / Levoamphetamine
+// 1.25 mg. A racemate on its own (Evekeo) is left as the racemate.
+
+/**
+ * A product's ingredients with each racemate split into the enantiomers it is
+ * made of and every salt of an enantiomer summed into it (see above). Returned
+ * unchanged when nothing splits, or when the strengths involved cannot be added
+ * (different units or denominators, or some stated and some not).
+ */
+export function resolveRacemates<T extends { name: string; strength: string | null }>(
+	ingredients: T[]
+): { name: string; strength: string | null }[] {
+	const shares = enantiomerShares(ingredients.map((item) => item.name));
+	if (!shares) return ingredients;
+	const out: { name: string; parts: { strength: string | null; share: number }[] }[] = [];
+	ingredients.forEach((item, index) => {
+		for (const { name, share } of shares[index]) {
+			const key = name.toLowerCase();
+			const found = out.find((entry) => entry.name.toLowerCase() === key);
+			if (found) found.parts.push({ strength: item.strength, share });
+			else out.push({ name, parts: [{ strength: item.strength, share }] });
+		}
+	});
+	const resolved = out.map(({ name, parts }) => {
+		if (parts.length === 1 && parts[0].share === 1) return { name, strength: parts[0].strength };
+		if (parts.every((part) => !part.strength)) return { name, strength: null };
+		const parsed = parts.map((part) => (part.strength ? parseStrength(part.strength) : null));
+		const [first] = parsed;
+		if (!first || parsed.some((item) => !item || item.family !== first.family || item.per !== first.per))
+			return null;
+		const total =
+			parsed.reduce((sum, item, at) => sum + item!.base * parts[at].share, 0) / (mgPer(first.unit) ?? 1);
+		return { name, strength: `${Number(total.toPrecision(6))} ${first.unit}${first.perLabel}` };
+	});
+	return resolved.every(Boolean) ? (resolved as { name: string; strength: string | null }[]) : ingredients;
+}
+
+/** The ingredient names `resolveRacemates` would list, for keys built from names alone. */
+export function racemateNames(names: string[]): string[] {
+	const shares = enantiomerShares(names);
+	return shares ? [...new Set(shares.flatMap((list) => list.map((entry) => entry.name)))] : names;
 }
 
 

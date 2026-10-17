@@ -66,11 +66,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		select: { formularyItem: { select: { id: true, displayName: true, nameOverride: true, strengthAsPercent: true } } }
 	});
+	const scope = await defaultScope(prisma);
+	const styles = parseSettings(scope.settings).strengthStyles;
 	const formularyItems = links.map(({ formularyItem }) => ({
 		id: formularyItem.id,
-		displayName: itemName(formularyItem.displayName, formularyItem)
+		displayName: itemName(formularyItem.displayName, formularyItem, styles)
 	}));
-	const scope = await defaultScope(prisma);
 	const scopeId = scope.id;
 	const [shown] = await withPharmClassRules(prisma, scopeId, packages.slice(0, 1));
 	return {

@@ -1,5 +1,6 @@
 import type { PrismaClient } from '../../generated/client';
 import { CACHE_SOURCE, readSnapshot, type PackageSnapshot } from './catalog-cache';
+import { packageTitle } from '../package-title';
 
 /** UNIIs are 10 uppercase alphanumerics. */
 export const normalizeUnii = (value: string) => {
@@ -15,6 +16,8 @@ export type UniiRole =
 
 export type UniiUsage = {
 	ndc: string;
+	/** The title the package's NDC page shows. */
+	title: string;
 	description: string | null;
 	brandName: string | null;
 	genericName: string | null;
@@ -53,7 +56,8 @@ export async function uniiUsage(db: PrismaClient, unii: string): Promise<UniiUsa
 			const roles = rolesIn(snapshot.item, unii);
 			if (!roles.length) return [];
 			const { description, brandName, genericName, labelerName, doseForm } = snapshot.item;
-			return [{ ndc, description, brandName, genericName, labelerName, doseForm, roles }];
+			const title = packageTitle(snapshot.item);
+			return [{ ndc, title, description, brandName, genericName, labelerName, doseForm, roles }];
 		})
 		.sort((a, b) => a.ndc.localeCompare(b.ndc));
 }

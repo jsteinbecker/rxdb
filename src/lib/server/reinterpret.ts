@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { gsrsMoieties, gsrsMoietyFactor, prismaSubstanceTable } from './unii-substance-store';
+import { gsrsMoieties, gsrsMoietyFactor, gsrsSalt, prismaSubstanceTable } from './unii-substance-store';
 import { env } from '$env/dynamic/private';
 import { prisma } from '$lib/server/prisma';
 import {
@@ -57,7 +57,8 @@ export async function previewReinterpret(ndc: string, request: ReviewRequest) {
 	};
 	const [fresh] = await enrichPackages([ndc], env.OPENFDA_API_KEY, new Map([[ndc, preference]]), {
 		moietiesOf: gsrsMoieties(prismaSubstanceTable(prisma)),
-		moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma))
+		moietyFactorOf: gsrsMoietyFactor(prismaSubstanceTable(prisma)),
+		saltOf: gsrsSalt(prismaSubstanceTable(prisma))
 	});
 	if (!fresh) throw new Error('The sources returned nothing for this NDC.');
 

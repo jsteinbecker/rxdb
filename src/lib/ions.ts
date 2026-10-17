@@ -74,3 +74,83 @@ export function balanceIon(
 	const expectedMEq = Number((massMg / perMEq).toPrecision(3));
 	return { balanced: Math.abs(massMg / perMEq - mEq) / mEq <= 0.05, expectedMEq };
 }
+
+/**
+ * Cations a salt's formula carries as one element. Only metals: an organic
+ * drug's own Cl, Br or F atoms are covalent, so counting them as chloride or
+ * bromide ions would be wrong.
+ */
+const ELEMENT_CATIONS: Record<string, string> = {
+	sodium: 'Na',
+	potassium: 'K',
+	lithium: 'Li',
+	calcium: 'Ca',
+	magnesium: 'Mg',
+	zinc: 'Zn'
+};
+
+/** The cations a salt's name mentions, in `ELEMENT_CATIONS` order: `CEFTRIAXONE SODIUM` → `['sodium']`. */
+export const cationsNamedIn = (name: string) =>
+	Object.keys(ELEMENT_CATIONS).filter((ion) => new RegExp(`\\b${ion}\\b`, 'i').test(name));
+
+/** Atoms of each element in one formula part with no leading coefficient: `(C6H11O7)2Ca`. */
+function atomsOf(part: string): Map<string, number> | null {
+	const stack: Map<string, number>[] = [new Map()];
+	const add = (into: Map<string, number>, element: string, count: number) =>
+		into.set(element, (into.get(element) ?? 0) + count);
+	const token = /([A-Z][a-z]?)(\d*)|(\()|\)(\d*)/y;
+	let at = 0;
+	while (at < part.length) {
+		token.lastIndex = at;
+		const match = token.exec(part);
+		if (!match) return null;
+		at = token.lastIndex;
+		if (match[1]) add(stack.at(-1)!, match[1], Number(match[2] || 1));
+		else if (match[0] === '(') stack.push(new Map());
+		else {
+			const group = stack.pop();
+			if (!group || !stack.length) return null;
+			const times = Number(match[4] || 1);
+			for (const [element, count] of group) add(stack.at(-1)!, element, count * times);
+		}
+	}
+	return stack.length === 1 ? stack[0] : null;
+}
+
+/**
+ * How many of `ion` one formula unit holds, from a GSRS formula:
+ * `C18H16N8Na2O7S3.7/2H2O` → 2 sodium. Dotted parts may lead with a count
+ * (`2C6H11O7.Ca`, `7/2H2O`). Null for an unreadable formula or an ion that is
+ * not a single-element cation.
+ */
+export function ionAtoms(formula: string, ion: string): number | null {
+	const element = ELEMENT_CATIONS[ionKey(ion)];
+	if (!element || !formula.trim()) return null;
+	let total = 0;
+	for (const raw of formula.replace(/\s+/g, '').split(/[.·•]/)) {
+		const lead = /^(\d+(?:\/\d+)?(?:\.\d+)?)?(.*)$/.exec(raw)!;
+		const [top, bottom] = (lead[1] ?? '1').split('/').map(Number);
+		const atoms = lead[2] ? atomsOf(lead[2]) : null;
+		if (!atoms) return null;
+		total += ((atoms.get(element) ?? 0) * top) / (bottom ?? 1);
+	}
+	return total;
+}
+
+const threeFigures = (value: number) => Number(value.toPrecision(3));
+
+/**
+ * The mass and mEq of `ion` in `saltMassMg` of a salt, from its GSRS formula
+ * and molecular weight. Null when the salt holds none or either is unknown.
+ */
+export function ionFromSalt(
+	salt: { formula: string | null; mw: number | null },
+	saltMassMg: number,
+	ion: string
+): { massMg: number; mEq: number } | null {
+	const facts = IONS[ionKey(ion)];
+	const atoms = salt.formula ? ionAtoms(salt.formula, ion) : null;
+	if (!facts || !atoms || !salt.mw || !(saltMassMg > 0)) return null;
+	const massMg = (saltMassMg * atoms * facts.massMg) / salt.mw;
+	return { massMg: threeFigures(massMg), mEq: threeFigures((massMg / facts.massMg) * facts.valence) };
+}

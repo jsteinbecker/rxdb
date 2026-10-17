@@ -1,10 +1,10 @@
 <script lang="ts">
       import {resolve} from '$app/paths';
+      import {formatNdc} from '$lib/ndc';
       import type {PropertyOverride} from '$lib/property-override-fields';
 
       let {override}: { override: PropertyOverride } = $props();
 
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
 </script>
 
 {#if override.source === 'url'}

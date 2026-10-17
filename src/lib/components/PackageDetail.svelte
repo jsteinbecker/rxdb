@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { racemicDisplayName } from '$lib/ingredient-group';
+	import {formatNdc} from '$lib/ndc';
 	import RxCui from '$lib/components/RxCui.svelte';
       import type {StagedPackage} from '$lib/server/catalog-sync';
       import type {LabelIngredient} from '$lib/server/catalog-providers';
@@ -11,6 +12,7 @@
       import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from '$lib/pill-image-layout';
       import {resolve} from '$app/paths';
       import {constituentName, ionDisplayName} from '$lib/ions';
+      import {nestIngredients, type Constituent, type IngredientGroup} from '$lib/ingredient-constituents';
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import SplLabelSections from './SplLabelSections.svelte';
@@ -132,55 +134,42 @@
                   ? `Strength manually corrected from stated value of ${from} to ${to}${as}`
                   : `${substance(ingredient.name)} manually corrected to ${to}${as}`;
       };
-      // Active ingredients that deliver the same moiety (tyrosine and acetyl
-      // tyrosine both supply tyrosine) are grouped, each group given a letter and
-      // hue. The total is only stated when every member is measured as that
-      // moiety in the same units; an ingredient-basis salt's mass is not the
-      // moiety's mass, so it is listed but not added.
-      const moietyGroups = $derived.by(() => {
-            const byMoiety = new Map<string, { name: string; members: LabelIngredient[] }>();
-            for (const ingredient of ingredientRows) {
-                  if (ingredient.kind !== 'active') continue;
-                  const moiety = ingredient.moieties[0];
-                  const unii = moiety?.unii ?? ingredient.unii;
-                  if (!unii) continue;
-                  const group = byMoiety.get(unii) ?? {name: moiety?.name ?? ingredient.name, members: []};
-                  group.members.push(ingredient);
-                  byMoiety.set(unii, group);
-            }
-            return [...byMoiety.entries()]
-                  .filter(([, group]) => group.members.length > 1)
-                  .map(([unii, group], g) => {
-                        const parts = group.members.map((ingredient) => {
-                              const asMoiety =
-                                    ingredient.basis === 'moiety' || ingredient.unii === unii;
-                              return {ingredient, asMoiety, strength: parseStrengthText(ingredient.strength)};
-                        });
-                        const first = parts[0].strength;
-                        const summable = parts.every(
-                              (p) =>
-                                    p.asMoiety &&
-                                    p.strength &&
-                                    first &&
-                                    p.strength.unit === first.unit &&
-                                    p.strength.per === first.per &&
-                                    p.strength.perUnit === first.perUnit
-                        );
-                        const total = summable
-                              ? Number(parts.reduce((sum, p) => sum + Number(p.strength!.value), 0).toPrecision(6))
-                              : null;
-                        return {
-                              unii,
-                              name: group.name,
-                              label: String.fromCharCode(65 + g),
-                              hue: (g * 137 + 200) % 360,
-                              parts,
-                              total: total == null ? null : strengthText(formatStrength({...first!, value: String(total)}))
-                        };
-                  });
-      });
-      const moietyGroupOf = (ingredient: LabelIngredient) =>
-            moietyGroups.find((group) => group.parts.some((p) => p.ingredient === ingredient));
+      // The table as a tree: each label ingredient, then the pieces it delivers
+      // (a racemate's two enantiomers, a moiety it shares, its ions) indented
+      // beneath it, and a total row for each piece more than one ingredient gives.
+      const nested = $derived(
+            nestIngredients(d?.spl?.ingredients ?? [], {
+                  rxNormName: d?.rxnav?.conceptName,
+                  totalShared: d?.spl?.totalSharedMoieties
+            })
+      );
+      // Which strength cells in a group feed its totals, and how the tree line
+      // from the total's strength runs past each row: '├' feeds and continues,
+      // '└' is the last feeder, '│' only passes by.
+      type Branch = 'mid' | 'end' | 'pass' | null;
+      const groupBranches = (group: IngredientGroup) => {
+            const names = new Set(group.totals.map((total) => total.name.trim().toLowerCase()));
+            const sources = new Set(group.totals.flatMap((total) => total.sources));
+            const rows = group.nodes.flatMap((node) => [
+                  sources.has(node.ingredient.name) && !node.constituents.some((piece) => piece.kind === 'enantiomer'),
+                  ...node.constituents.map((piece) => piece.kind === 'enantiomer' && names.has(piece.name.trim().toLowerCase()))
+            ]);
+            const last = rows.lastIndexOf(true);
+            const branches: Branch[] = rows.map((feeds, i) =>
+                  i > last ? null : i === last ? 'end' : feeds ? 'mid' : 'pass'
+            );
+            let at = 0;
+            return group.nodes.map((node) => ({
+                  node,
+                  branch: branches[at++],
+                  pieces: node.constituents.map(() => branches[at++])
+            }));
+      };
+      // An ingredient that is its own moiety leaves the moiety cell empty: naming it again says nothing.
+      const isItself = (ingredient: LabelIngredient, moiety: LabelIngredient['moieties'][number]) =>
+            (!!moiety.unii && moiety.unii === ingredient.unii) ||
+            moiety.name.trim().toLowerCase() === ingredient.name.trim().toLowerCase();
+      const hasConstituents = $derived(nested.totals.length > 0 || nested.nodes.some((node) => node.constituents.length));
       const rxnavMarketingStatus = $derived(
             d?.rxnav?.properties.find((property) => property.name === 'MARKETING_STATUS')?.value ?? null
       );
@@ -225,7 +214,6 @@
             if (name === 'SCORE') return value === '1' ? 'none (1 piece)' : `${value} pieces`;
             return value;
       };
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
       // The 10-digit form the FDA lists, from the product code's segment widths (4-4-2, 5-3-2, 5-4-1).
       const fdaNdc = $derived.by(() => {
             const code = item.productCode;
@@ -491,6 +479,98 @@
       {#if keys.some((key) => citeNumber(key) > 0)}{@render cite(keys)}{:else if source}{@render src(
             source
       )}{/if}{@render editButton(keys, label)}
+{/snippet}
+
+{#snippet strengthCell(ingredient: LabelIngredient)}
+      {#if ingredient.strengthNotes?.length}<sup title={ingredient.strengthNotes.join('\n')}
+      >{ingredient.strengthNotes.map(noteMark).join(',')}</sup
+      >{/if}{#if manualMark(ingredient)}<sup
+            class="manual-mark"
+            title="Manually corrected — see the § note below the table"
+      >{manualMark(ingredient)}</sup
+      >{/if}{@render edit(
+            [
+                  `details.spl.ingredients.${splIndex(ingredient)}.strength`,
+                  ...(item.propertyOverrides?.[ingredientCorrectionKey(splIndex(ingredient))]
+                        ? [ingredientCorrectionKey(splIndex(ingredient))]
+                        : [])
+            ],
+            `${ingredient.name} strength`
+      )}
+{/snippet}
+
+{#snippet ingredientRow(ingredient: LabelIngredient, constituents: Constituent[], branch: Branch = null)}
+      <tr
+            class:muted={ingredient.kind !== 'active'}
+            class:ion-row={ingredient.kind === 'ionic'}
+            class:has-constituents={constituents.length > 0}
+      >
+            <td>{ingredient.kind === 'ionic' ? 'ion' : ingredient.kind}</td>
+            <td>
+                  {#if ingredient.kind === 'ionic'}{ionDisplayName(ingredient.ionicContent?.element ?? ingredient.name)}
+                        {#if ingredient.ionicContent?.sourceIngredients.length}<div class="muted">
+                              from {ingredient.ionicContent.sourceIngredients.map((name) => substance(name)).join(' + ')}
+                        </div>{/if}
+                  {:else}{ingredient.kind === 'active' ? substance(ingredient.name) : ingredient.name}{/if}
+                  {#if ingredient.part}
+                        <div class="muted">in {ingredient.part.replace(/^[^(]+/, (name) => name.toLowerCase())}</div>
+                  {/if}
+            </td>
+            <td class="mono">
+                  {#if ingredient.unii}<a href={resolve('/formulary/unii/[unii]', { unii: ingredient.unii })}
+                        data-nav-title={ingredient.name}
+                  >{ingredient.unii}</a
+                  >{:else}—{/if}
+            </td>
+            <td class={branch ? `feed ${branch}` : undefined}>{ingredient.strength ? strengthText(ingredient.strength) : '—'}{@render strengthCell(ingredient)}</td>
+            <td>{ingredient.basis ?? '—'}</td>
+            <td class="row-end">
+                  {#if ingredient.kind === 'ionic' || constituents.some((piece) => piece.kind === 'enantiomer')}—
+                  {:else}
+                        {@const moieties = ingredient.moieties.filter((moiety) => !isItself(ingredient, moiety))}
+                        {#each moieties as moiety, m (m)}{m ? ', ' : ''}
+                              {#if moiety.unii}<a href={resolve('/formulary/unii/[unii]', { unii: moiety.unii })}
+                              >{constituentName(moiety.name)}</a
+                              >{:else}{constituentName(moiety.name)}{/if}
+                        {:else}{#if !ingredient.moieties.length}—{/if}
+                        {/each}
+                  {/if}
+                  {#if editing && ingredient.kind === 'active'}<button
+                        class="edit correct"
+                        type="button"
+                        title={`Correct ${ingredient.name}…`}
+                        aria-label={`Correct ${ingredient.name}`}
+                        onclick={() => oncorrect?.(splIndex(ingredient))}
+                  ><svg viewBox="0 0 16 16" aria-hidden="true"
+                  ><path d="M3 5.5h8.5M9.5 3 12 5.5 9.5 8M13 10.5H4.5M6.5 8 4 10.5 6.5 13"
+                         fill="none" stroke="currentColor" stroke-width="1.3"
+                         stroke-linecap="round" stroke-linejoin="round"/></svg
+                  ></button
+                  >{/if}
+            </td>
+      </tr>
+{/snippet}
+
+{#snippet constituentRow(piece: Constituent, last: boolean, branch: Branch = null)}
+      <tr class="constituent" class:last>
+            <td>{piece.kind}</td>
+            <td>
+                  <span class="branch" aria-hidden="true">{last ? '└' : '├'}</span>{#if piece.share !== 1}<span
+                        class="share"
+                        title="Half of a racemic mixture">½</span
+                  >{/if}{piece.kind === 'ion' ? ionDisplayName(piece.name) : constituentName(piece.name).toLowerCase()}
+                  {#if piece.sources}<div class="muted">
+                        from {piece.sources.map((name) => substance(name)).join(' + ')} together
+                  </div>{/if}
+            </td>
+            <td class="mono">
+                  {#if piece.unii}<a href={resolve('/formulary/unii/[unii]', { unii: piece.unii })}>{piece.unii}</a
+                  >{:else}—{/if}
+            </td>
+            <td class={branch ? `feed ${branch}` : undefined}>{piece.strength ? strengthText(piece.strength) : '—'}{#if piece.row}{@render strengthCell(piece.row)}{/if}</td>
+            <td>{piece.kind === 'ion' ? 'label-declared' : piece.saltMass ? 'salt mass' : 'moiety'}</td>
+            <td class="row-end"></td>
+      </tr>
 {/snippet}
 
 {#snippet deleteButton(key: string, label: string)}
@@ -1163,103 +1243,50 @@
                   <div class="table-wrap">
                         <table class="data-table ing-table">
                               <thead>
-                              <tr
-                              >
+                              <tr>
                                     <th>Kind</th>
                                     <th>Substance</th>
                                     <th>UNII</th>
                                     <th>Strength</th>
                                     <th>Basis</th>
-                                    <th
-                                    >Moieties / ions
-                                    </th
-                                    >
-                              </tr
-                              >
+                                    <th>Moieties</th>
+                              </tr>
                               </thead>
-                              <tbody>
-                              {#each ingredientRows as ingredient, i (i)}
-                                    <tr class:muted={ingredient.kind !== 'active'} class:ion-row={ingredient.kind === 'ionic'}>
-                                          <td>{ingredient.kind === 'ionic' ? 'ion constituent' : ingredient.kind}</td>
-                                          <td
-                                          >{#if ingredient.kind === 'ionic'}<span class="ion-of" aria-hidden="true">↳ </span
-                                                >{ionDisplayName(ingredient.ionicContent?.element ?? ingredient.name)}
-                                                {#if ingredient.ionicContent?.sourceIngredients.length}<div class="muted">
-                                                      constituent of {ingredient.ionicContent.sourceIngredients
-                                                            .map((name) => substance(name))
-                                                            .join(' + ')}
-                                                </div>{/if}
-                                          {:else}{ingredient.kind === 'active'
-                                                ? substance(ingredient.name)
-                                                : ingredient.name}{#if moietyGroupOf(ingredient)}{@const group = moietyGroupOf(ingredient)!}<span
-                                                      class="moiety-group"
-                                                      style:--group-hue={group.hue}
-                                                      title={`Shares ${constituentName(group.name)} with ${group.parts.length - 1} other ingredient(s) — see group ${group.label} below the table`}
-                                                >{group.label} · {constituentName(group.name)}{group.parts.find((p) => p.ingredient === ingredient)?.asMoiety ? '' : ' (salt mass)'}</span
-                                                >{/if}{/if}
-                                                {#if ingredient.part}
-                                                      <div class="muted">
-                                                            in {ingredient.part.replace(/^[^(]+/, (name) => name.toLowerCase())}
-                                                      </div>
-                                                {/if}
-                                          </td
-                                          >
-                                          <td class="mono">
-                                                {#if ingredient.unii}<a
-                                                      href={resolve('/formulary/unii/[unii]', { unii: ingredient.unii })}
-                                                >{ingredient.unii}</a
-                                                >{:else}—
-                                                {/if}
-                                          </td>
-                                          <td
-                                          >{ingredient.strength ? strengthText(ingredient.strength) : '—'}
-                                                {#if ingredient.strengthNotes?.length}<sup
-                                                      title={ingredient.strengthNotes.join('\n')}
-                                                >{ingredient.strengthNotes.map(noteMark).join(',')}</sup
-                                                >{/if}{#if manualMark(ingredient)}<sup
-                                                      class="manual-mark"
-                                                      title="Manually corrected — see the § note below the table"
-                                                >{manualMark(ingredient)}</sup
-                                                >{/if}{@render edit(
-                                                      [
-                                                            `details.spl.ingredients.${splIndex(ingredient)}.strength`,
-                                                            ...(item.propertyOverrides?.[ingredientCorrectionKey(splIndex(ingredient))]
-                                                                  ? [ingredientCorrectionKey(splIndex(ingredient))]
-                                                                  : [])
-                                                      ],
-                                                      `${ingredient.name} strength`
-                                                )}
-</td
-                                          >
-                                          <td>{ingredient.basis ?? '—'}</td>
-                                          <td class="row-end">
-                                                {#if ingredient.kind === 'ionic'}—
-                                                {:else}
-                                                      {#each ingredient.moieties as moiety, m (m)}{m ? ', ' : ''}
-                                                            {#if moiety.unii}<a
-                                                                  href={resolve('/formulary/unii/[unii]', { unii: moiety.unii })}
-                                                            >{constituentName(moiety.name)}</a
-                                                            >{:else}{constituentName(moiety.name)}{/if}
-                                                      {:else}—
-                                                      {/each}
-                                                {/if}
-                                          
-                                                {#if editing && ingredient.kind === 'active'}<button
-                                                      class="edit correct"
-                                                      type="button"
-                                                      title={`Correct ${ingredient.name}…`}
-                                                      aria-label={`Correct ${ingredient.name}`}
-                                                      onclick={() => oncorrect?.(splIndex(ingredient))}
-                                                ><svg viewBox="0 0 16 16" aria-hidden="true"
-                                                ><path d="M3 5.5h8.5M9.5 3 12 5.5 9.5 8M13 10.5H4.5M6.5 8 4 10.5 6.5 13"
-                                                       fill="none" stroke="currentColor" stroke-width="1.3"
-                                                       stroke-linecap="round" stroke-linejoin="round"/></svg
-                                                ></button
-                                                >{/if}
-                                          </td>
-                                    </tr>
+                              {#each nested.groups as group, g (g)}
+                                    {@const clustered = group.totals.length > 0}
+                                    <tbody class:cluster={clustered}>
+                                    {#each group.totals as total, t (total.name)}
+                                          <tr class="total-head">
+                                                <td>total</td>
+                                                <td>
+                                                      <span class="sigma" aria-hidden="true">Σ</span>{constituentName(total.name).toUpperCase()}
+                                                </td>
+                                                <td class="mono">
+                                                      {#if total.unii}<a href={resolve('/formulary/unii/[unii]', { unii: total.unii })}
+                                                      >{total.unii}</a>{:else}—{/if}
+                                                </td>
+                                                <td class:root={t === group.totals.length - 1}>{total.strength ?? (total.unsummed === 'basis'
+                                                      ? 'not added — mixes salt and moiety mass'
+                                                      : 'not added — units differ')}</td>
+                                                <td>sum</td>
+                                                <td class="row-end">{total.parts.length} sources</td>
+                                          </tr>
+                                    {/each}
+                                    {#each clustered ? groupBranches(group) : group.nodes.map((node) => ({ node, branch: null, pieces: node.constituents.map(() => null) })) as { node, branch, pieces }, i (i)}
+                                          {@render ingredientRow(node.ingredient, node.constituents, branch)}
+                                          {#each node.constituents as piece, c (c)}
+                                                {@render constituentRow(piece, c === node.constituents.length - 1, pieces[c])}
+                                          {/each}
+                                    {/each}
+                                    </tbody>
                               {/each}
-                              </tbody>
+                              {#if nested.others.length}
+                                    <tbody class="others">
+                                    {#each nested.others as node, i (i)}
+                                          {@render ingredientRow(node.ingredient, node.constituents)}
+                                    {/each}
+                                    </tbody>
+                              {/if}
                         </table>
                   </div>
                   {#if strengthNotes.length || manualCorrections.length}
@@ -1273,31 +1300,17 @@
                               {/each}
                         </ul>
                   {/if}
-                  {#if moietyGroups.length}
-                        <ul class="moiety-groups">
-                              {#each moietyGroups as group (group.unii)}
-                                    <li style:--group-hue={group.hue}>
-                                          <span class="moiety-group">{group.label} · {constituentName(group.name)}</span>
-                                          {#each group.parts as part, p (part.ingredient)}{p ? ' + ' : ''}<span
-                                                class:muted={!part.asMoiety}
-                                          >{part.ingredient.strength ? strengthText(part.ingredient.strength) : '?'}
-                                                {part.asMoiety
-                                                      ? part.ingredient.unii === group.unii
-                                                            ? `as ${constituentName(group.name)} itself`
-                                                            : `as ${constituentName(group.name)}, from ${substance(part.ingredient.name)}`
-                                                      : `of ${substance(part.ingredient.name)} (salt mass, not ${constituentName(group.name)})`}</span
-                                          >{/each}
-                                          {#if group.total}= <b>{group.total} {constituentName(group.name)} in total</b>
-                                          {:else}<span class="muted">— not totaled: strengths are not all stated as {constituentName(group.name)} in the same units</span>{/if}
-                                    </li>
-                              {/each}
-                        </ul>
-                  {/if}
-                  {#if ionic.length}
-                        <p class="muted">
-                              Ion constituents (↳) are the label-declared total of an ion supplied by the salt ingredients
-                              they are listed under. They are part of those ingredients, not additional ingredients, and
-                              are not added to their strengths.
+                  {#if hasConstituents}
+                        <p class="muted constituent-legend">
+                              {#if nested.nodes.some((node) => node.constituents.length)}Indented rows are what the
+                                    ingredient above them is made of — a racemate's two enantiomers (½ each) or an ion
+                                    the label declares. They are part of that ingredient, not more of it.{/if}
+                              {#if nested.totals.length}A <b>Σ</b> label adds up one piece across the ingredients
+                                    nested beneath it{nested.totals.some((t) => t.saltMass)
+                                    ? '; where the label states salt mass, so does the total'
+                                    : ''}{nested.totals.some((t) => t.unsummed === 'basis')
+                                    ? '; salt and moiety masses are not added together'
+                                    : ''}.{/if}
                         </p>
                   {/if}
             {:else if item.ingredients.length}
@@ -1859,12 +1872,160 @@
             white-space: nowrap;
       }
 
-      .ing-table td:nth-child(2),
-      .ing-table tr.ion-row td:nth-child(2) {
+      .ing-table td:nth-child(2) {
             padding-left: 1.25rem;
       }
-      .ing-table .ion-of {
-            margin-left: -0.9rem;
+
+      /* A parent's pieces read as part of it: smaller, greyer, tinted, and hung
+         off a guide line from the parent's name. */
+      .ing-table tr.has-constituents td {
+            border-bottom-color: transparent;
+      }
+      .ing-table tr.constituent td {
+            padding-top: 0.1rem;
+            padding-bottom: 0.1rem;
+            border-bottom-color: transparent;
+            background: #f8fafc;
+            color: #5c6777;
+            font-size: 0.72rem;
+      }
+      .ing-table tr.constituent.last td {
+            padding-bottom: 0.3rem;
+            border-bottom-color: #e3e8ee;
+      }
+      .ing-table tr.constituent td:nth-child(1) {
+            font-size: 0.66rem;
+            font-style: italic;
+      }
+      .ing-table tr.constituent td:nth-child(2) {
+            padding-left: 2.6rem;
+            position: relative;
+      }
+      .ing-table .branch {
+            position: absolute;
+            left: 1.5rem;
+            color: #a9b4c2;
+      }
+      .ing-table .share {
+            display: inline-block;
+            margin-right: 0.3rem;
+            padding: 0 0.3rem;
+            border-radius: 0.25rem;
+            background: #e6ecf3;
+            color: #44536a;
+            font-size: 0.66rem;
+            font-weight: 650;
+      }
+      .constituent-legend {
+            margin: 0.4rem 0 0;
+            max-width: 60rem;
+            font-size: 0.74rem;
+            line-height: 1.35;
+      }
+      /* Ingredients a total adds up form one bracketed block, total last, set
+         apart from the rows around it. */
+      /* (Borders sit on cells: the table's borders are separate.) Each tbody
+         is a group, divided from the one before it; one whose rows a total
+         adds up is tinted and bracketed down its left edge, total last. */
+      .ing-table tbody + tbody tr:first-child td {
+            border-top: 1px solid #d5dce6;
+      }
+      .ing-table tbody.cluster td {
+            background: #f7f9fc;
+      }
+      .ing-table tbody.cluster + tbody tr:first-child td,
+      .ing-table tbody + tbody.cluster tr:first-child td {
+            border-top: 2px solid #c9d2de;
+      }
+      /* A total heads its group: a full row, set apart and stronger than the
+         ingredients nested below it. */
+      .ing-table tr.total-head td {
+            padding-top: 0.55rem;
+            padding-bottom: 0.45rem;
+            border-top: 1px solid #b7c3d3;
+            border-bottom: 1px solid #b7c3d3;
+            background: #e6edf6;
+            color: #1f2d42;
+            font-weight: 650;
+      }
+      .ing-table tr.total-head td:first-child {
+            box-shadow: inset 3px 0 0 #5f7aa0;
+            font-weight: 400;
+      }
+      .ing-table tr.total-head td:nth-child(5),
+      .ing-table tr.total-head td:nth-child(6) {
+            font-weight: 400;
+      }
+      /* A trunk drops straight down from the (last) total's strength and
+         branches to every strength it adds up; those are indented further
+         and fainter, being parts of it. --tick is how far down a row its
+         text sits. */
+      .ing-table td.root,
+      .ing-table td.feed {
+            --trunk: 1.05rem;
+            --tick: 0.95rem;
+            position: relative;
+      }
+      .ing-table td.feed {
+            padding-left: 2.5rem;
+      }
+      .ing-table tr.constituent td.feed {
+            --tick: 0.55rem;
+      }
+      .ing-table td.feed.mid,
+      .ing-table td.feed.end {
+            color: rgb(31 45 66 / 55%);
+      }
+      .ing-table td.root::before,
+      .ing-table td.feed::before {
+            content: '';
+            position: absolute;
+            left: var(--trunk);
+            top: -1px;
+            bottom: -1px;
+            border-left: 1px solid #8fa3bf;
+      }
+      .ing-table td.root::before {
+            top: 1.6rem;
+      }
+      .ing-table td.feed.end::before {
+            bottom: auto;
+            height: calc(var(--tick) + 1px);
+      }
+      .ing-table td.feed.mid::after,
+      .ing-table td.feed.end::after {
+            content: '';
+            position: absolute;
+            left: var(--trunk);
+            top: var(--tick);
+            width: 1.15rem;
+            border-top: 1px solid #8fa3bf;
+      }
+      .ing-table tr.total-head + tr.total-head td {
+            border-top: 0;
+      }
+      .ing-table .sigma {
+            margin-right: 0.35rem;
+            color: #5f7aa0;
+      }
+      /* One unbroken rail from under the Σ label down past its last member. */
+      .ing-table tbody.cluster tr:not(:first-child) td:first-child {
+            box-shadow: inset 3px 0 0 #8fa3bf;
+      }
+      .ing-table tbody.cluster tr td {
+            border-bottom-color: transparent;
+      }
+      .ing-table tbody.cluster tr.total-head + tr:not(.total-head) td {
+            padding-top: 0.5rem;
+      }
+      .ing-table tbody.cluster tr:not(.total-head) td:nth-child(2) {
+            padding-left: 1.6rem;
+      }
+      .ing-table tbody.cluster tr.constituent td:nth-child(2) {
+            padding-left: 3.6rem;
+      }
+      .ing-table tbody.cluster .branch {
+            left: 2.5rem;
       }
       .ing-table td:nth-child(6) {
             overflow-wrap: anywhere;
@@ -1980,34 +2141,9 @@
             font-weight: 650;
       }
 
-      .moiety-group {
-            margin-left: 0.5rem;
-            padding: 0 0.45rem;
-            border-radius: 999px;
-            border: 1px solid hsl(var(--group-hue) 55% 70%);
-            background: hsl(var(--group-hue) 70% 95%);
-            color: hsl(var(--group-hue) 60% 30%);
-            font-size: 0.72rem;
-            font-weight: 650;
-            white-space: nowrap;
-      }
 
-      .moiety-groups {
-            list-style: none;
-            padding: 0;
-            margin: 0.5rem 0 0;
-            font-size: 0.85em;
-      }
 
-      .moiety-groups li {
-            padding: 0.2rem 0 0.2rem 0.6rem;
-            border-left: 3px solid hsl(var(--group-hue) 55% 60%);
-            margin-bottom: 0.25rem;
-      }
 
-      .moiety-groups .moiety-group {
-            margin: 0 0.4rem 0 0;
-      }
 
 
       .ing-table td.row-end {

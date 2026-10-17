@@ -140,18 +140,30 @@ export async function removePropertyOverrides(ndc: string, keys: string[]) {
 			)
 		).map((item) => [item.ndc, item])
 	);
-	if (!fresh.get(ndc)?.complete)
-		throw new Error('Providers did not answer, so the original values could not be restored.');
+	const own = fresh.get(ndc);
+	if (!answered(own)) {
+		const failed = [...new Set((own?.providerErrors ?? []).map((e) => `${e.source} ${e.message}`))];
+		throw new Error(
+			`${failed.length ? failed.join(', ') : 'Providers did not answer'}, so the original values could not be restored.`
+		);
+	}
 	// A sibling the providers did not answer for keeps its copy until removed there.
 	await stageCollection(
 		prisma,
 		[],
 		removals.flatMap(({ item, keys }) => {
 			const provided = fresh.get(item.ndc);
-			return provided?.complete ? [restoreWithout(item, provided, keys)] : [];
+			return answered(provided) ? [restoreWithout(item, provided!, keys)] : [];
 		})
 	);
 }
+
+/**
+ * Every provider responded. A sparse package (unlisted, no matched product) is
+ * not `complete` yet is still what the providers say, so it can be restored.
+ */
+const answered = (item: ExternalPackage | undefined) =>
+	Boolean(item && (item.complete || !item.providerErrors?.length));
 
 /** `current` re-read from `fresh`, with every override but `removed` re-applied. */
 function restoreWithout(current: ExternalPackage, fresh: ExternalPackage, removed: string[]) {

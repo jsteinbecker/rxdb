@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { resolve } from '$app/paths';
 
 	let { data, form } = $props();
@@ -11,13 +12,12 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow">
+	<PageHeader title="Compounds">
+		{#snippet eyebrow()}
 			<a href={resolve('/')}>RxDB</a> / <a href={resolve('/formulary')}>Formulary</a> / Compounds
-		</p>
-		<h1>Compounds</h1>
-		<p class="meta">{data.scope.name}</p>
-	</header>
+		{/snippet}
+		<p>{data.scope.name}</p>
+	</PageHeader>
 
 	<form method="POST" action="?/create" class="new" use:enhance>
 		<input name="name" placeholder="New compound name…" aria-label="New compound name" required />
@@ -48,25 +48,6 @@
 		max-width: 760px;
 		margin: 0 auto;
 		padding: 4rem 1.5rem;
-	}
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-	.eyebrow a {
-		color: inherit;
-	}
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
-	}
-	.meta {
-		color: #5c6777;
 	}
 	.new {
 		display: flex;

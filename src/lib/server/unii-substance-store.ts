@@ -139,3 +139,11 @@ export const gsrsMoietyFactor =
 		const factor = conversionFactor(mw, base.substance.mw, 1 / moietyCount);
 		return factor ? { moietyUnii: moiety.unii, factor } : null;
 	};
+
+/** GSRS's formula and molecular weight for a UNII, from which a salt's ions are computed. */
+export const gsrsSalt =
+	(table: SubstanceTable) =>
+	async (unii: string): Promise<{ formula: string | null; mw: number | null } | null> => {
+		const answer = await substanceFor(table, unii);
+		return answer.status === 'ok' ? { formula: answer.substance.formula, mw: answer.substance.mw } : null;
+	};

@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { untrack } from 'svelte';
 	import { DEFAULT_LEVELS, levelLabel } from '$lib/formulary-hierarchy';
 	import HierarchyBuilder from '$lib/components/HierarchyBuilder.svelte';
 	import EquivalenceGroups from '$lib/components/EquivalenceGroups.svelte';
 	import type { ExpandDepth } from '$lib/settings';
+	import { STRENGTH_STYLES } from '$lib/strength-style';
 
 	let { data, form } = $props();
 
@@ -41,11 +43,10 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow"><a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Settings</p>
-		<h1>Settings</h1>
+	<PageHeader title="Settings">
+		{#snippet eyebrow()}<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Settings{/snippet}
 		<p>Preferences for {data.scope.name}.</p>
-	</header>
+	</PageHeader>
 
 	<form
 		method="POST"
@@ -212,6 +213,64 @@
 		/>
 	</section>
 
+	<section class="card" aria-labelledby="strength-styles-heading">
+		<h2 id="strength-styles-heading">Strength display</h2>
+		<p class="hint">
+			Ingredients whose strength is named in special terms — e.g. sodium chloride as “0.9%”, or
+			epinephrine in an injection as “1:100000”. Leave the dose form blank to apply it to every
+			form; a rule naming the form wins over one that doesn’t. An item’s own “show as percent”
+			choice still takes precedence.
+		</p>
+
+		{#if data.settings.strengthStyles.length}
+			<ul class="views">
+				{#each data.settings.strengthStyles as rule, index (`${rule.ingredient}|${rule.doseForm}`)}
+					<li>
+						<span class="desc">
+							{rule.ingredient}
+							<span class="small">
+								{rule.doseForm ?? 'Any dose form'} · {STRENGTH_STYLES.find(
+									(option) => option.value === rule.style
+								)?.label}
+							</span>
+						</span>
+						<form method="POST" action="?/deleteStrengthStyle" use:enhance>
+							<input type="hidden" name="index" value={index} />
+							<button class="icon" aria-label="Delete rule for {rule.ingredient}">×</button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="empty">No rules — strengths show as named in RxNorm.</p>
+		{/if}
+
+		<form class="view-builder" method="POST" action="?/saveStrengthStyle" use:enhance>
+			<div class="row">
+				<label class="field grow">
+					<span>Ingredient</span>
+					<input name="ingredient" placeholder="sodium chloride" maxlength="200" required />
+				</label>
+				<label class="field grow">
+					<span>Dose form (optional)</span>
+					<input name="doseForm" placeholder="Injection" maxlength="200" />
+				</label>
+				<label class="field">
+					<span>Show as</span>
+					<select name="style">
+						{#each STRENGTH_STYLES as option (option.value)}
+							<option value={option.value}>{option.label} ({option.example})</option>
+						{/each}
+					</select>
+				</label>
+				<button class="primary">Add rule</button>
+			</div>
+			{#if form?.section === 'strengthStyles' && 'message' in form && form.message}
+				<p class="notice error" role="alert">{form.message}</p>
+			{/if}
+		</form>
+	</section>
+
 	<section class="card danger-zone">
 		<h2>Danger zone</h2>
 		<div class="row between">
@@ -294,29 +353,9 @@
 		padding: 4rem 1.5rem;
 	}
 
-	header p:last-child,
 	.hint {
 		color: #5c6777;
 		line-height: 1.55;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
 	}
 
 	h2 {

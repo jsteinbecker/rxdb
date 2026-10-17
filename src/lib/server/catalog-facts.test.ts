@@ -179,7 +179,7 @@ test('activity ladder distinguishes absence from outage and prefers FDA marketin
 	);
 	assert.equal(
 		exclusionReason({ ...unknown, listed: false, splPresent: true, rxcuiStatus: 'OBSOLETE' }, now),
-		null
+		'unlisted'
 	);
 	assert.equal(
 		exclusionReason({ ...unknown, listed: false, splPresent: null, rxcuiStatus: 'OBSOLETE' }, now),
@@ -187,7 +187,19 @@ test('activity ladder distinguishes absence from outage and prefers FDA marketin
 	);
 	assert.equal(exclusionReason({ ...unknown, listed: false, splPresent: false }, now), 'no-spl');
 	assert.equal(exclusionReason({ ...unknown, listed: true, splPresent: false }, now), null);
-	assert.equal(exclusionReason({ ...unknown, listed: false, splPresent: true }, now), null);
+	// 61919-0428-30: unlisted, no siblings, SPL and RxNav still active.
+	assert.equal(
+		exclusionReason({ ...unknown, listed: false, splPresent: true, rxcuiStatus: 'ACTIVE' }, now),
+		'unlisted'
+	);
+	// An inner package matched through a listed sibling stays on.
+	assert.equal(
+		exclusionReason(
+			{ ...unknown, listed: false, splPresent: true, details: { packaging: { siblings: [{}] } } },
+			now
+		),
+		null
+	);
 	assert.equal(exclusionReason({ ...unknown, listed: null, splPresent: false }, now), null);
 	// 33358-0028-60 as stored: the directory found product 33358-0028 without this
 	// package, DailyMed has no SPL, and RxNav still said ACTIVE. That is unlisted.

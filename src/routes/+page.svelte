@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { watchJobs } from '$lib/jobs-watch';
 	import RxCui from '$lib/components/RxCui.svelte';
+	import BrandedName from '$lib/components/BrandedName.svelte';
       import {resolve} from '$app/paths';
       import {onDestroy, onMount} from 'svelte';
       import {replaceState} from '$app/navigation';
@@ -7,8 +9,10 @@
       import {ttyLabel, ttyTitle} from '$lib/rxnorm-tty';
       import {SvelteMap, SvelteSet} from 'svelte/reactivity';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
-      import {packageDisplayTitle} from '$lib/package-title';
+      import PageHeader from '$lib/components/PageHeader.svelte';
+      import {packageTitle} from '$lib/package-title';
       import type {StagedConcept, StagedPackage} from '$lib/server/catalog-sync';
+      import {filtersQuery, type MatchReason, type SearchFacets, type SearchFilters} from '$lib/search-relevance';
 
       type Result = {
 		id: string;
@@ -29,6 +33,8 @@
 		total: number;
 		offset: number;
 		warning: string | null;
+		facets: SearchFacets | null;
+		suggestion: string | null;
 	};
 
 	type Staged = {
@@ -57,6 +63,7 @@
 	let sync: SyncSummary | null = $state(null);
 	let message = $state(EMPTY_MESSAGE);
 	let hideExcluded = $state(true);
+	let filters: SearchFilters = $state({});
 	const open = new SvelteSet<string>();
 	const pending = new SvelteSet<string>();
 	let notices: Record<string, { ok: boolean; text: string }> = $state({});
@@ -68,6 +75,10 @@
 	const packageState = new SvelteMap<string, PackageState>();
 	let controller: AbortController | undefined;
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	let liveTimer: ReturnType<typeof setTimeout> | undefined;
+	/** Local results follow typing; live sources wait for a pause or Enter. */
+	const LOCAL_DELAY_MS = 350;
+	const LIVE_DELAY_MS = 900;
 
 	type Snapshot = {
 		query: string;
@@ -76,6 +87,7 @@
 		sync: SyncSummary | null;
 		message: string;
 		hideExcluded: boolean;
+		filters: SearchFilters;
 		open: string[];
 		loaded: [string, PackageState][];
 	};
@@ -91,6 +103,7 @@
 			sync,
 			message,
 			hideExcluded,
+			filters,
 			open: [...open],
 			loaded: [...packageState].filter(([, state]) => state.status === 'loaded')
 		}),
@@ -101,6 +114,8 @@
 			sync = value.sync;
 			message = value.message;
 			hideExcluded = value.hideExcluded;
+			filters = value.filters ?? {};
+			lastTerm = value.query.trim();
 			open.clear();
 			for (const key of value.open) open.add(key);
 			packageState.clear();
@@ -115,6 +130,7 @@
 
 	function scheduleSearch() {
 		clearTimeout(timer);
+		clearTimeout(liveTimer);
 		const term = query.trim();
 		if (!term) {
 			rememberQuery('');
@@ -131,7 +147,16 @@
 			message = 'Enter at least two characters.';
 			return;
 		}
-		timer = setTimeout(() => void search(term), 350);
+		timer = setTimeout(() => void search(term, { live: false }), LOCAL_DELAY_MS);
+		// A live lookup for a fragment like "amo" only returns fuzzy noise.
+		if (term.split(/\s+/).some((word) => word.length >= 3))
+			liveTimer = setTimeout(() => void search(term), LIVE_DELAY_MS);
+	}
+
+	function searchNow(term = query.trim()) {
+		clearTimeout(timer);
+		clearTimeout(liveTimer);
+		void search(term);
 	}
 
 	/** The search lives in the URL, so it can be shared, bookmarked and reopened. */
@@ -142,8 +167,11 @@
 		if (url.search !== page.url.search) replaceState(url, page.state);
 	}
 
-	async function search(term = query.trim()) {
+	async function search(term = query.trim(), { live = true } = {}) {
 		if (!term) return;
+		// New words start unfiltered; chips belong to the search that offered them.
+		if (term !== lastTerm) filters = {};
+		lastTerm = term;
 		rememberQuery(term);
 		controller?.abort();
 		const request = new AbortController();
@@ -167,13 +195,17 @@
 			}
 			if (controller !== request) return;
 			results = payload.results;
+			if (!live) {
+				message = results.length ? '' : `No local results for “${term}”.`;
+				return;
+			}
 			staged = null;
 			sync = null;
 			notices = {};
 			packageState.clear();
 			message = results.length ? '' : `No local results for “${term}”. Checking live sources…`;
 			const externalResponse = await fetch(
-				`/api/v1/search?q=${encodeURIComponent(term)}&external=1`,
+				`/api/v1/search?q=${encodeURIComponent(term)}&external=1${filtersQuery(filters)}`,
 				{ signal: request.signal }
 			);
 			const externalPayload = await externalResponse.json();
@@ -207,6 +239,51 @@
 		}
 	}
 
+	let lastTerm = '';
+
+	/** Re-run only the live lookup with new filters; local results stay. */
+	async function applyFilters(next: SearchFilters) {
+		const term = query.trim();
+		if (!term) return;
+		filters = next;
+		controller?.abort();
+		const request = new AbortController();
+		controller = request;
+		loading = true;
+		try {
+			const response = await fetch(
+				`/api/v1/search?q=${encodeURIComponent(term)}&external=1${filtersQuery(next)}`,
+				{ signal: request.signal }
+			);
+			const payload = await response.json();
+			if (controller !== request) return;
+			if (!response.ok) {
+				message = payload.message ?? 'Live search could not be completed.';
+				return;
+			}
+			open.clear();
+			packageState.clear();
+			staged = payload.staged;
+			sync = payload.sync;
+		} catch (error) {
+			if ((error as Error).name !== 'AbortError' && controller === request)
+				message = error instanceof Error ? error.message : 'Live search could not be completed.';
+		} finally {
+			if (controller === request) loading = false;
+		}
+	}
+
+	const toggleFilter = (key: 'form' | 'strength', value: string) =>
+		void applyFilters({ ...filters, [key]: filters[key] === value ? undefined : value });
+
+	const REASON_LABELS: Record<MatchReason, string> = {
+		name: 'name',
+		brand: 'brand name',
+		strength: 'strength',
+		form: 'dose form',
+		spelling: 'close spelling'
+	};
+
 	const PAGE_SIZE = 10;
 	let nextOffset = $derived(((sync as SyncSummary | null)?.offset ?? 0) + PAGE_SIZE);
 	let remaining = $derived(Math.max(0, ((sync as SyncSummary | null)?.total ?? 0) - nextOffset));
@@ -218,7 +295,7 @@
 		loadingMore = true;
 		try {
 			const response = await fetch(
-				`/api/v1/search?q=${encodeURIComponent(term)}&offset=${nextOffset}&external=1`
+				`/api/v1/search?q=${encodeURIComponent(term)}&offset=${nextOffset}&external=1${filtersQuery(filters)}`
 			);
 			const payload = await response.json();
 			if (!response.ok) {
@@ -249,6 +326,7 @@
 				packages: sync.packages + payload.sync.packages,
 				excluded: sync.excluded + payload.sync.excluded,
 				partial: sync.partial || payload.sync.partial,
+				facets: payload.sync.facets ?? sync.facets,
 				warning: sync.warning ?? payload.sync.warning
 			};
 		} catch (error) {
@@ -303,8 +381,9 @@
 		}
 	}
 
-	async function load(key: string, body: { rxcui: string } | { ndc: string }) {
+	async function load(key: string, body: ({ rxcui: string } | { ndc: string }) & { label?: string }) {
 		pending.add(key);
+		watchJobs();
 		try {
 			const response = await fetch('/api/v1/formulary/load', {
 				method: 'POST',
@@ -380,26 +459,20 @@
 			(counterpart) => !details.brandedProducts.some((brand) => brand.rxcui === counterpart.rxcui)
 		);
 
-	const packageTitle = (item: StagedPackage) =>
-		packageDisplayTitle(item) ??
-		item.description ??
-		item.genericName ??
-		item.brandName ??
-		`NDC ${item.ndc}`;
-
 	onMount(() => {
 		const linked = page.url.searchParams.get('q')?.trim();
 		// After a snapshot restore the results are already back; only a fresh visit searches.
 		setTimeout(() => {
 			if (linked && !query.trim()) {
 				query = linked;
-				void search(linked);
+				searchNow(linked);
 			}
 		});
 	});
 
 	onDestroy(() => {
 		clearTimeout(timer);
+		clearTimeout(liveTimer);
 		controller?.abort();
 	});
 </script>
@@ -413,22 +486,20 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow">
+	<PageHeader title="Search and import medications">
+		{#snippet eyebrow()}
 			RxDB · <a href={resolve('/formulary')}>View formulary →</a> · <a href={resolve('/settings')}>Settings</a>
-		</p>
-		<h1>Search and import medications</h1>
+		{/snippet}
 		<p>
 			Search RxNav, openFDA, and DailyMed. Results are only for review until you add a drug or a
 			package to the formulary.
 		</p>
-	</header>
+	</PageHeader>
 
 	<form
 		onsubmit={(event) => {
 			event.preventDefault();
-			clearTimeout(timer);
-			void search();
+			searchNow();
 		}}
 	>
 		<label for="search">Search</label>
@@ -471,6 +542,79 @@
 		</section>
 	{/if}
 
+	{#if sync?.suggestion}
+		<p class="suggestion">
+			No exact match in RxNorm. Did you mean
+			<button
+				class="link"
+				onclick={() => {
+					query = sync!.suggestion!;
+					searchNow();
+				}}
+				type="button">{sync.suggestion}</button
+			>?
+		</p>
+	{/if}
+
+	{#if sync?.facets && (sync.facets.forms.length > 1 || sync.facets.strengths.length > 1 || sync.facets.combos || sync.facets.weak || filters.form || filters.strength)}
+		{@const facets = sync.facets}
+		<section class="facets" aria-label="Narrow live results">
+			{#if facets.forms.length > 1 || filters.form}
+				<div class="facet-row">
+					<span class="facet-label">Form</span>
+					{#each facets.forms as facet (facet.value)}
+						<button
+							aria-pressed={filters.form === facet.value}
+							class="chip"
+							disabled={loading}
+							onclick={() => toggleFilter('form', facet.value)}
+							type="button">{facet.value} <span class="count">{facet.count}</span></button
+						>
+					{/each}
+				</div>
+			{/if}
+			{#if facets.strengths.length > 1 || filters.strength}
+				<div class="facet-row">
+					<span class="facet-label">Strength</span>
+					{#each facets.strengths as facet (facet.value)}
+						<button
+							aria-pressed={filters.strength === facet.value}
+							class="chip"
+							disabled={loading}
+							onclick={() => toggleFilter('strength', facet.value)}
+							type="button">{facet.value} <span class="count">{facet.count}</span></button
+						>
+					{/each}
+				</div>
+			{/if}
+			{#if facets.combos || facets.weak}
+				<div class="facet-row">
+					<span class="facet-label">Also show</span>
+					{#if facets.combos}
+						<button
+							aria-pressed={!!filters.combos}
+							class="chip"
+							disabled={loading}
+							onclick={() => void applyFilters({ ...filters, combos: !filters.combos || undefined })}
+							title="Combination products containing what you searched for"
+							type="button">Combinations <span class="count">{facets.combos}</span></button
+						>
+					{/if}
+					{#if facets.weak}
+						<button
+							aria-pressed={!!filters.weak}
+							class="chip"
+							disabled={loading}
+							onclick={() => void applyFilters({ ...filters, weak: !filters.weak || undefined })}
+							title="Concepts missing part of your search, such as a strength or dose form"
+							type="button">Partial matches <span class="count">{facets.weak}</span></button
+						>
+					{/if}
+				</div>
+			{/if}
+		</section>
+	{/if}
+
 	{#if staged && (staged.concepts.length || staged.packages.length)}
 		<div class="section-head">
 			<h2 class="section-title">Fetched from sources</h2>
@@ -481,8 +625,14 @@
 			>
 		</div>
 		<ul class="tree">
-			{#each shownConcepts as concept (concept.rxcui)}
+			{#each shownConcepts as concept, index (concept.rxcui)}
 				{@const key = `c:${concept.rxcui}`}
+				{@const tier = concept.match?.tier ?? 'strong'}
+				{#if tier !== 'strong' && (index === 0 || (shownConcepts[index - 1].match?.tier ?? 'strong') !== tier)}
+					<li class="tier-divider">
+						{tier === 'combo' ? 'Combination products' : 'Partial matches — missing part of your search'}
+					</li>
+				{/if}
 				{@const packages = visible(concept.packages)}
 				{@const fetched = packageState.get(concept.rxcui)}
 				<li class="node">
@@ -506,6 +656,15 @@
 									? ` (of ${concept.details.ndcCount} in RxNorm)`
 									: ''}{concept.vetOnly ? ' · veterinary only' : ''}
 							</p>
+							{#if concept.match && (concept.match.reasons.length || concept.match.missing.length)}
+								<p class="why">
+									{#if concept.match.reasons.length}Matched on {concept.match.reasons
+											.map((reason) => REASON_LABELS[reason])
+											.join(', ')}{/if}{#if concept.match.missing.length}{concept.match.reasons.length
+											? ' · '
+											: ''}<span class="missing">no {concept.match.missing.join(', ')}</span>{/if}
+								</p>
+							{/if}
 						</div>
 						{#if concept.loaded}
 							{@render onFormulary(concept.formularyItemId)}
@@ -513,7 +672,7 @@
 						<button
 							class="load"
 							disabled={pending.has(key) || !!concept.vetOnly}
-							onclick={() => void load(key, { rxcui: concept.rxcui })}
+							onclick={() => void load(key, { rxcui: concept.rxcui, label: concept.name })}
 							type="button"
 							title={concept.loaded ? 'Fetch its packages again and update the formulary item' : undefined}
 							>{pending.has(key)
@@ -646,7 +805,7 @@
 			>
 			<div class="node-title">
 				<span class="kind">package</span>
-				<h3>{packageTitle(item)}</h3>
+				<h3><BrandedName text={packageTitle(item)} /></h3>
 				<p class="meta">
 					<span class="mono">{item.ndc}</span>
 					{[
@@ -686,36 +845,78 @@
 		padding: 5rem 1.5rem;
 	}
 
-	header {
-		margin-bottom: 2.5rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3.25rem);
-		letter-spacing: -0.045em;
-	}
-
-	header p:last-child {
-		color: #5c6777;
-		line-height: 1.55;
-	}
-
 	label {
 		display: block;
 		margin-bottom: 0.5rem;
 		font-weight: 700;
 	}
 
+	.suggestion {
+		margin: 0.5rem 0;
+	}
+	.link {
+		background: none;
+		border: 0;
+		padding: 0;
+		color: #204f91;
+		font: inherit;
+		font-weight: 600;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+	.facets {
+		display: grid;
+		gap: 0.4rem;
+		margin: 0.75rem 0;
+	}
+	.facet-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.35rem;
+	}
+	.facet-label {
+		font-size: 0.8rem;
+		font-weight: 600;
+		min-width: 5.5rem;
+		opacity: 0.75;
+	}
+	.chip {
+		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+		border-radius: 999px;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.8rem;
+		padding: 0.15rem 0.6rem;
+		cursor: pointer;
+	}
+	.chip[aria-pressed='true'] {
+		background: #204f91;
+		border-color: #204f91;
+		color: #fff;
+	}
+	.chip .count {
+		opacity: 0.65;
+		font-variant-numeric: tabular-nums;
+	}
+	.why {
+		margin: 0.15rem 0 0;
+		font-size: 0.78rem;
+		opacity: 0.75;
+	}
+	.why .missing {
+		color: #765416;
+	}
+	.tier-divider {
+		list-style: none;
+		margin: 1rem 0 0.25rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		opacity: 0.7;
+	}
 	.search-box {
 		display: flex;
 		gap: 0.75rem;

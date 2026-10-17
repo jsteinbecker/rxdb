@@ -1,4 +1,5 @@
 import { quantifiedScdName } from './quantified-scd';
+import { applyStrengthStyles, type StrengthStyleRule } from './strength-style';
 
 export const MAX_NAME_OVERRIDE = 500;
 
@@ -35,8 +36,15 @@ export function strengthAsPercent(name: string): string {
 	return name.replace(whole, `${percent((grams / millilitres) * 100)}% ${volume}${volumeUnit.toUpperCase()}`);
 }
 
-/** The name a formulary item is shown by: the user's override, else the sourced name, optionally as a percentage. */
-export function itemName(sourced: string, naming: ItemNaming): string {
+/**
+ * The name a formulary item is shown by: the user's override, else the sourced
+ * name, optionally as a percentage, else with the formulary's strength styles.
+ */
+export function itemName(
+	sourced: string,
+	naming: ItemNaming,
+	styles: StrengthStyleRule[] = []
+): string {
 	const base = naming.nameOverride ?? quantifiedScdName(sourced);
-	return naming.strengthAsPercent ? strengthAsPercent(base) : base;
+	return naming.strengthAsPercent ? strengthAsPercent(base) : applyStrengthStyles(base, styles);
 }

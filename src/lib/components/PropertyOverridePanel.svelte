@@ -1,5 +1,6 @@
 <script lang="ts">
       import {untrack} from 'svelte';
+      import {formatNdc} from '$lib/ndc';
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import type {StagedPackage} from '$lib/server/catalog-sync';
@@ -172,7 +173,6 @@
       const candidates = $derived(
             equivalents.filter((equivalent) => equivalent.values[overrideKey] != null)
       );
-      const formatNdc = (ndc: string) => `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}-${ndc.slice(9)}`;
       const ready = $derived(
             !!overrideValue.trim() &&
             (!quantitySpec || !!quantity) &&

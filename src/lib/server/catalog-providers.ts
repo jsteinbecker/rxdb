@@ -1,6 +1,23 @@
 import { loggedFetch } from './log';
-import { balanceIon, ionDisplayName } from '../ions';
+import { cationsNamedIn } from '../ions';
+import {
+	type IonDeclaration,
+	ionDeclarationsFromLabel,
+	ionRows,
+	type SaltFacts
+} from './ion-content';
 import { naturalCompare } from '../natural-sort';
+import {
+	isCombination,
+	nameFacets,
+	parseQuery,
+	relevance,
+	singleIngredientQuery,
+	type ConceptMatch,
+	type FacetCount,
+	type SearchFacets,
+	type SearchFilters
+} from '../search-relevance';
 import { type PackageFacts, parsePackageFacts } from './catalog-facts';
 import type { PropertyOverride } from '../property-override-fields';
 import { hyphenCandidates, labelerCandidates, toNdc11 } from '../ndc';
@@ -13,7 +30,11 @@ import {
 	strengthText,
 	withoutUnspecified
 } from '../spl-ingredients';
-import { type CheckedStrength, checkProductStrengths, type MoietyFactor } from '../spl-strength-checks';
+import {
+	type CheckedStrength,
+	checkProductStrengths,
+	type MoietyFactor
+} from '../spl-strength-checks';
 import { appearancesByPackage, type PillAppearance } from '../spl-characteristics';
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
@@ -44,6 +65,8 @@ export function inactivatedOnDailyMed(html: string, candidates: string[]): boole
 }
 
 export const MAX_CONCEPTS = 10;
+/** Approximate candidates scoring below this share of the best one are dropped. */
+const APPROXIMATE_CUTOFF = 0.7;
 
 export type SourcePayload = { source: string; nativeId: string; url: string; payload: unknown };
 export type RxProperty = { name: string; value: string };
@@ -83,6 +106,13 @@ export type LabelIngredient = {
 	productCode: string | null;
 	/** Why `strength` differs from what the label coded — see $lib/spl-strength-checks.ts. */
 	strengthNotes?: string[];
+	/**
+	 * What `strength` read before a salt correction changed the label's number,
+	 * that number being the mass of `unii`, the salt itself. Undoing the
+	 * correction restores it exactly instead of converting the rounded moiety
+	 * strength back.
+	 */
+	labelStrength?: { strength: string; unii: string | null };
 	/** The kit part the ingredient is in: `GRAPE FLAVORED DILUENT (145 mL)`. */
 	part?: string;
 	/** Label-declared elemental content supplied by one or more salt ingredients. */
@@ -146,6 +176,8 @@ export type PackageDetails = {
 		otherLabels: { setId: string; title: string | null }[];
 		/** Set when this NDC has no SPL of its own and a sibling package's was used. */
 		siblingNdc?: string | null;
+		/** Overridden: total shared moieties (true) or never (false); unset follows RxNorm. */
+		totalSharedMoieties?: boolean;
 	} | null;
 	rxnav: {
 		status: string | null;
@@ -384,11 +416,17 @@ function labelIngredientOf(
 	const part = product.part
 		? `${product.name ?? 'Kit part'}${product.part.amount !== null ? ` (${product.part.amount}${product.part.amountUnit ? ` ${product.part.amountUnit}` : ''})` : ''}`
 		: null;
+	// The row as the label printed it, before any salt correction.
+	const printed = checked.corrections.find((correction) => correction.stated !== undefined)?.stated;
+	const asPrinted = printed === undefined ? null : { ...checked, strength: printed };
+	const labelStrengthOf = (strength: string | null) =>
+		strength ? { labelStrength: { strength, unii: ingredient.unii } } : {};
 	// A kit part states its strength per its own measure: `1 g/1 g` of a 7.5 g
 	// bottle of powder is 7.5 g. Read as written it says nothing about content.
 	const content =
 		product.part && ingredient.kind === 'active' ? partContent(checked, product.part) : null;
 	if (content) {
+		const printedContent = asPrinted && partContent(asPrinted, product.part);
 		return {
 			name: ingredient.name,
 			unii: ingredient.unii,
@@ -401,25 +439,22 @@ function labelIngredientOf(
 				...checked.corrections.map((correction) => correction.note),
 				`Stated as ${strengthText(checked)} of the ${(product.doseForm ?? 'part').toLowerCase()}; the kit holds ${product.part!.amount} ${product.part!.amountUnit ?? ''}`.trim()
 			],
+			...labelStrengthOf(printedContent ? `${printedContent.value} ${printedContent.unit}` : null),
 			...(part ? { part } : {})
 		};
 	}
-	const statedStrength = strengthText(checked);
-	const totalStrength =
-		!dryFill &&
-		fillVolumeMl !== null &&
-		checked.strength !== null &&
-		checked.per !== null &&
-		checked.per > 0 &&
-		/^(?:mL|L)$/i.test(checked.perUnit ?? '')
-			? `${Number(((checked.strength * fillVolumeMl * (checked.perUnit!.toLowerCase() === 'l' ? 0.001 : 1)) / checked.per).toPrecision(12))}${checked.strengthUnit ? ` ${checked.strengthUnit}` : ''}`
-			: null;
-	return {
-		name: ingredient.name,
-		unii: ingredient.unii,
-		kind: ingredient.kind,
-		basis: ingredient.basis,
-		strength: dryFill
+	const strengthOf = (row: CheckedStrength) => {
+		const statedStrength = strengthText(row);
+		const totalStrength =
+			!dryFill &&
+			fillVolumeMl !== null &&
+			row.strength !== null &&
+			row.per !== null &&
+			row.per > 0 &&
+			/^(?:mL|L)$/i.test(row.perUnit ?? '')
+				? `${Number(((row.strength * fillVolumeMl * (row.perUnit!.toLowerCase() === 'l' ? 0.001 : 1)) / row.per).toPrecision(12))}${row.strengthUnit ? ` ${row.strengthUnit}` : ''}`
+				: null;
+		return dryFill
 			? dryFillStrength(
 					statedStrength,
 					// The package's form, corrected where the SPL miscoded the powder as
@@ -428,12 +463,20 @@ function labelIngredientOf(
 					bulkFillMl,
 					fillVolumeMl
 				)
-			: (totalStrength ?? statedStrength),
+			: (totalStrength ?? statedStrength);
+	};
+	return {
+		name: ingredient.name,
+		unii: ingredient.unii,
+		kind: ingredient.kind,
+		basis: ingredient.basis,
+		strength: strengthOf(checked),
 		moieties: ingredient.moieties,
 		productCode,
 		...(checked.corrections.length
 			? { strengthNotes: checked.corrections.map((correction) => correction.note) }
 			: {}),
+		...labelStrengthOf(asPrinted && strengthOf(asPrinted)),
 		...(part ? { part } : {})
 	};
 }
@@ -447,64 +490,6 @@ function splDocumentTitle(xml: string | null): string | null {
 		.replace(/\s+/g, ' ')
 		.trim();
 	return text || null;
-}
-
-/** GSRS's SODIUM CATION. */
-const SODIUM_ION_UNII = 'LYR4M0NH37';
-
-/** Extract a label-stated total sodium amount for the exact package NDC. */
-function sodiumContentFromLabel(
-	text: string | null,
-	ndc: string,
-	saltIngredients: string[]
-): LabelIngredient | null {
-	if (!text || !saltIngredients.length) return null;
-	const plain = text
-		.replace(/<[^>]*>/g, ' ')
-		.replace(/&#x([\da-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
-		.replace(/&#(\d+);/g, (_, decimal: string) => String.fromCodePoint(Number(decimal)))
-		.replace(/&nbsp;/gi, ' ')
-		.replace(/&amp;/gi, '&')
-		.replace(/\s+/g, ' ');
-	// "contains 2.5 mEq (57.5 mg) of sodium" or "contains 57.5 mg (2.5 mEq) of sodium".
-	const declarations =
-		/(?:contains|provides)\s+(?:([\d,.]+)\s*mEq\s*\(\s*([\d,.]+)\s*mg\s*\)|([\d,.]+)\s*mg\s*\(\s*([\d,.]+)\s*mEq\s*\))\s*(?:of\s+)?sodium\b/gi;
-	const matches = [...plain.matchAll(declarations)];
-	for (let index = 0; index < matches.length; index++) {
-		const match = matches[index];
-		const start = (match.index ?? 0) + match[0].length;
-		const end = Math.min(matches[index + 1]?.index ?? start + 240, start + 240);
-		const ndcMatch = plain.slice(start, end).match(/\bNDC\s*[:#]?\s*([\d-]{10,})/i);
-		if (!ndcMatch || toNdc11(ndcMatch[1]) !== ndc) continue;
-		const mEq = Number((match[1] ?? match[4]).replaceAll(',', ''));
-		const massMg = Number((match[2] ?? match[3]).replaceAll(',', ''));
-		if (!Number.isFinite(mEq) || mEq <= 0 || !Number.isFinite(massMg) || massMg <= 0) continue;
-		const balance = balanceIon('sodium', massMg, mEq);
-		return {
-			name: ionDisplayName('sodium'),
-			unii: SODIUM_ION_UNII,
-			kind: 'ionic',
-			basis: 'ion constituent (label total)',
-			strength: `${massMg} mg (${mEq} mEq)`,
-			moieties: [],
-			productCode: null,
-			...(balance && !balance.balanced
-				? {
-						strengthNotes: [
-							`The label states ${massMg} mg and ${mEq} mEq of sodium, which disagree: ${massMg} mg is ${balance.expectedMEq} mEq`
-						]
-					}
-				: {}),
-			ionicContent: {
-				element: 'sodium',
-				massMg,
-				mEq,
-				sourceIngredients: saltIngredients,
-				nonAdditive: true
-			}
-		};
-	}
-	return null;
 }
 
 /** A provider answered with a non-OK status; `status` 429 is a rate limit. */
@@ -567,12 +552,59 @@ function shared<T>(key: string, ttl: number, load: () => Promise<T>): Promise<T>
 	return value;
 }
 
+// ── openFDA key rotation ────────────────────────────────────────────────────
+// Each openFDA key has its own daily quota. When one answers 429 the request is
+// retried with the next configured key, and later requests start from the key
+// that last worked.
+let fdaKeys: string[] = [];
+let fdaKeyIndex = 0;
+
+/** Registers every configured openFDA key (OPENFDA_API_KEY, OPENFDA_API_KEY2, …). */
+export function setFdaApiKeys(keys: (string | undefined)[]) {
+	fdaKeys = [...new Set(keys.filter((key): key is string => !!key))];
+	fdaKeyIndex = 0;
+}
+
+/** The OPENFDA_API_KEY* values of an env object, in name order. */
+export function fdaApiKeysFrom(env: Record<string, string | undefined>): string[] {
+	return Object.keys(env)
+		.filter((name) => /^OPENFDA_API_KEY\d*$/.test(name))
+		.sort(naturalCompare)
+		.map((name) => env[name] ?? '')
+		.filter(Boolean);
+}
+
+/** Fetches `url`, moving to the next openFDA key whenever the current one is rate limited. */
+async function fetchRotatingFdaKey(
+	url: string,
+	init: RequestInit,
+	expected: number[]
+): Promise<Response> {
+	const parsed = new URL(url);
+	if (parsed.hostname !== 'api.fda.gov' || !parsed.searchParams.has('api_key') || !fdaKeys.length)
+		return loggedFetch(url, init, expected);
+	let response = await loggedFetch(url, init, expected);
+	for (let tried = 1; response.status === 429 && tried < fdaKeys.length; tried++) {
+		const current = parsed.searchParams.get('api_key');
+		if (fdaKeys[fdaKeyIndex] === current) fdaKeyIndex = (fdaKeyIndex + 1) % fdaKeys.length;
+		parsed.searchParams.set('api_key', fdaKeys[fdaKeyIndex]);
+		response = await loggedFetch(
+			parsed.href,
+			{ ...init, signal: AbortSignal.timeout(12_000) },
+			expected
+		);
+	}
+	return response;
+}
+
 function getJson(url: string, emptyOn404 = false): Promise<unknown> {
 	return shared(`json:${emptyOn404 ? '404:' : ''}${url}`, ttlOf(url), async () => {
-		const response = await loggedFetch(url, {
-			headers: { Accept: 'application/json' },
-			signal: AbortSignal.timeout(12_000)
-		});
+		const response = await fetchRotatingFdaKey(
+			url,
+			{ headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(12_000) },
+			// openFDA answers a search that matches nothing with 404.
+			emptyOn404 ? [404] : []
+		);
 		if (response.status === 404 && emptyOn404) return { results: [] };
 		if (!response.ok) throw new ProviderHttpError(url, response.status);
 		return response.json();
@@ -636,8 +668,24 @@ async function mapLimit<T, R>(
 	return results;
 }
 
+/** Every openFDA NDC-directory product matching a search, paged past the 100-row limit. */
+export async function searchFdaProducts(search: string, apiKey?: string): Promise<FdaProduct[]> {
+	const products: FdaProduct[] = [];
+	for (let skip = 0; skip < 5_000; skip += 100) {
+		const params = new URLSearchParams({ search, limit: '100', skip: String(skip) });
+		if (apiKey) params.set('api_key', apiKey);
+		const page = (await getJson(`${OPENFDA_NDC}?${params}`, true)) as {
+			results?: FdaProduct[];
+			meta?: { results?: { total?: number } };
+		};
+		products.push(...(page.results ?? []));
+		if (!page.results?.length || products.length >= (page.meta?.results?.total ?? 0)) break;
+	}
+	return products;
+}
+
 export async function discoverRxNav(query: string): Promise<RxConcept[]> {
-	return (await discoverRxNavPage(query)).concepts;
+	return (await discoverRxNavPage(query, 0, undefined, { weak: true, combos: true })).concepts;
 }
 
 // The ranked graph behind a query, so later pages fetch only their own NDCs.
@@ -655,10 +703,41 @@ function rankingOf(query: string): Promise<RxRanking> {
 	if (rankings.size >= 64) rankings.delete(rankings.keys().next().value!);
 	const ranking = rankRxNav(query);
 	rankings.set(key, { at: now, ranking });
-	ranking.catch(() => {
-		if (rankings.get(key)?.ranking === ranking) rankings.delete(key);
-	});
+	ranking.then(
+		(result) => {
+			// A fuzzy ranking is often a word still being typed: keep it only briefly.
+			const entry = rankings.get(key);
+			if (result.approximate && entry?.ranking === ranking)
+				entry.at = now - RANKING_TTL_MS + APPROXIMATE_TTL_MS;
+		},
+		() => {
+			if (rankings.get(key)?.ranking === ranking) rankings.delete(key);
+		}
+	);
 	return ranking;
+}
+
+const APPROXIMATE_TTL_MS = 5 * 60 * 1000;
+
+/** RxNav's closest spelling of a query it could not find, or null. */
+async function spellingSuggestion(query: string): Promise<string | null> {
+	try {
+		const payload = (await getJson(
+			`${RXNAV}/spellingsuggestions.json?name=${encodeURIComponent(query)}`
+		)) as { suggestionGroup?: { suggestionList?: { suggestion?: string[] } } };
+		const first = payload.suggestionGroup?.suggestionList?.suggestion?.[0];
+		return first && first.toLocaleLowerCase() !== query.trim().toLocaleLowerCase() ? first : null;
+	} catch {
+		return null;
+	}
+}
+
+function countBy(values: (string | null)[]): FacetCount[] {
+	const counts = new Map<string, number>();
+	for (const value of values) if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+	return [...counts]
+		.map(([value, count]) => ({ value, count }))
+		.sort((a, b) => b.count - a.count || naturalCompare(a.value, b.value));
 }
 
 /** What the catalog already knows about a concept from an earlier search. */
@@ -679,23 +758,77 @@ const isEmptyConcept = (concept: Pick<RxConcept, 'vetOnly' | 'ndcs'>) =>
 export async function discoverRxNavPage(
 	query: string,
 	offset = 0,
-	stored?: (rxcuis: string[]) => Promise<Map<string, StoredConcept>>
-): Promise<{ concepts: RxConcept[]; total: number; reused: string[] }> {
+	stored?: (rxcuis: string[]) => Promise<Map<string, StoredConcept>>,
+	filters: SearchFilters = {}
+): Promise<{
+	concepts: RxConcept[];
+	total: number;
+	reused: string[];
+	matches: Record<string, ConceptMatch>;
+	facets: SearchFacets;
+	suggestion: string | null;
+	approximate: boolean;
+}> {
 	const ranking = await rankingOf(query);
-	const known = stored ? await stored(ranking.roots.map((root) => root.rxcui)) : new Map<string, StoredConcept>();
+	const tier = (rxcui: string) => ranking.matches.get(rxcui)?.tier ?? 'strong';
+	// Weaker matches and set-aside combinations are listed only when asked for.
+	const pool = ranking.roots.filter((root) => {
+		const value = tier(root.rxcui);
+		return value === 'strong' || (value === 'combo' && filters.combos) || filters.weak;
+	});
+	const facetsOf = new Map(pool.map((root) => [root.rxcui, nameFacets(root.name)]));
+	const facets: SearchFacets = {
+		forms: countBy(
+			pool
+				.filter((root) => !filters.strength || facetsOf.get(root.rxcui)!.strength === filters.strength)
+				.map((root) => facetsOf.get(root.rxcui)!.form)
+		),
+		strengths: countBy(
+			pool
+				.filter((root) => !filters.form || facetsOf.get(root.rxcui)!.form === filters.form)
+				.map((root) => facetsOf.get(root.rxcui)!.strength)
+		),
+		combos: ranking.roots.filter((root) => tier(root.rxcui) === 'combo').length,
+		weak: ranking.roots.filter((root) => tier(root.rxcui) === 'weak').length
+	};
+	const filtered = pool.filter((root) => {
+		const facet = facetsOf.get(root.rxcui)!;
+		return (
+			(!filters.form || facet.form === filters.form) &&
+			(!filters.strength || facet.strength === filters.strength)
+		);
+	});
+	const known = stored
+		? await stored(filtered.map((root) => root.rxcui))
+		: new Map<string, StoredConcept>();
 	const empty = (rxcui: string) => {
 		const entry = known.get(rxcui);
 		return entry && isEmptyConcept(entry.concept) ? 1 : 0;
 	};
 	// Stable: the ranking's own order holds within each group.
-	const roots = [...ranking.roots].sort((a, b) => empty(a.rxcui) - empty(b.rxcui));
-	const reuse = new Map([...known].flatMap(([rxcui, entry]) => (entry.fresh ? [[rxcui, entry.concept] as const] : [])));
+	const roots = [...filtered].sort((a, b) => empty(a.rxcui) - empty(b.rxcui));
+	const reuse = new Map(
+		[...known].flatMap(([rxcui, entry]) => (entry.fresh ? [[rxcui, entry.concept] as const] : []))
+	);
 	const page = await pageOfRanking(offset, { ...ranking, roots }, reuse);
 	return {
 		...page,
 		// Within the page too, anything with nothing to load goes last.
-		concepts: [...page.concepts].sort((a, b) => Number(isEmptyConcept(a)) - Number(isEmptyConcept(b))),
-		reused: page.concepts.filter((concept) => reuse.has(concept.rxcui)).map((concept) => concept.rxcui)
+		concepts: [...page.concepts].sort(
+			(a, b) => Number(isEmptyConcept(a)) - Number(isEmptyConcept(b))
+		),
+		reused: page.concepts
+			.filter((concept) => reuse.has(concept.rxcui))
+			.map((concept) => concept.rxcui),
+		matches: Object.fromEntries(
+			page.concepts.flatMap((concept) => {
+				const match = ranking.matches.get(concept.rxcui);
+				return match ? [[concept.rxcui, match]] : [];
+			})
+		),
+		facets,
+		suggestion: ranking.suggestion,
+		approximate: ranking.approximate
 	};
 }
 
@@ -714,17 +847,25 @@ async function rankRxNav(query: string) {
 	let ids =
 		rxcuiQuery && seedPayload.idGroup?.name ? [query] : (seedPayload.idGroup?.rxnormId ?? []);
 	let approximate: SourcePayload | undefined;
+	let suggestion: string | null = null;
 	if (!ids.length && !numeric) {
 		const url = `${RXNAV}/approximateTerm.json?term=${encodeURIComponent(query)}&maxEntries=${MAX_CONCEPTS}&option=1`;
 		const payload = (await getJson(url)) as {
-			approximateGroup?: { candidate?: { rxcui?: string }[] };
+			approximateGroup?: { candidate?: { rxcui?: string; score?: string }[] };
 		};
+		// Keep only candidates close to the best one: the tail of an approximate
+		// match is unrelated words that happen to share letters.
+		const candidates = payload.approximateGroup?.candidate ?? [];
+		const top = Math.max(0, ...candidates.map((candidate) => Number(candidate.score) || 0));
 		ids = [
 			...new Set(
-				payload.approximateGroup?.candidate?.flatMap((candidate) => candidate.rxcui ?? []) ?? []
+				candidates
+					.filter((candidate) => !top || (Number(candidate.score) || 0) >= top * APPROXIMATE_CUTOFF)
+					.flatMap((candidate) => candidate.rxcui ?? [])
 			)
 		];
 		approximate = { source: 'rxnav', nativeId: `approximate:${query}`, url, payload };
+		suggestion = await spellingSuggestion(query);
 	}
 
 	const seedEvidence: SourcePayload[] = [
@@ -840,29 +981,69 @@ async function rankRxNav(query: string) {
 		members.set(root.rxcui, list);
 		if (!concepts.has(root.rxcui)) concepts.set(root.rxcui, root);
 	}
-	// Rank before paging: an exact RxCUI, then generic nodes (a brand stands alone only when
-	// RxNorm has no generic), then names led by the query, single-ingredient
-	// drugs, non-packs, and finally a numeric-aware name order so strengths sort.
-	const needle = query.trim().toLocaleLowerCase();
-	const score = (concept: Concept) => {
-		const name = concept.name.toLocaleLowerCase();
-		return [
-			// An RxCUI lookup must keep its own concept on the first page.
-			Number(concept.rxcui !== query.trim()),
-			Number(branded.has(concept.tty ?? '')),
-			Number(!name.startsWith(needle)),
-			Number(name.includes(' / ')),
-			Number(concept.tty === 'GPCK' || concept.tty === 'BPCK')
-		];
-	};
-	const roots = [...members.keys()]
-		.map((rxcui) => concepts.get(rxcui)!)
+	// Rank before paging. Each root is scored against the query by its own name and
+	// the brands rolled into it; an exact RxCUI leads, then complete matches by score,
+	// generic nodes before brands that stand alone, non-packs, and a numeric-aware
+	// name order so strengths sort.
+	const parsed = parseQuery(query);
+	const scored = [...members.keys()].map((rxcui) => {
+		const concept = concepts.get(rxcui)!;
+		const fit = numeric
+			? { matched: true, score: 0, reasons: [], missing: [] }
+			: relevance(parsed, {
+					name: concept.name,
+					aliases: (members.get(rxcui) ?? []).map((member) => member.name)
+				});
+		return { concept, fit };
+	});
+	// A single-ingredient query sets combinations aside, but only when it has
+	// single-ingredient answers; a combination brand's own generic still leads.
+	const setAside = (item: (typeof scored)[number]) =>
+		!numeric &&
+		singleIngredientQuery(parsed) &&
+		isCombination(item.concept.name) &&
+		scored.some((other) => other.fit.matched && !isCombination(other.concept.name));
+	const anyMatched = scored.some((item) => item.fit.matched);
+	const matches = new Map<string, ConceptMatch>(
+		scored.map((item) => [
+			item.concept.rxcui,
+			{
+				// Nothing matched completely (an abbreviation RxNorm does not use, say):
+				// the partial matches are all there is, so none is hidden.
+				tier: item.fit.matched || !anyMatched ? (setAside(item) ? 'combo' : 'strong') : 'weak',
+				reasons: item.fit.reasons,
+				missing: item.fit.missing
+			}
+		])
+	);
+	const tierOrder = { strong: 0, combo: 1, weak: 2 } as const;
+	const key = (item: (typeof scored)[number]) => [
+		// An RxCUI lookup must keep its own concept on the first page.
+		Number(item.concept.rxcui !== query.trim()),
+		tierOrder[matches.get(item.concept.rxcui)!.tier],
+		-item.fit.score,
+		Number(branded.has(item.concept.tty ?? '')),
+		Number(item.concept.tty === 'GPCK' || item.concept.tty === 'BPCK')
+	];
+	const roots = scored
 		.sort((a, b) => {
-			const [x, y] = [score(a), score(b)];
+			const [x, y] = [key(a), key(b)];
 			const i = x.findIndex((value, index) => value !== y[index]);
-			return i >= 0 ? x[i] - y[i] : naturalCompare(a.name, b.name);
-		});
-	return { roots, members, concepts, parentsOf, counterpartsOf, evidence, related };
+			return i >= 0 ? x[i] - y[i] : naturalCompare(a.concept.name, b.concept.name);
+		})
+		.map((item) => item.concept);
+	return {
+		roots,
+		matches,
+		suggestion,
+		approximate: Boolean(approximate),
+		members,
+		concepts,
+		parentsOf,
+		counterpartsOf,
+		evidence,
+		related
+	};
 }
 
 type RankedConcept = { rxcui: string; name: string; tty: string | null };
@@ -1053,6 +1234,8 @@ export type PackageHints = {
 	moietiesOf?: (unii: string) => Promise<{ unii: string; name: string }[] | null>;
 	/** GSRS's salt-to-moiety mass factor for a UNII; corrects a heavy salt's mass labeled as moiety. */
 	moietyFactorOf?: (unii: string) => Promise<MoietyFactor | null>;
+	/** GSRS's formula and molecular weight for a UNII; how much of each ion a salt delivers. */
+	saltOf?: (unii: string) => Promise<SaltFacts | null>;
 };
 
 /**
@@ -1074,10 +1257,15 @@ function directoryMoietyStrengths(
 		product.ingredients.forEach((ingredient, index) => {
 			if (!checked[index].corrections.some((c) => c.kind === 'moiety-equivalent')) return;
 			const factor = Number(moietyFactors.get(ingredient.unii!)!.factor);
-			const listed = directory.find((entry) => entry.name.toLowerCase() === ingredient.name.toLowerCase());
+			const listed = directory.find(
+				(entry) => entry.name.toLowerCase() === ingredient.name.toLowerCase()
+			);
 			const match = /^\s*(\d*\.?\d+)(\s*[^\d/\s]+.*)$/.exec(listed?.strength ?? '');
 			if (!listed || !match) return;
-			out.set(listed.name.toLowerCase(), `${Number((Number(match[1]) * factor).toPrecision(6))}${match[2]}`);
+			out.set(
+				listed.name.toLowerCase(),
+				`${Number((Number(match[1]) * factor).toPrecision(6))}${match[2]}`
+			);
 		});
 	}
 	return out;
@@ -1093,7 +1281,9 @@ async function moietyFactorsOf(
 	const uniis = new Set(
 		products
 			.flatMap((product) => product.ingredients)
-			.filter((i) => i.kind === 'active' && i.basis === 'moiety' && i.unii && i.moieties.length === 1)
+			.filter(
+				(i) => i.kind === 'active' && i.basis === 'moiety' && i.unii && i.moieties.length === 1
+			)
 			.map((i) => i.unii!)
 	);
 	await Promise.all(
@@ -1103,6 +1293,39 @@ async function moietyFactorsOf(
 		})
 	);
 	return factors;
+}
+
+/** GSRS's formula and weight for every active salt named for a cation, by UNII. */
+async function saltsOf(
+	products: { ingredients: SplIngredient[] }[],
+	saltOf: PackageHints['saltOf']
+): Promise<Map<string, SaltFacts>> {
+	const salts = new Map<string, SaltFacts>();
+	if (!saltOf) return salts;
+	const uniis = new Set(
+		products
+			.flatMap((product) => product.ingredients)
+			.filter((i) => i.kind === 'active' && i.unii && cationsNamedIn(i.name).length)
+			.map((i) => i.unii!)
+	);
+	await Promise.all(
+		[...uniis].map(async (unii) => {
+			const salt = await saltOf(unii).catch(() => null);
+			if (salt) salts.set(unii, salt);
+		})
+	);
+	return salts;
+}
+
+/** The label's rows followed by the ions its salts deliver. */
+function withIonRows(
+	ingredients: LabelIngredient[],
+	salts: Map<string, SaltFacts>,
+	moietyFactors: Map<string, MoietyFactor>,
+	declared: IonDeclaration[]
+): LabelIngredient[] {
+	const factors = new Map([...moietyFactors].map(([unii, { factor }]) => [unii, Number(factor)]));
+	return [...ingredients, ...ionRows(ingredients, salts, factors, declared)];
 }
 
 /**
@@ -1117,14 +1340,23 @@ export async function completeMoieties(
 ): Promise<void> {
 	const ingredients = products
 		.flatMap((product) => product.ingredients)
-		.filter((ingredient) => ingredient.kind === 'active' && ingredient.unii && ingredient.moieties.length);
+		.filter(
+			(ingredient) => ingredient.kind === 'active' && ingredient.unii && ingredient.moieties.length
+		);
 	const known = new Map<string, Promise<{ unii: string; name: string }[] | null>>();
 	for (const ingredient of ingredients) {
 		const unii = ingredient.unii!;
-		if (!known.has(unii)) known.set(unii, moietiesOf(unii).catch(() => null));
+		if (!known.has(unii))
+			known.set(
+				unii,
+				moietiesOf(unii).catch(() => null)
+			);
 		const gsrs = (await known.get(unii)) ?? [];
 		const listed = new Set(ingredient.moieties.map((moiety) => moiety.unii));
-		if (gsrs.length <= listed.size || ![...listed].every((unii) => gsrs.some((m) => m.unii === unii)))
+		if (
+			gsrs.length <= listed.size ||
+			![...listed].every((unii) => gsrs.some((m) => m.unii === unii))
+		)
 			continue;
 		for (const moiety of gsrs)
 			if (!listed.has(moiety.unii)) ingredient.moieties.push({ ...moiety, source: 'gsrs' });
@@ -1197,7 +1429,9 @@ export async function enrichPackages(
 		const labelUrl = fdaUrl(OPENFDA_LABEL, search('openfda.package_ndc'), apiKey);
 		const statusUrl = `${RXNAV}/ndcstatus.json?ndc=${encodeURIComponent(ndc)}`;
 		let splUrl = `${DAILYMED_SPL}?ndc=${encodeURIComponent(candidates[0] ?? ndc)}`;
-		const speciesUrl = `${RXNAV}/ndcproperties.json?id=${encodeURIComponent(ndc)}`;
+		// Without ndcstatus=all RxNav answers {} for NDCs it does not list as RxNorm
+		// NDCs (status ALIEN, e.g. ACD-A 14537-817-75), leaving the package incomplete.
+		const speciesUrl = `${RXNAV}/ndcproperties.json?id=${encodeURIComponent(ndc)}&ndcstatus=all`;
 		const [fda, label, status, spl, species] = await Promise.allSettled([
 			getJson(productUrl, true),
 			getJson(labelUrl, true),
@@ -1373,11 +1607,7 @@ export async function enrichPackages(
 		if (product?.product_type) labelTypes.push(product.product_type);
 		// A product found without this package (even by the package-level search) is the
 		// directory saying the package is not listed; only an outage leaves it unknown.
-		const listed = packaging
-			? true
-			: product || fdaPayload?.results?.length === 0
-				? false
-				: null;
+		const listed = packaging ? true : product || fdaPayload?.results?.length === 0 ? false : null;
 		const splPresent =
 			splPayload && Array.isArray(splPayload.data) ? splPayload.data.length > 0 : null;
 		const listedByFDA = listed === true;
@@ -1591,17 +1821,11 @@ export async function enrichPackages(
 				? dryFillStrength(ingredient.strength, doseForm, bulkFillMl, fillVolumeMl)
 				: ingredient.strength
 		}));
-		const saltIngredients = [
-			...new Set(
-				labelProducts
-					.flatMap((item) => item.ingredients)
-					.filter(
-						(ingredient) => ingredient.kind === 'active' && /\bsodium\b/i.test(ingredient.name)
-					)
-					.map((ingredient) => ingredient.name)
-			)
-		];
-		const ionicContent = sodiumContentFromLabel(labelText('how_supplied'), ndc, saltIngredients);
+		const ionSalts = await saltsOf(labelProducts, hints.saltOf);
+		const ionDeclarations = ionDeclarationsFromLabel(
+			['how_supplied', 'description', 'dosage_and_administration'].map(labelText),
+			ndc
+		);
 		const hasProductFacts = Boolean(
 			product || rxRoutes.length || labelRoutes.length || doseForm || openfda.rxcui || rxNormTitle
 		);
@@ -1665,27 +1889,31 @@ export async function enrichPackages(
 						version: splHit.spl_version != null ? String(splHit.spl_version) : null,
 						publishedDate: splHit.published_date ?? null,
 						doseForm: ownProducts.find((item) => item.doseForm)?.doseForm ?? null,
-						ingredients: [
-							...labelProducts.flatMap((item) => {
-								const checked = checkProductStrengths(item, {
-							rxNormName: rxNormTitle,
+						ingredients: withIonRows(
+							[
+								...labelProducts.flatMap((item) => {
+									const checked = checkProductStrengths(item, {
+										rxNormName: rxNormTitle,
+										moietyFactors,
+										directory: sourceIngredients
+									});
+									return item.ingredients.map((ingredient, index) =>
+										labelIngredientOf(
+											ingredient,
+											checked[index],
+											item,
+											doseForm,
+											dryFill,
+											fillVolumeMl,
+											bulkFillMl
+										)
+									);
+								})
+							],
+							ionSalts,
 							moietyFactors,
-							directory: sourceIngredients
-						});
-								return item.ingredients.map((ingredient, index) =>
-									labelIngredientOf(
-										ingredient,
-										checked[index],
-										item,
-										doseForm,
-										dryFill,
-										fillVolumeMl,
-										bulkFillMl
-									)
-								);
-							}),
-							...(ionicContent ? [ionicContent] : [])
-						],
+							ionDeclarations
+						),
 						appearances,
 						siblingNdc: splSiblingNdc,
 						otherLabels: splRows
@@ -1858,7 +2086,7 @@ type NdcPropertyRow = {
 	propertyConceptList?: { propertyConcept?: { propName: string; propValue: string }[] };
 };
 
-type FdaProduct = {
+export type FdaProduct = {
 	product_ndc?: string;
 	route?: string[];
 	marketing_category?: string;

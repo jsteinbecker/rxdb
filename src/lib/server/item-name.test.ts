@@ -39,3 +39,29 @@ test('parseNameOverride trims and clears', () => {
 	assert.deepEqual(parseNameOverride(''), { name: null });
 	assert.ok('error' in parseNameOverride('x'.repeat(501)));
 });
+
+test('strength styles restate matching ingredients per dose form', async () => {
+	const { applyStrengthStyles } = await import('../strength-style');
+	const rules = [
+		{ ingredient: 'water', doseForm: null, style: 'percent' as const },
+		{ ingredient: 'sodium chloride', doseForm: 'Injection', style: 'percent' as const },
+		{ ingredient: 'epinephrine', doseForm: 'Injection', style: 'ratio' as const }
+	];
+	assert.equal(applyStrengthStyles('water 1 G/ML Injectable Solution', rules), 'water 100% Injectable Solution');
+	assert.equal(
+		applyStrengthStyles('100 ML sodium chloride 9 MG/ML Injection', rules),
+		'100 ML sodium chloride 0.9% Injection'
+	);
+	assert.equal(
+		applyStrengthStyles('sodium chloride 0.9 G/100ML Injection', rules),
+		'sodium chloride 0.9% 100ML Injection'
+	);
+	assert.equal(
+		applyStrengthStyles('EPINEPHrine 0.01 MG/ML / lidocaine hydrochloride 10 MG/ML Injectable Solution', rules),
+		'EPINEPHrine 1:100000 / lidocaine hydrochloride 10 MG/ML Injectable Solution'
+	);
+	// Wrong dose form, no rule, or not an amount per volume: unchanged.
+	assert.equal(applyStrengthStyles('sodium chloride 1 G Oral Tablet', rules), 'sodium chloride 1 G Oral Tablet');
+	assert.equal(applyStrengthStyles('sodium chloride 9 MG/ML Irrigation Solution', rules), 'sodium chloride 9 MG/ML Irrigation Solution');
+	assert.equal(applyStrengthStyles('lidocaine 10 MG/ML Injectable Solution', rules), 'lidocaine 10 MG/ML Injectable Solution');
+});

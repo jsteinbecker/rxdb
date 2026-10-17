@@ -1,5 +1,6 @@
 <script lang="ts">
       import QuantityField from './QuantityField.svelte';
+      import BrandedName from '$lib/components/BrandedName.svelte';
       import MixedFraction from './MixedFraction.svelte';
       import {formatRational, type Rational} from '$lib/rational';
       import {type Field, type Line, VOLUME_UNIT} from '$lib/compound-builder';
@@ -59,7 +60,7 @@
 
 <div class="line" class:diluent={isDiluent}>
       <div class="identity">
-            <span class="label">{line.label}</span>
+            <span class="label"><BrandedName text={line.label} /></span>
             {#if isDiluent}<span class="tag">Diluent</span>{/if}
       </div>
 
