@@ -11,6 +11,7 @@ import { parseNameOverride } from '$lib/item-name';
 import { summarizeItem } from '$lib/item-summary';
 import { loadPackageSnapshots } from '$lib/server/catalog-store';
 import { loadStagedNode } from '$lib/server/catalog-sync';
+import { cmsBilling } from '$lib/server/cms-billing';
 import { withPharmClassRules } from '$lib/server/pharm-class-view';
 import { hasAppearance, isSolidDoseForm, type PillAppearance } from '$lib/spl-characteristics';
 import { refineAppearances } from '$lib/spl-appearance-text';
@@ -99,9 +100,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		snapshotNdcs.map((ndc) => snapshots.get(ndc)!.item)
 	);
 	const summaryItems = new Map(snapshotNdcs.map((ndc, index) => [ndc, resolved[index]]));
+	const billing = await cmsBilling(
+		prisma,
+		packages.map((row) => ({ ndc: row.ndc, doseForm: row.doseForm ?? snapshots.get(row.ndc)?.item.doseForm ?? null }))
+	);
 	return {
 		appearances,
 		layouts,
+		cmsBilling: Object.fromEntries(billing),
 		scope: { id: scope.id, name: scope.name },
 		item,
 		brands: await itemBrands(prisma, item.formularyItemId),

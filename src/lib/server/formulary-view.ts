@@ -5,6 +5,7 @@ import {loadPackageSnapshots} from './catalog-store';
 import {correctedIngredients, packageDisplayTitle} from '../package-title';
 import {PACKAGE_PSEUDO_SCD} from './pseudo-scd-store';
 import {fillFromConcept} from '../concept-fill';
+import {scopeStrengthStyles} from './strength-styles';
 
 /**
  * Every package currently linked into a formulary scope, flattened with the
@@ -13,6 +14,7 @@ import {fillFromConcept} from '../concept-fill';
  * catalog does not model yet.
  */
 export async function formularyRows(db: PrismaClient, scopeId: string): Promise<FormularyRow[]> {
+  const styles = await scopeStrengthStyles(db, scopeId);
   const links = await db.formularyItemPackage.findMany({
     where: {
       validTo: null,
@@ -103,7 +105,7 @@ export async function formularyRows(db: PrismaClient, scopeId: string): Promise<
         packageId: link.package.id,
         ndc,
         formularyItemId: link.formularyItem.id,
-        formularyItem: itemName(pseudo?.name ?? link.formularyItem.displayName, link.formularyItem),
+        formularyItem: itemName(pseudo?.name ?? link.formularyItem.displayName, link.formularyItem, styles),
         description: facts.description,
         displayTitle: packageDisplayTitle(facts),
         routes: item?.details?.product?.routes ?? [],

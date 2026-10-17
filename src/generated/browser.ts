@@ -332,3 +332,9 @@ export type UniiSubstance = Prisma.UniiSubstanceModel
  * 
  */
 export type PharmClassRule = Prisma.PharmClassRuleModel
+/**
+ * Model CmsCrosswalkRow
+ * A row of the CMS quarterly NDC–HCPCS crosswalk for Medicare Part B (ASP, OPPS, AWP, PrEP files).
+ * Replaced whole when a newer quarter is published; see `cms-billing.ts`.
+ */
+export type CmsCrosswalkRow = Prisma.CmsCrosswalkRowModel

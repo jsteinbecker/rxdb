@@ -12,6 +12,7 @@ import {
   validLevelKeys
 } from './formulary-hierarchy';
 import { type EquivalenceGroup, parseEquivalenceGroups } from './equivalence';
+import { parseStrengthStyles, type StrengthStyleRule } from './strength-style';
 
 export type ExpandDepth = 'none' | 'first' | 'all';
 
@@ -43,6 +44,8 @@ export type FormularySettings = {
 	uniformImprintSize: boolean;
 	/** Sibling values the hierarchy merges into one node, per dimension. */
 	equivalenceGroups: EquivalenceGroup[];
+	/** Ingredients (optionally per dose form) whose strength names show as a percent or ratio. */
+	strengthStyles: StrengthStyleRule[];
 };
 
 export const DEFAULT_SETTINGS: FormularySettings = {
@@ -53,7 +56,8 @@ export const DEFAULT_SETTINGS: FormularySettings = {
 	confirmRemove: true,
 	comboDoseDisplay: {},
 	uniformImprintSize: false,
-	equivalenceGroups: []
+	equivalenceGroups: [],
+	strengthStyles: []
 };
 
 export function parseComboDoseDisplay(value: unknown): ComboDoseDisplay | null {
@@ -127,6 +131,7 @@ export function parseSettings(value: unknown): FormularySettings {
 			raw.equivalenceGroups,
 			new Set(DIMENSION_BY_KEY.keys())
 		),
+		strengthStyles: parseStrengthStyles(raw.strengthStyles),
 		comboDoseDisplay: Object.fromEntries(
 			Object.entries(
 				raw.comboDoseDisplay && typeof raw.comboDoseDisplay === 'object' ? raw.comboDoseDisplay : {}

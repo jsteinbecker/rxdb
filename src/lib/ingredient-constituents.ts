@@ -14,6 +14,12 @@
 //
 // The ingredients a total adds up are kept together as one group under it.
 //
+// A shared moiety is only totalled when the product's RxNorm concept names it:
+// that is the evidence the pieces are one drug given as several salts. Citric
+// acid beside sodium citrate in ACD-A share a moiety too, but they are a buffer
+// pair, not a dose, and adding them states nothing. A product-level override
+// (`details.spl.totalSharedMoieties`) forces totals on or off.
+//
 // A whole moiety never gets its own row — its amount is the parent's, so it
 // would only repeat it; it stays in the moiety column.
 
@@ -67,6 +73,17 @@ function scaled(strength: string | null, share: number): string | null {
 	return formatStrength({ ...parsed, value: String(Number((Number(parsed.value) * share).toPrecision(6))) });
 }
 
+/** Words that name a form of a moiety rather than a different substance. */
+const FORM_WORDS = /\b(?:anhydrous|dextro|levo)/g;
+const stem = (name: string) => key(name).replace(FORM_WORDS, ' ').replace(/\s+/g, ' ').trim();
+
+/** Whether RxNorm's concept name mentions `piece`, ignoring hydration and handedness. */
+export function rxNormNames(rxNormName: string | null | undefined, piece: string): boolean {
+	if (!rxNormName) return false;
+	const name = ` ${stem(rxNormName.replace(/[^\p{L}\p{N}\s-]/gu, ' '))} `;
+	return name.includes(` ${stem(piece)}`);
+}
+
 /** The sum of strengths in one unit and denominator, or null when they differ. */
 function summed(strengths: (string | null)[]): string | null {
 	const parsed = strengths.map(parseStrengthText);
@@ -87,7 +104,15 @@ function summed(strengths: (string | null)[]): string | null {
  * them, any ion whose salts are all missing, then the excipients. `totals`
  * holds one row per piece delivered by more than one active.
  */
-export function nestIngredients(ingredients: LabelIngredient[]): {
+export function nestIngredients(
+	ingredients: LabelIngredient[],
+	options: {
+		/** The product's RxNorm concept name; a shared moiety is totalled only when it names it. */
+		rxNormName?: string | null;
+		/** A product-level override: true totals every shared moiety, false none. */
+		totalShared?: boolean | null;
+	} = {}
+): {
 	nodes: IngredientNode[];
 	totals: ConstituentTotal[];
 	/** The active nodes in groups: one per set of actives linked by a total or a shared ion. */
@@ -133,7 +158,11 @@ export function nestIngredients(ingredients: LabelIngredient[]): {
 		}
 	});
 	const totalsWithMembers = [...byPiece.values()]
-		.filter((entry) => entry.parts.length > 1)
+		.filter(
+			(entry) =>
+				entry.parts.length > 1 &&
+				(options.totalShared ?? rxNormNames(options.rxNormName, entry.name))
+		)
 		.map((entry) => {
 			// A salt's mass and a moiety's mass are different quantities; adding
 			// them gives a number that is neither, so it isn't stated.

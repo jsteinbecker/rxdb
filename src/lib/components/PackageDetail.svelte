@@ -137,7 +137,12 @@
       // The table as a tree: each label ingredient, then the pieces it delivers
       // (a racemate's two enantiomers, a moiety it shares, its ions) indented
       // beneath it, and a total row for each piece more than one ingredient gives.
-      const nested = $derived(nestIngredients(d?.spl?.ingredients ?? []));
+      const nested = $derived(
+            nestIngredients(d?.spl?.ingredients ?? [], {
+                  rxNormName: d?.rxnav?.conceptName,
+                  totalShared: d?.spl?.totalSharedMoieties
+            })
+      );
       // Which strength cells in a group feed its totals, and how the tree line
       // from the total's strength runs past each row: '├' feeds and continues,
       // '└' is the last feeder, '│' only passes by.

@@ -5,6 +5,7 @@ import { parseSettings, type FormularySettings } from '$lib/settings';
 import { formularyRows } from '$lib/server/formulary-view';
 import { DIMENSIONS, dimensionValues } from '$lib/formulary-hierarchy';
 import { parseEquivalenceGroups } from '$lib/equivalence';
+import { parseStrengthStyleRule, ruleKey } from '$lib/strength-style';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -34,6 +35,7 @@ export const actions: Actions = {
 			// Edited elsewhere (the formulary page, the views section); carry them over.
 			comboDoseDisplay: current.comboDoseDisplay,
 			equivalenceGroups: current.equivalenceGroups,
+			strengthStyles: current.strengthStyles,
 			views: current.views,
 			defaultView: current.defaultView,
 			defaultLevels: current.defaultLevels,
@@ -112,6 +114,39 @@ export const actions: Actions = {
 				equivalenceGroups: settings.equivalenceGroups.filter((_, at) => at !== index)
 			}),
 			{ section: 'groups' }
+		);
+	},
+
+	/** Add a strength display rule, replacing one for the same ingredient and dose form. */
+	saveStrengthStyle: async ({ request }) => {
+		const form = await request.formData();
+		const rule = parseStrengthStyleRule({
+			ingredient: form.get('ingredient'),
+			doseForm: form.get('doseForm'),
+			style: form.get('style')
+		});
+		if (!rule)
+			return fail(400, { section: 'strengthStyles', message: 'Name an ingredient and a style.' });
+		return updateSettings(
+			(settings) => ({
+				...settings,
+				strengthStyles: [
+					...settings.strengthStyles.filter((other) => ruleKey(other) !== ruleKey(rule)),
+					rule
+				]
+			}),
+			{ section: 'strengthStyles' }
+		);
+	},
+
+	deleteStrengthStyle: async ({ request }) => {
+		const index = Number((await request.formData()).get('index'));
+		return updateSettings(
+			(settings) => ({
+				...settings,
+				strengthStyles: settings.strengthStyles.filter((_, at) => at !== index)
+			}),
+			{ section: 'strengthStyles' }
 		);
 	},
 

@@ -4,8 +4,12 @@ import { hyphenCandidates, toNdc11 } from '../ndc';
 import type { SplProduct } from '../spl-ingredients';
 import { exclusionReason } from './catalog-facts';
 import {
+	fdaApiKeysFrom,
+	setFdaApiKeys,
+	searchFdaProducts,
 	completeMoieties,
 	discoverRxNav,
+	discoverRxNavPage,
 	enrichPackages,
 	labelIngredientsOf,
 	providerFailures,
@@ -620,4 +624,81 @@ test('a salt label missing one of its ions is completed from GSRS', async () => 
 	// A label naming a moiety GSRS does not list is left as written.
 	assert.equal(unrelated.moieties.length, 1);
 	assert.equal(calls, 1);
+});
+
+test('openFDA requests retry a 429 with the next configured key', async () => {
+	setFdaApiKeys(fdaApiKeysFrom({ OPENFDA_API_KEY2: 'b', OPENFDA_API_KEY: 'a', OTHER: 'x' }));
+	const original = globalThis.fetch;
+	const keys: (string | null)[] = [];
+	globalThis.fetch = (async (input: string | URL | Request) => {
+		const url = new URL(String(input));
+		keys.push(url.searchParams.get('api_key'));
+		return url.searchParams.get('api_key') === 'a'
+			? new Response('', { status: 429 })
+			: Response.json({ results: [] });
+	}) as typeof fetch;
+	try {
+		assert.deepEqual(await searchFdaProducts('brand_name:"rotate-test"', 'a'), []);
+		assert.deepEqual(keys, ['a', 'b']);
+	} finally {
+		globalThis.fetch = original;
+		setFdaApiKeys([]);
+	}
+});
+
+test('live search drops weak approximate candidates and sets combinations aside', async () => {
+	const original = globalThis.fetch;
+	const properties: string[] = [];
+	globalThis.fetch = async (input) => {
+		const url = new URL(String(input));
+		if (url.pathname.endsWith('/rxcui.json')) return Response.json({ idGroup: {} });
+		if (url.pathname.endsWith('/approximateTerm.json'))
+			return Response.json({
+				approximateGroup: {
+					candidate: [
+						{ rxcui: '1', score: '10' },
+						{ rxcui: '9', score: '3' }
+					]
+				}
+			});
+		if (url.pathname.endsWith('/spellingsuggestions.json'))
+			return Response.json({ suggestionGroup: { suggestionList: { suggestion: ['lisinopril'] } } });
+		const id = url.pathname.split('/')[3];
+		if (url.pathname.endsWith('/properties.json')) {
+			properties.push(id);
+			return Response.json({ properties: { rxcui: id, name: 'lisinopril', tty: 'IN' } });
+		}
+		if (url.pathname.endsWith('/related.json') && url.searchParams.get('tty'))
+			return Response.json({
+				relatedGroup: {
+					conceptGroup: [
+						{
+							tty: 'SCD',
+							conceptProperties: [
+								{ rxcui: '2', name: 'lisinopril 10 MG Oral Tablet' },
+								{ rxcui: '3', name: 'hydrochlorothiazide 12.5 MG / lisinopril 10 MG Oral Tablet' }
+							]
+						}
+					]
+				}
+			});
+		if (url.pathname.endsWith('/related.json')) return Response.json({ relatedGroup: {} });
+		if (url.pathname.endsWith('/allProperties.json'))
+			return Response.json({ propConceptGroup: { propConcept: [{ propName: 'RXNAV_HUMAN_DRUG' }] } });
+		return Response.json({ ndcGroup: { ndcList: { ndc: ['12345678901'] } } });
+	};
+	try {
+		const page = await discoverRxNavPage('lisinoprl tab');
+		assert.deepEqual(properties, ['1']);
+		assert.equal(page.suggestion, 'lisinopril');
+		assert.deepEqual(page.concepts.map((c) => c.rxcui), ['2']);
+		assert.deepEqual(page.matches['2'].reasons.sort(), ['form', 'spelling']);
+		assert.equal(page.facets.combos, 1);
+		assert.deepEqual(page.facets.forms, [{ value: 'Oral Tablet', count: 1 }]);
+		const withCombos = await discoverRxNavPage('lisinoprl tab', 0, undefined, { combos: true });
+		assert.deepEqual(withCombos.concepts.map((c) => c.rxcui), ['2', '3']);
+		assert.equal(withCombos.matches['3'].tier, 'combo');
+	} finally {
+		globalThis.fetch = original;
+	}
 });

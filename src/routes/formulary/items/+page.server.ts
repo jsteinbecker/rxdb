@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { defaultScope, loadedItems, removeFromFormulary } from '$lib/server/catalog-formulary';
+import { defaultScope, loadedItems, removeFromFormulary, targetValue } from '$lib/server/catalog-formulary';
+import { PRODUCT_SETS, productSet } from '$lib/server/product-sets';
 import { loadStagedNode } from '$lib/server/catalog-sync';
 import { parseSettings } from '$lib/settings';
 import { jobFailure, jobItem, trackJob } from '$lib/server/jobs';
@@ -36,7 +37,8 @@ export const load: PageServerLoad = async () => {
 	return {
 		scope: { id: scope.id, name: scope.name },
 		settings: parseSettings(scope.settings),
-		items: await loadedItems(prisma, scope.id)
+		items: await loadedItems(prisma, scope.id),
+		productSets: PRODUCT_SETS.map(({ key, name }) => ({ key, name }))
 	};
 };
 
@@ -54,6 +56,21 @@ export const actions: Actions = {
 		const items = (await loadedItems(prisma, scope.id)).filter((item) => ids.has(item.formularyItemId));
 		if (!items.length) return fail(404, { message: 'Those items are no longer on this formulary.' });
 		return { reloadAll: await reloadItems(scope.id, items) };
+	},
+	addSet: async ({ request }) => {
+		const set = productSet(String((await request.formData()).get('set') ?? ''));
+		if (!set) return fail(400, { message: 'Choose a curated product set.' });
+		const scope = await defaultScope(prisma);
+		try {
+			const result = await trackJob(`Adding ${set.name} to the formulary`, () =>
+				loadStagedNode({ kind: 'set', key: set.key }, scope.id)
+			);
+			return { updated: { displayName: result.displayName, packagesLinked: result.packagesLinked } };
+		} catch (error) {
+			return fail(422, {
+				message: error instanceof Error ? error.message : 'The set could not be added.'
+			});
+		}
 	},
 	remove: async ({ request }) => {
 		const id = (await request.formData()).get('formularyItemId');
@@ -75,7 +92,7 @@ export const actions: Actions = {
 		if (
 			typeof itemId !== 'string' ||
 			!itemId ||
-			(kind !== 'concept' && kind !== 'package') ||
+			(kind !== 'concept' && kind !== 'package' && kind !== 'set') ||
 			typeof value !== 'string' ||
 			!value
 		)
@@ -85,9 +102,7 @@ export const actions: Actions = {
 		if (
 			!item ||
 			item.target.kind !== kind ||
-			(kind === 'concept'
-				? item.target.kind !== 'concept' || item.target.rxcui !== value
-				: item.target.kind !== 'package' || item.target.ndc !== value)
+			targetValue(item.target) !== value
 		)
 			return fail(404, { message: 'That item is no longer on this formulary.' });
 		try {

@@ -4,7 +4,7 @@ import { applyPropertyOverrides } from './apply-property-overrides';
 
 import { withoutUnspecified } from '../spl-ingredients';
 
-export const CATALOG_VERSION = 'catalog-sync-v33';
+export const CATALOG_VERSION = 'catalog-sync-v34';
 export const CACHE_SOURCE = 'catalog-enrichment';
 const HOUR = 60 * 60 * 1000;
 export type PackageSnapshot = {

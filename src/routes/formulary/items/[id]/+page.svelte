@@ -38,7 +38,7 @@
       };
       const appearanceSpans = (packages: PackageLine[]) =>
             runSpans(packages.map((pkg) => appearanceKey(pkg.ndc)));
-      const level = $derived(item.target.kind === 'concept' ? (item.tty ?? 'Concept') : 'NDC');
+      const level = $derived(item.target.kind === 'concept' ? (item.tty ?? 'Concept') : item.target.kind === 'set' ? 'Set' : 'NDC');
       const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
       const columns = $derived(2 + Number(showAppearance) + Number(layout.showDoseForm) + Number(layout.showRoutes));
 </script>
@@ -69,7 +69,7 @@
                   <span class="level">{level}</span>
                   <span class="mono">
         {#if item.target.kind === 'concept'}RxCUI <RxCui
-              rxcui={item.target.rxcui}/>{:else}NDC {formatNdc(item.target.ndc)}{/if}
+              rxcui={item.target.rxcui}/>{:else if item.target.kind === 'set'}Curated set · openFDA{:else}NDC {formatNdc(item.target.ndc)}{/if}
       </span>
                   · {plural(item.packages, 'package')}
                   {#if item.excludedPackages}<span
@@ -289,6 +289,42 @@
       </section>
 
       {#if data.packages.length}
+            {@const billed = data.packages.flatMap((pkg) => (data.cmsBilling[pkg.ndc] ?? []).map((bill) => ({pkg, bill})))}
+            <section aria-labelledby="cms-heading" class="brands cms">
+                  <h2 id="cms-heading">CMS billing (Medicare Part B)</h2>
+                  {#if billed.length}
+                        <table>
+                              <thead>
+                              <tr>
+                                    <th>NDC</th>
+                                    <th>HCPCS</th>
+                                    <th>Code dosage</th>
+                                    <th>Billing units / pkg</th>
+                                    <th>NDC qty</th>
+                                    <th>N4 segment</th>
+                              </tr>
+                              </thead>
+                              <tbody>
+                              {#each billed as {pkg, bill} (pkg.ndc + bill.hcpcs)}
+                                    <tr>
+                                          <td><a href="/formulary/ndc/{pkg.ndc}">{bill.ndc}</a></td>
+                                          <td title={bill.descriptor ?? ''}><strong>{bill.hcpcs}</strong>
+                                                {#if bill.descriptor}<span class="muted">{bill.descriptor}</span>{/if}
+                                                {#if bill.file !== 'ASP'}<span class="muted">({bill.file})</span>{/if}</td>
+                                          <td>{bill.hcpcsDosage ?? '—'}</td>
+                                          <td>{bill.billUnitsPerPackage ?? '—'}</td>
+                                          <td>{bill.ndcQuantity ?? '—'} {bill.unitQualifier}</td>
+                                          <td><code>{bill.n4}</code></td>
+                                    </tr>
+                              {/each}
+                              </tbody>
+                        </table>
+                        <p class="muted">CMS ASP NDC–HCPCS crosswalk, {billed[0].bill.quarter}. The N4 quantity is one whole
+                              package; bill the amount given.</p>
+                  {:else}
+                        <p class="none">No package of this item is in the current CMS NDC–HCPCS crosswalk (Part B drugs only).</p>
+                  {/if}
+            </section>
             <ItemSummary summary={data.summary}/>
             <IngredientScenarios summary={data.summary}/>
       {/if}
@@ -653,6 +689,28 @@
 
       .brands {
             margin-top: 1.5rem;
+      }
+
+      .cms table {
+            border-collapse: collapse;
+            font-size: 0.85rem;
+      }
+
+      .cms th,
+      .cms td {
+            padding: 0.25rem 0.6rem 0.25rem 0;
+            text-align: left;
+            vertical-align: top;
+      }
+
+      .cms .muted {
+            color: #5c6777;
+            font-size: 0.8rem;
+            margin-left: 0.3rem;
+      }
+
+      .cms p.muted {
+            margin: 0.4rem 0 0;
       }
 
       h2 {

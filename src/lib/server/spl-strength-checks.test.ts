@@ -130,3 +130,40 @@ test('a heavy salt is left alone without the directory agreeing on its mass', ()
 		assert.deepEqual(row.corrections, []);
 	}
 });
+
+// NDC 14537-817 (ACD-A, 750 mL): citric acid monohydrate's 6 g coded ACTIM as
+// anhydrous citric acid. Its name does not contain the moiety's, so rule 2
+// never sees it; left as is, it summed hydrate mass with the trisodium
+// citrate row's anhydrous equivalent.
+const CITRIC_MOIETY = `<activeMoiety><activeMoiety><code code="XF417D3PSL" codeSystem="2.16.840.1.113883.4.9"/><name>ANHYDROUS CITRIC ACID</name></activeMoiety></activeMoiety>`;
+const ACD_A = `<document><manufacturedProduct><manufacturedProduct>
+	<code code="14537-817" codeSystem="2.16.840.1.113883.6.69"/>
+	<name>ACD-A</name>
+	<formCode code="C42945" displayName="INJECTION, SOLUTION"/>
+	${ingredient(
+		'ACTIM',
+		'CITRIC ACID MONOHYDRATE',
+		'2968PHW8QP',
+		`<quantity><numerator value="6" unit="g"/><denominator value="750" unit="mL"/></quantity>`,
+		CITRIC_MOIETY
+	)}
+</manufacturedProduct></manufacturedProduct></document>`;
+// 192.12 / 210.14
+const CITRIC_FACTOR = new Map([['2968PHW8QP', { moietyUnii: 'XF417D3PSL', factor: '0.914247644427519748' }]]);
+
+test('a light hydrate stated as moiety strength converts when RxNorm cannot arbitrate', () => {
+	const [product] = parseSplIngredients(ACD_A);
+	const directory = [{ name: 'CITRIC ACID MONOHYDRATE', strength: '.8 g/100mL' }];
+	const [row] = checkProductStrengths(product, { moietyFactors: CITRIC_FACTOR, directory });
+	assert.equal(row.strength, 5.485);
+	assert.equal(row.corrections[0].kind, 'moiety-equivalent');
+	assert.equal(row.corrections[0].stated, 6);
+
+	// Where RxNorm states the moiety, rule 2 owns light salts.
+	const [kept] = checkProductStrengths(product, {
+		rxNormName: 'anhydrous citric acid 8 MG/ML Injectable Solution',
+		moietyFactors: CITRIC_FACTOR,
+		directory
+	});
+	assert.equal(kept.strength, 6);
+});
