@@ -90,6 +90,43 @@ export function rxNormStrengths(name: string | null | undefined): RxStrength[] {
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
+const HYDRATION_WORD = /\b(?:anhydrous|(?:mono|di|tri|tetra|penta|hexa|hepta|hemi|sesqui)?hydrate)\b/gi;
+const withoutHydration = (name: string) => name.replace(HYDRATION_WORD, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/**
+ * The same substance whatever its water: SPL names the moiety `PIPERACILLIN
+ * ANHYDROUS` or `ANHYDROUS CITRIC ACID` where RxNorm writes `piperacillin` and
+ * `citric acid`. Every comparison against RxNorm goes through this; an exact
+ * match missed piperacillin, and the label's 2 g was "corrected" to 1.919 g
+ * beside an SCD that says 2000 MG.
+ */
+export const sameSubstance = (a: string, b: string) => withoutHydration(a) === withoutHydration(b);
+
+/** A salt or hydrate of `moiety`, or the moiety itself: `PIPERACILLIN SODIUM`, `CITRIC ACID MONOHYDRATE`. */
+export const isFormOf = (ingredient: string, moiety: string) =>
+  withoutHydration(ingredient).includes(withoutHydration(moiety));
+
+/**
+ * A salt that names its moiety and a counterion: `PIPERACILLIN SODIUM` of
+ * `PIPERACILLIN ANHYDROUS`. `CITRIC ACID MONOHYDRATE` of `ANHYDROUS CITRIC
+ * ACID` differs only in water, which is no counterion.
+ */
+const namesMoiety = (ingredient: string, moiety: string) => {
+  const salt = withoutHydration(ingredient);
+  const base = withoutHydration(moiety);
+  return salt.includes(base) && salt.replace(base, '').trim() !== '';
+};
+
+/**
+ * The label names the drug bare — `AMOXICILLIN` against moiety `AMOXICILLIN
+ * ANHYDROUS` — with no salt or hydrate word of its own. FDA's UNII for the bare
+ * name is sometimes the hydrate (amoxicillin's 804826J2HU is the trihydrate),
+ * but a labeler who writes the bare name means the drug, so its number is
+ * already the moiety's.
+ */
+const namesBareMoiety = (ingredient: string, moiety: string) =>
+  !new RegExp(HYDRATION_WORD.source, 'i').test(ingredient) && withoutHydration(ingredient) === withoutHydration(moiety);
+
 /** `VANCOMYCIN HYDROCHLORIDE` less `VANCOMYCIN` → `hydrochloride`. */
 function counterionOf(salt: string, moiety: string): string | null {
   const rest = salt.toLowerCase().replace(moiety.toLowerCase(), '').replace(/\s+/g, ' ').trim();
@@ -182,10 +219,10 @@ function correctSaltAsMoiety(
     if (ingredient.kind !== 'active' || ingredient.basis !== 'moiety') return;
     if (ingredient.moieties.length !== 1 || row.strength === null) return;
     const moiety = ingredient.moieties[0];
-    if (sameName(ingredient.name, moiety.name)) return;
-    if (!ingredient.name.toLowerCase().includes(moiety.name.toLowerCase())) return;
+    if (sameSubstance(ingredient.name, moiety.name)) return;
+    if (!namesMoiety(ingredient.name, moiety.name)) return;
 
-    const reference = rx.find((entry) => sameName(entry.name, moiety.name));
+    const reference = rx.find((entry) => sameSubstance(entry.name, moiety.name));
     if (!reference) return;
 
     // Only compare like with like: RxNorm's per-mL against a per-mL label
@@ -267,10 +304,19 @@ function correctHeavySaltAsMoiety(
     if (!known || known.moietyUnii !== moiety.unii) return;
     const factor = Number(known.factor);
     if (!(factor > 0)) return;
-    // Small counterions are rule 2's where RxNorm states the moiety and can
-    // arbitrate. Without that (a hydrate whose name does not contain its
-    // moiety's), nothing else would convert it.
-    if (1 / factor <= MAX_SALT_RATIO && rx.some((entry) => sameName(entry.name, moiety.name))) return;
+    if (namesBareMoiety(ingredient.name, moiety.name)) return;
+    // A light salt is never this rule's to convert where RxNorm states its
+    // moiety: rule 2 moves the label toward RxNorm's number, and a label that
+    // already agrees with it is right. Nor where the salt names its moiety
+    // (`PIPERACILLIN SODIUM`): that is ordinary "equivalent to" labeling, and
+    // the directory repeats the moiety number under the salt's name, so its
+    // agreeing proves nothing. Only a hydrate that does not name its moiety
+    // (citric acid monohydrate, with no RxNorm) falls through.
+    if (
+      1 / factor <= MAX_SALT_RATIO &&
+      (rx.some((entry) => sameSubstance(entry.name, moiety.name)) || namesMoiety(ingredient.name, moiety.name))
+    )
+      return;
 
     const label = concentration(row.strength, row.strengthUnit, row.per, row.perUnit);
     if (!label || label.mg <= 0) return;

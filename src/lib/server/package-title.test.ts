@@ -201,7 +201,7 @@ test('a converted strength is rounded to the precision the others are written in
         { name: 'LYSINE ACETATE', strength: '0.850589 g/100mL' }
       ]
     }),
-    'leucine 14 mg/mL / isoleucine 8.2 mg/mL / cysteine hydrochloride 0.17 mg/mL / lysine acetate 8.5 mg/mL'
+    'cysteine hydrochloride 0.17 mg/mL / isoleucine 8.2 mg/mL / leucine 14 mg/mL / lysine acetate 8.5 mg/mL'
   );
   assert.equal(
     packageStrengthText({
@@ -211,5 +211,144 @@ test('a converted strength is rounded to the precision the others are written in
       ]
     }),
     'sulfamethoxazole 800 mg / trimethoprim 160 mg'
+  );
+});
+
+// Baxter's Zosyn Galaxy bag (0338-9636-24): the label codes PIPERACILLIN
+// SODIUM and TAZOBACTAM SODIUM on their moieties, and the SCD states each as
+// the bag's amount. The title follows the SCD in name and number.
+const ZOSYN_BAG = {
+  description: '24 BAG in 1 CARTON (0338-9636-24)  / 50 mL in 1 BAG (0338-9636-01)',
+  doseForm: 'INJECTION, SOLUTION',
+  ingredients: [
+    { name: 'PIPERACILLIN SODIUM', strength: '3 g/50mL' },
+    { name: 'TAZOBACTAM SODIUM', strength: '.375 g/50mL' }
+  ],
+  size: { kind: 'volume' as const, value: 50, unit: 'mL', container: 'BAG', packQty: 24 },
+  details: {
+    rxnav: { conceptName: 'piperacillin 3000 MG / tazobactam 375 MG Injection [Zosyn]' },
+    spl: {
+      ingredients: [
+        { name: 'PIPERACILLIN SODIUM', kind: 'active', strength: '3 g', basis: 'moiety', moieties: [{ name: 'PIPERACILLIN ANHYDROUS' }] },
+        { name: 'TAZOBACTAM SODIUM', kind: 'active', strength: '0.375 g', basis: 'moiety', moieties: [{ name: 'TAZOBACTAM' }] }
+      ]
+    }
+  }
+};
+
+test('a moiety-basis salt is named by its moiety, as the SCD spells it', () => {
+  assert.equal(packageStrengthText(ZOSYN_BAG), 'piperacillin 3 g / tazobactam 375 mg');
+});
+
+test('a bag whose SCD states amounts reads its total, not per mL', () => {
+  // Without the label's rows, the directory's concentration read over the bag
+  // is the SCD's amount, so it reads as the SCD does.
+  assert.equal(
+    packageStrengthText({ ...ZOSYN_BAG, details: { rxnav: ZOSYN_BAG.details.rxnav } }),
+    'piperacillin 3 g / tazobactam 375 mg'
+  );
+  // An amount that disagrees with the SCD keeps the salt's name and its own number.
+  assert.equal(
+    packageStrengthText({
+      ...ZOSYN_BAG,
+      ingredients: [{ name: 'PIPERACILLIN SODIUM', strength: '3.13 g/50mL' }],
+      details: { rxnav: ZOSYN_BAG.details.rxnav }
+    }),
+    'piperacillin sodium 3.13 g'
+  );
+  // An SCD that states a concentration keeps mg/mL.
+  assert.equal(
+    packageStrengthText({
+      ...ZOSYN_BAG,
+      details: { ...ZOSYN_BAG.details, rxnav: { conceptName: 'piperacillin 60 MG/ML / tazobactam 7.5 MG/ML Injectable Solution' } }
+    }),
+    'piperacillin 60 mg/mL / tazobactam 7.5 mg/mL'
+  );
+});
+
+test('a hydrate renamed to its moiety takes the label number, never the directory salt mass', () => {
+  // ACD-A (14537-817): no RxNorm. Citric acid monohydrate is measured as
+  // anhydrous citric acid (0.8 g of it is 0.7314 g); trisodium citrate is
+  // no form of citric acid, so it keeps its own name and the directory's 22 mg/mL.
+  assert.equal(
+    packageStrengthText({
+      doseForm: 'INJECTION, SOLUTION',
+      ingredients: [
+        { name: 'CITRIC ACID MONOHYDRATE', strength: '.8 g/100mL' },
+        { name: 'DEXTROSE MONOHYDRATE', strength: '2.45 g/100mL' },
+        { name: 'TRISODIUM CITRATE DIHYDRATE', strength: '2.2 g/100mL' }
+      ],
+      size: { kind: 'volume', value: 750, unit: 'mL', container: 'BAG', packQty: 1 },
+      details: {
+        spl: {
+          ingredients: [
+            { name: 'CITRIC ACID MONOHYDRATE', kind: 'active', strength: '5.4855 g', basis: 'moiety', moieties: [{ name: 'ANHYDROUS CITRIC ACID' }] },
+            { name: 'DEXTROSE MONOHYDRATE', kind: 'active', strength: '18.375 g', basis: 'ingredient', moieties: [{ name: 'ANHYDROUS DEXTROSE' }] },
+            { name: 'TRISODIUM CITRATE DIHYDRATE', kind: 'active', strength: '10.7775 g', basis: 'moiety', moieties: [{ name: 'ANHYDROUS CITRIC ACID' }] }
+          ]
+        }
+      }
+    }),
+    'anhydrous citric acid 7.314 mg/mL / dextrose monohydrate 24.5 mg/mL / trisodium citrate dihydrate 22 mg/mL'
+  );
+});
+
+test('an electrolyte is not renamed to its ion', () => {
+  assert.equal(
+    packageStrengthText({
+      ingredients: [{ name: 'POTASSIUM CHLORIDE', strength: '20 meq/100mL' }],
+      size: { kind: 'volume', value: 100, unit: 'mL', container: 'BAG', packQty: 1 },
+      details: {
+        spl: {
+          ingredients: [{ name: 'POTASSIUM CHLORIDE', kind: 'active', strength: '20 meq', basis: 'moiety', moieties: [{ name: 'POTASSIUM CATION' }] }]
+        }
+      }
+    }),
+    'potassium chloride 0.2 mEq/mL'
+  );
+});
+
+test('actives read in RxNorm order whatever order the directory lists them', () => {
+  // Wyeth's Zosyn Galaxy lists tazobactam first.
+  assert.equal(
+    packageStrengthText({
+      ...ZOSYN_BAG,
+      ingredients: [...ZOSYN_BAG.ingredients].reverse(),
+      details: { ...ZOSYN_BAG.details, spl: { ingredients: [...ZOSYN_BAG.details.spl.ingredients].reverse() } }
+    }),
+    'piperacillin 3 g / tazobactam 375 mg'
+  );
+});
+
+test('a concept name in the listing own words is no SCD', () => {
+  // RxNav's name for ACD-A 14537-817-75: not RxNorm's, so neither its
+  // spelling nor its amounts stand in for an SCD's.
+  const item = {
+    ingredients: [{ name: 'CITRIC ACID MONOHYDRATE', strength: '.8 g/100mL' }],
+    size: { kind: 'volume' as const, value: 750, unit: 'mL', container: 'BAG', packQty: 12 },
+    details: {
+      rxnav: { conceptName: 'Dextrose Monohydrate 2.45 g in 100 mL / Citric Acid Monohydrate 0.80 g in 100 mL INTRAVENOUS INJECTION, SOLUTION [ACD A]' },
+      spl: {
+        ingredients: [{ name: 'Citric Acid Monohydrate', kind: 'active', strength: '5.4855 g', basis: 'moiety', moieties: [{ name: 'Anhydrous Citric Acid' }] }]
+      }
+    }
+  };
+  assert.equal(packageStrengthText(item), 'anhydrous citric acid 7.314 mg/mL');
+});
+
+test('a directory amount that is the SCD\'s takes its name, whatever the denominator', () => {
+  // Hikma's ampicillin and sulbactam (0641-6116-01): per 1.5 g of powder, no label rows.
+  assert.equal(
+    packageStrengthText({
+      description: '1.5 g in 1 VIAL',
+      doseForm: 'INJECTION, POWDER, FOR SOLUTION',
+      ingredients: [
+        { name: 'AMPICILLIN SODIUM', strength: '1 g/1.5g' },
+        { name: 'SULBACTAM SODIUM', strength: '.5 g/1.5g' }
+      ],
+      size: { kind: 'mass', value: 1.5, unit: 'g', container: 'VIAL', packQty: 1 },
+      details: { rxnav: { conceptName: 'ampicillin 1000 MG / sulbactam 500 MG Injection' } }
+    }),
+    'ampicillin 1 g / sulbactam 500 mg'
   );
 });

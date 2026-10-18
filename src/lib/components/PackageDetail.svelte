@@ -96,6 +96,8 @@
             item.splSetId && appearance.image ? {setId: item.splSetId, image: appearance.image} : null;
       const pseudoScd = $derived(pseudoScdFor(item));
       // A biosimilar's ingredient carries its FDA suffix even when the source names only the reference.
+      const pieceName = (piece: Constituent) =>
+            piece.kind === 'ion' ? ionDisplayName(piece.name) : constituentName(piece.name).toLowerCase();
       const substance = (name: string) =>
             withBiosimilarSuffix(racemicDisplayName(name), [item.genericName, item.splTitle, d?.rxnav?.conceptName]);
       const active = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'active') ?? []);
@@ -119,12 +121,6 @@
             });
             return [...rows, ...ionic.filter((ion) => !placed.has(ion)), ...inactive];
       });
-      // Strength corrections, numbered by first appearance so identical notes on
-      // several rows (a miscoded denominator shared by every excipient) share a mark.
-      const strengthNotes = $derived([
-            ...new Set(ingredientRows.flatMap((i) => i.strengthNotes ?? []))
-      ]);
-      const noteMark = (note: string) => '*'.repeat(strengthNotes.indexOf(note) + 1);
       // Manual ingredient corrections are footnoted like the automatic ones, with
       // their own mark (§) and color so a person's edit reads apart from the rules'.
       const manualCorrections = $derived(
@@ -493,9 +489,7 @@
 {/snippet}
 
 {#snippet strengthCell(ingredient: LabelIngredient)}
-      {#if ingredient.strengthNotes?.length}<sup title={ingredient.strengthNotes.join('\n')}
-      >{ingredient.strengthNotes.map(noteMark).join(',')}</sup
-      >{/if}{#if manualMark(ingredient)}<sup
+{#if manualMark(ingredient)}<sup
             class="manual-mark"
             title="Manually corrected — see the § note below the table"
       >{manualMark(ingredient)}</sup
@@ -507,7 +501,16 @@
                         : [])
             ],
             `${ingredient.name} strength`
-      )}
+      )}{@render statedOnLabel(ingredient)}
+{/snippet}
+
+<!-- What the label printed, under the corrected value it was read as; the full
+     reasoning is the hover. A correction with no printed number of its own (a
+     miscoded denominator) says what it changed instead. -->
+{#snippet statedOnLabel(ingredient: LabelIngredient)}
+      {#if ingredient.strengthNotes?.length}<span class="stated" title={ingredient.strengthNotes.join('\n')}
+      >{#if ingredient.labelStrength}label: {strengthText(ingredient.labelStrength.strength)}{:else}{ingredient.strengthNotes.join(' ')}{/if}</span
+      >{/if}
 {/snippet}
 
 {#snippet ingredientRow(ingredient: LabelIngredient, constituents: Constituent[], branch: Branch = null)}
@@ -522,16 +525,14 @@
                         {#if ingredient.ionicContent?.sourceIngredients.length}<div class="muted">
                               from {ingredient.ionicContent.sourceIngredients.map((name) => substance(name)).join(' + ')}
                         </div>{/if}
-                  {:else}{ingredient.kind === 'active' ? substance(ingredient.name) : ingredient.name}{/if}
+                  {:else}{@const name = ingredient.kind === 'active' ? substance(ingredient.name) : ingredient.name}{#if ingredient.unii}<a
+                        href={resolve('/formulary/unii/[unii]', { unii: ingredient.unii })}
+                        title={`UNII ${ingredient.unii}`}
+                        data-nav-title={ingredient.name}
+                  >{name}</a>{:else}{name}{/if}{/if}
                   {#if ingredient.part}
                         <div class="muted">in {ingredient.part.replace(/^[^(]+/, (name) => name.toLowerCase())}</div>
                   {/if}
-            </td>
-            <td class="mono">
-                  {#if ingredient.unii}<a href={resolve('/formulary/unii/[unii]', { unii: ingredient.unii })}
-                        data-nav-title={ingredient.name}
-                  >{ingredient.unii}</a
-                  >{:else}—{/if}
             </td>
             <td class={branch ? `feed ${branch}` : undefined}>{ingredient.strength ? strengthText(ingredient.strength) : '—'}{@render strengthCell(ingredient)}</td>
             <td>{ingredient.basis ?? '—'}</td>
@@ -569,14 +570,13 @@
                   <span class="branch" aria-hidden="true">{last ? '└' : '├'}</span>{#if piece.share !== 1}<span
                         class="share"
                         title="Half of a racemic mixture">½</span
-                  >{/if}{piece.kind === 'ion' ? ionDisplayName(piece.name) : constituentName(piece.name).toLowerCase()}
+                  >{/if}{#if piece.unii}<a
+                        href={resolve('/formulary/unii/[unii]', { unii: piece.unii })}
+                        title={`UNII ${piece.unii}`}
+                  >{pieceName(piece)}</a>{:else}{pieceName(piece)}{/if}
                   {#if piece.sources}<div class="muted">
                         from {piece.sources.map((name) => substance(name)).join(' + ')} together
                   </div>{/if}
-            </td>
-            <td class="mono">
-                  {#if piece.unii}<a href={resolve('/formulary/unii/[unii]', { unii: piece.unii })}>{piece.unii}</a
-                  >{:else}—{/if}
             </td>
             <td class={branch ? `feed ${branch}` : undefined}>{piece.strength ? strengthText(piece.strength) : '—'}{#if piece.row}{@render strengthCell(piece.row)}{/if}</td>
             <td>{piece.kind === 'ion' ? 'label-declared' : piece.saltMass ? 'salt mass' : 'moiety'}</td>
@@ -1257,7 +1257,6 @@
                               <tr>
                                     <th>Kind</th>
                                     <th>Substance</th>
-                                    <th>UNII</th>
                                     <th>Strength</th>
                                     <th>Basis</th>
                                     <th>Moieties</th>
@@ -1270,11 +1269,10 @@
                                           <tr class="total-head">
                                                 <td>total</td>
                                                 <td>
-                                                      <span class="sigma" aria-hidden="true">Σ</span>{constituentName(total.name).toUpperCase()}
-                                                </td>
-                                                <td class="mono">
-                                                      {#if total.unii}<a href={resolve('/formulary/unii/[unii]', { unii: total.unii })}
-                                                      >{total.unii}</a>{:else}—{/if}
+                                                      <span class="sigma" aria-hidden="true">Σ</span>{#if total.unii}<a
+                                                            href={resolve('/formulary/unii/[unii]', { unii: total.unii })}
+                                                            title={`UNII ${total.unii}`}
+                                                      >{constituentName(total.name).toUpperCase()}</a>{:else}{constituentName(total.name).toUpperCase()}{/if}
                                                 </td>
                                                 <td class:root={t === group.totals.length - 1}>{total.strength ?? (total.unsummed === 'basis'
                                                       ? 'not added — mixes salt and moiety mass'
@@ -1300,11 +1298,8 @@
                               {/if}
                         </table>
                   </div>
-                  {#if strengthNotes.length || manualCorrections.length}
+                  {#if manualCorrections.length}
                         <ul class="muted footnotes">
-                              {#each strengthNotes as note (note)}
-                                    <li>{noteMark(note)} — {note}</li>
-                              {/each}
                               {#each manualCorrections as correction (correction.ingredient)}
                                     <li class="manual-note"><span class="manual-mark">{manualMark(correction.ingredient)}</span>
                                           — {manualNote(correction)} <span class="manual-tag">manual</span></li>
@@ -1912,9 +1907,18 @@
 
       .ing-table td:nth-child(1),
       .ing-table td:nth-child(3),
-      .ing-table td:nth-child(4),
-      .ing-table td:nth-child(5) {
+      .ing-table td:nth-child(4) {
             white-space: nowrap;
+      }
+
+      /* The label's own number, under the corrected one it was read as. */
+      .ing-table .stated {
+            display: block;
+            max-width: 16rem;
+            color: #7a8494;
+            font-size: 0.68rem;
+            white-space: normal;
+            cursor: help;
       }
 
       .ing-table td:nth-child(2) {
@@ -1997,8 +2001,8 @@
             box-shadow: inset 3px 0 0 #5f7aa0;
             font-weight: 400;
       }
-      .ing-table tr.total-head td:nth-child(5),
-      .ing-table tr.total-head td:nth-child(6) {
+      .ing-table tr.total-head td:nth-child(4),
+      .ing-table tr.total-head td:nth-child(5) {
             font-weight: 400;
       }
       /* A trunk drops straight down from the (last) total's strength and
@@ -2072,7 +2076,7 @@
       .ing-table tbody.cluster .branch {
             left: 2.5rem;
       }
-      .ing-table td:nth-child(6) {
+      .ing-table td:nth-child(5) {
             overflow-wrap: anywhere;
       }
 
