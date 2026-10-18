@@ -1994,8 +1994,10 @@ export async function enrichPackages(
 			labelerName,
 			labelerCode: ndc.slice(0, 5),
 			productCode: product?.product_ndc ?? null,
-			// A kit's are its drug part's content; the directory lists none.
-			ingredients: listedIngredients,
+			// A kit's are its drug part's content; the directory lists none. The
+			// directory's own numbers, not the moiety restatement used to match
+			// label rows: the names are the salts', so the strengths must be too.
+			ingredients: [...sourceIngredients, ...kitIngredients],
 			rxcuiStatus: statusPayload?.ndcStatus?.status ?? null,
 			splSetId: splHit?.setid ?? null,
 			splTitle: splHit?.title ?? null,

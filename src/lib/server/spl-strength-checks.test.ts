@@ -167,3 +167,80 @@ test('a light hydrate stated as moiety strength converts when RxNorm cannot arbi
 	});
 	assert.equal(kept.strength, 6);
 });
+
+// Amoxicillin capsules: the label names AMOXICILLIN, whose UNII (804826J2HU) is
+// the trihydrate in GSRS, with ACTIM basis on AMOXICILLIN ANHYDROUS. The bare
+// name means the drug, so 500 mg stays 500 mg.
+const AMOXICILLIN_MOIETY = `<activeMoiety><activeMoiety><code code="9EM05410Q9" codeSystem="2.16.840.1.113883.4.9"/><name>AMOXICILLIN ANHYDROUS</name></activeMoiety></activeMoiety>`;
+const AMOXICILLIN = `<document><manufacturedProduct><manufacturedProduct>
+	<code code="00000-0000" codeSystem="2.16.840.1.113883.6.69"/>
+	<name>Amoxicillin</name>
+	<formCode code="C25158" displayName="CAPSULE"/>
+	${ingredient(
+		'ACTIM',
+		'AMOXICILLIN',
+		'804826J2HU',
+		`<quantity><numerator value="500" unit="mg"/><denominator value="1" unit="1"/></quantity>`,
+		AMOXICILLIN_MOIETY
+	)}
+</manufacturedProduct></manufacturedProduct></document>`;
+// 365.40 / 419.45
+const AMOXICILLIN_FACTOR = new Map([['804826J2HU', { moietyUnii: '9EM05410Q9', factor: '0.871140779592323' }]]);
+
+test('a bare drug name is not treated as its hydrate UNII', () => {
+	const [product] = parseSplIngredients(AMOXICILLIN);
+	const [row] = checkProductStrengths(product, {
+		rxNormName: 'amoxicillin 500 MG Oral Capsule',
+		moietyFactors: AMOXICILLIN_FACTOR,
+		directory: [{ name: 'AMOXICILLIN', strength: '500 mg/1' }]
+	});
+	assert.equal(row.strength, 500);
+	assert.deepEqual(row.corrections, []);
+});
+
+// Piperacillin and tazobactam (Hospira vials, Baxter and B. Braun bags): ACTIM
+// on PIPERACILLIN SODIUM, moiety PIPERACILLIN ANHYDROUS, at 2 g — the usual
+// "equivalent to 2 g piperacillin", and what the SCD says (2000 MG). The
+// directory repeats that number under the salt's name. An exact name match
+// missed RxNorm's `piperacillin`, and every one of these read 1.919 g.
+const PIPERACILLIN_MOIETY = `<activeMoiety><activeMoiety><code code="9I628532GX" codeSystem="2.16.840.1.113883.4.9"/><name>PIPERACILLIN ANHYDROUS</name></activeMoiety></activeMoiety>`;
+const pipTazo = (quantity: string) => `<document><manufacturedProduct><manufacturedProduct>
+	<code code="00000-0001" codeSystem="2.16.840.1.113883.6.69"/>
+	<name>Piperacillin and Tazobactam</name>
+	<formCode code="C42974" displayName="INJECTION, POWDER, FOR SOLUTION"/>
+	${ingredient('ACTIM', 'PIPERACILLIN SODIUM', 'M98T69Q7HP', quantity, PIPERACILLIN_MOIETY)}
+</manufacturedProduct></manufacturedProduct></document>`;
+const PIP_VIAL = pipTazo(`<quantity><numerator value="2" unit="g"/><denominator value="1" unit="1"/></quantity>`);
+const PIP_BAG = pipTazo(`<quantity><numerator value="2" unit="g"/><denominator value="50" unit="mL"/></quantity>`);
+// 517.56 / 539.54
+const PIPERACILLIN_FACTOR = new Map([['M98T69Q7HP', { moietyUnii: '9I628532GX', factor: '0.959261592' }]]);
+
+test('piperacillin sodium stated as piperacillin keeps the SCD\'s 2 g', () => {
+	for (const [xml, listed] of [
+		[PIP_VIAL, '2 g/1'],
+		[PIP_BAG, '2 g/50mL']
+	]) {
+		for (const rxNormName of ['piperacillin 2000 MG / tazobactam 250 MG Injection', null]) {
+			const [product] = parseSplIngredients(xml);
+			const [row] = checkProductStrengths(product, {
+				rxNormName,
+				moietyFactors: PIPERACILLIN_FACTOR,
+				directory: [{ name: 'PIPERACILLIN SODIUM', strength: listed }]
+			});
+			assert.equal(row.strength, 2, `${listed}, ${rxNormName ?? 'no RxNorm'}`);
+			assert.deepEqual(row.corrections, []);
+		}
+	}
+});
+
+test('RxNorm matches a moiety whatever its hydrate word', () => {
+	// Rule 2 still corrects toward RxNorm when the label printed the salt's mass.
+	const [product] = parseSplIngredients(
+		pipTazo(`<quantity><numerator value="2.085" unit="g"/><denominator value="1" unit="1"/></quantity>`)
+	);
+	const [row] = checkProductStrengths(product, {
+		rxNormName: 'piperacillin 2000 MG / tazobactam 250 MG Injection'
+	});
+	assert.equal(row.strength, 2);
+	assert.equal(row.corrections[0].kind, 'salt-equivalent');
+});

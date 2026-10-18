@@ -352,14 +352,14 @@ test('a merging level absorbs an only child, radix-tree style', () => {
 		[
 			'Oral route',
 			[
-				['Folic Acid / Thiamine', ['200mg / 1mg']],
+				['Folic Acid / Thiamine', ['1mg / 200mg']],
 				['Thiamine', ['200mg']]
 			]
 		]
 	]);
 	assert.deepEqual(read(buildTree(rows, ['route~', 'ingredientCombo~', 'strength'])), [
 		'Intravenous route – Thiamine – 100mg/mL',
-		['Oral route', ['Folic Acid / Thiamine – 200mg / 1mg', 'Thiamine – 200mg']]
+		['Oral route', ['Folic Acid / Thiamine – 1mg / 200mg', 'Thiamine – 200mg']]
 	]);
 
 	const [iv] = buildTree(rows, ['route~', 'ingredientCombo~', 'strength']);

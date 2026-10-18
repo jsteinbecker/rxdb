@@ -312,7 +312,11 @@ export function normalizeStrength(strength: string): string {
 }
 
 export function strengthOf(row: FormularyRow): string {
-	const each = row.ingredients.filter((item) => item.strength);
+	// In `comboKey`'s order, so the n-th strength is the n-th name's whatever
+	// order the directory listed them in (Wyeth's pip/tazo leads with tazobactam).
+	const each = row.ingredients
+		.filter((item) => item.strength)
+		.sort((a, b) => compare(ingredientLabel(a.name), ingredientLabel(b.name)));
 	const display = row.doseDisplay;
 	if (display?.mode === 'single') {
 		const pick = each.find((item) => ingredientLabel(item.name) === display.ingredient);

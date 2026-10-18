@@ -5,12 +5,25 @@ import { withBiosimilarSuffix } from './biosimilar';
 import { ingredientGroup } from './ingredient-group';
 import { dryFillStrength, pharmacyBulkFillMl } from './ingredient-content';
 import { mgPer, mlPer } from './units';
-import { rxNormStrengths } from './spl-strength-checks';
+import { isFormOf, rxNormStrengths, sameSubstance } from './spl-strength-checks';
 import { formatNdc } from './ndc';
 import { splitBrand } from './brand-name';
 import { quantifiedScdName } from './quantified-scd';
 
-type Ingredient = { name: string; strength: string | null };
+type Ingredient = {
+	name: string;
+	strength: string | null;
+	/** Named by its basis of strength (`piperacillin` for PIPERACILLIN SODIUM); the strength is that substance's. */
+	basisNamed?: boolean;
+};
+
+type SplActive = {
+	name: string;
+	kind: string;
+	strength: string | null;
+	basis?: string | null;
+	moieties?: { name: string }[];
+};
 
 /** The package facts a title is built from; every field is optional. */
 export type PackageTitleSource = {
@@ -27,7 +40,7 @@ export type PackageTitleSource = {
 	splTitle?: string | null;
 	details?: {
 		rxnav?: { conceptName?: string | null } | null;
-		spl?: { ingredients: { name: string; kind: string; strength: string | null }[] } | null;
+		spl?: { ingredients: SplActive[] } | null;
 	} | null;
 };
 
@@ -46,31 +59,155 @@ export function correctedIngredients(item: PackageTitleSource): Ingredient[] {
 		item.details?.rxnav?.conceptName,
 		...(item.details?.spl?.ingredients ?? []).map((ingredient) => ingredient.name)
 	];
-	const named = (ingredient: Ingredient): Ingredient => ({
+	const named = <T extends Ingredient>(ingredient: T): T => ({
 		...ingredient,
 		name: withBiosimilarSuffix(ingredient.name, texts)
 	});
-	const spl = (item.details?.spl?.ingredients ?? [])
-		.filter((ingredient) => ingredient.kind === 'active')
-		// The substance name, as the FDA directory gives it; the hierarchy groups
-		// salts itself, and a moiety name reads `POTASSIUM CATION` for an electrolyte.
-		.map((ingredient) => named({ name: ingredient.name, strength: ingredient.strength }));
-	if (!item.ingredients?.length) return spl;
+	const rx = scdStrengths(item);
+	const actives = (item.details?.spl?.ingredients ?? []).filter((ingredient) => ingredient.kind === 'active');
+	const spl = actives.map((ingredient) => {
+		const basis = basisName(ingredient, rx);
+		return named({
+			// The substance name, as the FDA directory gives it, unless the label
+			// measures it as its moiety; see `basisName`.
+			name: basis ?? ingredient.name,
+			strength: ingredient.strength,
+			...(basis ? { basisNamed: true } : {}),
+			key: key(ingredient.name)
+		});
+	});
+	const plain = ({ key: _, ...ingredient }: Ingredient & { key: string }): Ingredient => ingredient;
+	const asScd = (ingredient: Ingredient) => scdNamed(ingredient, rx, item.size);
+	if (!item.ingredients?.length) return spl.map(plain).map(asScd);
 	const size = item.size;
 	const fillVolumeMl = size?.kind === 'volume' ? size.value * (size.unit === 'L' ? 1000 : 1) : null;
 	const bulkFillMl = pharmacyBulkFillMl(item.description ?? size?.container, fillVolumeMl);
-	const key = (name: string) => ingredientGroup(name).toLowerCase();
-	const labeled = new Map(
-		spl.flatMap((entry) => (entry.strength ? [[key(entry.name), entry.strength] as const] : []))
+	const labeled = new Map(spl.flatMap((entry) => (entry.strength ? [[entry.key, entry] as const] : [])));
+	return item.ingredients.map(named).map((ingredient) => {
+		const label = labeled.get(key(ingredient.name));
+		// Renamed to its basis, the row takes the label's number, which is that
+		// substance's; the directory's is printed under the salt's name.
+		if (label?.basisNamed) return asScd(plain(label));
+		const shown = {
+			name: ingredient.name,
+			strength:
+				label?.strength ??
+				(item.isDryFill
+					? dryFillStrength(ingredient.strength, item.doseForm, bulkFillMl, fillVolumeMl)
+					: ingredient.strength)
+		};
+		// A dry fill shows the vial's content, where the SCD may state the
+		// reconstituted concentration; the directory's own figure is compared.
+		return shown.strength === ingredient.strength ? asScd(shown) : scdRenamed(shown, ingredient.strength, rx, item.size);
+	});
+}
+
+/** Within this two amounts are the same. */
+const SAME_AMOUNT = 0.005;
+
+/**
+ * An active whose amount is the SCD's for the same ingredient is the SCD's:
+ * named and written as RxNorm has it. `AMPICILLIN SODIUM 1 g/1.5g` in a vial of
+ * 1.5 g of powder is `ampicillin 1000 MG`, whatever basis the label coded (or
+ * without a label at all). An amount that disagrees keeps its own name, since
+ * then the number may well be the salt's.
+ */
+function scdNamed(
+	ingredient: Ingredient,
+	rx: { name: string; value: number; unit: string; per: number; perUnit: string | null }[],
+	size: UnitOfUseSize | null | undefined
+): Ingredient {
+	if (!ingredient.strength) return ingredient;
+	const entry = rx.find((candidate) => key(candidate.name) === key(ingredient.name));
+	if (!entry) return ingredient;
+	const amount = amountOf(ingredient.strength, size);
+	const rxPerMl = entry.perUnit ? mlPer(entry.perUnit) : null;
+	const rxValue = entry.value * (mgPer(entry.unit) ?? 1);
+	const own = entry.perUnit ? (rxPerMl ? amount?.perMl : null) : amount?.total;
+	const reference = entry.perUnit ? (rxPerMl ? rxValue / (entry.per * rxPerMl) : null) : rxValue;
+	if (own == null || reference == null || !(reference > 0)) return ingredient;
+	if (Math.abs(own - reference) > SAME_AMOUNT * reference) return ingredient;
+	if (!mgPer(entry.unit) !== !mgPer(amount!.unit)) return ingredient;
+	const per = entry.perUnit ? `/${entry.per === 1 ? '' : entry.per}${entry.perUnit}` : '';
+	return { name: entry.name, strength: `${entry.value} ${entry.unit}${per}`, basisNamed: true };
+}
+
+/** `shown` under the SCD's name where `stated`, the same amount written otherwise, is the SCD's. */
+function scdRenamed(
+	shown: Ingredient,
+	stated: string | null,
+	rx: Parameters<typeof scdNamed>[1],
+	size: UnitOfUseSize | null | undefined
+): Ingredient {
+	const named = scdNamed({ name: shown.name, strength: stated }, rx, size);
+	return named.basisNamed ? { ...shown, name: named.name, basisNamed: true } : shown;
+}
+
+/**
+ * A strength as the container's total and as per mL, in mg for a mass: `2 g/50mL`
+ * in a 50 mL bag, `1 g/1.5g` in 1.5 g of powder, `500 mg/1` per vial. Null parts
+ * where the package does not say.
+ */
+function amountOf(strength: string, size: UnitOfUseSize | null | undefined) {
+	const match = strength.trim().match(/^([\d.,]+)\s*([^\s\d/][^/]*?)\s*(?:\/\s*([\d.]*)\s*([^\d\s][^/]*?)?\s*)?$/);
+	if (!match) return null;
+	const unit = match[2];
+	const value = Number(match[1].replace(/,/g, '')) * (mgPer(unit) ?? 1);
+	const perValue = match[3] ? Number(match[3]) : 1;
+	const perUnit = match[4]?.trim() ?? null;
+	if (!Number.isFinite(value) || !(perValue > 0)) return null;
+	const sizeIn = (per: (unit: string) => number | null) =>
+		size?.unit && per(size.unit) ? size.value * per(size.unit)! : null;
+	const perMl = perUnit && mlPer(perUnit) ? perValue * mlPer(perUnit)! : null;
+	const perMg = perUnit && mgPer(perUnit) ? perValue * mgPer(perUnit)! : null;
+	if (perMl) {
+		const volume = sizeIn(mlPer);
+		return { unit, perMl: value / perMl, total: volume ? (value * volume) / perMl : null };
+	}
+	if (perMg) {
+		const mass = sizeIn(mgPer);
+		return { unit, perMl: null, total: mass ? (value * mass) / perMg : null };
+	}
+	// No denominator, or one dose unit (`/1`, `/1 VIAL`): the amount is the unit's.
+	return { unit, perMl: null, total: perValue === 1 ? value : null };
+}
+
+const key = (name: string) => ingredientGroup(name).toLowerCase();
+
+/**
+ * The package's SCD strengths, or none when its concept name is not an SCD's:
+ * RxNav names some NDCs in the listing's own words (`Dextrose Monohydrate
+ * 2.45 g in 100 mL / …`), which neither states totals nor spells as RxNorm.
+ * An SCD's units are always upper case (`MG`, `ML`, `UNT`).
+ */
+function scdStrengths(item: PackageTitleSource) {
+	const rx = rxNormStrengths(item.details?.rxnav?.conceptName);
+	const scd = rx.every(
+		(entry) => entry.unit === entry.unit.toUpperCase() && (!entry.perUnit || entry.perUnit === entry.perUnit.toUpperCase())
 	);
-	return item.ingredients.map(named).map((ingredient) => ({
-		name: ingredient.name,
-		strength:
-			labeled.get(key(ingredient.name)) ??
-			(item.isDryFill
-				? dryFillStrength(ingredient.strength, item.doseForm, bulkFillMl, fillVolumeMl)
-				: ingredient.strength)
-	}));
+	return scd && !/\d\s*[a-z]+\s+in\s+\d/i.test(item.details?.rxnav?.conceptName ?? '') ? rx : [];
+}
+
+/** `SODIUM CATION`, `CHLORIDE ION`: an electrolyte's moiety is no name for its salt. */
+const ION = /\b(?:cation|anion|ion)$/i;
+const HYDRATE_WORD = /\b(?:anhydrous|\w*hydrate)\b/i;
+
+/**
+ * The substance an active's strength measures, where that is not the active
+ * as named: ACTIM on `PIPERACILLIN SODIUM` with moiety `PIPERACILLIN ANHYDROUS`
+ * is piperacillin, as the SCD writes it (`piperacillin 2000 MG`). RxNorm's
+ * spelling where the package has one, else the moiety's. Only a salt or
+ * hydrate of the moiety is renamed: TRISODIUM CITRATE coded with moiety
+ * ANHYDROUS CITRIC ACID is no form of citric acid, and keeps its own name.
+ */
+function basisName(ingredient: SplActive, rx: { name: string }[]): string | null {
+	if (ingredient.basis !== 'moiety' || ingredient.moieties?.length !== 1) return null;
+	const moiety = ingredient.moieties[0].name;
+	// A bare name (`AMOXICILLIN` of `AMOXICILLIN ANHYDROUS`) already names the drug.
+	const bare = sameSubstance(ingredient.name, moiety) && !HYDRATE_WORD.test(ingredient.name);
+	if (ION.test(moiety) || bare || ingredient.name.toLowerCase() === moiety.toLowerCase()) return null;
+	if (!isFormOf(ingredient.name, moiety)) return null;
+	return rx.find((entry) => sameSubstance(entry.name, moiety))?.name ?? moiety;
 }
 
 const UNITS: Record<string, string> = {
@@ -119,11 +256,15 @@ function strengthText(strength: string, volume: { value: number; unit: string } 
 		if (mg !== null) [value, unit] = value * mg >= 1000 ? [(value * mg) / 1000, 'g'] : [value * mg, 'mg'];
 		return `${number(value)} ${unit}/mL`;
 	}
-	// A sub-gram mass of a gram or more reads in grams; kg stays as written.
+	// A sub-gram mass of a gram or more reads in grams, and grams short of one
+	// in mg, as RxNorm writes them (`tazobactam 375 MG`); kg stays as written.
 	const mg = mgPer(unit);
 	if (mg !== null && mg < 1000 && value * mg >= 1000) {
 		value = (value * mg) / 1000;
 		unit = 'g';
+	} else if (mg === 1000 && value > 0 && value < 1) {
+		value *= 1000;
+		unit = 'mg';
 	}
 	// "/1", "/1 VIAL", "/1 TABLET": one dose unit adds nothing to the label.
 	const per =
@@ -205,14 +346,36 @@ function isGenericWording(brand: string, names: (string | null | undefined)[]): 
 	);
 }
 
+/**
+ * The package's SCD states each active as an amount, not a concentration:
+ * `piperacillin 3000 MG / tazobactam 375 MG Injection` for a 50 mL bag. The
+ * title then gives the container's 3 g, as the SCD does, not 60 mg/mL.
+ */
+function scdStatesTotals(item: PackageTitleSource): boolean {
+	const rx = scdStrengths(item);
+	return rx.length > 0 && rx.every((entry) => !entry.perUnit);
+}
+
+/** `4 g/100mL` in a 100 mL bag is `4 g`; a strength over any other volume, or none, is left as written. */
+function containerTotal(strength: string, volume: { value: number; unit: string } | null): string {
+	const match = strength.trim().match(/^([\d.,]+)\s*([^\s\d/][^/]*?)\s*\/\s*([\d.]*)\s*([^\d\s][^/]*?)\s*$/);
+	const ml = match && mlPer(match[4]);
+	if (!match || !ml || !volume) return strength;
+	const perMl = ml * (match[3] ? Number(match[3]) : 1);
+	const packageMl = (mlPer(volume.unit) ?? 0) * volume.value;
+	if (!(perMl > 0) || !(packageMl > 0)) return strength;
+	return `${Number(((Number(match[1].replace(/,/g, '')) * packageMl) / perMl).toPrecision(12))} ${match[2]}`;
+}
+
 /** The package's ingredients, and their strengths joined as "a 5 mg / b 10 mg". */
 function activesParts(item: PackageTitleSource) {
 	// A concentration the directory states ("100 mg/5mL", ".7 mL/mL") reads
 	// better than the label's per-package total; a dry fill has no concentration
 	// until it is reconstituted, and a per-unit figure ("1.13 g/1") takes the
 	// label's moiety correction.
+	const totals = scdStatesTotals(item);
 	const stated = new Map(
-		(item.isDryFill
+		(item.isDryFill || totals
 			? []
 			: (item.ingredients ?? []).map((ingredient) => ({
 					...ingredient,
@@ -230,9 +393,13 @@ function activesParts(item: PackageTitleSource) {
 	);
 	const ingredients = correctedIngredients(item)
 		.filter((ingredient) => ingredient.name.trim())
+		// In RxNorm's order, alphabetical, whatever order the directory listed them in.
+		.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
 		.map((ingredient) => ({
 			...ingredient,
-			strength: stated.get(ingredientGroup(ingredient.name).toLowerCase()) ?? ingredient.strength
+			strength:
+				(!ingredient.basisNamed && stated.get(ingredientGroup(ingredient.name).toLowerCase())) ||
+				ingredient.strength
 		}));
 	if (!ingredients.length) return null;
 
@@ -244,7 +411,11 @@ function activesParts(item: PackageTitleSource) {
 			: null;
 	const strengths = matchedPrecision(
 		ingredients.map((ingredient) =>
-			ingredient.strength?.trim() ? strengthText(ingredient.strength, volume) : null
+			!ingredient.strength?.trim()
+				? null
+				: totals
+					? strengthText(containerTotal(ingredient.strength, volume), null)
+					: strengthText(ingredient.strength, volume)
 		)
 	);
 	const actives = ingredients
