@@ -231,11 +231,6 @@
 </main>
 
 <style>
-  main {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 3rem 1.5rem 5rem;
-  }
   .titlebar {
     display: flex;
     align-items: center;

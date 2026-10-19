@@ -6,6 +6,7 @@ import { exclusionReason } from './catalog-facts';
 import {
 	fdaApiKeysFrom,
 	setFdaApiKeys,
+	setRateLimitPolicy,
 	searchFdaProducts,
 	completeMoieties,
 	discoverRxNav,
@@ -542,6 +543,7 @@ test('provider failures name each failed source once and call out rate limits', 
 });
 
 test('an openFDA rate limit is reported on the package instead of read as unlisted', async () => {
+	setRateLimitPolicy({ retries: 0 });
 	const original = globalThis.fetch;
 	globalThis.fetch = async (input) => {
 		const url = new URL(String(input));
@@ -558,6 +560,7 @@ test('an openFDA rate limit is reported on the package instead of read as unlist
 		assert.equal(item.complete, false);
 	} finally {
 		globalThis.fetch = original;
+		setRateLimitPolicy();
 	}
 });
 
@@ -624,6 +627,61 @@ test('a salt label missing one of its ions is completed from GSRS', async () => 
 	// A label naming a moiety GSRS does not list is left as written.
 	assert.equal(unrelated.moieties.length, 1);
 	assert.equal(calls, 1);
+});
+
+test('a rate-limited provider is waited out and asked again, not read as empty', async () => {
+	const waits: number[] = [];
+	let clock = 0;
+	setRateLimitPolicy({
+		retries: 4,
+		now: () => clock,
+		sleep: async (ms) => {
+			waits.push(ms);
+			clock += ms;
+		}
+	});
+	const original = globalThis.fetch;
+	let calls = 0;
+	globalThis.fetch = (async () =>
+		++calls < 3
+			? new Response('', { status: 429 })
+			: Response.json({ results: [{ product_ndc: '1' }] })) as typeof fetch;
+	try {
+		const products = await searchFdaProducts('brand_name:"backoff-test"');
+		assert.equal(products.length, 1);
+		assert.equal(calls, 3);
+		// Doubling waits, so a storm of NDCs backs off instead of hammering the provider.
+		assert.deepEqual(waits, [2_000, 4_000]);
+	} finally {
+		globalThis.fetch = original;
+		setRateLimitPolicy();
+	}
+});
+
+test('a Retry-After header sets the wait', async () => {
+	const waits: number[] = [];
+	let clock = 0;
+	setRateLimitPolicy({
+		retries: 4,
+		now: () => clock,
+		sleep: async (ms) => {
+			waits.push(ms);
+			clock += ms;
+		}
+	});
+	const original = globalThis.fetch;
+	let calls = 0;
+	globalThis.fetch = (async () =>
+		++calls < 2
+			? new Response('', { status: 429, headers: { 'Retry-After': '7' } })
+			: Response.json({ results: [] })) as typeof fetch;
+	try {
+		await searchFdaProducts('brand_name:"retry-after-test"');
+		assert.deepEqual(waits, [7_000]);
+	} finally {
+		globalThis.fetch = original;
+		setRateLimitPolicy();
+	}
 });
 
 test('openFDA requests retry a 429 with the next configured key', async () => {

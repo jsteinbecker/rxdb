@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
 	import { ruleKeyText } from '$lib/pharm-class-rule-label';
 
@@ -32,17 +33,16 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow">
+	<PageHeader title="Pharmacologic class rules">
+		{#snippet eyebrow()}
 			<a href={resolve('/')}>RxDB</a> / <a href={resolve('/formulary')}>Formulary</a> / Class rules ·
 			<a href={resolve('/settings')}>Settings</a>
-		</p>
-		<h1>Pharmacologic class rules</h1>
+		{/snippet}
 		<p>
 			{plural(data.rules.length, 'rule')} in {data.scope.name}. Rules replace, add to or hide the
 			classes shown for matching packages; the source data is untouched.
 		</p>
-	</header>
+	</PageHeader>
 
 	{#if form?.action === 'pharmClassRuleDelete' && form.message}
 		<p class="notice error" role="alert">{form.message}</p>
@@ -136,37 +136,6 @@
 />
 
 <style>
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
-	}
-
-	header p:last-child {
-		color: #5c6777;
-		line-height: 1.55;
-		max-width: 46rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
-	}
-
 	.notice {
 		border-radius: 0.55rem;
 		padding: 0.6rem 0.85rem;

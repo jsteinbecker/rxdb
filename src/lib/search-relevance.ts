@@ -51,13 +51,18 @@ export type ParsedQuery = {
 };
 
 function tokens(text: string): string[] {
-	return text
-		.toLocaleLowerCase()
-		.replace(/(\d)([a-z%])/g, '$1 $2')
-		.replace(/([a-z])(\d)/g, '$1 $2')
-		.split(/[^a-z0-9.%]+/)
-		.map((token) => token.replace(/^\.+|\.+$/g, ''))
-		.filter(Boolean);
+	return (
+		text
+			.toLocaleLowerCase()
+			// `5,000 units` is one number.
+			.replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
+			.replace(/(\d)([a-z%])/g, '$1 $2')
+			.replace(/([a-z])(\d)/g, '$1 $2')
+			.split(/[^a-z0-9.%]+/)
+			// A leading dot before a digit is a naked decimal: `.5` is 0.5, never 5.
+			.map((token) => token.replace(/^\.+(?!\d)|\.+$/g, ''))
+			.filter(Boolean)
+	);
 }
 
 const isNumber = (token: string) => /^\d+(?:\.\d+)?$/.test(token) || /^\.\d+$/.test(token);
@@ -103,9 +108,11 @@ function distance(a: string, b: string, max: number): number {
 
 type WordHit = 'exact' | 'prefix' | 'fuzzy' | null;
 
-function wordHit(word: string, candidates: string[]): WordHit {
+function wordHit(word: string, candidates: string[], known?: ReadonlySet<string>): WordHit {
 	if (candidates.includes(word)) return 'exact';
 	if (word.length >= 2 && candidates.some((token) => token.startsWith(word))) return 'prefix';
+	// A word some listed drug spells is spelled right: `clonazepam` is no typo of lorazepam.
+	if (known?.has(word)) return null;
 	const max = word.length >= 8 ? 2 : word.length >= 5 ? 1 : 0;
 	if (max && candidates.some((token) => token.length >= 4 && distance(word, token, max) <= max))
 		return 'fuzzy';
@@ -113,6 +120,18 @@ function wordHit(word: string, candidates: string[]): WordHit {
 }
 
 const STRENGTH = /(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|unt|meq|mmol|%)?/g;
+
+/** mg in one of each mass unit, so `50 mcg` finds RxNorm's `0.05 MG` and `1 g` its `1000 MG`. */
+const MASS_MG: Record<string, number> = { mcg: 0.001, mg: 1, g: 1000 };
+
+/** The same amount: equal as written, or equal masses in different units. */
+function sameStrength(have: { value: number; unit: string | null }, wanted: { value: number; unit: string | null }) {
+	if (have.value === wanted.value && (!wanted.unit || have.unit === wanted.unit)) return true;
+	const [a, b] = [MASS_MG[have.unit ?? ''], MASS_MG[wanted.unit ?? '']];
+	if (!a || !b) return false;
+	const [x, y] = [have.value * a, wanted.value * b];
+	return Math.abs(x - y) <= 1e-9 * Math.max(x, y);
+}
 
 function nameStrengths(name: string) {
 	return [...name.toLocaleLowerCase().matchAll(STRENGTH)].map((match) => ({
@@ -134,10 +153,25 @@ export type Relevance = {
 
 export const isCombination = (name: string) => / \/ /.test(name.replace(/\{[^}]*\}/g, ''));
 
-/** How well `name` (plus aliases such as rolled-up brand names) answers the query. */
+/**
+ * Every word the listed names spell. A query word found here is spelled right,
+ * so it never fuzzy-matches a look-alike in the same list.
+ */
+export function knownWords(names: Iterable<string>): Set<string> {
+	const known = new Set<string>();
+	for (const name of names) for (const token of tokens(name)) known.add(token);
+	return known;
+}
+
+/**
+ * How well `name` (plus aliases such as rolled-up brand names) answers the query.
+ * `known` is the words of every name being ranked (`knownWords`): without it, a
+ * correctly spelled drug can match its look-alike as a misspelling.
+ */
 export function relevance(
 	query: ParsedQuery,
-	candidate: { name: string; aliases?: string[] }
+	candidate: { name: string; aliases?: string[] },
+	known?: ReadonlySet<string>
 ): Relevance {
 	const nameTokens = tokens(candidate.name);
 	const aliasTokens = (candidate.aliases ?? []).flatMap(tokens);
@@ -148,8 +182,8 @@ export function relevance(
 	if (!parts) return { matched: true, score: 0, reasons: [], missing: [] };
 
 	for (const word of query.words) {
-		const inName = wordHit(word, nameTokens);
-		const hit = inName ?? wordHit(word, aliasTokens);
+		const inName = wordHit(word, nameTokens, known);
+		const hit = inName ?? wordHit(word, aliasTokens, known);
 		if (!hit) {
 			missing.push(word);
 			continue;
@@ -159,9 +193,7 @@ export function relevance(
 	}
 	const strengths = [...nameStrengths(candidate.name), ...(candidate.aliases ?? []).flatMap(nameStrengths)];
 	for (const wanted of query.strengths) {
-		const found = strengths.some(
-			(have) => have.value === wanted.value && (!wanted.unit || have.unit === wanted.unit)
-		);
+		const found = strengths.some((have) => sameStrength(have, wanted));
 		if (found) {
 			reasons.add('strength');
 			score += 8;

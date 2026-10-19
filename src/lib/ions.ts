@@ -91,7 +91,10 @@ const ELEMENT_CATIONS: Record<string, string> = {
 
 /** The cations a salt's name mentions, in `ELEMENT_CATIONS` order: `CEFTRIAXONE SODIUM` → `['sodium']`. */
 export const cationsNamedIn = (name: string) =>
-	Object.keys(ELEMENT_CATIONS).filter((ion) => new RegExp(`\\b${ion}\\b`, 'i').test(name));
+	Object.keys(ELEMENT_CATIONS).filter((ion) =>
+		// `PEMETREXED DISODIUM`, `TRISODIUM CITRATE` deliver sodium too.
+		new RegExp(`\\b(?:mono|di|tri|tetra)?${ion}\\b`, 'i').test(name)
+	);
 
 /** Atoms of each element in one formula part with no leading coefficient: `(C6H11O7)2Ca`. */
 function atomsOf(part: string): Map<string, number> | null {
@@ -126,11 +129,19 @@ function atomsOf(part: string): Map<string, number> | null {
 export function ionAtoms(formula: string, ion: string): number | null {
 	const element = ELEMENT_CATIONS[ionKey(ion)];
 	if (!element || !formula.trim()) return null;
+	// Each dotted part: a count (`2`, `7/2`, `3.5`), then its formula. A dot after a
+	// part's leading count is a decimal point, any other dot separates parts.
+	const part = /(\d+(?:\/\d+)?(?:\.\d+)?)?([A-Z(][^.·•]*)(?:[.·•]|$)/y;
+	const text = formula.replace(/\s+/g, '');
 	let total = 0;
-	for (const raw of formula.replace(/\s+/g, '').split(/[.·•]/)) {
-		const lead = /^(\d+(?:\/\d+)?(?:\.\d+)?)?(.*)$/.exec(raw)!;
-		const [top, bottom] = (lead[1] ?? '1').split('/').map(Number);
-		const atoms = lead[2] ? atomsOf(lead[2]) : null;
+	let at = 0;
+	while (at < text.length) {
+		part.lastIndex = at;
+		const match = part.exec(text);
+		if (!match || part.lastIndex === at) return null;
+		at = part.lastIndex;
+		const [top, bottom] = (match[1] ?? '1').split('/').map(Number);
+		const atoms = atomsOf(match[2]);
 		if (!atoms) return null;
 		total += ((atoms.get(element) ?? 0) * top) / (bottom ?? 1);
 	}

@@ -65,3 +65,136 @@ describe('billing format', () => {
 		assert.partialDeepStrictEqual(vials, { unitQualifier: 'UN', ndcQuantity: 10 });
 	});
 });
+
+const crosswalkRow = (over: Partial<Parameters<typeof billingFormat>[0]> = {}): Parameters<typeof billingFormat>[0] => ({
+	ndc11: '00409488820',
+	hcpcs: 'J1234',
+	file: 'ASP',
+	descriptor: null,
+	labelerName: null,
+	drugName: null,
+	hcpcsDosage: '1 MG',
+	pkgSize: 20,
+	pkgQty: 1,
+	billUnits: 20,
+	billUnitsPkg: 20,
+	...over
+});
+
+describe('CMS crosswalk files as they actually arrive', () => {
+	it('reads CRLF line endings, quoted commas and escaped quotes', () => {
+		const csv = [
+			'Title row,,,,',
+			'HCPCS Code,Short Description,LABELER NAME,NDC,Drug Name,HCPCS dosage,PKG SIZE,PKG QTY,BILLUNITS,BILLUNITSPKG',
+			'J1234,"Inj, ""special"" drug",ACME,00409-4888-20,"Thing, 1 mg/mL",1 MG,"1,000",1,"1,000","1,000"',
+			''
+		].join('\r\n');
+		const [row] = parseCrosswalkCsv(csv, 'ASP');
+		assert.equal(row.ndc11, '00409488820');
+		assert.equal(row.descriptor, 'Inj, "special" drug');
+		assert.equal(row.drugName, 'Thing, 1 mg/mL');
+		assert.equal(row.pkgSize, 1000);
+		assert.equal(row.billUnitsPkg, 1000);
+	});
+
+	it('keeps one row per NDC and HCPCS code, but both codes for one NDC', () => {
+		const csv = `NDC,_2026_CODE,HCPCS dosage,PKG SIZE
+00409-4888-20,J1234,1 MG,10
+00409-4888-20,J1234,1 MG,20
+00409-4888-20,j5678,2 MG,20
+`;
+		const rows = parseCrosswalkCsv(csv, 'OPPS');
+		assert.deepEqual(
+			rows.map((row) => [row.hcpcs, row.pkgSize]),
+			[
+				['J1234', 20],
+				['J5678', 20]
+			]
+		);
+	});
+
+	it('reads blanks and placeholders as unknown, not zero', () => {
+		const csv = `NDC,_2026_CODE,HCPCS dosage,PKG SIZE,PKG QTY,BILLUNITS,BILLUNITSPKG
+00409-4888-20,J1234,  ,,N/A, ,
+`;
+		const [row] = parseCrosswalkCsv(csv, 'ASP');
+		assert.partialDeepStrictEqual(row, { hcpcsDosage: null, pkgSize: null, pkgQty: null, billUnits: null, billUnitsPkg: null });
+	});
+
+	it('finds a header whose NDC column is named NDC2', () => {
+		const csv = `HCPCS Code,NDC2,HCPCS dosage,PKG SIZE
+J1234,00409-4888-20,1 MG,20
+`;
+		assert.equal(parseCrosswalkCsv(csv, 'ASP').length, 1);
+	});
+
+	it('returns nothing for a file with no NDC header', () => {
+		assert.deepEqual(parseCrosswalkCsv('just,a,title\n1,2,3\n', 'ASP'), []);
+		assert.deepEqual(parseCrosswalkCsv('', 'ASP'), []);
+	});
+
+	it('names quarters in any case and rejects other months', () => {
+		assert.equal(crosswalkQuarter('JANUARY 2027 ASP NDC-HCPCS'), 'January 2027');
+		assert.equal(crosswalkQuarter('april-2026-ndc-hcpcs-crosswalk.zip'), 'April 2026');
+		assert.equal(crosswalkQuarter('March 2026 update'), null);
+	});
+
+	it('ignores links to anything but a crosswalk zip', () => {
+		const html = `<a href="/files/zip/october-2026-asp-pricing-file.zip"></a>
+<a href="/files/document/october-2026-crosswalk.pdf"></a>`;
+		assert.equal(latestCrosswalkUrl(html), null);
+	});
+});
+
+describe('N4 unit qualifiers for dose forms', () => {
+	it('bills injectable liquids by the mL and powders and kits by the unit', () => {
+		for (const [form, qualifier] of [
+			['INJECTION, SOLUTION', 'ML'],
+			['INJECTION, EMULSION', 'ML'],
+			['INJECTION, SOLUTION, CONCENTRATE', 'ML'],
+			['INJECTION, POWDER, FOR SUSPENSION', 'UN'],
+			['INJECTION, POWDER, LYOPHILIZED, FOR LIPOSOMAL SUSPENSION', 'UN'],
+			['KIT', 'UN'],
+			['IMPLANT', 'UN'],
+			['PELLET, IMPLANTABLE', 'UN'],
+			['PATCH, EXTENDED RELEASE', 'UN'],
+			['GEL', 'GR'],
+			['POWDER, FOR SUSPENSION', 'ML']
+		] as const)
+			assert.equal(unitQualifierFor(form), qualifier, form);
+	});
+
+	it('falls back to the HCPCS dosage when the dose form says nothing', () => {
+		assert.equal(unitQualifierFor(null, '1 ML'), 'ML');
+		assert.equal(unitQualifierFor('', '10 MG'), 'UN');
+		assert.equal(unitQualifierFor(null), 'UN');
+	});
+
+	it('bills every capsule and tablet by the unit', () => {
+		for (const form of ['CAPSULE, LIQUID FILLED', 'CAPSULE, GELATIN COATED', 'TABLET, FOR SUSPENSION', 'TABLET, FOR SOLUTION'])
+			assert.equal(unitQualifierFor(form), 'UN', form);
+		// Cyclosporine (J7502) bills each capsule.
+		const bill = billingFormat(crosswalkRow({ hcpcs: 'J7502', hcpcsDosage: '100 MG', pkgSize: 30, pkgQty: 1 }), 'CAPSULE, LIQUID FILLED', 'q');
+		assert.equal(bill.n4, 'N400409488820UN30');
+	});
+
+	it('scales the NDC quantity by the package count', () => {
+		const bill = billingFormat(crosswalkRow({ pkgSize: 2, pkgQty: 25 }), 'INJECTION, SOLUTION', 'October 2026');
+		assert.equal(bill.ndcQuantity, 50);
+		assert.equal(bill.n4, 'N400409488820ML50');
+		// Fractional mL survive to three places.
+		assert.equal(billingFormat(crosswalkRow({ pkgSize: 0.4, pkgQty: 10 }), 'INJECTION, SOLUTION', 'q').ndcQuantity, 4);
+		assert.equal(billingFormat(crosswalkRow({ pkgSize: 0.3333, pkgQty: 1 }), 'INJECTION, SOLUTION', 'q').ndcQuantity, 0.333);
+	});
+
+	it('prefers billable units per package over per unit', () => {
+		assert.equal(billingFormat(crosswalkRow({ billUnits: 1, billUnitsPkg: 20 }), 'INJECTION, SOLUTION', 'q').billUnitsPerPackage, 20);
+		assert.equal(billingFormat(crosswalkRow({ billUnits: 1, billUnitsPkg: null }), 'INJECTION, SOLUTION', 'q').billUnitsPerPackage, 1);
+	});
+
+	it('never builds an N4 segment without a quantity', () => {
+		const bill = billingFormat(crosswalkRow({ pkgSize: null }), 'INJECTION, SOLUTION', 'October 2026');
+		assert.equal(bill.ndcQuantity, null);
+		assert.equal(bill.n4, null);
+	});
+});

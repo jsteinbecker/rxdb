@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { labelProductName, packageDisplayTitle, packageStrengthText, packageTitle, rxNormPackageTitle } from '../package-title';
+import { labelProductName, packageDisplayTitle, packageStrengthText, packageTitle, rxNormPackageTitle, strengthDisplay } from '../package-title';
 import { splitBrand } from '../brand-name';
 
 const rxnav = (conceptName: string) => ({ rxnav: { conceptName } });
@@ -17,7 +17,8 @@ test('title is generated from ingredients, strength and dose form', () => {
       isMultiDose: false,
       details: rxnav('150 ML vancomycin 5 MG/ML Injection')
     }),
-    'Vancomycin hydrochloride 5 mg/mL injection, solution'
+    // The quantified SCD agrees on 5 mg/mL, so the active takes its name.
+    'Vancomycin 5 mg/mL injection, solution'
   );
 });
 
@@ -191,6 +192,68 @@ test('a corrected strength that agrees with RxNorm keeps the RxNorm title', () =
   );
 });
 
+test('a salt corrected to its moiety equivalent is titled as printed', () => {
+  // ACD-A 14537-817: citric acid monohydrate's 6 g, coded ACTIM as anhydrous
+  // citric acid, is the hydrate's mass (rule 3). The equivalent 5.4855 g is a
+  // derived figure for the ingredient table, never the title's.
+  const acd = {
+    ndc: '14537081775',
+    doseForm: 'INJECTION, SOLUTION',
+    size: { kind: 'volume' as const, value: 750, unit: 'mL', container: 'BAG', packQty: 1 },
+    ingredients: [
+      { name: 'CITRIC ACID MONOHYDRATE', strength: '.7314 g/100mL' },
+      { name: 'DEXTROSE MONOHYDRATE', strength: '2.45 g/100mL' },
+      { name: 'TRISODIUM CITRATE DIHYDRATE', strength: '2.2 g/100mL' }
+    ],
+    details: {
+      rxnav: { conceptName: 'Dextrose Monohydrate 2.45 g in 100 mL / Citric Acid Monohydrate 0.80 g in 100 mL INTRAVENOUS INJECTION, SOLUTION [ACD A]' },
+      spl: {
+        ingredients: [
+          {
+            name: 'Citric Acid Monohydrate',
+            kind: 'active',
+            basis: 'moiety',
+            moieties: [{ name: 'Anhydrous Citric Acid' }],
+            strength: '5.4855 g',
+            labelStrength: { strength: '6 g', correction: 'moiety-equivalent' as const }
+          },
+          { name: 'Dextrose Monohydrate', kind: 'active', basis: 'ingredient', strength: '18.375 g' },
+          { name: 'Trisodium Citrate Dihydrate', kind: 'active', basis: 'ingredient', strength: '16.5 g' }
+        ]
+      }
+    }
+  };
+  assert.equal(
+    packageStrengthText(acd),
+    'citric acid monohydrate 8 mg/mL / dextrose monohydrate 24.5 mg/mL / trisodium citrate dihydrate 22 mg/mL'
+  );
+});
+
+test('a light salt corrected to the SCD keeps the SCD figure', () => {
+  // Rule 2, vancomycin HCl 513 mg → the SCD's 500 mg: RxNorm arbitrated, so the
+  // corrected figure is the displayed one.
+  assert.equal(
+    packageStrengthText({
+      details: {
+        rxnav: { conceptName: 'vancomycin 500 MG Injection' },
+        spl: {
+          ingredients: [
+            {
+              name: 'VANCOMYCIN HYDROCHLORIDE',
+              kind: 'active',
+              basis: 'moiety',
+              moieties: [{ name: 'VANCOMYCIN' }],
+              strength: '500 mg',
+              labelStrength: { strength: '513 mg', correction: 'salt-equivalent' as const }
+            }
+          ]
+        }
+      }
+    }),
+    'vancomycin 500 mg'
+  );
+});
+
 test('a converted strength is rounded to the precision the others are written in', () => {
   assert.equal(
     packageStrengthText({
@@ -351,4 +414,112 @@ test('a directory amount that is the SCD\'s takes its name, whatever the denomin
     }),
     'ampicillin 1 g / sulbactam 500 mg'
   );
+});
+
+test('a blank directory ingredient is skipped, not fatal', () => {
+	assert.equal(
+		packageDisplayTitle({
+			doseForm: 'TABLET',
+			ingredients: [
+				{ name: '  ', strength: '5 mg/1' },
+				{ name: 'LISINOPRIL', strength: '10 mg/1' }
+			]
+		}),
+		'Lisinopril 10 mg tablet'
+	);
+	assert.equal(packageDisplayTitle({ doseForm: 'TABLET', ingredients: [{ name: '', strength: null }] }), null);
+	assert.equal(packageTitle({ ndc: '00093000101', ingredients: [{ name: '', strength: null }] }), 'NDC 00093-0001-01');
+});
+
+test('strengths read as RxNorm writes them, every volume per mL', () => {
+	for (const [stated, shown] of [
+		['1.25 g/250mL', '5 mg/mL'],
+		['0.9 g/100mL', '9 mg/mL'],
+		['5 mg/5mL', '1 mg/mL'],
+		['100 mcg/0.5mL', '0.2 mg/mL'],
+		['20 mEq/100mL', '0.2 mEq/mL'],
+		['1000 [iU]/10mL', '100 units/mL'],
+		['1000 mg/1 VIAL', '1 g'],
+		['1000 mg', '1 g'],
+		['2,000 mg', '2 g'],
+		['0.25 g/1', '250 mg'],
+		['3.375 g/1', '3.375 g'],
+		['0.5 g', '500 mg'],
+		['1.5 kg', '1.5 kg'],
+		['50 mcg/1', '50 mcg'],
+		['40 mEq/1', '40 mEq'],
+		['10 mg/g', '10 mg/g'],
+		['0.09 mg/actuat', '0.09 mg/actuat'],
+		['  80 mg/1  ', '80 mg'],
+		['.5 mg/1', '0.5 mg']
+	])
+		assert.equal(strengthDisplay(stated), shown, stated);
+	// Text that is not a strength comes back as written.
+	assert.equal(strengthDisplay(' see label '), 'see label');
+});
+
+test('a brand that is only the generic in other words is not bracketed', () => {
+	assert.equal(
+		packageDisplayTitle({
+			doseForm: 'INJECTION, SOLUTION',
+			brandName: 'Sodium Chloride',
+			genericName: 'SODIUM CHLORIDE',
+			ingredients: [{ name: 'SODIUM CHLORIDE', strength: '9 mg/mL' }]
+		}),
+		'Sodium chloride 9 mg/mL injection, solution'
+	);
+	assert.equal(
+		labelProductName({
+			brandName: 'Vancomycin Hydrochloride for Injection',
+			genericName: 'vancomycin hydrochloride',
+			ingredients: [{ name: 'VANCOMYCIN HYDROCHLORIDE', strength: '1 g/20mL' }]
+		}),
+		'vancomycin hydrochloride'
+	);
+	// A name that adds a diluent says something the ingredients don't.
+	assert.equal(
+		labelProductName({
+			brandName: 'Vasopressin in Sodium Chloride',
+			genericName: 'vasopressin',
+			ingredients: [{ name: 'VASOPRESSIN', strength: "20 [USP'U]/100mL" }]
+		}),
+		'Vasopressin in Sodium Chloride (vasopressin)'
+	);
+});
+
+test('a carton of single-dose vials reads its count without the dose qualifier', () => {
+	assert.equal(
+		packageDisplayTitle({
+			doseForm: 'INJECTION, SOLUTION',
+			genericName: 'HEPARIN SODIUM',
+			ingredients: [{ name: 'HEPARIN SODIUM', strength: "5000 [USP'U]/mL" }],
+			description: '25 VIAL, SINGLE-DOSE in 1 CARTON (63323-262-01)  / 1 mL in 1 VIAL, SINGLE-DOSE',
+			isMultiDose: false
+		}),
+		'Heparin sodium 5000 USP units/mL injection, solution CARTON of 25 VIAL'
+	);
+});
+
+test('look-alike salts keep their full names in titles', () => {
+	for (const name of ['EDETATE DISODIUM', 'EDETATE CALCIUM DISODIUM'])
+		assert.equal(
+			packageDisplayTitle({
+				doseForm: 'INJECTION, SOLUTION',
+				genericName: name,
+				ingredients: [{ name, strength: '200 mg/mL' }]
+			}),
+			`${name.charAt(0)}${name.slice(1).toLowerCase()} 200 mg/mL injection, solution`
+		);
+});
+
+test('a title never depends on the order the sources list ingredients in', () => {
+	const ingredients = [
+		{ name: 'TAZOBACTAM SODIUM', strength: '375 mg/1' },
+		{ name: 'PIPERACILLIN SODIUM', strength: '3 g/1' }
+	];
+	const titles = [ingredients, [...ingredients].reverse()].map((list) =>
+		packageDisplayTitle({ doseForm: 'INJECTION, POWDER, FOR SOLUTION', ingredients: list })
+	);
+	assert.equal(titles[0], titles[1]);
+	assert.match(titles[0]!, /^Piperacillin sodium 3 g \/ tazobactam sodium 375 mg/);
 });

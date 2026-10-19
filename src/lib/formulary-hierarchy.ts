@@ -118,6 +118,7 @@ const PHARMACY_BULK = /PHARMACY BULK|MULTI-DOSE/i;
 const UNIT_DOSE =
 	/unit[-\s]?dose|\bU\.?D\.?\b|BLISTER|DOSE PACK|SINGLE-(?:DOSE|USE)|AMPULE|PREFILLED|SYRINGE|CARTRIDGE|\bPEN\b|POUCH|PACKET|\bCUP\b|\bBAG\b|CONTAINER/i;
 const STOCK = /BOTTLE|\bJAR\b|PAIL|\bCAN\b|\bTUBE\b|\bBOX\b/i;
+const SOLID_DOSE = /TABLET|CAPSULE|LOZENGE|TROCHE|SUPPOSITOR|PELLET|WAFER/i;
 
 /**
  * Unit-dose packaging versus bulk stock, from the innermost container in the
@@ -135,6 +136,19 @@ export function packagingClass(row: FormularyRow): string {
 		row.size?.container ??
 		'';
 	if (PHARMACY_BULK.test(inner)) return 'Bulk packaging';
+	// A bag or container of premix is one dose; of a hundred tablets, stock.
+	const content = text
+		?.split('/')
+		.pop()
+		?.match(/^\s*([\d.]+)\s+(.+?)\s+in \d+ /i);
+	if (
+		content &&
+		Number(content[1]) > 1 &&
+		SOLID_DOSE.test(content[2]) &&
+		/\bBAG\b|CONTAINER/i.test(inner) &&
+		!/unit[-\s]?dose/i.test(inner)
+	)
+		return 'Bulk packaging';
 	if (
 		(text && /unit[-\s]?dose|\bU\.?D\.?\b|BLISTER|DOSE PACK/i.test(text)) ||
 		UNIT_DOSE.test(inner)
