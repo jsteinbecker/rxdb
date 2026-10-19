@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSterileWaterForInjection, productSet, setPackageNdcs } from './product-sets';
+import { isSterileWaterForInjection, productSet, setPackageNdcs, setsMatching } from './product-sets';
 import type { FdaProduct } from './catalog-providers';
 
 const swfi = (over: Partial<FdaProduct> = {}): FdaProduct => ({
@@ -50,4 +50,37 @@ test('set packages are 11-digit, deduplicated, and skip samples', () => {
 		setPackageNdcs(set, [swfi(), swfi(), swfi({ brand_name: 'Bacteriostatic Water' })]),
 		['00409488710']
 	);
+});
+
+test('searches that name sterile water offer the SWFI set', () => {
+	for (const query of [
+		'water',
+		'Water',
+		'sterile water',
+		'Sterile Water for Injection',
+		'water for injection',
+		'water for inj',
+		'SWFI',
+		'wfi',
+		'sterile water 10 mL vial',
+		'sterile-water'
+	])
+		assert.deepEqual(setsMatching(query).map((set) => set.key), ['swfi'], query);
+});
+
+test('other water products and unrelated words do not offer it', () => {
+	for (const query of [
+		'',
+		'wa',
+		'wat',
+		'ster',
+		'bacteriostatic water',
+		'sterile water for irrigation',
+		'dextrose 5% in water',
+		'D5W',
+		'sodium chloride in water',
+		'watermelon',
+		'metformin'
+	])
+		assert.deepEqual(setsMatching(query), [], query);
 });

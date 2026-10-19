@@ -233,6 +233,9 @@
 
 	.chip {
 		display: inline-flex;
+		flex-wrap: wrap;
+		max-width: 100%;
+		box-sizing: border-box;
 		align-items: center;
 		gap: 0.4rem;
 		border: 1px solid #cdd6e1;

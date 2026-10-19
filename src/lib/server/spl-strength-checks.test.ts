@@ -122,6 +122,97 @@ test('a heavy salt stated as moiety strength converts when the directory names t
 	assert.equal(row.corrections[0].stated, 1.2);
 });
 
+// NDC 59630-266 (Fetroja): ACTIM `CEFIDEROCOL SULFATE TOSYLATE 1 g`, which is
+// ordinary "equivalent to" labeling. The SCD is `cefiderocol 1000 MG`, and the
+// label text says "1 gram of cefiderocol". Rule 3 once cut it to 0.7371 g.
+const FETROJA = `<document><manufacturedProduct><manufacturedProduct>
+	<code code="59630-266" codeSystem="2.16.840.1.113883.6.69"/>
+	<name>Fetroja</name>
+	<formCode code="C42974" displayName="INJECTION, POWDER, FOR SOLUTION"/>
+	${ingredient(
+		'ACTIM',
+		'CEFIDEROCOL SULFATE TOSYLATE',
+		'O2VQ1P3I6B',
+		`<quantity><numerator value="1" unit="g"/><denominator value="10" unit="mL"/></quantity>`,
+		`<activeMoiety><activeMoiety><code code="SZ34OMG6E8" codeSystem="2.16.840.1.113883.4.9"/><name>CEFIDEROCOL</name></activeMoiety></activeMoiety>`
+	)}
+</manufacturedProduct></manufacturedProduct></document>`;
+const CEFIDEROCOL_FACTOR = new Map([['O2VQ1P3I6B', { moietyUnii: 'SZ34OMG6E8', factor: '0.7371' }]]);
+const FETROJA_DIRECTORY = [{ name: 'CEFIDEROCOL SULFATE TOSYLATE', strength: '1 g/10mL' }];
+
+test('a heavy salt is not converted where RxNorm states its moiety at the label number', () => {
+	const [product] = parseSplIngredients(FETROJA);
+	for (const labelText of [undefined, 'Each vial contains 1 gram of cefiderocol (as the sulfate tosylate).']) {
+		const [row] = checkProductStrengths(product, {
+			rxNormName: 'cefiderocol 1000 MG Injection [Fetroja]',
+			moietyFactors: CEFIDEROCOL_FACTOR,
+			directory: FETROJA_DIRECTORY,
+			labelText
+		});
+		assert.equal(row.strength, 1);
+		assert.deepEqual(row.corrections, []);
+	}
+});
+
+test('label text giving the number as the moiety blocks the heavy-salt rule', () => {
+	const [product] = parseSplIngredients(FETROJA);
+	const [row] = checkProductStrengths(product, {
+		moietyFactors: CEFIDEROCOL_FACTOR,
+		directory: FETROJA_DIRECTORY,
+		labelText: 'FETROJA is formulated with 1 gram cefiderocol, sucrose and sodium chloride.'
+	});
+	assert.equal(row.strength, 1);
+	assert.deepEqual(row.corrections, []);
+});
+
+test('label text giving the salt its mass outweighs an RxNorm copied from the label', () => {
+	// RxNorm's real TrophAmine name copies the acetate's mass as lysine's.
+	const [product] = parseSplIngredients(TROPHAMINE);
+	const options = {
+		rxNormName: 'lysine 12 MG/ML Injectable Solution [TrophAmine]',
+		moietyFactors: LYSINE_FACTOR,
+		directory: [{ name: 'LYSINE ACETATE', strength: '1.2 g/100mL' }]
+	};
+	const [unproved] = checkProductStrengths(product, options);
+	assert.deepEqual(unproved.corrections, []);
+	const [row] = checkProductStrengths(product, {
+		...options,
+		labelText: 'Each 100 mL contains: Isoleucine USP 0.82 g; L-Lysine Acetate USP 1.2 g; Valine USP 0.78 g'
+	});
+	assert.equal(strengthText(row), '0.8506 g/100 mL');
+	assert.equal(row.corrections[0].kind, 'moiety-equivalent');
+});
+
+// NDC 0093-2275 (amoxicillin/clavulanate 875/125): ACTIM `CLAVULANATE
+// POTASSIUM 125 mg`, moiety CLAVULANIC ACID; RxNorm writes the moiety as its
+// anion, `clavulanate 125 MG`. Rule 3 cut it to 104.9 mg on 81 packages.
+const AUGMENTIN = `<document><manufacturedProduct><manufacturedProduct>
+	<code code="0093-2275" codeSystem="2.16.840.1.113883.6.69"/>
+	<name>Amoxicillin and Clavulanate Potassium</name>
+	<formCode code="C42931" displayName="TABLET, FILM COATED"/>
+	${ingredient(
+		'ACTIM',
+		'CLAVULANATE POTASSIUM',
+		'Q42OMW3AT8',
+		`<quantity><numerator value="125" unit="mg"/><denominator value="1" unit="1"/></quantity>`,
+		`<activeMoiety><activeMoiety><code code="23521W1S24" codeSystem="2.16.840.1.113883.4.9"/><name>CLAVULANIC ACID</name></activeMoiety></activeMoiety>`
+	)}
+</manufacturedProduct></manufacturedProduct></document>`;
+
+test('RxNorm naming an acid by its anion still arbitrates', () => {
+	const [product] = parseSplIngredients(AUGMENTIN);
+	const [row] = checkProductStrengths(product, {
+		rxNormName: 'amoxicillin 875 MG / clavulanate 125 MG Oral Tablet',
+		moietyFactors: new Map([['Q42OMW3AT8', { moietyUnii: '23521W1S24', factor: '0.8392' }]]),
+		directory: [{ name: 'CLAVULANATE POTASSIUM', strength: '125 mg/1' }],
+		// A strength pair names the salt but gives the moiety's numbers.
+		labelText:
+			'Amoxicillin and Clavulanate Potassium 125 mg/31.25 mg per 5 mL for Oral Suspension may be used in place of the 500 mg/125 mg tablet.'
+	});
+	assert.equal(row.strength, 125);
+	assert.deepEqual(row.corrections, []);
+});
+
 test('a heavy salt is left alone without the directory agreeing on its mass', () => {
 	const [product] = parseSplIngredients(TROPHAMINE);
 	for (const directory of [[], [{ name: 'LYSINE ACETATE', strength: '1.7 g/100mL' }]]) {
@@ -187,6 +278,20 @@ const AMOXICILLIN = `<document><manufacturedProduct><manufacturedProduct>
 // 365.40 / 419.45
 const AMOXICILLIN_FACTOR = new Map([['804826J2HU', { moietyUnii: '9EM05410Q9', factor: '0.871140779592323' }]]);
 
+test('a listing name in RxNav is no SCD to arbitrate with', () => {
+	// RxNav names ACD-A in the listing's own words; its `Citric Acid
+	// Monohydrate 0.80 g` names the hydrate, so it says nothing about the moiety.
+	const [product] = parseSplIngredients(ACD_A);
+	const [row] = checkProductStrengths(product, {
+		rxNormName:
+			'Dextrose Monohydrate 2.45 g in 100 mL / Citric Acid Monohydrate 0.80 g in 100 mL INTRAVENOUS INJECTION, SOLUTION [ACD A]',
+		moietyFactors: CITRIC_FACTOR,
+		directory: [{ name: 'CITRIC ACID MONOHYDRATE', strength: '.8 g/100mL' }]
+	});
+	assert.equal(row.strength, 5.485);
+	assert.equal(row.corrections[0].kind, 'moiety-equivalent');
+});
+
 test('a bare drug name is not treated as its hydrate UNII', () => {
 	const [product] = parseSplIngredients(AMOXICILLIN);
 	const [row] = checkProductStrengths(product, {
@@ -243,4 +348,156 @@ test('RxNorm matches a moiety whatever its hydrate word', () => {
 	});
 	assert.equal(row.strength, 2);
 	assert.equal(row.corrections[0].kind, 'salt-equivalent');
+});
+
+// One active with a single moiety, per one unit of presentation.
+const single = (name: string, unii: string, moiety: string, moietyUnii: string, value: string, unit = 'mg', per = '1', perUnit = '1') => `<document><manufacturedProduct><manufacturedProduct>
+	<code code="00000-0002" codeSystem="2.16.840.1.113883.6.69"/>
+	<name>${name}</name>
+	<formCode code="C25158" displayName="CAPSULE"/>
+	${ingredient(
+		'ACTIM',
+		name,
+		unii,
+		`<quantity><numerator value="${value}" unit="${unit}"/><denominator value="${per}" unit="${perUnit}"/></quantity>`,
+		`<activeMoiety><activeMoiety><code code="${moietyUnii}" codeSystem="2.16.840.1.113883.4.9"/><name>${moiety}</name></activeMoiety></activeMoiety>`
+	)}
+</manufacturedProduct></manufacturedProduct></document>`;
+
+const vancomycinCapsule = (value: string, unit = 'mg') =>
+	single('VANCOMYCIN HYDROCHLORIDE', '71WO621TJD', 'VANCOMYCIN', '6Q205EH1VU', value, unit);
+
+test('a salt correction is only made inside the salt-ratio window', () => {
+	const rxNormName = 'vancomycin 500 MG Oral Capsule';
+	for (const [value, expected] of [
+		['502', 502], // within rounding of RxNorm: left alone
+		['490', 490], // below RxNorm: never raised to it
+		['513', 500], // vancomycin HCl's own mass
+		['650', 500], // 1.3×, the widest salt allowed
+		['655', 655] // past 1.3×: more likely a different strength
+	] as const) {
+		const [product] = parseSplIngredients(vancomycinCapsule(value));
+		const [row] = checkProductStrengths(product, { rxNormName });
+		assert.equal(row.strength, expected, `${value} mg`);
+		assert.equal(row.corrections.length, expected === Number(value) ? 0 : 1, `${value} mg`);
+	}
+});
+
+test('a salt correction keeps the label unit', () => {
+	const [product] = parseSplIngredients(vancomycinCapsule('0.513', 'g'));
+	const [row] = checkProductStrengths(product, { rxNormName: 'vancomycin 500 MG Oral Capsule' });
+	assert.equal(strengthText(row), '0.5 g');
+	assert.match(row.corrections[0].note, /stated value of 0\.513 g, equivalent to 0\.5 g vancomycin as the hydrochloride salt/);
+	assert.equal(row.corrections[0].stated, 0.513);
+});
+
+test('a salt is never corrected against RxNorm for a different moiety or kind of strength', () => {
+	const [product] = parseSplIngredients(vancomycinCapsule('513'));
+	for (const rxNormName of [
+		null,
+		'',
+		'teicoplanin 500 MG Injection',
+		// RxNorm per mL, label per capsule: not like with like.
+		'vancomycin 50 MG/ML Oral Solution'
+	]) {
+		const [row] = checkProductStrengths(product, { rxNormName });
+		assert.equal(row.strength, 513, String(rxNormName));
+		assert.deepEqual(row.corrections, [], String(rxNormName));
+	}
+});
+
+test('a pure substance, 100% by weight, is a possible mass-in-mass strength', () => {
+	// Bulk powders: 1 g in 1 g is the whole product, not a miscoding.
+	const [product] = parseSplIngredients(
+		single('SODIUM CHLORIDE', '451W47IQ8X', 'SODIUM CATION', 'LYR4M0NH37', '1', 'g', '1', 'g')
+	);
+	const [row] = checkProductStrengths(product);
+	assert.deepEqual(row.corrections, []);
+	assert.equal(strengthText(row), '1 g/1 g');
+});
+
+test('the heavy-salt rule never stacks on a salt correction', () => {
+	const [product] = parseSplIngredients(
+		pipTazo(`<quantity><numerator value="2.085" unit="g"/><denominator value="1" unit="1"/></quantity>`)
+	);
+	const [row] = checkProductStrengths(product, {
+		rxNormName: 'piperacillin 2000 MG / tazobactam 250 MG Injection',
+		moietyFactors: PIPERACILLIN_FACTOR,
+		directory: [{ name: 'PIPERACILLIN SODIUM', strength: '2.085 g/1' }]
+	});
+	assert.equal(row.strength, 2);
+	assert.deepEqual(row.corrections.map((correction) => correction.kind), ['salt-equivalent']);
+});
+
+test('the heavy-salt rule needs GSRS to name this exact salt and moiety', () => {
+	const [product] = parseSplIngredients(TROPHAMINE);
+	const directory = [{ name: 'LYSINE ACETATE', strength: '1.2 g/100mL' }];
+	for (const moietyFactors of [
+		new Map(),
+		// The factor is for another moiety.
+		new Map([['TTL6G7LIWZ', { moietyUnii: 'XXXXXXXXXX', factor: '0.708834367727889837' }]]),
+		// An unreadable or zero factor.
+		new Map([['TTL6G7LIWZ', { moietyUnii: 'K3Z4F929H6', factor: 'abc' }]]),
+		new Map([['TTL6G7LIWZ', { moietyUnii: 'K3Z4F929H6', factor: '0' }]])
+	]) {
+		const [row] = checkProductStrengths(product, { moietyFactors, directory });
+		assert.equal(row.strength, 1.2);
+		assert.deepEqual(row.corrections, []);
+	}
+});
+
+test('the heavy-salt rule compares like with like against the directory', () => {
+	const [product] = parseSplIngredients(TROPHAMINE);
+	// The directory per vial, the label per mL: no agreement to lean on.
+	const [row] = checkProductStrengths(product, {
+		moietyFactors: LYSINE_FACTOR,
+		directory: [{ name: 'LYSINE ACETATE', strength: '1.2 g/1' }]
+	});
+	assert.equal(row.strength, 1.2);
+	// The directory names the salt in another case: still the same row.
+	const [cased] = checkProductStrengths(product, {
+		moietyFactors: LYSINE_FACTOR,
+		directory: [{ name: 'Lysine Acetate', strength: '1.2 g/100mL' }]
+	});
+	assert.equal(cased.corrections[0]?.kind, 'moiety-equivalent');
+});
+
+test('RxNorm names with commas, metered doses and equivalents parse', () => {
+	assert.deepEqual(rxNormStrengths('heparin sodium, porcine 5000 UNT/ML Injectable Solution'), [
+		{ name: 'heparin sodium, porcine', value: 5000, unit: 'UNT', per: 1, perUnit: 'ML' }
+	]);
+	assert.deepEqual(rxNormStrengths('albuterol 0.09 MG/ACTUAT Metered Dose Inhaler, 200 ACTUAT'), [
+		{ name: 'albuterol', value: 0.09, unit: 'MG', per: 1, perUnit: 'ACTUAT' }
+	]);
+	assert.deepEqual(rxNormStrengths('potassium chloride 2 MEQ/ML Injectable Solution'), [
+		{ name: 'potassium chloride', value: 2, unit: 'MEQ', per: 1, perUnit: 'ML' }
+	]);
+	for (const empty of [null, undefined, '', 'Sterile Water Injection']) assert.deepEqual(rxNormStrengths(empty), []);
+});
+
+test('quantity and release prefixes are not part of the ingredient name', () => {
+	assert.equal(rxNormStrengths('150 ML vancomycin 5 MG/ML Injection')[0]?.name, 'vancomycin');
+	assert.equal(rxNormStrengths('0.4 ML enoxaparin sodium 100 MG/ML Prefilled Syringe')[0]?.name, 'enoxaparin sodium');
+	assert.equal(rxNormStrengths('24 HR venlafaxine 75 MG Extended Release Oral Capsule')[0]?.name, 'venlafaxine');
+	assert.deepEqual(rxNormStrengths('72 HR fentanyl 0.025 MG/HR Transdermal System'), [
+		{ name: 'fentanyl', value: 0.025, unit: 'MG', per: 1, perUnit: 'HR' }
+	]);
+});
+
+test('an extended-release salt is corrected against its SCD like any other', () => {
+	// Venlafaxine HCl 84.86 mg is venlafaxine 75 mg.
+	const [product] = parseSplIngredients(
+		single('VENLAFAXINE HYDROCHLORIDE', '7D7RX5A8MO', 'VENLAFAXINE', 'GRZ5RCB1QG', '84.86')
+	);
+	const [row] = checkProductStrengths(product, {
+		rxNormName: '24 HR venlafaxine 75 MG Extended Release Oral Capsule'
+	});
+	assert.equal(row.strength, 75);
+});
+
+test('a pack name yields its components, not its braces', () => {
+	const names = rxNormStrengths(
+		'{21 (norgestimate 0.25 MG / ethinyl estradiol 0.035 MG Oral Tablet) / 7 (inert ingredients 1 MG Oral Tablet) } Pack [Sprintec 28]'
+	).map((entry) => entry.name);
+	assert.deepEqual(names, ['norgestimate', 'ethinyl estradiol', 'inert ingredients']);
 });

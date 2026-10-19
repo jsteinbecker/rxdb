@@ -425,3 +425,99 @@ test('a route group narrows rows to every route it gathers', () => {
 		]
 	);
 });
+
+test('the container dose type beats the isMultiDose flag when they disagree', () => {
+	assert.equal(
+		packagingClass(
+			row({
+				description: '1 VIAL, SINGLE-DOSE in 1 CARTON / 1 mL in 1 VIAL, SINGLE-DOSE',
+				isMultiDose: true
+			})
+		),
+		'Unit-dose packaging'
+	);
+	assert.equal(
+		packagingClass(
+			row({
+				description: '1 VIAL, MULTI-DOSE in 1 CARTON / 10 mL in 1 VIAL, MULTI-DOSE',
+				isMultiDose: false
+			})
+		),
+		'Bulk packaging'
+	);
+});
+
+test('only the innermost container decides, wherever the outer ones sit', () => {
+	for (const [description, expected] of [
+		// A bag of vials is vials.
+		['25 VIAL in 1 BAG / 2 mL in 1 VIAL', 'Unit-dose packaging'],
+		// A blister in a carton, a bottle in a box.
+		['50 BLISTER PACK in 1 CARTON / 1 TABLET in 1 BLISTER PACK', 'Unit-dose packaging'],
+		['1 BOTTLE in 1 BOX / 473 mL in 1 BOTTLE', 'Bulk packaging'],
+		['1 BOX in 1 CASE / 100 PACKET in 1 BOX', 'Bulk packaging'],
+		// A trailing package NDC does not hide the container.
+		['10 AMPULE in 1 CARTON (0409-1234-10)  / 1 mL in 1 AMPULE (0409-1234-01)', 'Unit-dose packaging']
+	] as const)
+		assert.equal(packagingClass(row({ description, isMultiDose: false })), expected, description);
+});
+
+test('patient-specific containers are unit dose, stock containers bulk', () => {
+	for (const description of [
+		'1 SYRINGE, GLASS in 1 CARTON / 1 mL in 1 SYRINGE, GLASS',
+		'5 PEN in 1 CARTON / 3 mL in 1 PEN',
+		'5 CARTRIDGE in 1 CARTON / 3 mL in 1 CARTRIDGE',
+		'100 CUP, UNIT-DOSE in 1 CASE / 15 mL in 1 CUP, UNIT-DOSE',
+		'1 POUCH in 1 CARTON / 1 PATCH in 1 POUCH',
+		'30 TABLET in 1 BOTTLE, UNIT-DOSE'
+	])
+		assert.equal(packagingClass(row({ description })), 'Unit-dose packaging', description);
+	for (const description of [
+		'100 CAPSULE in 1 BOTTLE, PLASTIC',
+		'5 mL in 1 BOTTLE, DROPPER',
+		'30 g in 1 TUBE',
+		'500 g in 1 JAR'
+	])
+		assert.equal(packagingClass(row({ description })), 'Bulk packaging', description);
+});
+
+test('a vial with no dose type and no flag is not guessed', () => {
+	assert.equal(
+		packagingClass(
+			row({ description: '10 VIAL in 1 CARTON / 10 mL in 1 VIAL (0409-1234-01)', isMultiDose: null })
+		),
+		NOT_SPECIFIED
+	);
+	// Unknown containers stay unknown rather than defaulting to bulk.
+	assert.equal(
+		packagingClass(row({ description: '1 INHALER in 1 CARTON / 200 AEROSOL, METERED in 1 INHALER' })),
+		NOT_SPECIFIED
+	);
+});
+
+test('without package text, the parsed size container decides', () => {
+	assert.equal(
+		packagingClass(
+			row({
+				description: null,
+				size: { kind: 'volume', value: 2, unit: 'mL', container: 'AMPULE', packQty: 10 }
+			})
+		),
+		'Unit-dose packaging'
+	);
+	assert.equal(packagingClass(row({ description: null, size: null })), NOT_SPECIFIED);
+});
+
+test('a container of many solid doses is bulk', () => {
+	for (const description of [
+		'1 BOTTLE in 1 CARTON / 100 TABLET in 1 CONTAINER',
+		'1000 TABLET in 1 BAG (1234-5678-90)'
+	])
+		assert.equal(packagingClass(row({ description })), 'Bulk packaging', description);
+	// A premix bag, one tablet in a container, or a unit-dose container are not.
+	for (const description of [
+		'12 BAG in 1 CARTON / 750 mL in 1 BAG',
+		'30 CONTAINER in 1 BOX / 1 TABLET in 1 CONTAINER',
+		'1 CASE in 1 BOX / 100 TABLET in 1 CONTAINER, UNIT-DOSE'
+	])
+		assert.equal(packagingClass(row({ description })), 'Unit-dose packaging', description);
+});

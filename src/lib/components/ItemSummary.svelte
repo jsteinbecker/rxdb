@@ -171,6 +171,8 @@
                         <dt>Applications</dt>
                         <dd>
                               {#if summary.applications.length}
+                                    <details class="collapsed">
+                                    <summary>{plural(summary.applications.length, 'application')}</summary>
                                     <ul class="values">
                                           {#each summary.applications as application (application.number)}
                                                 <li title={ndcList(application.ndcs)}>
@@ -181,6 +183,7 @@
                                                 </li>
                                           {/each}
                                     </ul>
+                                    </details>
                               {:else}<span class="unknown">—</span>{/if}
                         </dd>
                         {#if summary.deaSchedules.length}

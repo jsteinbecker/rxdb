@@ -2,8 +2,10 @@
 // A sodium salt's sodium is a fact of the salt: its formula says how many Na
 // atoms one unit holds, its molecular weight how much one unit weighs. So the
 // ion is computed from every salt on the label, the same way for every
-// package. What a label states ("contains 3.6 mEq (83 mg) of sodium") is kept
-// as a check on that number, and stands in only when GSRS has no formula.
+// package. What a label states ("contains 3.6 mEq (83 mg) of sodium") checks
+// that number, and wins where they disagree: the label's total counts sodium
+// from buffers and excipients (Zosyn's citrate) that no active salt's formula
+// sees. It also stands in when GSRS has no formula. See docs/strength-basis-rules.md.
 
 import { balanceIon, cationsNamedIn, ionDisplayName, ionFromSalt, mgPerMEq } from '../ions';
 import { parseStrengthText } from '../ingredient-correction';
@@ -22,8 +24,12 @@ const ION_UNIIS: Record<string, string> = {
 
 const MG_PER: Record<string, number> = { mcg: 0.001, µg: 0.001, mg: 1, g: 1000, kg: 1e6 };
 
-/** What a label states of one ion for one package: its mass and mEq. */
-export type IonDeclaration = { ion: string; massMg: number; mEq: number };
+/**
+ * What a label states of one ion for one package: its mass and mEq. With
+ * `perGramOf`, the figure is per gram of that drug (`2.84 mEq (65 mg) of
+ * sodium per gram of piperacillin`) and holds for every size.
+ */
+export type IonDeclaration = { ion: string; massMg: number; mEq: number; perGramOf?: string };
 
 const decode = (text: string) =>
 	text
@@ -49,9 +55,22 @@ export function ionDeclarationsFromLabel(texts: (string | null)[], ndc: string):
 		new RegExp(`${amount}\\s*(?:of\\s+)?(?<ion>${ions})\\b`, 'gi'),
 		new RegExp(`\\b(?<ion>${ions})\\s+(?:content|ion)?[^.\\d]{0,40}?${amount}`, 'gi')
 	];
+	const perGram = new RegExp(
+		`${amount}\\s*(?:of\\s+)?(?<ion>${ions})\\b[^.\\d]{0,30}?\\bper\\s+(?:gram|g)\\s+of\\s+(?<drug>[a-z]+)`,
+		'gi'
+	);
+	const perGramFound = new Map<string, IonDeclaration>();
 	for (const text of texts) {
 		if (!text) continue;
 		const plain = decode(text);
+		for (const match of plain.matchAll(perGram)) {
+			const groups = match.groups!;
+			const mEq = Number((groups.eqFirst ?? groups.eqSecond).replaceAll(',', ''));
+			const massMg = Number((groups.mgFirst ?? groups.mgSecond).replaceAll(',', ''));
+			const ion = groups.ion.toLowerCase();
+			if (mEq > 0 && massMg > 0 && !perGramFound.has(ion))
+				perGramFound.set(ion, { ion, massMg, mEq, perGramOf: groups.drug.toLowerCase() });
+		}
 		for (const match of patterns.flatMap((pattern) => [...plain.matchAll(pattern)])) {
 			const groups = match.groups!;
 			const start = (match.index ?? 0) + match[0].length;
@@ -63,7 +82,34 @@ export function ionDeclarationsFromLabel(texts: (string | null)[], ndc: string):
 			if (mEq > 0 && massMg > 0 && !found.has(ion)) found.set(ion, { ion, massMg, mEq });
 		}
 	}
+	// A statement for this very NDC outranks a per-gram one.
+	for (const [ion, declaration] of perGramFound) if (!found.has(ion)) found.set(ion, declaration);
 	return [...found.values()];
+}
+
+/**
+ * A per-gram statement as this package's total: scaled by the grams of the
+ * drug it names, read from an active row measuring that drug itself (its
+ * moiety basis, or the bare drug) per package. Null when no row does.
+ */
+function perPackage(statement: IonDeclaration, active: LabelIngredient[]): IonDeclaration | null {
+	if (!statement.perGramOf) return statement;
+	const drug = statement.perGramOf;
+	const measuresDrug = (ingredient: LabelIngredient) =>
+		ingredient.basis === 'moiety'
+			? ingredient.moieties.some((moiety) => moiety.name.toLowerCase().split(/\s+/).includes(drug))
+			: ingredient.name.toLowerCase() === drug;
+	const row = active.find(measuresDrug);
+	const strength = row && parseStrengthText(row.strength);
+	const scale = strength && !strength.perUnit && strength.per === '1' ? MG_PER[strength.unit.toLowerCase()] : undefined;
+	if (!strength || !scale) return null;
+	const grams = (Number(strength.value) * scale) / 1000;
+	return {
+		ion: statement.ion,
+		massMg: Number((statement.massMg * grams).toPrecision(3)),
+		mEq: Number((statement.mEq * grams).toPrecision(3)),
+		perGramOf: drug
+	};
 }
 
 /** The salt's own mass in a row: the printed salt figure, else the strength unless it is the moiety's. */
@@ -97,7 +143,8 @@ export function ionRows(
 	const rows: LabelIngredient[] = [];
 	for (const ion of cations) {
 		const sources = active.filter((i) => cationsNamedIn(i.name).includes(ion));
-		const statement = declared.find((d) => d.ion === ion);
+		const stated = declared.find((d) => d.ion === ion);
+		const statement = stated ? perPackage(stated, active) : null;
 		const parts = sources.map((ingredient) => {
 			const salt = ingredient.unii ? salts.get(ingredient.unii) : undefined;
 			const strength = saltStrength(ingredient, factors);
@@ -114,7 +161,16 @@ export function ionRows(
 						denominator: parts[0]!.denominator
 					}
 				: null;
-		const amount = computed ?? (statement ? { ...statement, denominator: '' } : null);
+		// A per-package statement checks only a per-unit computation.
+		const disagrees =
+			!!computed &&
+			!!statement &&
+			!computed.denominator &&
+			Math.abs(computed.massMg - statement.massMg) / statement.massMg > 0.05;
+		const declaredTotal = statement
+			? { massMg: statement.massMg, mEq: statement.mEq, denominator: '' }
+			: null;
+		const amount = disagrees ? declaredTotal : (computed ?? declaredTotal);
 		if (!amount) continue;
 		const notes: string[] = [];
 		const labelBalance = statement && balanceIon(ion, statement.massMg, statement.mEq);
@@ -122,19 +178,20 @@ export function ionRows(
 			notes.push(
 				`The label states ${statement.massMg} mg and ${statement.mEq} mEq of ${ion}, which disagree: ${statement.massMg} mg is ${labelBalance.expectedMEq} mEq`
 			);
-		// A per-package statement checks only a per-unit computation.
-		if (computed && statement && !computed.denominator) {
+		if (disagrees) {
 			const perMEq = mgPerMEq(ion)!;
-			if (Math.abs(computed.massMg - statement.massMg) / statement.massMg > 0.05)
-				notes.push(
-					`The label states ${statement.massMg} mg (${statement.mEq} mEq) of ${ion}; the salt's formula gives ${computed.massMg} mg (${Number((computed.massMg / perMEq).toPrecision(3))} mEq)`
-				);
+			const source = stated?.perGramOf
+				? `${stated.massMg} mg (${stated.mEq} mEq) of ${ion} per gram of ${stated.perGramOf}, ${statement!.massMg} mg (${statement!.mEq} mEq) here`
+				: `${statement!.massMg} mg (${statement!.mEq} mEq) of ${ion}`;
+			notes.push(
+				`The label states ${source}; the salt's formula gives ${computed!.massMg} mg (${Number((computed!.massMg / perMEq).toPrecision(3))} mEq) from the active salts alone`
+			);
 		}
 		rows.push({
 			name: ionDisplayName(ion),
 			unii: ION_UNIIS[ion] ?? null,
 			kind: 'ionic',
-			basis: computed ? 'ion constituent (from salt formula)' : 'ion constituent (label total)',
+			basis: amount === computed ? 'ion constituent (from salt formula)' : 'ion constituent (label total)',
 			strength: `${amount.massMg} mg${amount.denominator} (${amount.mEq} mEq${amount.denominator})`,
 			moieties: [],
 			productCode: null,

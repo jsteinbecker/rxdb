@@ -190,12 +190,6 @@
 />
 
 <style>
-      main {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 2.5rem 1.5rem 4rem;
-      }
-
       .back {
             display: inline-flex;
             gap: 0.4rem;
@@ -264,7 +258,7 @@
       }
 
       main:has(.with-panel) {
-            max-width: 1440px;
+            --page-width: 1440px;
       }
 
       .with-panel {
@@ -329,7 +323,7 @@
 
       dialog h2 {
             margin: 0 0 0.4rem;
-            font-size: 1.05rem;
+            font-size: 1.15rem;
       }
 
       dialog p {

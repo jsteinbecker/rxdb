@@ -139,7 +139,10 @@ const SALT_SENSITIVE = new Set([
 	'prednisolone',
 	'dexamethasone',
 	'betamethasone',
-	'triamcinolone'
+	'triamcinolone',
+	// Edetate disodium chelates calcium; edetate calcium disodium treats lead.
+	// Given one for the other, patients have died.
+	'edetate'
 ]);
 
 // ── One moiety, several names ────────────────────────────────────────────────
@@ -256,6 +259,38 @@ const resolved = (name: string) => {
 
 const HYDRATE = /hydrate$|^anhydrous$/;
 
+/** A counted cation: `TRISODIUM`, `DIPOTASSIUM`, `MONOSODIUM`. */
+const COUNTED = /^(mono|di|tri|tetra)(.+)$/i;
+
+/**
+ * Anions whose salts with different cation counts are different substances:
+ * monobasic and dibasic phosphate are dosed and combined as separate actives,
+ * and disodium edetate is a chelator where calcium disodium edetate is not.
+ * With any other anion — citrate, most often — the count is just stoichiometry.
+ */
+const COUNT_MATTERS = /^(?:phosphate|diphosphate|pyrophosphate|edetate|hydrogen)$/i;
+
+/** The acid hydrogens a salt keeps: `DISODIUM HYDROGEN CITRATE`. */
+const HYDROGEN = /^(?:mono|di)?hydrogen$/i;
+
+const BASICITY: Record<string, string> = { monobasic: 'mono', dibasic: 'di', tribasic: 'tri' };
+
+/**
+ * A phosphate salt worded by its basicity, `SODIUM PHOSPHATE, DIBASIC` or
+ * `DIBASIC SODIUM PHOSPHATE`: the cation count it means (`di`), its cation and
+ * its phosphate word. Null for any other name.
+ */
+function phosphateBasicity(words: string[]) {
+	const lowered = words.map((word) => word.toLowerCase());
+	if (words.length !== 3 || !lowered.includes('phosphate')) return null;
+	const at = lowered.findIndex((word) => BASICITY[word]);
+	if (at === -1) return null;
+	const rest = words.filter((_, index) => index !== at);
+	const [cation, phosphate] = rest;
+	if (!ELEMENTS.has(cation.toLowerCase()) || phosphate.toLowerCase() !== 'phosphate') return null;
+	return { count: BASICITY[lowered[at]], cation, phosphate };
+}
+
 /** A trailing solvate phrase (`PROPYLENE GLYCOL SOLVATE`, `ETHANOLATE`) — a crystal form, not a different drug. */
 const SOLVATE =
 	/(?:\s+(?:propylene|glycol|ethanol|methanol|isopropanol|acetone|dimethyl|sulfoxide|dmso|water))*\s+solvate$|\s+(?:ethanolate|methanolate)$/i;
@@ -302,12 +337,30 @@ export function ingredientGroup(name: string): string {
 
 	// Hydration never matters; drop it first so `X SULFATE PENTAHYDRATE` reads as `X SULFATE`.
 	while (words.length > 1 && HYDRATE.test(lower(words.at(-1)!))) words.pop();
+
+	// `SODIUM PHOSPHATE, DIBASIC` and `DIBASIC SODIUM PHOSPHATE` are `DISODIUM PHOSPHATE`.
+	const basic = phosphateBasicity(words);
+	if (basic) words.splice(0, words.length, inCasing(basic.cation, `${basic.count}${lower(basic.cation)}`), basic.phosphate);
+
+	// `TRISODIUM CITRATE` is `SODIUM CITRATE`; `DISODIUM PHOSPHATE` is not `SODIUM PHOSPHATE`.
+	const counted = words.length > 1 ? words[0].match(COUNTED) : null;
+	if (counted && ELEMENTS.has(lower(counted[2])) && !words.slice(1).some((word) => COUNT_MATTERS.test(word)))
+		words[0] = inCasing(words[0], lower(counted[2]));
+
 	const salt = words.join(' ');
 	if (DEPOT.test(salt)) return salt;
 
 	const base = [...words];
 	while (base.length > 1 && INCIDENTAL.has(lower(base.at(-1)!))) base.pop();
-	if (base.length === 1 && ELEMENTS.has(lower(base[0])) && base.length < words.length) return salt;
+	// Nothing but cations left (`SODIUM`, `DISODIUM`, `DISODIUM HYDROGEN`): the salt is the drug.
+	const isCation = (word: string) =>
+		ELEMENTS.has(lower(word)) || ELEMENTS.has(lower(word.match(COUNTED)?.[2] ?? ''));
+	if (
+		base.length < words.length &&
+		base.some(isCation) &&
+		base.every((word) => isCation(word) || HYDROGEN.test(word))
+	)
+		return salt;
 	if (SALT_SENSITIVE.has(base.map(lower).join(' '))) return salt;
 	return resolved(base.join(' '));
 }

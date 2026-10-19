@@ -36,8 +36,8 @@ export type CmsBillingFormat = {
 	unitQualifier: NdcUnitQualifier;
 	/** NDC quantity for one whole package, in `unitQualifier` units. */
 	ndcQuantity: number | null;
-	/** The N4 claim segment for one whole package. */
-	n4: string;
+	/** The N4 claim segment for one whole package; null without a package size to state. */
+	n4: string | null;
 	quarter: string;
 };
 
@@ -98,7 +98,8 @@ const text = (value: string | undefined) => value?.trim().replace(/\s+/g, ' ') |
 /** Rows of one crosswalk CSV; the header row is found by its NDC column, below the title block. */
 export function parseCrosswalkCsv(csv: string, file: CrosswalkFile): CrosswalkRow[] {
 	const rows = parseCsv(csv);
-	const headerAt = rows.findIndex((row) => row.some((cell) => /^NDC\b/i.test(cell.trim())));
+	// `NDC`, or `NDC2` in some quarters' files.
+	const headerAt = rows.findIndex((row) => row.some((cell) => /^NDC\d*\b/i.test(cell.trim())));
 	if (headerAt < 0) return [];
 	const header = rows[headerAt].map((cell) => cell.trim().toUpperCase());
 	const col = (test: (name: string) => boolean) => header.findIndex(test);
@@ -150,6 +151,9 @@ export function unitQualifierFor(doseForm: string | null, hcpcsDosage: string | 
 	const form = (doseForm ?? '').toUpperCase();
 	if (/KIT/.test(form)) return 'UN';
 	if (/INJECT|INFUSION/.test(form) && /POWDER|LYOPHILIZED/.test(form)) return 'UN';
+	// The form's head decides: `CAPSULE, LIQUID FILLED` and `TABLET, FOR SUSPENSION`
+	// are counted, whatever their qualifier says (and `GELATIN` is no gel).
+	if (COUNTED.test(form.split(',')[0])) return 'UN';
 	if (LIQUID.test(form) || (/INJECT/.test(form) && !COUNTED.test(form))) return 'ML';
 	if (MASS.test(form)) return 'GR';
 	if (COUNTED.test(form)) return 'UN';
@@ -174,7 +178,8 @@ export function billingFormat(row: CrosswalkRow, doseForm: string | null, quarte
 		ndc: formatNdc(row.ndc11),
 		unitQualifier,
 		ndcQuantity,
-		n4: `N4${row.ndc11}${unitQualifier}${ndcQuantity ?? ''}`,
+		// A claim rejects an N4 segment without its quantity.
+		n4: ndcQuantity === null ? null : `N4${row.ndc11}${unitQualifier}${ndcQuantity}`,
 		quarter
 	};
 }

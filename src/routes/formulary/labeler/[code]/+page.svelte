@@ -181,11 +181,6 @@
 </main>
 
 <style>
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 2.5rem 1.5rem 4rem;
-	}
 	a {
 		color: #3464a5;
 	}
@@ -285,9 +280,6 @@
 		cursor: help;
 	}
 	@media (max-width: 640px) {
-		main {
-			padding: 1.5rem 1rem 3rem;
-		}
 		table {
 			display: block;
 			overflow-x: auto;

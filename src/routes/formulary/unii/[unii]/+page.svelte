@@ -97,7 +97,6 @@ const counts = $derived({
 </main>
 
 <style>
-	main {max-width: 1040px;margin: 0 auto;padding: 2.5rem 1.5rem 4rem;}
 	a {color: #3464a5;}
 	.back {display: inline-flex;gap: 0.4rem;margin-bottom: 1.5rem;font-weight: 650;text-decoration: none;}
 	.muted {color: #5c6777;}
@@ -114,7 +113,6 @@ const counts = $derived({
 	.role {display: inline-block;margin: 0 0.25rem 0.15rem 0;border-radius: 999px;padding: 0.05rem 0.5rem;font-size: 0.75rem;background: #eef1f5;color: #3a4556;}
 	.role.active {background: #e4ecf8;color: #26508a;}
 	@media (max-width: 640px) {
-		main {padding: 1.5rem 1rem 3rem;}
 		table {display: block;overflow-x: auto;}
 	}
 </style>

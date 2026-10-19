@@ -9,6 +9,7 @@ import {
 import { naturalCompare } from '../natural-sort';
 import {
 	isCombination,
+	knownWords,
 	nameFacets,
 	parseQuery,
 	relevance,
@@ -34,7 +35,8 @@ import {
 import {
 	type CheckedStrength,
 	checkProductStrengths,
-	type MoietyFactor
+	type MoietyFactor,
+	type StrengthCorrectionKind
 } from '../spl-strength-checks';
 import { appearancesByPackage, type PillAppearance } from '../spl-characteristics';
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
@@ -113,7 +115,12 @@ export type LabelIngredient = {
 	 * correction restores it exactly instead of converting the rounded moiety
 	 * strength back.
 	 */
-	labelStrength?: { strength: string; unii: string | null };
+	labelStrength?: {
+		strength: string;
+		unii: string | null;
+		/** Which correction moved the number; a `moiety-equivalent` is derived, never displayed. */
+		correction?: StrengthCorrectionKind;
+	};
 	/** The kit part the ingredient is in: `GRAPE FLAVORED DILUENT (145 mL)`. */
 	part?: string;
 	/** Label-declared elemental content supplied by one or more salt ingredients. */
@@ -420,10 +427,11 @@ function labelIngredientOf(
 		? `${product.name ?? 'Kit part'}${product.part.amount !== null ? ` (${product.part.amount}${product.part.amountUnit ? ` ${product.part.amountUnit}` : ''})` : ''}`
 		: null;
 	// The row as the label printed it, before any salt correction.
-	const printed = checked.corrections.find((correction) => correction.stated !== undefined)?.stated;
+	const salt = checked.corrections.find((correction) => correction.stated !== undefined);
+	const printed = salt?.stated;
 	const asPrinted = printed === undefined ? null : { ...checked, strength: printed };
 	const labelStrengthOf = (strength: string | null) =>
-		strength ? { labelStrength: { strength, unii: ingredient.unii } } : {};
+		strength ? { labelStrength: { strength, unii: ingredient.unii, correction: salt!.kind } } : {};
 	// A kit part states its strength per its own measure: `1 g/1 g` of a 7.5 g
 	// bottle of powder is 7.5 g. Read as written it says nothing about content.
 	const content =
@@ -482,6 +490,15 @@ function labelIngredientOf(
 		...labelStrengthOf(asPrinted && strengthOf(asPrinted)),
 		...(part ? { part } : {})
 	};
+}
+
+/** An SPL's text with its markup and entities gone, one space between words. */
+function splPlainText(xml: string): string {
+	return xml
+		.replace(/<[^>]+>/g, ' ')
+		.replace(/&nbsp;|&#160;/g, ' ')
+		.replace(/&amp;/g, '&')
+		.replace(/\s+/g, ' ');
 }
 
 /** The SPL document's own `<title>`, flattened: "Vancomycin Hydrochloride for Oral Solution, USP". */
@@ -555,6 +572,65 @@ function shared<T>(key: string, ttl: number, load: () => Promise<T>): Promise<T>
 	return value;
 }
 
+// ── Rate limits ─────────────────────────────────────────────────────────────
+// One SCD can have hundreds of NDCs, each asking several providers, so a load
+// reliably trips openFDA's and DailyMed's rate limits. A 429 is not an answer:
+// read as one, amoxicillin's 668 packages were staged with no ingredients at
+// all. So a rate-limited host is paused for every caller (Retry-After, else a
+// doubling wait) and the request asked again; only a limit that outlasts every
+// retry is reported on the package.
+const FETCH_TIMEOUT_MS = 12_000;
+const BACKOFF_START_MS = 2_000;
+const BACKOFF_MAX_MS = 60_000;
+type RateLimitPolicy = {
+	retries: number;
+	sleep: (ms: number) => Promise<void>;
+	now: () => number;
+};
+const defaultPolicy: RateLimitPolicy = {
+	retries: 4,
+	sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+	now: () => Date.now()
+};
+let rateLimitPolicy = defaultPolicy;
+const pausedUntil = new Map<string, number>();
+
+/** Tests swap the clock and waits out; called with nothing, restores the defaults. */
+export function setRateLimitPolicy(policy: Partial<RateLimitPolicy> = {}) {
+	rateLimitPolicy = { ...defaultPolicy, ...policy };
+	pausedUntil.clear();
+}
+
+function retryAfterMs(response: Response): number | null {
+	const header = response.headers.get('retry-after');
+	if (!header) return null;
+	const seconds = Number(header);
+	const ms = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(header) - rateLimitPolicy.now();
+	return ms > 0 ? Math.min(ms, BACKOFF_MAX_MS) : null;
+}
+
+/** `loggedFetch`, waiting out a host's rate limit and retrying, each attempt with its own timeout. */
+async function rateLimitedFetch(
+	url: string,
+	init: RequestInit,
+	expected: number[]
+): Promise<Response> {
+	const host = new URL(url).hostname;
+	for (let attempt = 0; ; attempt++) {
+		// Another caller's 429 pauses this one too.
+		const paused = (pausedUntil.get(host) ?? 0) - rateLimitPolicy.now();
+		if (paused > 0) await rateLimitPolicy.sleep(paused);
+		const response = await loggedFetch(
+			url,
+			{ ...init, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+			expected
+		);
+		if (response.status !== 429 || attempt >= rateLimitPolicy.retries) return response;
+		const wait = retryAfterMs(response) ?? Math.min(BACKOFF_START_MS * 2 ** attempt, BACKOFF_MAX_MS);
+		pausedUntil.set(host, Math.max(pausedUntil.get(host) ?? 0, rateLimitPolicy.now() + wait));
+	}
+}
+
 // ── openFDA key rotation ────────────────────────────────────────────────────
 // Each openFDA key has its own daily quota. When one answers 429 the request is
 // retried with the next configured key, and later requests start from the key
@@ -577,7 +653,10 @@ export function fdaApiKeysFrom(env: Record<string, string | undefined>): string[
 		.filter(Boolean);
 }
 
-/** Fetches `url`, moving to the next openFDA key whenever the current one is rate limited. */
+/**
+ * Fetches `url`, moving to the next openFDA key whenever the current one is
+ * rate limited, and waiting the limit out once every key is.
+ */
 async function fetchRotatingFdaKey(
 	url: string,
 	init: RequestInit,
@@ -585,7 +664,7 @@ async function fetchRotatingFdaKey(
 ): Promise<Response> {
 	const parsed = new URL(url);
 	if (parsed.hostname !== 'api.fda.gov' || !parsed.searchParams.has('api_key') || !fdaKeys.length)
-		return loggedFetch(url, init, expected);
+		return rateLimitedFetch(url, init, expected);
 	let response = await loggedFetch(url, init, expected);
 	for (let tried = 1; response.status === 429 && tried < fdaKeys.length; tried++) {
 		const current = parsed.searchParams.get('api_key');
@@ -593,11 +672,11 @@ async function fetchRotatingFdaKey(
 		parsed.searchParams.set('api_key', fdaKeys[fdaKeyIndex]);
 		response = await loggedFetch(
 			parsed.href,
-			{ ...init, signal: AbortSignal.timeout(12_000) },
+			{ ...init, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
 			expected
 		);
 	}
-	return response;
+	return response.status === 429 ? rateLimitedFetch(parsed.href, init, expected) : response;
 }
 
 function getJson(url: string, emptyOn404 = false): Promise<unknown> {
@@ -616,10 +695,7 @@ function getJson(url: string, emptyOn404 = false): Promise<unknown> {
 
 function getText(url: string): Promise<string> {
 	return shared(`text:${url}`, RESPONSE_TTL_MS, async () => {
-		const response = await loggedFetch(url, {
-			headers: { Accept: '*/*' },
-			signal: AbortSignal.timeout(12_000)
-		});
+		const response = await rateLimitedFetch(url, { headers: { Accept: '*/*' } }, []);
 		if (!response.ok) throw new ProviderHttpError(url, response.status);
 		return response.text();
 	});
@@ -989,14 +1065,23 @@ async function rankRxNav(query: string) {
 	// generic nodes before brands that stand alone, non-packs, and a numeric-aware
 	// name order so strengths sort.
 	const parsed = parseQuery(query);
+	// RxNav's approximate match returns the drug as typed beside its look-alikes;
+	// a word one of them spells is no misspelling of the others.
+	const known = knownWords(
+		[...members].flatMap(([rxcui, list]) => [concepts.get(rxcui)!.name, ...list.map((member) => member.name)])
+	);
 	const scored = [...members.keys()].map((rxcui) => {
 		const concept = concepts.get(rxcui)!;
 		const fit = numeric
 			? { matched: true, score: 0, reasons: [], missing: [] }
-			: relevance(parsed, {
-					name: concept.name,
-					aliases: (members.get(rxcui) ?? []).map((member) => member.name)
-				});
+			: relevance(
+					parsed,
+					{
+						name: concept.name,
+						aliases: (members.get(rxcui) ?? []).map((member) => member.name)
+					},
+					known
+				);
 		return { concept, fit };
 	});
 	// A single-ingredient query sets combinations aside, but only when it has
@@ -1251,12 +1336,18 @@ function directoryMoietyStrengths(
 	products: SplProduct[],
 	rxNormName: string | null,
 	moietyFactors: Map<string, MoietyFactor>,
-	directory: { name: string; strength: string | null }[]
+	directory: { name: string; strength: string | null }[],
+	labelText: string | null
 ): Map<string, string> {
 	const out = new Map<string, string>();
 	if (!moietyFactors.size) return out;
 	for (const product of products) {
-		const checked = checkProductStrengths(product, { rxNormName, moietyFactors, directory });
+		const checked = checkProductStrengths(product, {
+			rxNormName,
+			moietyFactors,
+			directory,
+			labelText
+		});
 		product.ingredients.forEach((ingredient, index) => {
 			if (!checked[index].corrections.some((c) => c.kind === 'moiety-equivalent')) return;
 			const factor = Number(moietyFactors.get(ingredient.unii!)!.factor);
@@ -1627,6 +1718,8 @@ export async function enrichPackages(
 		const splProducts = xml ? parseSplIngredients(xml) : [];
 		if (hints.moietiesOf) await completeMoieties(splProducts, hints.moietiesOf);
 		const moietyFactors = await moietyFactorsOf(splProducts, hints.moietyFactorOf);
+		// The label's words, the evidence for whose mass a salt's number is.
+		const splText = xml ? splPlainText(xml) : null;
 		const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
 		// Who else this label speaks to — the suspension beside these tablets,
 		// the other vial sizes — so the page can set their passages aside.
@@ -1791,7 +1884,8 @@ export async function enrichPackages(
 						const checked = checkProductStrengths(item, {
 							rxNormName: rxNormTitle,
 							moietyFactors,
-							directory: sourceIngredients
+							directory: sourceIngredients,
+							labelText: splText
 						});
 						return item.ingredients.flatMap((ingredient, index) => {
 							if (ingredient.kind !== 'active') return [];
@@ -1812,7 +1906,8 @@ export async function enrichPackages(
 			labelProducts,
 			rxNormTitle,
 			moietyFactors,
-			sourceIngredients
+			sourceIngredients,
+			splText
 		);
 		const listedIngredients = [...sourceIngredients, ...kitIngredients].map((ingredient) => ({
 			...ingredient,
@@ -1898,7 +1993,8 @@ export async function enrichPackages(
 									const checked = checkProductStrengths(item, {
 										rxNormName: rxNormTitle,
 										moietyFactors,
-										directory: sourceIngredients
+										directory: sourceIngredients,
+										labelText: splText
 									});
 									return item.ingredients.map((ingredient, index) =>
 										labelIngredientOf(

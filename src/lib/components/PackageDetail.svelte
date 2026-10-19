@@ -1059,6 +1059,11 @@
             <section class="wide">
                   <h4>Reconstitution, concentration and volume{@render src('spl')}</h4>
                   {#if volume}
+                        <!-- The diagram labels every resolved value, so the numbers are written out
+                             only when there is nothing to draw. While editing, a drawn diagram keeps
+                             just a row of labelled override buttons. -->
+                        {@const drawn = !!diagram && ((volume.finalVolumeMl ?? 0) > 0 || (volume.diluentMl ?? 0) > 0)}
+                        {#if !drawn}
                         <p class="resolved-summary">
                               <strong>Resolved volume:</strong>
                               {#if volume.finalVolumeMl === null}Unresolved{:else}{@render qty(volume.finalVolumeMl, 'mL')} final{/if}{@render edit(
@@ -1088,6 +1093,7 @@
                                     'powder displacement'
                               )}{/if}
                         </p>
+                        {/if}
                         {#if diagram}
                               <ReconstitutionDiagram
                                     finalVolumeMl={volume.finalVolumeMl}
@@ -1100,12 +1106,23 @@
                                     container={isOralDryFillForm(item.doseForm) ? 'bottle' : 'vial'}
                               />
                         {/if}
+                        {#if drawn && editing}
+                        <p class="muted resolved-summary">
+                              Override resolved: final volume{@render edit(['resolvedVolume.finalVolumeMl'], 'resolved volume')}
+                              · concentration{@render edit(['resolvedVolume.concentrationMgPerMl'], 'resolved concentration')}
+                              · diluent added{@render edit(['resolvedVolume.diluentMl'], 'diluent added')}
+                              · powder displacement{@render edit(['resolvedVolume.powderDisplacementMl'], 'powder displacement')}
+                              · package volume meaning ({volume.meaning}){@render edit(['resolvedVolume.meaning'], 'package volume meaning')}
+                        </p>
+                        {:else if !drawn || volume.meaning !== 'final'}
+                        <!-- "Final" is already the diagram's top label; other meanings still need saying. -->
                         <p class="muted">
                               Package volume meaning: {volume.meaning}.{@render edit(
                               ['resolvedVolume.meaning'],
                               'package volume meaning'
                         )}
                         </p>
+                        {/if}
                   {/if}
                   {#if item.reconstitution.length}
                         <div class="table-wrap">

@@ -402,12 +402,6 @@
 </main>
 
 <style>
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
-	}
-
 	h2 {
 		margin: 0;
 		font-size: 1rem;
@@ -770,10 +764,6 @@
 	}
 
 	@media (max-width: 640px) {
-		main {
-			padding: 2.5rem 1rem;
-		}
-
 		.toolbar {
 			flex-wrap: wrap;
 		}

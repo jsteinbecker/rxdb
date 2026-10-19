@@ -5,10 +5,11 @@ import { ttyLabel } from '$lib/rxnorm-tty';
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { stagedTree, syncExternalSearch } from '$lib/server/catalog-sync';
-import { defaultScope } from '$lib/server/catalog-formulary';
+import { defaultScope, loadedOrigins, originKey } from '$lib/server/catalog-formulary';
+import { setsMatching } from '$lib/server/product-sets';
 import { withPharmClassRulesInTree } from '$lib/server/pharm-class-view';
 import { withLocalConceptsInTree } from '$lib/server/local-concept-view';
-import { filtersFrom, parseQuery, relevance, type ParsedQuery } from '$lib/search-relevance';
+import { filtersFrom, knownWords, parseQuery, relevance, type ParsedQuery } from '$lib/search-relevance';
 import type { RequestHandler } from './$types';
 
 const DEFAULT_LIMIT = 24;
@@ -30,6 +31,29 @@ export type SearchResult = {
 	/** A clinical_drug row that is a local concept (LC code), not an RxNorm concept. */
 	localConcept?: true;
 };
+
+/** A curated product set the query names: loadable though no source returns it. */
+export type SetResult = {
+	key: string;
+	name: string;
+	description: string;
+	/** Its formulary item in the scope, when it is already loaded. */
+	formularyItemId: string | null;
+};
+
+async function setResults(query: string, scopeId: string | null): Promise<SetResult[]> {
+	const sets = setsMatching(query);
+	if (!sets.length) return [];
+	const scope = scopeId ?? (await defaultScope(prisma)).id;
+	const targets = sets.map((set) => ({ kind: 'set' as const, key: set.key }));
+	const loaded = await loadedOrigins(prisma, scope, targets);
+	return sets.map((set, index) => ({
+		key: set.key,
+		name: set.name,
+		description: set.description,
+		formularyItemId: loaded.get(originKey(scope, targets[index])) ?? null
+	}));
+}
 
 const amount = (value: unknown) => String(Number(Number(value).toPrecision(6)));
 /** `500 mg`, `25 mg/mL`, `100 mg/4 mL`: a stored strength as a reader says it. */
@@ -75,11 +99,15 @@ function normalizeIdentifier(value: string): string {
 }
 
 /** How well a local result answers the query, scored as the live ranking scores RxNav names. */
-function fitOf(result: SearchResult, parsed: ParsedQuery) {
-	return relevance(parsed, {
-		name: result.name,
-		aliases: [result.detail ?? '', ...result.identifiers]
-	});
+function fitOf(result: SearchResult, parsed: ParsedQuery, known?: ReadonlySet<string>) {
+	return relevance(
+		parsed,
+		{
+			name: result.name,
+			aliases: [result.detail ?? '', ...result.identifiers]
+		},
+		known
+	);
 }
 
 /** Sort key: an exact identifier, then complete matches by score, an exact name, a name led by the query. */
@@ -87,11 +115,12 @@ function rank(
 	result: SearchResult,
 	query: string,
 	parsed: ParsedQuery,
-	exactIdentifierIds: Set<string>
+	exactIdentifierIds: Set<string>,
+	known?: ReadonlySet<string>
 ): number[] {
 	const name = result.name.toLocaleLowerCase();
 	const needle = query.toLocaleLowerCase();
-	const fit = fitOf(result, parsed);
+	const fit = fitOf(result, parsed, known);
 	return [
 		Number(!exactIdentifierIds.has(result.id)),
 		Number(!fit.matched && result.matchedOn !== 'identifier'),
@@ -114,6 +143,7 @@ const compareKeys = (x: number[], y: number[]) => {
  * `offset` pages the staged RxNav concepts (10 per page); catalog results are unaffected.
  * `local=1` skips the live lookup; `external=1` returns only it (`results` is empty).
  * Staged concepts arrive without packages: GET /api/v1/search/packages?rxcui= fetches them.
+ * `sets` lists curated product sets the query names (`water`, `swfi`), which no source returns.
  *
  * Searches the application's canonical entity models instead of rebuilding the
  * legacy RxNorm traversal.  Identifier matching is normalized and uses the
@@ -509,19 +539,21 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 
 	const all = [...results.values()];
+	// A query word any result spells is spelled right, never a look-alike's typo.
+	const known = knownWords(all.map((result) => result.name));
 	// Rows missing part of the query (a strength or form the name lacks) are dropped,
 	// unless nothing matched completely: then the partial matches are all there is.
 	const complete = all.filter(
 		(result) =>
 			exactIdentifierIds.has(result.id) ||
 			result.matchedOn === 'identifier' ||
-			fitOf(result, parsed).matched
+			fitOf(result, parsed, known).matched
 	);
 	const ranked = (complete.length ? complete : all).sort(
 		(a, b) =>
 			compareKeys(
-				rank(a, query, parsed, exactIdentifierIds),
-				rank(b, query, parsed, exactIdentifierIds)
+				rank(a, query, parsed, exactIdentifierIds, known),
+				rank(b, query, parsed, exactIdentifierIds, known)
 			) || naturalCompare(a.name, b.name)
 	);
 
@@ -529,6 +561,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		query,
 		sync,
 		staged,
+		sets: await setResults(query, scopeId),
 		results: ranked.slice(0, limit)
 	});
 };

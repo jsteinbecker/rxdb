@@ -5,7 +5,7 @@ import { withBiosimilarSuffix } from './biosimilar';
 import { ingredientGroup } from './ingredient-group';
 import { dryFillStrength, pharmacyBulkFillMl } from './ingredient-content';
 import { mgPer, mlPer } from './units';
-import { isFormOf, rxNormStrengths, sameSubstance } from './spl-strength-checks';
+import { isFormOf, rxNormStrengths, sameSubstance, scdStrengths } from './spl-strength-checks';
 import { formatNdc } from './ndc';
 import { splitBrand } from './brand-name';
 import { quantifiedScdName } from './quantified-scd';
@@ -15,6 +15,8 @@ type Ingredient = {
 	strength: string | null;
 	/** Named by its basis of strength (`piperacillin` for PIPERACILLIN SODIUM); the strength is that substance's. */
 	basisNamed?: boolean;
+	/** The label's printed salt figure, standing in for a derived moiety equivalent; never renamed or replaced. */
+	printed?: boolean;
 };
 
 type SplActive = {
@@ -23,6 +25,8 @@ type SplActive = {
 	strength: string | null;
 	basis?: string | null;
 	moieties?: { name: string }[];
+	/** What the label printed before a salt correction, and which correction moved it. */
+	labelStrength?: { strength: string; correction?: string } | null;
 };
 
 /** The package facts a title is built from; every field is optional. */
@@ -63,21 +67,30 @@ export function correctedIngredients(item: PackageTitleSource): Ingredient[] {
 		...ingredient,
 		name: withBiosimilarSuffix(ingredient.name, texts)
 	});
-	const rx = scdStrengths(item);
+	const rx = scdStrengthsOf(item);
 	const actives = (item.details?.spl?.ingredients ?? []).filter((ingredient) => ingredient.kind === 'active');
 	const spl = actives.map((ingredient) => {
-		const basis = basisName(ingredient, rx);
+		// A heavy salt's moiety equivalent (rule 3) is derived: the label printed
+		// the salt's own mass, and that is what a title shows, under the salt's
+		// name. A light salt moved onto the SCD's number (rule 2) is not; RxNorm
+		// arbitrated it. See docs/strength-basis-rules.md §4.
+		const printed =
+			ingredient.labelStrength?.correction === 'moiety-equivalent' ? ingredient.labelStrength.strength : null;
+		const basis = printed ? null : basisName(ingredient, rx);
 		return named({
 			// The substance name, as the FDA directory gives it, unless the label
 			// measures it as its moiety; see `basisName`.
 			name: basis ?? ingredient.name,
-			strength: ingredient.strength,
+			strength: printed ?? ingredient.strength,
 			...(basis ? { basisNamed: true } : {}),
+			...(printed ? { printed: true } : {}),
 			key: key(ingredient.name)
 		});
 	});
 	const plain = ({ key: _, ...ingredient }: Ingredient & { key: string }): Ingredient => ingredient;
-	const asScd = (ingredient: Ingredient) => scdNamed(ingredient, rx, item.size);
+	// A printed salt figure is never renamed to the SCD's moiety: the numbers
+	// agreeing there only means RxNorm copied the salt's mass.
+	const asScd = (ingredient: Ingredient) => (ingredient.printed ? ingredient : scdNamed(ingredient, rx, item.size));
 	if (!item.ingredients?.length) return spl.map(plain).map(asScd);
 	const size = item.size;
 	const fillVolumeMl = size?.kind === 'volume' ? size.value * (size.unit === 'L' ? 1000 : 1) : null;
@@ -87,7 +100,7 @@ export function correctedIngredients(item: PackageTitleSource): Ingredient[] {
 		const label = labeled.get(key(ingredient.name));
 		// Renamed to its basis, the row takes the label's number, which is that
 		// substance's; the directory's is printed under the salt's name.
-		if (label?.basisNamed) return asScd(plain(label));
+		if (label?.basisNamed || label?.printed) return asScd(plain(label));
 		const shown = {
 			name: ingredient.name,
 			strength:
@@ -174,19 +187,8 @@ function amountOf(strength: string, size: UnitOfUseSize | null | undefined) {
 
 const key = (name: string) => ingredientGroup(name).toLowerCase();
 
-/**
- * The package's SCD strengths, or none when its concept name is not an SCD's:
- * RxNav names some NDCs in the listing's own words (`Dextrose Monohydrate
- * 2.45 g in 100 mL / …`), which neither states totals nor spells as RxNorm.
- * An SCD's units are always upper case (`MG`, `ML`, `UNT`).
- */
-function scdStrengths(item: PackageTitleSource) {
-	const rx = rxNormStrengths(item.details?.rxnav?.conceptName);
-	const scd = rx.every(
-		(entry) => entry.unit === entry.unit.toUpperCase() && (!entry.perUnit || entry.perUnit === entry.perUnit.toUpperCase())
-	);
-	return scd && !/\d\s*[a-z]+\s+in\s+\d/i.test(item.details?.rxnav?.conceptName ?? '') ? rx : [];
-}
+/** The package's SCD strengths, or none when its concept name is not an SCD's; see `scdStrengths`. */
+const scdStrengthsOf = (item: PackageTitleSource) => scdStrengths(item.details?.rxnav?.conceptName);
 
 /** `SODIUM CATION`, `CHLORIDE ION`: an electrolyte's moiety is no name for its salt. */
 const ION = /\b(?:cation|anion|ion)$/i;
@@ -352,7 +354,7 @@ function isGenericWording(brand: string, names: (string | null | undefined)[]): 
  * title then gives the container's 3 g, as the SCD does, not 60 mg/mL.
  */
 function scdStatesTotals(item: PackageTitleSource): boolean {
-	const rx = scdStrengths(item);
+	const rx = scdStrengthsOf(item);
 	return rx.length > 0 && rx.every((entry) => !entry.perUnit);
 }
 
@@ -398,7 +400,9 @@ function activesParts(item: PackageTitleSource) {
 		.map((ingredient) => ({
 			...ingredient,
 			strength:
-				(!ingredient.basisNamed && stated.get(ingredientGroup(ingredient.name).toLowerCase())) ||
+				(!ingredient.basisNamed &&
+					!ingredient.printed &&
+					stated.get(ingredientGroup(ingredient.name).toLowerCase())) ||
 				ingredient.strength
 		}));
 	if (!ingredients.length) return null;
