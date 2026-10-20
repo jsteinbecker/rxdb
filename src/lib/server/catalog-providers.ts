@@ -41,7 +41,7 @@ import {
 import { appearancesByPackage, type PillAppearance } from '../spl-characteristics';
 import { correctDoseForm, type DoseFormCorrection } from '../dose-form-correction';
 import { reconstitutionFromLabel } from '../reconstitution';
-import { type LabelBlock, labelSectionBlocks } from '../spl-sections';
+import { type LabelBlock, labelSectionBlocks, sectionPlainText } from '../spl-sections';
 import { labelScope, type LabelScope } from '../label-relevance';
 import { dryFillStrength, isDryFillForm, pharmacyBulkFillMl } from '../ingredient-content';
 import {
@@ -1821,8 +1821,19 @@ export async function enrichPackages(
 			...routesFromProductText(productRouteText),
 			...routesFromLabelText(labelRouteText)
 		];
+		const siblingProducts = splProducts.filter((item) => !ownProducts.includes(item));
+		const codesOf = (items: typeof splProducts) =>
+			items
+				.flatMap((item) => [item.productCode, ...item.packageCodes])
+				.filter((code) => !!code) as string[];
 		const doseFormCorrection = correctDoseForm({
-			doseForm: product?.dosage_form ?? null,
+			// RxNorm's `Injection` stands in when the directory has no form, and is
+			// just as silent on whether the vial holds a powder.
+			doseForm:
+				product?.dosage_form ??
+				ownProducts.find((item) => item.doseForm)?.doseForm ??
+				rxNormDoseForm ??
+				null,
 			identity: {
 				generic_name: product?.generic_name,
 				brand_name: product?.brand_name,
@@ -1843,9 +1854,15 @@ export async function enrichPackages(
 				].map((key) => [key, labelText(key)])
 			),
 			reconstitutionRows: labelRow ? reconstitutionFromLabel(labelRow).length : 0,
-			siblingForms: splProducts
-				.filter((item) => !ownProducts.includes(item))
-				.map((item) => item.doseForm)
+			siblingForms: siblingProducts.map((item) => item.doseForm),
+			// The article as supplied, and whose it is when the label has siblings.
+			supplied: {
+				description: sectionPlainText(sectionBlocks.description) ?? labelText('description'),
+				how_supplied: sectionPlainText(sectionBlocks.how_supplied) ?? labelText('how_supplied')
+			},
+			ownCodes: codesOf(ownProducts),
+			siblingCodes: codesOf(siblingProducts),
+			scope
 		});
 		const doseForm =
 			doseFormCorrection?.to ??

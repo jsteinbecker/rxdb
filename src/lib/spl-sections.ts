@@ -338,3 +338,30 @@ export function labelSectionBlocks(xml: string): Record<string, LabelBlock[]> {
 	}
 	return out;
 }
+
+/**
+ * A section's blocks as plain text, one line per paragraph, list item and
+ * table row, so a row's NDC stays on the line with the rest of that row.
+ */
+export function sectionPlainText(blocks: LabelBlock[] | undefined): string | null {
+	if (!blocks?.length) return null;
+	const runs = (items: LabelRun[]) => items.map((run) => run.text).join('');
+	const lines = (block: LabelBlock): string[] => {
+		switch (block.type) {
+			case 'heading':
+				return [block.text];
+			case 'paragraph':
+				return [runs(block.runs)];
+			case 'list':
+				return block.items.map((item) => item.flatMap(lines).join(' '));
+			case 'table':
+				return [
+					...(block.caption ? [block.caption] : []),
+					...[...block.head, ...block.body, ...block.foot].map((row) =>
+						row.map((cell) => runs(cell.runs)).join(' | ')
+					)
+				];
+		}
+	};
+	return blocks.flatMap(lines).join('\n') || null;
+}
