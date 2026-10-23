@@ -1194,6 +1194,13 @@ marks, and `editing` offers a pencil beside each overridable property.
                                     container={isOralDryFillForm(item.doseForm) ? 'bottle' : 'vial'}
                               />
                         {/if}
+                        {#if volume.concentrationConflict}
+                        <p class="muted">
+                              The label states about {@render qty(volume.concentrationConflict.statedMgPerMl, 'mg/mL')},
+                              but withdraws {@render qty(volume.concentrationConflict.withdrawnMl, 'mL')} for the vial;
+                              the concentration here is taken from the volume.
+                        </p>
+                        {/if}
                         {#if drawn && editing}
                         <p class="muted resolved-summary">
                               Override resolved: final volume{@render edit(['resolvedVolume.finalVolumeMl'], 'resolved volume')}

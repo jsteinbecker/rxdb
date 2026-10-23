@@ -97,7 +97,7 @@ test('withdrawal volume columns are yields, not diluent, and sibling vial sizes 
 	);
 	assert.deepEqual(
 		facts.reconstitution.map(({ id: _id, ...row }) => row),
-		[{ vialMassMg: 1500, diluentMl: 3.2, concentrations: [], finalVolumeMl: 4 }]
+		[{ vialMassMg: 1500, diluentMl: 3.2, concentrations: [], finalVolumeMl: 4, withdrawn: true }]
 	);
 	assert.equal(facts.resolvedVolume?.diluentMl, 3.2);
 	assert.equal(facts.resolvedVolume?.finalVolumeMl, 4);

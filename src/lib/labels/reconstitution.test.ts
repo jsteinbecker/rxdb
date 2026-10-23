@@ -11,8 +11,10 @@ import {
 } from './reconstitution';
 import {
 	dedupeProseReconstitutions,
+	fromReconstitutionRows,
 	parseBottleProse,
 	parseReconstitutionProse,
+	resolveDryFillVolume,
 	rowsForVial,
 	statedReconstitutedConcentrations,
 	withLabelConcentrations
@@ -253,6 +255,7 @@ test('a vial cell naming its route in parentheses is a vial of that route', () =
 			diluentMl: 10,
 			concentrationMgPerMl: 100,
 			finalVolumeMl: 10.5,
+			withdrawn: true,
 			routes: ['IV']
 		},
 		{
@@ -260,6 +263,7 @@ test('a vial cell naming its route in parentheses is a vial of that route', () =
 			diluentMl: 2.4,
 			concentrationMgPerMl: 280,
 			finalVolumeMl: 3.6,
+			withdrawn: true,
 			routes: ['IM']
 		},
 		{
@@ -267,9 +271,27 @@ test('a vial cell naming its route in parentheses is a vial of that route', () =
 			diluentMl: 10,
 			concentrationMgPerMl: 160,
 			finalVolumeMl: 12.5,
+			withdrawn: true,
 			routes: ['IV']
 		}
 	]);
+});
+
+// The 1 g IV row is the label contradicting itself: ~100 mg/mL × 10.5 mL is
+// 1,050 mg from a 1 g vial. Its other rows reconcile (280 × 3.6, 160 × 12.5),
+// so the rounded "approximate" concentration is the number that is off.
+test('a withdrawal volume that contradicts the approximate concentration wins, and says so (cefepime 00409-9566-10)', () => {
+	const rows = fromReconstitutionRows(parseReconstitutionTable(cefepimeTable));
+	const oneGram = resolveDryFillVolume(null, new Map([['CEFEPIME', 1000]]), rows);
+	assert.equal(oneGram.finalVolumeMl, 10.5);
+	assert.equal(oneGram.diluentMl, 10);
+	assert.equal(oneGram.concentrationMgPerMl!.toFixed(1), '95.2');
+	assert.deepEqual(oneGram.concentrationConflict, { statedMgPerMl: 100, withdrawnMl: 10.5 });
+
+	const twoGram = resolveDryFillVolume(null, new Map([['CEFEPIME', 2000]]), rows);
+	assert.equal(twoGram.finalVolumeMl, 12.5);
+	assert.equal(twoGram.concentrationMgPerMl, 160);
+	assert.equal(twoGram.concentrationConflict, undefined);
 });
 
 // ── Concentrations stated apart from the instruction: vancomycin ───────────
@@ -453,4 +475,16 @@ test('route dividers, "1 gram vial" stubs and starred volumes (ceftazidime 25021
 			routes: ['IV']
 		}
 	]);
+	// "Approximate Available Volume" holds the overfill: the footnote withdraws
+	// 10 mL for the 1 g dose, so the stated 100 mg/mL stands.
+	const resolved = resolveDryFillVolume(
+		null,
+		new Map([['CEFTAZIDIME', 1000]]),
+		fromReconstitutionRows(parseReconstitutionTable(ceftazidime)).filter((row) =>
+			row.routes?.includes('IV')
+		)
+	);
+	assert.equal(resolved.finalVolumeMl, 10);
+	assert.equal(resolved.concentrationMgPerMl, 100);
+	assert.equal(resolved.concentrationConflict, undefined);
 });

@@ -56,6 +56,13 @@ export interface ReconstitutionRow {
 	 * yields 4 mL, and the two sit side by side in the same row.
 	 */
 	finalVolumeMl: number | null;
+	/**
+	 * The final volume sits under a "to be Withdrawn" header: the label's
+	 * volume for the vial's whole content, not what the vial holds. An
+	 * "Available Volume" can include overfill (ceftazidime's 10.8 mL, of which
+	 * 10 mL is the 1 g dose); a withdrawal volume cannot.
+	 */
+	withdrawn?: true;
 	/** Routes the table assigns this row (section row, column header or stub), when it does. */
 	routes?: ReconstitutionRoute[];
 	/** Diluents the table names for this row (`reconstitution-terms.ts` codes). */
@@ -343,12 +350,16 @@ export function parseReconstitutionTable(
 		const { mg: vialMassMg, routes: massRoutes } = parseMassCell(row[massIndex])!;
 
 		let finalVolumeMl: number | null = null;
+		let withdrawn = false;
 		// A body cell like "375 mg/mL" under "Approximate Concentration" beats
 		// a header that names none.
 		let bodyConcentration: number | null = null;
 		for (let column = 0; column < row.length; column++) {
 			// The final volume may sit left of the vial size, as in the kit table.
-			if (roles[column] === 'final') finalVolumeMl ??= parseVolumeMl(row[column]);
+			if (roles[column] === 'final' && finalVolumeMl === null) {
+				finalVolumeMl = parseVolumeMl(row[column]);
+				withdrawn = finalVolumeMl !== null && /withdraw/i.test(headerText(column));
+			}
 			if (column <= massIndex) continue;
 			if (parseVolumeMl(row[column]) === null)
 				bodyConcentration ??= parseConcentrationMgPerMl(row[column]);
@@ -372,6 +383,7 @@ export function parseReconstitutionTable(
 				concentrationMgPerMl:
 					columnConcentration(column) ?? bodyConcentration ?? rowConcentration(row),
 				finalVolumeMl,
+				...(withdrawn ? { withdrawn: true as const } : {}),
 				...(routes ? { routes } : {}),
 				...(diluents ? { diluents } : {})
 			});
