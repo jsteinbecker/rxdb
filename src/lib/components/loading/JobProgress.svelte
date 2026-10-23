@@ -1,6 +1,13 @@
+<!--
+@component
+Floating panel listing background jobs (refreshes, batch loads) with progress, a
+time-left estimate and a hint about slow steps. Polls `/api/v1/jobs` quickly while a
+job runs or a form was just submitted, slowly otherwise, and stops while the tab is
+hidden and nothing is running. Finished jobs can be dismissed.
+-->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { JobSnapshot } from '$lib/server/jobs';
+	import type { JobSnapshot } from "$lib/server/infrastructure/jobs";
 
 	/** Poll fast while something runs (or was just started), slowly otherwise. */
 	const FAST_MS = 600;

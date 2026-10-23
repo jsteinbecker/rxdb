@@ -15,8 +15,8 @@
     VOLUME_UNIT,
     type Field,
     type Line
-  } from '$lib/compound-builder';
-  import { formatRational, serializeRational, type Rational } from '$lib/rational';
+  } from "$lib/compounds/compound-builder";
+  import { formatRational, serializeRational, type Rational } from "$lib/medication/rational";
 
   let { data, form } = $props();
 

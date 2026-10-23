@@ -1,18 +1,20 @@
 <script lang="ts">
       import RxCui from '$lib/components/RxCui.svelte';
       import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from '$lib/ndc';
+      import {formatNdc} from "$lib/catalog/ndc";
       import PageHeader from '$lib/components/PageHeader.svelte';
       import {enhance} from '$app/forms';
-      import {packageLayout, type PackageLine, runSpans} from '$lib/formulary-item';
+      import {packageLayout, type PackageLine, runSpans} from "$lib/formulary/item";
       import ItemSummary from '$lib/components/ItemSummary.svelte';
       import IngredientScenarios from '$lib/components/IngredientScenarios.svelte';
       import PillMockup from '$lib/components/PillMockup.svelte';
       import RouteBadge from '$lib/components/RouteBadge.svelte';
-      import {pillImageKey, pillPhotoUrl} from '$lib/pill-image-layout';
-      import {abbreviatedRelease} from '$lib/time-release';
-      import {strengthAsPercent} from '$lib/item-name';
-      import {badgeText} from '$lib/local-concept-list';
+      import {pillImageKey, pillPhotoUrl} from "$lib/imprints/pill-image-layout";
+      import {abbreviatedRelease} from "$lib/medication/time-release";
+      import {itemName} from "$lib/formulary/item-name";
+      import {ITEM_STRENGTH_STYLES} from "$lib/medication/strength-style";
+      import {strengthRules} from "$lib/client/strength-display.svelte";
+      import {badgeText} from "$lib/curation/local-concept-list";
       import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
 
       let {data, form} = $props();
@@ -22,11 +24,11 @@
       let editingRelease = $state(false);
       let editingName = $state(false);
       let nameDraft = $state('');
-      let percentDraft = $state(false);
+      let styleDraft = $state<string | null>(null);
       let refreshing = $state(false);
 
       const item = $derived(data.item);
-      const layout = $derived(packageLayout(data.packages));
+      const layout = $derived(packageLayout(data.packages, strengthRules(item.strengthStyle)));
       const showAppearance = $derived(Object.keys(data.appearances).length > 0);
       // What a row's mockup draws, so adjacent identical pills share one merged cell.
       // The product code is identity, not appearance, and is left out of the key.
@@ -114,7 +116,7 @@
                         {@render editToggle(editingName, 'display name', () => {
                               editingName = !editingName;
                               nameDraft = item.nameOverride ?? item.sourceName;
-                              percentDraft = item.strengthAsPercent;
+                              styleDraft = item.strengthStyle;
                         })}</h1>
             {/snippet}
             {#if editingName}
@@ -135,11 +137,15 @@
                               aria-label="Display name"
                         />
                         <label class="percent">
-                              <input type="checkbox" name="percent" bind:checked={percentDraft}/>
-                              Show strength as a percentage
+                              Strengths shown as
+                              <select name="strengthStyle" bind:value={styleDraft}>
+                                    {#each ITEM_STRENGTH_STYLES as option (option.label)}
+                                          <option value={option.value}>{option.label}</option>
+                                    {/each}
+                              </select>
                         </label>
                         <p class="none">
-                              Preview: {percentDraft ? strengthAsPercent(nameDraft || item.sourceName) : nameDraft || item.sourceName}
+                              Preview: {itemName(item.sourceName, {nameOverride: nameDraft && nameDraft !== item.sourceName ? nameDraft : null, strengthStyle: styleDraft}, data.strengthStyles)}
                         </p>
                         <div class="name-actions">
                               <button class="ghost">Save</button>
@@ -149,7 +155,7 @@
                         </div>
                   </form>
                   {#if form?.nameMessage}<p class="error" role="alert">{form.nameMessage}</p>{/if}
-            {:else if item.nameOverride || item.strengthAsPercent}
+            {:else if item.nameOverride || item.strengthStyle || item.displayName !== item.sourceName}
                   <p class="none">Sourced as {item.sourceName}</p>
             {/if}
       </PageHeader>
@@ -335,7 +341,7 @@
 
       <div class="content">
       {#if data.packages.length}
-            <ItemSummary summary={data.summary}/>
+            <ItemSummary summary={data.summary} title={item.nameOverride ?? item.sourceName} itemStyle={item.strengthStyle}/>
             <IngredientScenarios summary={data.summary}/>
       {/if}
 
@@ -534,7 +540,7 @@
             box-sizing: border-box;
       }
 
-      .name-form .percent input {
+      .name-form .percent select {
             width: auto;
       }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { watchJobs } from '$lib/jobs-watch';
+	import { watchJobs } from "$lib/client/jobs-watch";
 	import RxCui from '$lib/components/RxCui.svelte';
 	import BrandedName from '$lib/components/BrandedName.svelte';
       import {resolve} from '$app/paths';
@@ -10,9 +10,10 @@
       import {SvelteMap, SvelteSet} from 'svelte/reactivity';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
       import PageHeader from '$lib/components/PageHeader.svelte';
-      import {packageTitle} from '$lib/package-title';
-      import type {StagedConcept, StagedPackage} from '$lib/server/catalog-sync';
-      import {filtersQuery, type MatchReason, type SearchFacets, type SearchFilters} from '$lib/search-relevance';
+      import {packageTitle} from "$lib/catalog/package-title";
+      import {styledName} from "$lib/client/strength-display.svelte";
+      import type { StagedConcept, StagedPackage } from '../lib/catalog/types';
+      import {filtersQuery, type MatchReason, type SearchFacets, type SearchFilters} from "$lib/catalog/search-relevance";
 
       type Result = {
 		id: string;
@@ -862,7 +863,7 @@
 			>
 			<div class="node-title">
 				<span class="kind">package</span>
-				<h3><BrandedName text={packageTitle(item)} /></h3>
+				<h3><BrandedName text={styledName(packageTitle(item))} /></h3>
 				<p class="meta">
 					<span class="mono">{item.ndc}</span>
 					{[

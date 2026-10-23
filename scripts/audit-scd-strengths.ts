@@ -2,10 +2,10 @@
 //   node --env-file=.env --import tsx scripts/audit-scd-strengths.ts
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/client.ts';
-import { CATALOG_VERSION } from '../src/lib/server/catalog-cache.ts';
-import { correctedIngredients, packageTitle, packageStrengthText, packageDisplayTitle } from '../src/lib/package-title.ts';
-import { mgPer, mlPer } from '../src/lib/units.ts';
-import { rxNormStrengths, sameSubstance } from '../src/lib/spl-strength-checks.ts';
+import { CATALOG_VERSION } from "../src/lib/server/catalog/cache.ts";
+import { correctedIngredients, packageTitle, packageStrengthText, packageDisplayTitle } from "../src/lib/catalog/package-title.ts";
+import { mgPer, mlPer } from "../src/lib/medication/units.ts";
+import { rxNormStrengths, sameSubstance } from "../src/lib/labels/spl-strength-checks.ts";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 const rows = await db.$queryRaw<{ ndc: string; payload: any }[]>`

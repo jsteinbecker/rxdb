@@ -1,35 +1,45 @@
+<!--
+@component
+Everything known about one package (NDC): its identity, RxNorm concept (or the local
+concept superseding it), ingredients as a tree of salts, moieties and ions, strengths,
+packaging and reconstitution, appearance, classes and label. Each value cites the
+provider it came from; corrections and manual overrides are footnoted with their own
+marks, and `editing` offers a pencil beside each overridable property.
+-->
 <script lang="ts">
-	import { racemicDisplayName } from '$lib/ingredient-group';
-	import {formatNdc} from '$lib/ndc';
+	import { racemicDisplayName } from "$lib/medication/ingredient-group";
+	import {formatNdc} from "$lib/catalog/ndc";
 	import RxCui from '$lib/components/RxCui.svelte';
-      import type {StagedPackage} from '$lib/server/catalog-sync';
-      import type {LabelIngredient} from '$lib/server/catalog-providers';
-      import {appearanceText, isSolidDoseForm, SHAPE_CODES} from '$lib/spl-characteristics';
-      import {refineAppearances} from '$lib/spl-appearance-text';
+      import type { StagedPackage } from '../catalog/types';
+      import type { LabelIngredient } from '../catalog/types';
+      import {appearanceText, isSolidDoseForm, SHAPE_CODES} from "$lib/labels/spl-characteristics";
+      import {refineAppearances} from "$lib/labels/spl-appearance-text";
       import PillMockup from './PillMockup.svelte';
       import RouteBadge from './RouteBadge.svelte';
-      import {drugsComImprint, drugsComImprintUrl, drugsComNdcUrl} from '$lib/drugs-com';
-      import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from '$lib/pill-image-layout';
+      import {drugsComImprint, drugsComImprintUrl, drugsComNdcUrl} from "$lib/catalog/drugs-com";
+      import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from "$lib/imprints/pill-image-layout";
       import {resolve} from '$app/paths';
-      import {constituentName, ionDisplayName} from '$lib/ions';
-      import {nestIngredients, type Constituent, type IngredientGroup} from '$lib/ingredient-constituents';
+      import {constituentName, ionDisplayName} from "$lib/medication/ions";
+      import {nestIngredients, type Constituent, type IngredientGroup} from "$lib/medication/ingredient-constituents";
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import SplLabelSections from './SplLabelSections.svelte';
       import OverrideCitation from './OverrideCitation.svelte';
-      import {nextAddedRowId, overrideTargets, pillIlnKey} from '$lib/property-override-fields';
-      import {AMBIGUITY_KINDS} from '$lib/labeler-ambiguity';
-      import {pseudoScdFor} from '$lib/pseudo-scd';
-      import {editActionLabel} from '$lib/local-concept-view';
-      import {withBiosimilarSuffix} from '$lib/biosimilar';
-      import {timeReleaseAfterRelease} from '$lib/package-title';
-      import {unitOfSaleLabel, unitOfUseLabel} from '$lib/package-unit-label';
-      import {toNdc11} from '$lib/ndc';
+      import {nextAddedRowId, overrideTargets, pillIlnKey} from "$lib/curation/property-override-fields";
+      import {AMBIGUITY_KINDS} from "$lib/catalog/labeler-ambiguity";
+      import {pseudoScdFor} from "$lib/medication/pseudo-scd";
+      import {editActionLabel} from "$lib/curation/local-concept-view";
+      import {withBiosimilarSuffix} from "$lib/medication/biosimilar";
+      import {rxNormPackageTitle, timeReleaseAfterRelease} from "$lib/catalog/package-title";
+      import {formContext} from "$lib/medication/strength-style";
+      import {styledStrength} from "$lib/client/strength-display.svelte";
+      import {unitOfSaleLabel, unitOfUseLabel} from "$lib/catalog/package-unit-label";
+      import {toNdc11} from "$lib/catalog/ndc";
       import MixedFraction from './MixedFraction.svelte';
       import ReconstitutionDiagram from './ReconstitutionDiagram.svelte';
-      import {mgPer, mlPer} from '$lib/units';
-      import {isOralDryFillForm} from '$lib/ingredient-content';
-      import {fromNumber, toNumber} from '$lib/rational';
+      import {mgPer, mlPer} from "$lib/medication/units";
+      import {isOralDryFillForm} from "$lib/medication/ingredient-content";
+      import {fromNumber, toNumber} from "$lib/medication/rational";
       import {
             ingredientCorrectionKey,
             INGREDIENT_CORRECTION_KEY,
@@ -37,9 +47,9 @@
             describeCorrection,
             formatStrength,
             parseStrengthText
-      } from '$lib/ingredient-correction';
-      import {packageClassKey} from '$lib/pharm-class-key';
-      import {scopeOptions} from '$lib/pharm-class-scope-options';
+      } from "$lib/medication/ingredient-correction";
+      import {packageClassKey} from "$lib/formulary/pharm-class-key";
+      import {scopeOptions} from "$lib/formulary/pharm-class-scope-options";
       import LocalConceptBlock from './LocalConceptBlock.svelte';
 
       let {
@@ -56,12 +66,13 @@
             onlocalconcept = undefined,
             onstoplocalconcept = undefined
       }: {
+            /** The package to show. */
             item: StagedPackage;
             /**
              * Every formulary item that lists this package, however it was loaded. Without it the
              * row can only say whether the NDC was loaded as an item of its own.
              */
-            formularyItems?: { id: string; displayName: string }[];
+            formularyItems?: { id: string; displayName: string; strengthStyle?: string | null }[];
             /** Fetches the package again; offered where a provider did not answer. */
             onretry?: () => void;
             /** Opens the "Assign class…" dialog from the pharmacologic class menu. */
@@ -70,6 +81,7 @@
             editing?: boolean;
             /** Keys open in the override panel, to mark their pencil. */
             editKeys?: string[];
+            /** Opens the override panel on these property keys. */
             onedit?: (keys: string[]) => void;
             /** Opens the ingredient correction wizard on the ingredient at this index. */
             oncorrect?: (index: number) => void;
@@ -83,7 +95,8 @@
             pillMedia?: PillMedia | Promise<PillMedia>;
       } = $props();
 
-      const d = $derived(item.details);      // The coded appearances, refined by the label's own prose in How Supplied or DF&S.
+      const d = $derived(item.details);
+      /** The coded appearances, refined by the label's own prose in How Supplied or DF&S. */
       const appearances = $derived(
             refineAppearances(d?.spl?.appearances ?? [], d?.label?.sections, {
                   ndc: item.ndc,
@@ -91,20 +104,37 @@
                   doseForm: item.doseForm
             })
       );
-      // Before (or without) a lookup, only the photo the snapshot itself names.
+      /** Before (or without) a lookup, only the photo the snapshot itself names. */
       const labelPhotoOf = (appearance: { image?: string | null }): PillPhotoRef | null =>
             item.splSetId && appearance.image ? {setId: item.splSetId, image: appearance.image} : null;
       const pseudoScd = $derived(pseudoScdFor(item));
-      // A biosimilar's ingredient carries its FDA suffix even when the source names only the reference.
+      /**
+       * A biosimilar's ingredient carries its FDA suffix even when the source names only the reference.
+       */
       const pieceName = (piece: Constituent) =>
             piece.kind === 'ion' ? ionDisplayName(piece.name) : constituentName(piece.name).toLowerCase();
       const substance = (name: string) =>
             withBiosimilarSuffix(racemicDisplayName(name), [item.genericName, item.splTitle, d?.rxnav?.conceptName]);
       const active = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'active') ?? []);
+      /** The dose form text strength display rules match, as for the package's title. */
+      const strengthForm = $derived(formContext(rxNormPackageTitle(item), item.doseForm ?? d?.spl?.doseForm, d?.product?.routes ?? []));
+      /**
+       * An active ingredient's strength as the formulary's display rules show it
+       * ("1:100,000"), or null to show it as stored. Derived rows (moieties, ions,
+       * totals) always keep their units.
+       */
+      // A package on exactly one formulary item follows that item's own style.
+      const itemStyle = $derived(formularyItems?.length === 1 ? formularyItems[0].strengthStyle : null);
+      const displayedStrength = (ingredient: {name: string; strength: string | null; kind?: string}, actives: {name: string}[]) =>
+            ingredient.kind && ingredient.kind !== 'active'
+                  ? null
+                  : styledStrength(ingredient, strengthForm, actives.filter((other) => other.name !== ingredient.name).map((other) => other.name), itemStyle);
       const inactive = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'inactive') ?? []);
       const ionic = $derived(d?.spl?.ingredients.filter((i) => i.kind === 'ionic') ?? []);
-      // Each ion constituent sits right under the last salt it comes from, so it
-      // reads as part of that ingredient rather than as one more ingredient.
+      /**
+       * Each ion constituent sits right under the last salt it comes from, so it
+       * reads as part of that ingredient rather than as one more ingredient.
+       */
       const ingredientRows = $derived.by(() => {
             const placed = new Set<(typeof ionic)[number]>();
             const rows = active.flatMap((ingredient, index) => {
@@ -121,8 +151,10 @@
             });
             return [...rows, ...ionic.filter((ion) => !placed.has(ion)), ...inactive];
       });
-      // Manual ingredient corrections are footnoted like the automatic ones, with
-      // their own mark (§) and color so a person's edit reads apart from the rules'.
+      /**
+       * Manual ingredient corrections are footnoted like the automatic ones, with
+       * their own mark (§) and color so a person's edit reads apart from the rules'.
+       */
       const manualCorrections = $derived(
             ingredientRows.flatMap((ingredient) => {
                   const index = d?.spl?.ingredients.indexOf(ingredient) ?? -1;
@@ -141,18 +173,22 @@
                   ? `Strength manually corrected from stated value of ${from} to ${to}${as}`
                   : `${substance(ingredient.name)} manually corrected to ${to}${as}`;
       };
-      // The table as a tree: each label ingredient, then the pieces it delivers
-      // (a racemate's two enantiomers, a moiety it shares, its ions) indented
-      // beneath it, and a total row for each piece more than one ingredient gives.
+      /**
+       * The table as a tree: each label ingredient, then the pieces it delivers
+       * (a racemate's two enantiomers, a moiety it shares, its ions) indented
+       * beneath it, and a total row for each piece more than one ingredient gives.
+       */
       const nested = $derived(
             nestIngredients(d?.spl?.ingredients ?? [], {
                   rxNormName: d?.rxnav?.conceptName,
                   totalShared: d?.spl?.totalSharedMoieties
             })
       );
-      // Which strength cells in a group feed its totals, and how the tree line
-      // from the total's strength runs past each row: '├' feeds and continues,
-      // '└' is the last feeder, '│' only passes by.
+      /**
+       * Which strength cells in a group feed its totals, and how the tree line
+       * from the total's strength runs past each row: '├' feeds and continues,
+       * '└' is the last feeder, '│' only passes by.
+       */
       type Branch = 'mid' | 'end' | 'pass' | null;
       const groupBranches = (group: IngredientGroup) => {
             const names = new Set(group.totals.map((total) => total.name.trim().toLowerCase()));
@@ -172,7 +208,9 @@
                   pieces: node.constituents.map(() => branches[at++])
             }));
       };
-      // An ingredient that is its own moiety leaves the moiety cell empty: naming it again says nothing.
+      /**
+       * An ingredient that is its own moiety leaves the moiety cell empty: naming it again says nothing.
+       */
       const isItself = (ingredient: LabelIngredient, moiety: LabelIngredient['moieties'][number]) =>
             (!!moiety.unii && moiety.unii === ingredient.unii) ||
             moiety.name.trim().toLowerCase() === ingredient.name.trim().toLowerCase();
@@ -180,16 +218,20 @@
       const rxnavMarketingStatus = $derived(
             d?.rxnav?.properties.find((property) => property.name === 'MARKETING_STATUS')?.value ?? null
       );
-      // RxNav's NDC properties mix RxNorm identifiers with package facts (labeler,
-      // marketing, SPL ids) that RxNorm doesn't own; only the former belong in the
-      // RxNorm section.
+      /**
+       * RxNav's NDC properties mix RxNorm identifiers with package facts (labeler,
+       * marketing, SPL ids) that RxNorm doesn't own; only the former belong in the
+       * RxNorm section.
+       */
       const RXNORM_PROP = /^(RXCUI|RXAUI|TTY|SAB|CODE|RXNORM_NAME)$/i;
       const rxnormProps = $derived(d?.rxnav?.properties.filter((p) => RXNORM_PROP.test(p.name)) ?? []);
       const otherRxnavProps = $derived(
             d?.rxnav?.properties.filter((p) => !RXNORM_PROP.test(p.name)) ?? []
       );
-      // RxNav names its properties in SPL field codes and states shapes and dates as
-      // codes; say them in words, keeping the code beside anything translated.
+      /**
+       * RxNav names its properties in SPL field codes and states shapes and dates as
+       * codes; say them in words, keeping the code beside anything translated.
+       */
       const RXNAV_LABELS: Record<string, string> = {
             COLORTEXT: 'Color',
             COLOR: 'Color code',
@@ -221,7 +263,9 @@
             if (name === 'SCORE') return value === '1' ? 'none (1 piece)' : `${value} pieces`;
             return value;
       };
-      // The 10-digit form the FDA lists, from the product code's segment widths (4-4-2, 5-3-2, 5-4-1).
+      /**
+       * The 10-digit form the FDA lists, from the product code's segment widths (4-4-2, 5-3-2, 5-4-1).
+       */
       const fdaNdc = $derived.by(() => {
             const code = item.productCode;
             if (!code || !/^\d+-\d+$/.test(code)) return null;
@@ -234,7 +278,7 @@
             value && /^\d{8}$/.test(value)
                   ? `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`
                   : (value ?? null);
-      // A declared end date inside this window warns before it excludes.
+      /** A declared end date inside this window warns before it excludes. */
       const DISCONTINUING_DAYS = 90;
       const discontinuing = $derived.by(() => {
             const end = item.marketingEndDate;
@@ -244,9 +288,11 @@
             return days >= 0 && days <= DISCONTINUING_DAYS ? {date: date(end), days} : null;
       });
       const volume = $derived(item.resolvedVolume);
-      // What the diagram needs beyond the resolved volume: the default row's
-      // diluent and vial content, and the package volume when the label showed
-      // it to be the vial's capacity rather than a fill.
+      /**
+       * What the diagram needs beyond the resolved volume: the default row's
+       * diluent and vial content, and the package volume when the label showed
+       * it to be the vial's capacity rather than a fill.
+       */
       const diagram = $derived.by(() => {
             if (!volume) return null;
             const row = item.reconstitution.find((step) => step.id && step.id === volume.rowId) ??
@@ -260,7 +306,7 @@
                   capacityMl: volume.meaning === 'capacity' && Number.isFinite(sizeMl) ? sizeMl : null
             };
       });
-      // A kit is sold as the kit; the unit of use is its drug bottle.
+      /** A kit is sold as the kit; the unit of use is its drug bottle. */
       const kit = $derived(item.kit ?? null);
       const kitPartText = (part: NonNullable<typeof kit>['parts'][number]) =>
             [
@@ -273,17 +319,16 @@
             ]
                   .filter(Boolean)
                   .join(' ');
-      // Fills an unstated final volume or concentration from the row's other stated
-      // values (mass ÷ concentration, mass ÷ volume). Only with a single stated
-      // concentration: a combination vial's mass can't be split between ingredients.
-      // The fraction a stored decimal stands in for (131.578947… is 131 11/19), or
-      // null when no small fraction reproduces it and the decimal should show.
+      /**
+       * The fraction a stored decimal stands in for (131.578947… is 131 11/19), or
+       * null when no small fraction reproduces it and the decimal should show.
+       */
       const asFraction = (value: number) => {
             const r = fromNumber(value, 1000);
             return r && Math.abs(toNumber(r) - value) <= 1e-9 * Math.max(1, Math.abs(value)) ? r : null;
       };
       const round = (value: number) => Math.round(value * 100) / 100;
-      // A label's "/1" (per tablet, per vial) adds nothing a reader needs.
+      /** A label's "/1" (per tablet, per vial) adds nothing a reader needs. */
       const strengthText = (strength: string) => strength.replace(/\s*\/\s*1$/, '');
       const calculated = (step: StagedPackage['reconstitution'][number]) => {
             const mass = step.vialMassMg;
@@ -297,8 +342,10 @@
                               : null
             };
       };
-      // Corrections are cited like footnotes too: a mark beside the corrected value,
-      // with the original and the evidence in a footer.
+      /**
+       * Corrections are cited like footnotes too: a mark beside the corrected value,
+       * with the original and the evidence in a footer.
+       */
       const corrections = $derived(
             [
                   item.unitOfUseCorrection && {
@@ -319,19 +366,23 @@
       );
       const correction = (id: string) => corrections.find((c) => c.id === id);
       const overrideFields = $derived(overrideTargets(item));
-      // Manual overrides are cited like footnotes: a numbered mark beside each
-      // overridden value, with the sourcing listed in a footer at the end.
       const uid = $props.id();
+      /**
+       * Manual overrides are cited like footnotes: a numbered mark beside each
+       * overridden value, with the sourcing listed in a footer at the end.
+       */
       const overrides = $derived(Object.entries(item.propertyOverrides ?? {}));
       const citeNumber = (key: string) => overrides.findIndex(([k]) => k === key) + 1;
-      // Manual citations are lettered (a, b, … z, aa) so they stand apart from the
-      // numbered provider sources.
+      /**
+       * Manual citations are lettered (a, b, … z, aa) so they stand apart from the
+       * numbered provider sources.
+       */
       const citeLetter = (n: number) => {
             let letters = '';
             for (; n > 0; n = Math.floor((n - 1) / 26)) letters = String.fromCharCode(97 + ((n - 1) % 26)) + letters;
             return letters;
       };
-      // Every other fact cites the provider it came from, numbered in a Sources footer.
+      /** Every other fact cites the provider it came from, numbered in a Sources footer. */
       type SourceId = 'ndc' | 'spl' | 'label' | 'rxnav' | 'catalog';
       const sources = $derived(
             [
@@ -382,7 +433,7 @@
                   }
             ].filter((source) => !!source)
       );
-      // Why a package counts as incomplete, in the terms of the rule that decides it.
+      /** Why a package counts as incomplete, in the terms of the rule that decides it. */
       const incompleteReasons = $derived(
             [
                   item.listed === null && 'the FDA NDC Directory has no entry for this exact package',
@@ -393,16 +444,16 @@
       );
       const sourceNumber = (id: SourceId) => sources.findIndex((source) => source.id === id) + 1;
       const splIndex = (ingredient: LabelIngredient) => d?.spl?.ingredients.indexOf(ingredient) ?? -1;
-      // One reconstitution row's actions menu open at a time.
+      /** One reconstitution row's actions menu open at a time. */
       let rowMenu = $state<string | null>(null);
-      // Every value cites its provider; the marks show on hover, or all at once on request.
+      /** Every value cites its provider; the marks show on hover, or all at once on request. */
       let showSources = $state(false);
       const openFromMenu = (keys: string[]) => {
             rowMenu = null;
             onedit?.(keys);
       };
 
-      // Classes the source gave that a rule removed, and which shown classes a rule added.
+      /** Classes the source gave that a rule removed, and which shown classes a rule added. */
       const classSource = $derived(d?.product?.pharmClassResolution?.source);
       /** Assigning needs an ingredient set to key the rule on. */
       const canAssignClass = $derived(!!onassignclass && scopeOptions(packageClassKey(item)).length > 0);
@@ -416,12 +467,13 @@
 
       /** Deletes a manual override and its citation, restoring the provider value. */
       async function deleteOverride(key: string, label: string) {
-            if (!confirm(`Delete the override and citation for ${label}? The provider value will be restored.`))
+            if (!confirm(`Delete the override and citation for ${label}? ${item.baselineUnavailable?.includes(key) ? 'The original value was not recorded; the field will be cleared until refresh.' : 'The recorded provider value will be restored.'}`))
                   return;
             deletingKey = key;
             deleteMessage = '';
             const form = new FormData();
             form.set('key', key);
+            form.set('revision', String(item.editRevision));
             try {
                   const result = deserialize(
                         await (await fetch('?/removeOverride', {method: 'POST', body: form})).text()
@@ -488,6 +540,12 @@
       )}{/if}{@render editButton(keys, label)}
 {/snippet}
 
+<!-- A strength as the display rules show it; the stored value is the hover. -->
+{#snippet strengthValue(ingredient: {name: string; strength: string | null; kind?: string}, actives: {name: string}[])}
+      {@const shown = displayedStrength(ingredient, actives)}
+      {#if !ingredient.strength}—{:else if shown}<span class="styled-strength" title={`Stored as ${strengthText(ingredient.strength)}`}>{shown}</span>{:else}{strengthText(ingredient.strength)}{/if}
+{/snippet}
+
 {#snippet strengthCell(ingredient: LabelIngredient)}
 {#if manualMark(ingredient)}<sup
             class="manual-mark"
@@ -534,7 +592,7 @@
                         <div class="muted">in {ingredient.part.replace(/^[^(]+/, (name) => name.toLowerCase())}</div>
                   {/if}
             </td>
-            <td class={branch ? `feed ${branch}` : undefined}>{ingredient.strength ? strengthText(ingredient.strength) : '—'}{@render strengthCell(ingredient)}</td>
+            <td class={branch ? `feed ${branch}` : undefined}>{@render strengthValue(ingredient, active)}{@render strengthCell(ingredient)}</td>
             <td>{ingredient.basis ?? '—'}</td>
             <td class="row-end">
                   {#if ingredient.kind === 'ionic' || constituents.some((piece) => piece.kind === 'enantiomer')}—
@@ -1340,7 +1398,7 @@
                   <ul>
                         {#each item.ingredients as ingredient (ingredient.name)}
                               <li>
-                                    {substance(ingredient.name)}{ingredient.strength ? ` — ${strengthText(ingredient.strength)}` : ''}
+                                    {substance(ingredient.name)}{#if ingredient.strength} — {@render strengthValue(ingredient, item.ingredients)}{/if}
                               </li>
                         {/each}
                   </ul>
@@ -1929,6 +1987,13 @@
       }
 
       /* The label's own number, under the corrected one it was read as. */
+      /* Restated by a display rule; the dotted line says the stored value is a hover away. */
+      .styled-strength {
+            text-decoration: underline dotted #9aa5b3;
+            text-underline-offset: 0.2em;
+            cursor: help;
+      }
+
       .ing-table .stated {
             display: block;
             max-width: 16rem;

@@ -114,7 +114,9 @@ export const ModelName = {
   PillPhoto: 'PillPhoto',
   UniiSubstance: 'UniiSubstance',
   PharmClassRule: 'PharmClassRule',
-  CmsCrosswalkRow: 'CmsCrosswalkRow'
+  CmsCrosswalkRow: 'CmsCrosswalkRow',
+  PackageCuration: 'PackageCuration',
+  PackageReviewPreview: 'PackageReviewPreview'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -253,7 +255,7 @@ export const FormularyItemScalarFieldEnum = {
   displayName: 'displayName',
   releaseAbbreviation: 'releaseAbbreviation',
   nameOverride: 'nameOverride',
-  strengthAsPercent: 'strengthAsPercent'
+  strengthStyle: 'strengthStyle'
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
@@ -1135,6 +1137,38 @@ export const CmsCrosswalkRowScalarFieldEnum = {
 } as const
 
 export type CmsCrosswalkRowScalarFieldEnum = (typeof CmsCrosswalkRowScalarFieldEnum)[keyof typeof CmsCrosswalkRowScalarFieldEnum]
+
+
+export const PackageCurationScalarFieldEnum = {
+  ndc: 'ndc',
+  baseline: 'baseline',
+  baselineVersion: 'baselineVersion',
+  refreshAt: 'refreshAt',
+  overrides: 'overrides',
+  review: 'review',
+  revision: 'revision',
+  initialized: 'initialized',
+  unknownKeys: 'unknownKeys',
+  legacySnapshot: 'legacySnapshot',
+  legacyBaseline: 'legacyBaseline',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PackageCurationScalarFieldEnum = (typeof PackageCurationScalarFieldEnum)[keyof typeof PackageCurationScalarFieldEnum]
+
+
+export const PackageReviewPreviewScalarFieldEnum = {
+  token: 'token',
+  ndc: 'ndc',
+  sourceRevision: 'sourceRevision',
+  baseline: 'baseline',
+  overrides: 'overrides',
+  review: 'review',
+  evidence: 'evidence',
+  expiresAt: 'expiresAt'
+} as const
+
+export type PackageReviewPreviewScalarFieldEnum = (typeof PackageReviewPreviewScalarFieldEnum)[keyof typeof PackageReviewPreviewScalarFieldEnum]
 
 
 export const SortOrder = {

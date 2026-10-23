@@ -1,3 +1,9 @@
+/**
+ * Which page skeleton stands in for a destination route while its load runs;
+ * unlisted routes just dim.
+ *
+ * @module
+ */
 import type { SkeletonKind } from './PageSkeleton.svelte';
 
 /** Which skeleton stands in for a destination route while its load runs; unlisted routes just dim. */

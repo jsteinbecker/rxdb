@@ -1,11 +1,17 @@
+<!--
+@component
+Panel for overriding one or more of a package's properties by hand: enter the correct
+value (with shape-, pill- and ingredient-aware editors), cite where it comes from, and
+see which override it supersedes.
+-->
 <script lang="ts">
       import {untrack} from 'svelte';
-      import {formatNdc} from '$lib/ndc';
+      import {formatNdc} from "$lib/catalog/ndc";
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
-      import type {StagedPackage} from '$lib/server/catalog-sync';
+      import type { StagedPackage } from '../catalog/types';
       import SplPassagePicker from './SplPassagePicker.svelte';
-      import {appendPassages, type SplPassageDraft} from '$lib/citation-form';
+      import {appendPassages, type SplPassageDraft} from "$lib/curation/citation-form";
       import OverrideCitation from './OverrideCitation.svelte';
       import QuantityField from './QuantityField.svelte';
       import PillMockup from './PillMockup.svelte';
@@ -13,15 +19,15 @@
       import {guessIln} from '$lib/imprints/spl-to-iln';
       import {toSplAppearance} from '$lib/imprints/iln-render';
       import {findShape, formatShapeProportion, MAX_PROPORTION, PROPORTIONS, splitShapeProportion} from '$lib/imprints/shapes';
-      import type {PillMedia} from '$lib/pill-image-layout';
-      import {type Quantity, quantityDecimal} from '$lib/quantity';
+      import type {PillMedia} from "$lib/imprints/pill-image-layout";
+      import {type Quantity, quantityDecimal} from "$lib/medication/quantity";
       import {
             describeCorrection,
             INGREDIENT_CORRECTION_KEY,
             ingredientCorrectionKey,
             parseIngredientCorrection
-      } from '$lib/ingredient-correction';
-      import {AMBIGUITY_KINDS, type AmbiguityKind, ambiguityKindsFor} from '$lib/labeler-ambiguity';
+      } from "$lib/medication/ingredient-correction";
+      import {AMBIGUITY_KINDS, type AmbiguityKind, ambiguityKindsFor} from "$lib/catalog/labeler-ambiguity";
       import {
             type EquivalentPackage,
             overrideChoices,
@@ -33,7 +39,7 @@
             PILL_ILN_KEY,
             PILL_SHAPE_KEY,
             splitMulti
-      } from '$lib/property-override-fields';
+      } from "$lib/curation/property-override-fields";
 
       let {
             item,
@@ -47,13 +53,18 @@
             oncorrect?: (index: number) => void;
             /** The photos' measured layouts, offered as a starting point for a pill's ILN. */
             pillMedia?: Promise<PillMedia> | PillMedia | null;
+            /** The package being corrected. */
             item: StagedPackage;
+            /** The property keys being overridden; fixed for the panel's lifetime. */
             keys: string[];
             /** Packages whose values may stand in for this one's. */
             equivalents?: EquivalentPackage[];
+            /** Close the panel. */
             onclose: () => void;
       } = $props();
 
+      // svelte-ignore state_referenced_locally
+      const editingRevision = item.editRevision;
       let panel: HTMLElement;
       // The editing row fixes `keys` for this panel's lifetime (the page re-keys it).
       // svelte-ignore state_referenced_locally
@@ -69,7 +80,7 @@
       let equivalentNdc = $state('');
       let overrideMessage = $state('');
       let savingOverride = $state(false);
-      // Why the labeler's value was wrong, when it is a known pattern for this field.
+      /** Why the labeler's value was wrong, when it is a known pattern for this field. */
       let kind = $state<AmbiguityKind | ''>('');
       let kindNote = $state('');
 
@@ -80,12 +91,12 @@
       const kinds = $derived(ambiguityKindsFor(overrideKey));
       const choices = $derived(overrideChoices(overrideKey));
       const separator = $derived(overrideSeparator(overrideKey));
-      // A value may already hold entries the fixed choices lack; keep them pickable.
+      /** A value may already hold entries the fixed choices lack; keep them pickable. */
       const picked = $derived(separator ? splitMulti(overrideValue, separator) : []);
       const options = $derived(
             choices ? [...choices, ...picked.filter((p) => !choices.includes(p))] : []
       );
-      // "INJECTION, SOLUTION" nests under "INJECTION" when both are options.
+      /** "INJECTION, SOLUTION" nests under "INJECTION" when both are options. */
       const tree = $derived(
             options.map((option) => {
                   const parents = options.filter((other) => option.startsWith(`${other}, `));
@@ -105,7 +116,7 @@
             overrideValue = options.filter((o) => next.has(o)).join(separator ?? '');
       }
 
-      // A capsule-outline pill's shape also says how long it is for its width.
+      /** A capsule-outline pill's shape also says how long it is for its width. */
       const shapeParts = $derived(PILL_SHAPE_KEY.test(overrideKey) ? splitShapeProportion(overrideValue) : null);
       const proportion = $derived.by(() => {
             const id = shapeParts ? findShape(shapeParts.base)?.id : undefined;
@@ -115,7 +126,7 @@
       const setShape = (base: string, ratio: number | null) =>
             (overrideValue = base ? formatShapeProportion(base, ratio) : '');
 
-      // A pill's imprint layout is ILN: checked as it is typed and previewed as a mockup.
+      /** A pill's imprint layout is ILN: checked as it is typed and previewed as a mockup. */
       const pillIndex = $derived(PILL_ILN_KEY.exec(overrideKey)?.[1]);
       const pillAppearance = $derived(
             pillIndex === undefined ? null : (item.details?.spl?.appearances[Number(pillIndex)] ?? null)
@@ -145,7 +156,7 @@
                   }
             );
       });
-      // An ingredient correction is made in its own wizard; here it is only summarized.
+      /** An ingredient correction is made in its own wizard; here it is only summarized. */
       const correctionIndex = $derived(INGREDIENT_CORRECTION_KEY.exec(overrideKey)?.[1]);
       const correctionSummary = $derived.by(() => {
             if (correctionIndex === undefined || !existing) return null;
@@ -158,14 +169,14 @@
             const name = item.details?.spl?.ingredients[Number(correctionIndex)]?.name ?? 'ingredient';
             return parsed ? describeCorrection(parsed, name) : '—';
       };
-      // A correction on the same row wins over a strength override.
+      /** A correction on the same row wins over a strength override. */
       const supersededBy = $derived.by(() => {
             const row = INGREDIENT_STRENGTH_KEY.exec(overrideKey)?.[1];
             return row !== undefined && !!item.propertyOverrides?.[ingredientCorrectionKey(Number(row))];
       });
       const quantitySpec = $derived(overrideQuantity(overrideKey, item));
       let quantity = $state<Quantity | null>(null);
-      // Numbers are stored as decimals in the field's unit, however they were typed.
+      /** Numbers are stored as decimals in the field's unit, however they were typed. */
       const submittedValue = $derived(
             quantitySpec && quantity ? quantityDecimal(quantity) : overrideValue
       );
@@ -204,12 +215,13 @@
       let removing = $state(false);
 
       async function removeOverride() {
-            if (!confirm(`Delete the override and citation for ${overrideKey}? The provider value will be restored.`))
+            if (!confirm(`Delete the override and citation for ${overrideKey}? ${item.baselineUnavailable?.includes(overrideKey) ? 'The original value was not recorded; the field will be cleared until refresh.' : 'The recorded provider value will be restored.'}`))
                   return;
             removing = true;
             overrideMessage = '';
             const form = new FormData();
             form.set('key', overrideKey);
+            form.set('revision', String(editingRevision));
             try {
                   const response = await fetch('?/removeOverride', {method: 'POST', body: form});
                   const result = deserialize(await response.text());
@@ -233,6 +245,7 @@
             overrideMessage = '';
             const form = new FormData();
             form.set('key', overrideKey);
+            form.set('revision', String(editingRevision));
             form.set('value', submittedValue);
             if (kind) {
                   form.set('ambiguity', kind);

@@ -1,9 +1,18 @@
+<!--
+@component
+The source cited for a manual property override: a URL with its excerpt, an SPL
+passage (or several) linked to DailyMed, an NDC the value was copied from, or a note
+that no source was cited.
+-->
 <script lang="ts">
       import {resolve} from '$app/paths';
-      import {formatNdc} from '$lib/ndc';
-      import type {PropertyOverride} from '$lib/property-override-fields';
+      import {formatNdc} from "$lib/catalog/ndc";
+      import type {PropertyOverride} from "$lib/curation/property-override-fields";
 
-      let {override}: { override: PropertyOverride } = $props();
+      let {override}: {
+            /** The override whose citation to show. */
+            override: PropertyOverride
+      } = $props();
 
 </script>
 

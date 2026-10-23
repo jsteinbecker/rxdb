@@ -1,7 +1,11 @@
-// Every worked example from the ILN skill's documentation (SKILL.md and
-// references/*.md), with the shape and dose form each is meant for, so the
-// `/dev/iln-examples` gallery can draw them and `scripts/iln-screenshots.sh`
-// can capture them into `static/iln-examples/`.
+/**
+ * Every worked example from the ILN skill's documentation (SKILL.md and
+ * references/*.md), with the shape and dose form each is meant for, so the
+ * `/dev/iln-examples` gallery can draw them and `scripts/iln-screenshots.sh`
+ * can capture them into `static/iln-examples/`.
+ *
+ * @module
+ */
 
 export interface IlnDocExample {
 	id: string;

@@ -1,6 +1,12 @@
+<!--
+@component
+Dialog for pharmacologic class rules: assign a class at a chosen scope (replace the
+source's classes, add to them, or suppress one), and edit or delete existing rules.
+Posts to the page's `pharmClassRule` and `pharmClassRuleDelete` actions.
+-->
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { ScopeOption } from '$lib/pharm-class-scope-options';
+	import type { ScopeOption } from "$lib/formulary/pharm-class-scope-options";
 
 	type Scope = ScopeOption & {
 		count: number;
@@ -36,19 +42,21 @@
 	let classes = $state<string[]>([]);
 	let draft = $state('');
 	let scope = $state<ScopeOption['id']>('form');
-	// The resolved scope choices; null until `open()` has them.
+	/** The resolved scope choices; null until `open()` has them. */
 	let loaded = $state<Rules | null>(null);
 	let knownNames = $state<string[]>([]);
-	// While the streamed options load, and when they could not be loaded.
+	/** While the streamed options load, and when they could not be loaded. */
 	let loading = $state(false);
 	let loadFailed = $state(false);
 	let note = $state('');
 	let ruleId = $state('');
-	// True while a save is in flight.
+	/** True while a save is in flight. */
 	let pending = $state(false);
-	// A failure is only shown for a submit made from this dialog since it opened, never one left over from the page.
+	/**
+	 * A failure is only shown for a submit made from this dialog since it opened, never one left over from the page.
+	 */
 	let submitted = $state(false);
-	// Set while editing an existing rule: its key is fixed, so the scope picker is hidden.
+	/** Set while editing an existing rule: its key is fixed, so the scope picker is hidden. */
 	let editing = $state<{ id: string; title: string } | null>(null);
 
 	function load(scopes: Scope[], id: ScopeOption['id']) {

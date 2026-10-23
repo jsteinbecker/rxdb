@@ -360,8 +360,8 @@ model FormularyItem {
       releaseAbbreviation String?    @map("release_abbreviation")
       /// User replacement for the sourced name ("Glucose" → "Dextrose"); null shows the sourced name.
       nameOverride        String?    @map("name_override")
-      /// Show a single amount-per-volume strength as a percentage ("12500 MG/250ML" → "5% 250ML").
-      strengthAsPercent   Boolean    @default(false) @map("strength_as_percent")
+      /// How strengths show in this item's name: percent | ratio | stored; null follows the formulary's strength display rules.
+      strengthStyle       String?    @map("strength_style")
 
       entity                Entity                 @relation(fields: [id, type], references: [id, type])
       scope                 Scope                  @relation(fields: [scopeId], references: [id])
@@ -1616,4 +1616,37 @@ model CmsCrosswalkRow {
       @@id([ndc11, hcpcs, file])
       @@index([ndc11])
       @@map("cms_crosswalk_row")
+}
+
+/// Durable provider baseline and user decisions, independent of enrichment cache versions.
+model PackageCuration {
+      ndc            String   @id @db.VarChar(11)
+      baseline       Json
+      baselineVersion String  @map("baseline_version")
+      refreshAt      DateTime @map("refresh_at") @db.Timestamptz
+      overrides      Json     @default("{}")
+      review         Json     @default("{}")
+      revision       Int      @default(0)
+      initialized    Boolean  @default(true)
+      unknownKeys    String[] @default([]) @map("unknown_keys")
+      legacySnapshot Json?    @map("legacy_snapshot")
+      legacyBaseline Json?    @map("legacy_baseline")
+      updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+      @@map("package_curation")
+}
+
+/// Review previews survive process changes and apply only to the revision they reviewed.
+model PackageReviewPreview {
+      token          String   @id @default(uuid()) @db.Uuid
+      ndc            String   @db.VarChar(11)
+      sourceRevision Int      @map("source_revision")
+      baseline       Json
+      overrides      Json
+      review         Json
+      evidence       Json
+      expiresAt      DateTime @map("expires_at") @db.Timestamptz
+
+      @@index([expiresAt])
+      @@map("package_review_preview")
 }

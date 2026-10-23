@@ -1,7 +1,18 @@
+<!--
+@component
+A local concept's ingredients against RxNorm's: one row per ingredient with RxNorm's
+strength and the local one, tagged removed, changed or added, and a caption counting
+each kind of change.
+-->
 <script lang="ts">
-	import type { ConceptIngredient, IngredientDiff } from '$lib/local-concept';
+	import type { ConceptIngredient, IngredientDiff } from "$lib/curation/local-concept";
 
-	let { diff }: { diff: IngredientDiff } = $props();
+	let {
+		diff
+	}: {
+		/** Ingredient-by-ingredient comparison, from `diffIngredients`. */
+		diff: IngredientDiff;
+	} = $props();
 
 	const strength = (c: ConceptIngredient | null) => (c ? `${c.value} ${c.unit}` : '—');
 	const counts = $derived({

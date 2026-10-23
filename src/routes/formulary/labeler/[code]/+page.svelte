@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { formatNdc } from '$lib/ndc';
+	import { formatNdc } from "$lib/catalog/ndc";
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import FormularyIcon from '$lib/components/FormularyIcon.svelte';
-	import { doseFormAbbreviation, packageDescriptionCase, productNameCase } from '$lib/package-text';
+	import { doseFormAbbreviation, packageDescriptionCase, productNameCase } from "$lib/catalog/package-text";
+	import { applyStrengthStyles } from "$lib/medication/strength-style";
+	import { strengthRules, styledName } from "$lib/client/strength-display.svelte";
 
 	let { data } = $props();
 
@@ -140,7 +142,7 @@
 								<FormularyIcon status={pkg.formularyStatus} />
 								<a
 									href={resolve('/formulary/ndc/[ndc]', { ndc: pkg.ndc })}
-									data-nav-title={pkg.title}
+									data-nav-title={styledName(pkg.title)}
 									title="NDC11 {formatNdc(pkg.ndc)}">{tenDigit(pkg.ndc, pkg.zeroSegment) ?? formatNdc(pkg.ndc)}</a
 								>
 								{#if pkg.zeroBasis && pkg.zeroBasis !== 'labeled'}<span
@@ -157,7 +159,7 @@
 							<td>
 								<div class="product-name">
 									{productNameCase(pkg.brandName ?? pkg.genericName ?? 'Unknown product')}
-									{#if pkg.strength}<span class="strength">{pkg.strength}</span>{/if}
+									{#if pkg.strength}<span class="strength">{applyStrengthStyles(pkg.strength, strengthRules(), pkg.strengthForm)}</span>{/if}
 								</div>
 								<div class="package-detail">
 									{pkg.description ? packageDescriptionCase(pkg.description) : 'Package details unavailable'}

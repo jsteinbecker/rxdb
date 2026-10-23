@@ -1,3 +1,9 @@
+<!--
+@component
+Drag-and-drop editor for a formulary hierarchy; each level nests under the one before
+it. Dimensions are dragged from a palette into the hierarchy as chips, reordered, swapped
+for a variant (e.g. separated ↔ combined ingredients), or set to absorb an only child.
+-->
 <script lang="ts">
 	import {
 		DIMENSION_BY_KEY,
@@ -5,10 +11,14 @@
 		levelDimension,
 		mergesChildren,
 		withMerge
-	} from '$lib/formulary-hierarchy';
+	} from "$lib/formulary/hierarchy";
 
-	/** Drag-and-drop editor for a formulary hierarchy; each level nests under the one before it. */
-	let { levels = $bindable() }: { levels: string[] } = $props();
+	let {
+		levels = $bindable()
+	}: {
+		/** Level keys, outermost first; bound back as the hierarchy is edited. */
+		levels: string[];
+	} = $props();
 
 	/** Levels by dimension key; a level's key may carry a merge mark. */
 	const inUse = $derived(new Set(levels.map(levelDimension)));

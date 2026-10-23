@@ -1,9 +1,23 @@
+<!--
+@component
+One shimmering placeholder block for skeleton screens. Size it with `w`/`h`;
+`round` makes a pill or circle.
+
+Usage:
+```svelte
+<Bone w="12rem" h="1.25rem" />
+<Bone w="2rem" h="2rem" round />
+```
+-->
 <script lang="ts">
-	/** One shimmering placeholder block. Size it with `w`/`h`; `round` makes a pill or circle. */
 	let { w = '100%', h = '1rem', round = false, class: className = '' } = $props<{
+		/** CSS width. */
 		w?: string;
+		/** CSS height. */
 		h?: string;
+		/** Fully rounded ends: a pill, or a circle when `w` equals `h`. */
 		round?: boolean;
+		/** Extra classes on the block. */
 		class?: string;
 	}>();
 </script>

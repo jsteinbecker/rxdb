@@ -1,12 +1,15 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { prisma } from '$lib/server/prisma';
-import { defaultScope } from '$lib/server/catalog-formulary';
-import { CompoundError, createCompound, listCompounds } from '$lib/server/compound-store';
+import { prisma } from '$lib/server/infrastructure/database';
+import { defaultScope } from '$lib/server/formulary/membership';
+import { CompoundError, createCompound, listCompounds } from '$lib/server/compounds/store';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
 	const scope = await defaultScope(prisma);
-	return { scope: { id: scope.id, name: scope.name }, compounds: await listCompounds(prisma, scope.id) };
+	return {
+		scope: { id: scope.id, name: scope.name },
+		compounds: await listCompounds(prisma, scope.id)
+	};
 };
 
 export const actions: Actions = {

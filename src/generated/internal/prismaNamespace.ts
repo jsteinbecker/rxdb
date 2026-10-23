@@ -460,7 +460,9 @@ export const ModelName = {
   PillPhoto: 'PillPhoto',
   UniiSubstance: 'UniiSubstance',
   PharmClassRule: 'PharmClassRule',
-  CmsCrosswalkRow: 'CmsCrosswalkRow'
+  CmsCrosswalkRow: 'CmsCrosswalkRow',
+  PackageCuration: 'PackageCuration',
+  PackageReviewPreview: 'PackageReviewPreview'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -476,7 +478,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow" | "packageCuration" | "packageReviewPreview"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -5216,6 +5218,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PackageCuration: {
+      payload: Prisma.$PackageCurationPayload<ExtArgs>
+      fields: Prisma.PackageCurationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PackageCurationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PackageCurationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        findFirst: {
+          args: Prisma.PackageCurationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PackageCurationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        findMany: {
+          args: Prisma.PackageCurationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>[]
+        }
+        create: {
+          args: Prisma.PackageCurationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        createMany: {
+          args: Prisma.PackageCurationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PackageCurationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>[]
+        }
+        delete: {
+          args: Prisma.PackageCurationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        update: {
+          args: Prisma.PackageCurationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        deleteMany: {
+          args: Prisma.PackageCurationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PackageCurationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PackageCurationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>[]
+        }
+        upsert: {
+          args: Prisma.PackageCurationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        aggregate: {
+          args: Prisma.PackageCurationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePackageCuration>
+        }
+        groupBy: {
+          args: Prisma.PackageCurationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageCurationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PackageCurationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageCurationCountAggregateOutputType> | number
+        }
+      }
+    }
+    PackageReviewPreview: {
+      payload: Prisma.$PackageReviewPreviewPayload<ExtArgs>
+      fields: Prisma.PackageReviewPreviewFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PackageReviewPreviewFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PackageReviewPreviewFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        findFirst: {
+          args: Prisma.PackageReviewPreviewFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PackageReviewPreviewFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        findMany: {
+          args: Prisma.PackageReviewPreviewFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>[]
+        }
+        create: {
+          args: Prisma.PackageReviewPreviewCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        createMany: {
+          args: Prisma.PackageReviewPreviewCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PackageReviewPreviewCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>[]
+        }
+        delete: {
+          args: Prisma.PackageReviewPreviewDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        update: {
+          args: Prisma.PackageReviewPreviewUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        deleteMany: {
+          args: Prisma.PackageReviewPreviewDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PackageReviewPreviewUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PackageReviewPreviewUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>[]
+        }
+        upsert: {
+          args: Prisma.PackageReviewPreviewUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        aggregate: {
+          args: Prisma.PackageReviewPreviewAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePackageReviewPreview>
+        }
+        groupBy: {
+          args: Prisma.PackageReviewPreviewGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageReviewPreviewGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PackageReviewPreviewCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageReviewPreviewCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -5379,7 +5529,7 @@ export const FormularyItemScalarFieldEnum = {
   displayName: 'displayName',
   releaseAbbreviation: 'releaseAbbreviation',
   nameOverride: 'nameOverride',
-  strengthAsPercent: 'strengthAsPercent'
+  strengthStyle: 'strengthStyle'
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
@@ -6263,6 +6413,38 @@ export const CmsCrosswalkRowScalarFieldEnum = {
 export type CmsCrosswalkRowScalarFieldEnum = (typeof CmsCrosswalkRowScalarFieldEnum)[keyof typeof CmsCrosswalkRowScalarFieldEnum]
 
 
+export const PackageCurationScalarFieldEnum = {
+  ndc: 'ndc',
+  baseline: 'baseline',
+  baselineVersion: 'baselineVersion',
+  refreshAt: 'refreshAt',
+  overrides: 'overrides',
+  review: 'review',
+  revision: 'revision',
+  initialized: 'initialized',
+  unknownKeys: 'unknownKeys',
+  legacySnapshot: 'legacySnapshot',
+  legacyBaseline: 'legacyBaseline',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PackageCurationScalarFieldEnum = (typeof PackageCurationScalarFieldEnum)[keyof typeof PackageCurationScalarFieldEnum]
+
+
+export const PackageReviewPreviewScalarFieldEnum = {
+  token: 'token',
+  ndc: 'ndc',
+  sourceRevision: 'sourceRevision',
+  baseline: 'baseline',
+  overrides: 'overrides',
+  review: 'review',
+  evidence: 'evidence',
+  expiresAt: 'expiresAt'
+} as const
+
+export type PackageReviewPreviewScalarFieldEnum = (typeof PackageReviewPreviewScalarFieldEnum)[keyof typeof PackageReviewPreviewScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -6832,6 +7014,8 @@ export type GlobalOmitConfig = {
   uniiSubstance?: Prisma.UniiSubstanceOmit
   pharmClassRule?: Prisma.PharmClassRuleOmit
   cmsCrosswalkRow?: Prisma.CmsCrosswalkRowOmit
+  packageCuration?: Prisma.PackageCurationOmit
+  packageReviewPreview?: Prisma.PackageReviewPreviewOmit
 }
 
 /* Types for Logging */

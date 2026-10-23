@@ -1,9 +1,15 @@
+<!--
+@component
+Chooses the source for a manual override before it is saved: a URL with an excerpt,
+passages picked from the package's SPL label, an equivalent NDC whose value already
+matches, or no source. Binds the choice as a `CitationDraft`.
+-->
 <script lang="ts">
       import SplPassagePicker from './SplPassagePicker.svelte';
-      import { formatNdc } from '$lib/ndc';
-      import type {CitationDraft} from '$lib/citation-form';
-      import type {EquivalentPackage} from '$lib/property-override-fields';
-      import type {StagedPackage} from '$lib/server/catalog-sync';
+      import { formatNdc } from "$lib/catalog/ndc";
+      import type {CitationDraft} from "$lib/curation/citation-form";
+      import type {EquivalentPackage} from "$lib/curation/property-override-fields";
+      import type { StagedPackage } from '../catalog/types';
 
       let {
             item,
@@ -11,7 +17,9 @@
             candidates = [],
             describe
       }: {
+            /** The package being overridden; its label supplies the SPL passages. */
             item: StagedPackage;
+            /** The citation being built, bound back to the parent. */
             draft: CitationDraft;
             /** Equivalent NDCs whose value already matches what is being saved. */
             candidates?: EquivalentPackage[];

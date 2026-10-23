@@ -1,8 +1,21 @@
+<!--
+@component
+An RxCUI in monospace with its RxNorm name in a hover/focus tooltip. The name is looked
+up lazily (and shared across instances) unless the caller already knows it. Renders
+an em dash when there is no RxCUI.
+-->
 <script lang="ts">
-	import { rxcuiNames } from '$lib/rxcui-names';
+	import { rxcuiNames } from "$lib/client/rxcui-names";
 
-	let { rxcui, name: known = null }: { rxcui: string | null | undefined; name?: string | null } =
-		$props();
+	let {
+		rxcui,
+		name: known = null
+	}: {
+		/** The concept to show; nullish renders "—". */
+		rxcui: string | null | undefined;
+		/** The concept's name when the caller has it, which skips the lookup. */
+		name?: string | null;
+	} = $props();
 	const names = $derived(rxcuiNames(rxcui));
 	const entry = $derived(rxcui ? $names[rxcui] : undefined);
 	const name = $derived(known ?? entry?.name ?? null);
