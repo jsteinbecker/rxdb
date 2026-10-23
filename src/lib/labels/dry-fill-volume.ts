@@ -86,6 +86,8 @@ export interface ProseReconstitution {
 	concentrations: StatedConcentration[];
 	/** Volume the label states the vial yields ("Withdrawal Volume"), when it does. */
 	finalVolumeMl?: number | null;
+	/** `finalVolumeMl` is the volume to withdraw for the vial's content (reconstitution.ts). */
+	withdrawn?: true;
 	/**
 	 * Routes this instruction is for, when the label says. Absent means
 	 * unstated, not "any": a label with one instruction often never names it.
@@ -546,6 +548,9 @@ export function dedupeProseReconstitutions(
 			diluentMl: row.diluentMl,
 			concentrations: [...merged.values()],
 			finalVolumeMl: previous.finalVolumeMl ?? row.finalVolumeMl,
+			...((previous.finalVolumeMl != null ? previous.withdrawn : row.withdrawn)
+				? { withdrawn: true as const }
+				: {}),
 			...optionFields(
 				previous.routes ?? row.routes,
 				diluentList([...(previous.diluents ?? []), ...(row.diluents ?? [])])
@@ -586,6 +591,7 @@ export const fromReconstitutionRows = (
 		diluentMl: number;
 		concentrationMgPerMl: number | null;
 		finalVolumeMl: number | null;
+		withdrawn?: true;
 		routes?: ReconstitutionRoute[];
 		diluents?: string[];
 	}[]
@@ -596,6 +602,7 @@ export const fromReconstitutionRows = (
 		concentrations:
 			row.concentrationMgPerMl === null ? [] : [{ name: null, mgPerMl: row.concentrationMgPerMl }],
 		finalVolumeMl: row.finalVolumeMl,
+		...(row.withdrawn ? { withdrawn: true as const } : {}),
 		...optionFields(row.routes, row.diluents)
 	}));
 
@@ -764,6 +771,14 @@ export interface ResolvedDryFillVolume {
 	/** Concentration used to derive `finalVolumeMl`, in mg/mL. */
 	concentrationMgPerMl: number | null;
 	/**
+	 * The label's stated concentration and its withdrawal volume disagree
+	 * about the vial's content, and the volume was taken (`resolveDryFillVolume`).
+	 * Cefepime 1 g: "approximately 100 mg/mL", withdraw 10.5 mL — 1,050 mg.
+	 * The row still shows the label's 100; this records why the resolved
+	 * concentration is 95.2.
+	 */
+	concentrationConflict?: { statedMgPerMl: number; withdrawnMl: number };
+	/**
 	 * Id of the reconstitution row this was resolved from — the package's
 	 * default instruction among possibly several (IM, IV, ...). Absent when the
 	 * rows carry no ids or nothing resolved.
@@ -886,17 +901,32 @@ export function resolveDryFillVolume(
 		// A stated concentration is the label's own arithmetic; failing that, a
 		// stated withdrawal volume is, and dividing by it is exact rather than
 		// the diluent-based guess the concentration docs warn against.
-		const yielded =
-			yieldedVolumeMl(row, masses) ??
-			(row.finalVolumeMl
-				? { volumeMl: row.finalVolumeMl, concentrationMgPerMl: total / row.finalVolumeMl }
-				: null);
+		const stated = yieldedVolumeMl(row, masses);
+		const byVolume = row.finalVolumeMl
+			? { volumeMl: row.finalVolumeMl, concentrationMgPerMl: total / row.finalVolumeMl }
+			: null;
+		// When the two disagree, a withdrawal volume wins over an "approximate"
+		// concentration: concentrations are rounded to round numbers, volumes
+		// are given to 0.1 mL, and the rest of the same table reconciles through
+		// its volumes (cefepime: 280 × 3.6 and 160 × 12.5 are the vials; 100 ×
+		// 10.5 is not). An available volume does not, since it holds overfill.
+		const conflict =
+			stated && byVolume && row.withdrawn && !near(stated.volumeMl, byVolume.volumeMl);
+		const yielded = conflict ? byVolume : (stated ?? byVolume);
 		if (!yielded) continue;
 		const candidate: ResolvedDryFillVolume = {
 			meaning: 'unknown',
 			finalVolumeMl: yielded.volumeMl,
 			diluentMl: row.diluentMl,
 			concentrationMgPerMl: yielded.concentrationMgPerMl,
+			...(conflict
+				? {
+						concentrationConflict: {
+							statedMgPerMl: stated.concentrationMgPerMl,
+							withdrawnMl: byVolume.volumeMl
+						}
+					}
+				: {}),
 			...(row.id ? { rowId: row.id } : {})
 		};
 		// A row whose diluent or yield matches the labeled number explains that

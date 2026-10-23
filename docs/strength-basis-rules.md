@@ -81,6 +81,18 @@ to the package unit (rule 1).
   salt-formula figure disagree by more than 5%, show the label's total and keep the
   formula figure as a note. Zosyn's total includes its citrate buffer, which no active
   salt's formula can see. The formula figure is used when the label declares nothing.
+- **A withdrawal volume beats an approximate concentration when they contradict.**
+  The vial's mass is fixed (it is the SCD's). When a reconstitution row's stated
+  concentration × stated volume misses that mass by more than 2%, and the volume sits
+  under a "to be Withdrawn" header, the resolved volume is the stated one and the
+  resolved concentration is mass ÷ volume. Cefepime 1 g IV (00409-9566-10 and 14
+  copies) says "approximately 100 mg/mL" and "withdraw 10.5 mL": 1,050 mg from a 1 g
+  vial. It resolves to 10.5 mL at 95.2 mg/mL. The same table's other rows reconcile
+  (280 × 3.6, 160 × 12.5), so the rounded concentration is the number that is off. The
+  row still shows the label's 100 mg/mL, and `resolvedVolume.concentrationConflict`
+  records the gap. An "Available Volume" never wins this way, because it can include
+  overfill: ceftazidime's 1 g vial has 10.8 mL available and a footnote withdrawing
+  10 mL for the dose, so its 100 mg/mL stands.
 - **Sum only what is meant to be summed.** Sodium citrate is not summed into citric
   acid in ACD. Acetyl-L-tyrosine plus tyrosine sum to total tyrosine in TrophAmine.
   Racemic amphetamine salts break down to dextro- and levo-amphetamine at 3:1, nested
