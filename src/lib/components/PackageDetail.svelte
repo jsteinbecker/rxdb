@@ -37,6 +37,8 @@ marks, and `editing` offers a pencil beside each overridable property.
       import {toNdc11} from "$lib/catalog/ndc";
       import MixedFraction from './MixedFraction.svelte';
       import ReconstitutionDiagram from './ReconstitutionDiagram.svelte';
+      import DualChamberDiagram from './DualChamberDiagram.svelte';
+      import {dualChamber} from "$lib/labels/dual-chamber";
       import {mgPer, mlPer} from "$lib/medication/units";
       import {isOralDryFillForm} from "$lib/medication/ingredient-content";
       import {fromNumber, toNumber} from "$lib/medication/rational";
@@ -306,6 +308,11 @@ marks, and `editing` offers a pencil beside each overridable property.
                   capacityMl: volume.meaning === 'capacity' && Number.isFinite(sizeMl) ? sizeMl : null
             };
       });
+      /**
+       * A DUPLEX bag, Act-O-Vial or dual-chamber syringe already holds its
+       * diluent: it is activated, never reconstituted from a vial.
+       */
+      const chambers = $derived(dualChamber(item));
       /** A kit is sold as the kit; the unit of use is its drug bottle. */
       const kit = $derived(item.kit ?? null);
       const kitPartText = (part: NonNullable<typeof kit>['parts'][number]) =>
@@ -906,7 +913,11 @@ marks, and `editing` offers a pencil beside each overridable property.
                         </dd>
                         <dt>Dry fill</dt>
                         <dd>
-                              {item.isDryFill ? 'Yes — reconstitute before use' : 'No'}{@render edit(['isDryFill'], 'dry fill', 'catalog')}
+                              {item.isDryFill
+                                    ? chambers
+                                          ? `Yes — ${chambers.system ?? 'dual-chamber'} ${chambers.container}: activate (mix chambers) before use`
+                                          : 'Yes — reconstitute before use'
+                                    : 'No'}{@render edit(['isDryFill'], 'dry fill', 'catalog')}
                         </dd>
                   {/if}
             </dl>
@@ -1113,14 +1124,33 @@ marks, and `editing` offers a pencil beside each overridable property.
       {/if}
 
       <!-- A tablet or capsule has nothing to reconstitute; offer the section only to forms that might. -->
-      {#if volume || item.reconstitution.length || (editing && !isSolidDoseForm(item.doseForm))}
+      {#if chambers || volume || item.reconstitution.length || (editing && !isSolidDoseForm(item.doseForm))}
             <section class="wide">
-                  <h4>Reconstitution, concentration and volume{@render src('spl')}</h4>
-                  {#if volume}
+                  <h4>{chambers ? 'Activation' : 'Reconstitution'}, concentration and volume{@render src('spl')}</h4>
+                  {#if chambers}
+                        <!-- Powder and diluent share one container behind a seal: no vial is
+                             drawn up, so the vial diagram and "diluent to add" do not apply. -->
+                        <p class="resolved-summary">
+                              <strong>{chambers.system ? `${chambers.system} dual-chamber ${chambers.container}` : `Dual-chamber ${chambers.container}`}.</strong>
+                              The diluent chamber holds {chambers.diluentMl != null ? `${chambers.diluentMl} mL of ` : ''}{chambers.diluent ?? 'diluent'};
+                              break the seal to mix it with the drug chamber, then give the whole {chambers.container}. Nothing is drawn up or added.
+                        </p>
+                        <DualChamberDiagram
+                              system={chambers.system}
+                              container={chambers.container}
+                              contentMg={diagram?.contentMg ?? null}
+                              diluentName={chambers.diluent}
+                              diluentMl={chambers.diluentMl ?? volume?.diluentMl ?? null}
+                              finalVolumeMl={volume?.finalVolumeMl ?? null}
+                              concentrationMgPerMl={volume?.concentrationMgPerMl ?? null}
+                        />
+                        <p class="muted">Label: “{chambers.evidence}”</p>
+                  {/if}
+                  {#if volume && (!chambers || editing)}
                         <!-- The diagram labels every resolved value, so the numbers are written out
                              only when there is nothing to draw. While editing, a drawn diagram keeps
                              just a row of labelled override buttons. -->
-                        {@const drawn = !!diagram && ((volume.finalVolumeMl ?? 0) > 0 || (volume.diluentMl ?? 0) > 0)}
+                        {@const drawn = !!chambers || (!!diagram && ((volume.finalVolumeMl ?? 0) > 0 || (volume.diluentMl ?? 0) > 0))}
                         {#if !drawn}
                         <p class="resolved-summary">
                               <strong>Resolved volume:</strong>
@@ -1152,7 +1182,7 @@ marks, and `editing` offers a pencil beside each overridable property.
                               )}{/if}
                         </p>
                         {/if}
-                        {#if diagram}
+                        {#if diagram && !chambers}
                               <ReconstitutionDiagram
                                     finalVolumeMl={volume.finalVolumeMl}
                                     diluentMl={volume.diluentMl}
@@ -1190,8 +1220,8 @@ marks, and `editing` offers a pencil beside each overridable property.
                                     <tr
                                     >
                                           <th>Route</th>
-                                          <th>Vial content</th>
-                                          <th>Diluent to add</th>
+                                          <th>{chambers ? 'Drug chamber' : 'Vial content'}</th>
+                                          <th>{chambers ? 'Diluent chamber' : 'Diluent to add'}</th>
                                           <th>Diluent</th>
                                           <th
                                           >Stated final volume
@@ -1234,7 +1264,7 @@ marks, and `editing` offers a pencil beside each overridable property.
                                                 )}</td
                                                 >
                                                 <td
-                                                >{step.diluents?.join(' or ') ?? 'Not stated'}{@render edit(
+                                                >{step.diluents?.join(' or ') ?? chambers?.diluent ?? 'Not stated'}{@render edit(
                                                       [`${rowKey}.diluents`],
                                                       'diluent'
                                                 )}</td
