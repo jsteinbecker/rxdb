@@ -3,7 +3,7 @@
 	import PillMockup from '$lib/components/PillMockup.svelte';
 	import { ILN_DOC_EXAMPLES } from '$lib/imprints/iln-doc-examples';
 	import { SHAPES } from '$lib/imprints/shapes';
-	import type { PillAppearance } from '$lib/spl-characteristics';
+	import type { PillAppearance } from "$lib/labels/spl-characteristics";
 
 	const appearance = (shape: string, colors: string[], iln: string | null): PillAppearance => ({
 		productCode: null,
@@ -70,28 +70,8 @@
 </div>
 
 <style>
-	.gallery {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 16px;
-		padding: 16px;
-		background: white;
-	}
-	figure {
-		margin: 0;
-		padding: 12px;
-		border: 1px solid #ddd;
-		border-radius: 8px;
-		max-width: 440px;
-	}
-	figcaption {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		margin-top: 8px;
-		font-size: 12px;
-	}
-	figcaption span {
-		color: #555;
-	}
+	.gallery {display: flex;flex-wrap: wrap;gap: 16px;padding: 16px;background: white;}
+	figure {margin: 0;padding: 12px;border: 1px solid #ddd;border-radius: 8px;max-width: 440px;}
+	figcaption {display: flex;flex-direction: column;gap: 4px;margin-top: 8px;font-size: 12px;}
+	figcaption span {color: #555;}
 </style>

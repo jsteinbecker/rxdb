@@ -1,21 +1,30 @@
+<!--
+@component
+Lets a person cite passages of the SPL label by selecting text on the page's own label
+sections (or ticking table rows). Picked passages stay highlighted, survive a section
+being collapsed and expanded, and are bound back as `passages`.
+-->
 <script lang="ts">
-      import {MAX_SPL_PASSAGES, type SplPassageDraft} from '$lib/citation-form';
-      import type {PackageDetails} from '$lib/server/catalog-providers';
-      import {citationCapture} from '$lib/citation-capture.svelte';
+      import {MAX_SPL_PASSAGES, type SplPassageDraft} from "$lib/curation/citation-form";
+      import type { PackageDetails } from '../catalog/types';
+      import {citationCapture} from "$lib/client/citation-capture.svelte";
 
       let {
             passages = $bindable(),
             sections,
             splSetId
       }: {
+            /** The passages picked so far, bound back to the parent. */
             passages: SplPassageDraft[];
+            /** The label's sections, for titling each passage. */
             sections: NonNullable<PackageDetails['label']>['sections'];
+            /** The label's SPL set id, recorded with each passage. */
             splSetId: string | null;
       } = $props();
 
       const HIGHLIGHT = 'spl-citation';
       let notice = $state('');
-      // A repaint queued as the picker unmounts must not bring the highlights back.
+      /** A repaint queued as the picker unmounts must not bring the highlights back. */
       let mounted = true;
       const titleOf = (key: string) => sections.find((section) => section.key === key)?.title ?? key;
 
@@ -40,8 +49,10 @@
             return null;
       }
 
-      // Highlights stay painted on the page's own label sections, re-found by offset
-      // whenever a section is expanded again.
+      /**
+       * Highlights stay painted on the page's own label sections, re-found by offset
+       * whenever a section is expanded again.
+       */
       function paint() {
             if (!mounted || typeof CSS === 'undefined' || !('highlights' in CSS)) return;
             const ranges = passages.flatMap((passage) => {

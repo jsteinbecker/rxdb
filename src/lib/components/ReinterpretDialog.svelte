@@ -1,8 +1,15 @@
+<!--
+@component
+"Reload & reinterpret" dialog for a package: mark each interpreted value correct,
+incorrect, incomplete or too broad (saying what is wrong), and direct the scrape — a
+preferred DailyMed SPL set id, the rows that apply to this package — before its
+sources are fetched again and read anew.
+-->
 <script lang="ts">
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
-      import type {StagedPackage} from '$lib/server/catalog-sync';
-      import type {ExternalPackage} from '$lib/server/catalog-providers';
+      import type { StagedPackage } from '../catalog/types';
+      import type { ExternalPackage } from '../catalog/types';
       import {
             defaultMark,
             type FieldMark,
@@ -13,9 +20,12 @@
             REVIEW_FIELDS,
             type ReviewField,
             summarize
-      } from '$lib/reinterpret';
+      } from "$lib/curation/reinterpret";
 
-      let {item}: { item: StagedPackage } = $props();
+      let {item}: {
+            /** The package to reload. */
+            item: StagedPackage
+      } = $props();
 
       type Preview = {
             token: string;
@@ -49,7 +59,9 @@
       const unlockedCount = $derived(Object.values(marks).filter((m) => m !== 'locked').length);
       const overrideCount = $derived(Object.values(overrides).filter((v) => v.trim()).length);
 
+      let editingRevision: number | undefined;
       export function open() {
+            editingRevision = item.editRevision;
             marks = Object.fromEntries(REVIEW_FIELDS.map((f) => [f.key, defaultMark(asPackage, f)]));
             notes = {};
             overrides = {};
@@ -94,7 +106,7 @@
             busy = true;
             message = null;
             const review = {marks, notes, overrides, keepRows, preferredSetId, note};
-            const result = await post('preview', {review: JSON.stringify(review)});
+            const result = await post('preview', {review: JSON.stringify(review), revision: String(editingRevision)});
             busy = false;
             if (result.type === 'success' && result.data?.preview) {
                   preview = result.data.preview as Preview;

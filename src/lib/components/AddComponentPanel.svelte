@@ -1,17 +1,30 @@
+<!--
+@component
+The compound builder's "add a component" panel: search the formulary's packages by
+name or NDC and post the chosen package to the page's `?/add` action, as an active
+ingredient or a diluent. Shows at most 30 matches.
+-->
 <script lang="ts">
       import {enhance} from '$app/forms';
       import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from '$lib/ndc';
+      import {formatNdc} from "$lib/catalog/ndc";
 
+      /** A formulary package that can be added to the compound. */
       type Candidate = {
             packageId: string;
             ndc: string;
+            /** Display title, possibly ending in a `[Brand]` tag. */
             title: string;
+            /** Concentration, posted with the choice. */
             conc: string | null;
+            /** Unit a dose of the package is measured in, posted with the choice. */
             doseUnit: string | null;
       };
 
-      let {candidates}: { candidates: Candidate[] } = $props();
+      let {candidates}: {
+            /** Every package the search may offer. */
+            candidates: Candidate[]
+      } = $props();
 
       let query = $state('');
       let role = $state<'active' | 'diluent'>('active');

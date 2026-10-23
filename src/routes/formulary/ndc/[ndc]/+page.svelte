@@ -4,7 +4,7 @@
       import {afterNavigate, replaceState} from '$app/navigation';
       import {page} from '$app/state';
       import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from '$lib/ndc';
+      import {formatNdc} from "$lib/catalog/ndc";
       import PageHeader from '$lib/components/PageHeader.svelte';
       import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
       import {enhance} from '$app/forms';
@@ -15,7 +15,8 @@
       import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
       import LocalConceptDialog from '$lib/components/LocalConceptDialog.svelte';
       import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
-      import {labelProductName, packageTitle, rxNormPackageTitle} from '$lib/package-title';
+      import {labelProductName, packageTitle, rxNormPackageTitle} from "$lib/catalog/package-title";
+      import {styledName} from "$lib/client/strength-display.svelte";
 
       let {data, form} = $props();
 
@@ -80,7 +81,9 @@
       }
 
       const item = $derived(data.item);
-      const displayTitle = $derived(rxNormPackageTitle(item));
+      // A package on exactly one formulary item follows that item's own strength style.
+      const itemStyle = $derived(data.formularyItems.length === 1 ? data.formularyItems[0].strengthStyle : null);
+      const displayTitle = $derived(styledName(rxNormPackageTitle(item) ?? '', itemStyle) || null);
       const labelName = $derived(labelProductName(item));
       // The header is usually the formulary item's own RxNorm name; it isn't repeated.
       const sameName = (name: string) => !!displayTitle && displayTitle.toLowerCase().startsWith(name.trim().toLowerCase());
@@ -94,7 +97,7 @@
       <a class="back" href={resolve('/formulary')} onclick={back}>
             <span aria-hidden="true">←</span> Formulary
       </a>
-      <PageHeader title={packageTitle(item)} compact>
+      <PageHeader title={styledName(packageTitle(item), itemStyle)} compact>
             {#snippet name(text: string)}
                   {#each text.split(/(\d+(?:[.,]\d+)*)\s*mg\/ml/gi) as part, i (i)}{#if i % 2 === 1}<MgPerMl value={part}/>{:else}{part}{/if}{/each}
             {/snippet}
@@ -129,6 +132,7 @@
             {/if}
             {#if item.manualExclusion}
                   <form class="exclusion" method="POST" action="?/include" use:enhance>
+                        <input type="hidden" name="revision" value={item.editRevision} />
                         <span class="excluded">Excluded from formulary:</span> {item.manualExclusion}
                         <button class="link" type="submit">Include again</button>
                   </form>
@@ -144,6 +148,7 @@
                               if (!form?.message) excludeDialog.close();
                         }}
             >
+                  <input type="hidden" name="revision" value={item.editRevision} />
                   <h2>Exclude {formatNdc(item.ndc)}</h2>
                   <p>It is unlinked from any formulary item and skipped by future loads.</p>
                   <label>

@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { editState, evidenceText, supersedeItem, supersedesText } from '$lib/local-concept-list';
+	import { editState, evidenceText, supersedeItem, supersedesText } from "$lib/curation/local-concept-list";
 
 	let { data, form } = $props();
 

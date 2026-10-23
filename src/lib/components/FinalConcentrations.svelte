@@ -1,8 +1,17 @@
+<!--
+@component
+The "Final concentrations" table of the compound builder: one row per ingredient
+slot with its resulting amount as a mixed fraction, or a dash while there isn't
+enough information to work it out.
+-->
 <script lang="ts">
       import MixedFraction from './MixedFraction.svelte';
-      import type {FinalRow} from '$lib/compound-builder';
+      import type {FinalRow} from "$lib/compounds/compound-builder";
 
-      let {rows}: { rows: FinalRow[] } = $props();
+      let {rows}: {
+            /** One row per ingredient slot, from the compound builder. */
+            rows: FinalRow[]
+      } = $props();
 </script>
 
 <section aria-labelledby="final-heading" class="final">

@@ -1,3 +1,27 @@
+<!--
+@component
+One field for every typed quantity.
+
+A plain number, a mixed number ("131 11/19"), a percent ("0.9%"), an amount
+with a unit ("1.5 g"), or a ratio of units ("2500/19 mg/mL", "20,000
+UNT/vial", "250 mg/5 mL").
+
+At rest the field *is* the typeset value: the typed characters go invisible
+and the mixed number is drawn over them, its remainder stacked. While the
+caret is in it the characters come back — a stacked fraction is not the
+width of the text it is set from, so drawing it over a focused input would
+put the caret somewhere other than the digits — and the reading floats
+above the field as a preview that follows each keystroke.
+
+`unit` locks what the field produces: a bare number is taken to be in it,
+and anything convertible is converted ("1.5 g" → 1500 mg, "0.9%" → 9 mg/mL),
+with the conversion shown in the preview. `quantity` binds the result.
+
+Usage:
+```svelte
+<QuantityField bind:value bind:quantity unit="mg/mL" placeholder="e.g. 250 mg/5 mL" />
+```
+-->
 <script lang="ts">
       import {untrack} from 'svelte';
       import MixedFraction from './MixedFraction.svelte';
@@ -9,23 +33,7 @@
             type Quantity,
             quantityDecimal,
             type QuantityKind
-      } from '$lib/quantity';
-
-      // ── One field for every typed quantity ────────────────────────────────────
-      // A plain number, a mixed number ("131 11/19"), a percent ("0.9%"), an amount
-      // with a unit ("1.5 g"), or a ratio of units ("2500/19 mg/mL", "20,000
-      // UNT/vial", "250 mg/5 mL").
-      //
-      // At rest the field *is* the typeset value: the typed characters go invisible
-      // and the mixed number is drawn over them, its remainder stacked. While the
-      // caret is in it the characters come back — a stacked fraction is not the
-      // width of the text it is set from, so drawing it over a focused input would
-      // put the caret somewhere other than the digits — and the reading floats
-      // above the field as a preview that follows each keystroke.
-      //
-      // `unit` locks what the field produces: a bare number is taken to be in it,
-      // and anything convertible is converted ("1.5 g" → 1500 mg, "0.9%" → 9 mg/mL),
-      // with the conversion shown in the preview. `quantity` binds the result.
+      } from "$lib/medication/quantity";
 
       let {
             value = $bindable(''),
@@ -130,7 +138,7 @@
             untrack(() => onchange?.(current));
       });
 
-      // Editing means the caret is in here, and the caret belongs to the text.
+      /** Editing means the caret is in here, and the caret belongs to the text. */
       let editing = $state(false);
 
       /** The unit the typeset value is read in: as typed, else the locked one. */

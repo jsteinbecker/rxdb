@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
-	import { ruleKeyText } from '$lib/pharm-class-rule-label';
+	import { ruleKeyText } from "$lib/formulary/pharm-class-rule-label";
 
 	let { data, form } = $props();
 

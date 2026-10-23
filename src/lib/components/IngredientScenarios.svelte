@@ -1,11 +1,23 @@
+<!--
+@component
+"Ingredient scenarios" for a formulary item: which ingredient profiles (active
+ingredients and excipients) its packages fall into, as a matrix of profiles against
+ingredients. Ticking ingredients to avoid shows which NDCs remain. Columns merge salts
+into their moiety unless listed separately.
+-->
 <script lang="ts">
-  import type { ItemSummary } from '$lib/item-summary';
-  import { formatNdc } from '$lib/ndc';
-  import { ingredientScenarios, profileNames, remainingNdcs } from '$lib/ingredient-scenarios';
+  import type { ItemSummary } from "$lib/formulary/item-summary";
+  import { formatNdc } from "$lib/catalog/ndc";
+  import { ingredientScenarios, profileNames, remainingNdcs } from "$lib/medication/ingredient-scenarios";
 
-  let { summary }: { summary: ItemSummary } = $props();
+  let {
+    summary
+  }: {
+    /** The item summary whose packages to profile. */
+    summary: ItemSummary;
+  } = $props();
 
-  // Moiety columns by default; listing them splits VANCOMYCIN from VANCOMYCIN HCL.
+  /** Moiety columns by default; listing them splits VANCOMYCIN from VANCOMYCIN HCL. */
   let listed = $state(false);
   const scenarios = $derived(ingredientScenarios(summary, { byMoiety: !listed }));
   const mergesSalts = $derived(
@@ -23,10 +35,12 @@
   const names = $derived(new Map(scenarios.columns.map((entry) => [entry.key, entry.name])));
   const keeps = (has: string[]) => !has.some((key) => avoid.includes(key));
 
-  // Slanted labels get two lines. The header rises (from --rise's 6rem up to
-  // 9rem) until every label fits in two; past that, labels clamp with an
-  // ellipsis and carry their full name in the tooltip. Widths are estimated
-  // from glyph classes so the header lays out the same on the server.
+  /**
+   * Slanted labels get two lines. The header rises (from --rise's 6rem up to
+   * 9rem) until every label fits in two; past that, labels clamp with an
+   * ellipsis and carry their full name in the tooltip. Widths are estimated
+   * from glyph classes so the header lays out the same on the server.
+   */
   const RISES = [6, 6.5, 7, 7.5, 8, 8.5, 9];
   const glyph = (c: string) => (c === ' ' ? 0.28 : /[A-Z0-9]/.test(c) ? 0.68 : 0.55);
   const textEm = (text: string) => [...text].reduce((sum, c) => sum + glyph(c), 0);
@@ -49,7 +63,9 @@
     }
     return lines;
   }
-  // .slant is rise·√2 − 0.6rem long, less its padding and the button's; in em of the 0.68rem label.
+  /**
+   * .slant is rise·√2 − 0.6rem long, less its padding and the button's; in em of the 0.68rem label.
+   */
   const labelEm = (rise: number) => (rise * Math.SQRT2 - 0.6 - 0.45 - 0.5) / 0.68;
   const fitsAt = (text: string, rise: number) => lineCount(text, labelEm(rise)) <= 2;
   const rise = $derived(

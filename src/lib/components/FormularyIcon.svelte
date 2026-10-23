@@ -1,3 +1,9 @@
+<!--
+@component
+An open-book icon for a package's formulary status: a check when it is on the
+formulary, an exclamation mark when it is linked but excluded, a question mark when it
+is not on it. The label doubles as the accessible name and tooltip.
+-->
 <script lang="ts" module>
 	/** `on`: on the formulary; `flagged`: linked but kept off; `unknown`: not on it. */
 	export type FormularyStatus = 'on' | 'flagged' | 'unknown';
@@ -10,7 +16,14 @@
 </script>
 
 <script lang="ts">
-	let { status, title }: { status: FormularyStatus; title?: string } = $props();
+	let {
+		status,
+		title
+	}: {
+		status: FormularyStatus;
+		/** Replaces the default label for the status. */
+		title?: string;
+	} = $props();
 	const label = $derived(title ?? LABELS[status]);
 </script>
 

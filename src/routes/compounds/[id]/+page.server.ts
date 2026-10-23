@@ -1,8 +1,10 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { prisma } from '$lib/server/prisma';
-import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
-import { formularyRows } from '$lib/server/formulary-view';
-import { packageTitle } from '$lib/package-title';
+import { prisma } from '$lib/server/infrastructure/database';
+import { defaultScope, loadedItems, localNamesOf } from '$lib/server/formulary/membership';
+import { formularyRows } from '$lib/server/formulary/read';
+import { packageTitle } from '$lib/catalog/package-title';
+import { applyStrengthStyles } from '$lib/medication/strength-style';
+import { parseSettings } from '$lib/formulary/settings';
 import {
 	addComponent,
 	CompoundError,
@@ -11,10 +13,14 @@ import {
 	removeComponent,
 	saveLines,
 	setSaved
-} from '$lib/server/compound-store';
-import { refreshCompoundName } from '$lib/server/compound-naming';
-import { packageConcentration, parseLinesPayload, type Role } from '$lib/compound-builder';
-import { parseRational, serializeRational } from '$lib/rational';
+} from '$lib/server/compounds/store';
+import { refreshCompoundName } from '$lib/server/compounds/naming';
+import {
+	packageConcentration,
+	parseLinesPayload,
+	type Role
+} from '$lib/compounds/compound-builder';
+import { parseRational, serializeRational } from '$lib/medication/rational';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Run a store call; a CompoundError becomes a notice, anything else is a real failure. */
@@ -38,11 +44,17 @@ export const load: PageServerLoad = async ({ params }) => {
 		if (cause instanceof CompoundError) error(cause.status, cause.message);
 		throw cause;
 	}
-	const rows = await formularyRows(prisma, scope.id, localNamesOf(await loadedItems(prisma, scope.id)));
+	const rows = await formularyRows(
+		prisma,
+		scope.id,
+		localNamesOf(await loadedItems(prisma, scope.id))
+	);
 	const byPackage = new Map(rows.map((row) => [row.packageId, row]));
+	const styles = parseSettings(scope.settings).strengthStyles;
+	const shownTitle = (row: (typeof rows)[number]) => applyStrengthStyles(packageTitle(row), styles);
 	const title = (packageId: string) => {
 		const row = byPackage.get(packageId);
-		return row ? packageTitle(row) : 'Package no longer on the formulary';
+		return row ? shownTitle(row) : 'Package no longer on the formulary';
 	};
 	return {
 		scope: { id: scope.id, name: scope.name },
@@ -55,7 +67,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			return {
 				packageId: row.packageId,
 				ndc: row.ndc,
-				title: packageTitle(row),
+				title: shownTitle(row),
 				conc: found ? serializeRational(found.conc) : null,
 				doseUnit: found?.doseUnit ?? null
 			};

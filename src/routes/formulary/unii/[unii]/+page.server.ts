@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { findDefaultScope } from '$lib/server/catalog-formulary';
-import { formularyRows } from '$lib/server/formulary-view';
-import { prisma } from '$lib/server/prisma';
-import { normalizeUnii, uniiUsage } from '$lib/server/unii-usage';
+import { findDefaultScope } from '$lib/server/formulary/membership';
+import { formularyRows } from '$lib/server/formulary/read';
+import { prisma } from '$lib/server/infrastructure/database';
+import { normalizeUnii, uniiUsage } from '$lib/server/catalog/unii-usage';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

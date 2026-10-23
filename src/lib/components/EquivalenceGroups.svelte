@@ -1,7 +1,13 @@
+<!--
+@component
+Settings editor for equivalence groups: sets of a dimension's values (e.g. dose form
+spellings) merged and shown under one name. Suggests likely groups from the
+formulary's values, and edits, saves and deletes groups.
+-->
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { DIMENSIONS } from '$lib/formulary-hierarchy';
+	import { DIMENSIONS } from "$lib/formulary/hierarchy";
 	import {
 		equivalenceKey,
 		equivalenceWords,
@@ -13,7 +19,7 @@
 		type EquivalenceGroup,
 		type Suggestion,
 		type ValueCount
-	} from '$lib/equivalence';
+	} from "$lib/formulary/equivalence";
 
 	/** Settings editor for equivalence groups: sibling values the hierarchy shows as one node. */
 	let {
@@ -22,10 +28,13 @@
 		message = null,
 		savedGroup = null
 	}: {
+		/** The saved groups. */
 		groups: EquivalenceGroup[];
 		/** Each dimension's current values across the formulary. */
 		values: Record<string, ValueCount[]>;
+		/** An error from the last save or delete. */
 		message?: string | null;
+		/** The name of the group just saved, for a confirmation notice. */
 		savedGroup?: string | null;
 	} = $props();
 

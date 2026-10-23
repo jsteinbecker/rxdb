@@ -1,11 +1,20 @@
+<!--
+@component
+Renders SPL label content (headings, styled paragraphs, nested lists and tables) as
+parsed by `labels/spl-sections.ts`. While a citation is being captured, each table row
+gets a checkbox so it can be cited as its cells' text.
+-->
 <script lang="ts">
-      import type {LabelBlock, LabelCell, LabelRun} from '$lib/spl-sections';
+      import type {LabelBlock, LabelCell, LabelRun} from "$lib/labels/spl-sections";
       import LabelBlocks from './LabelBlocks.svelte';
-      import {citationCapture} from '$lib/citation-capture.svelte';
+      import {citationCapture} from "$lib/client/citation-capture.svelte";
 
-      let {blocks}: { blocks: LabelBlock[] } = $props();
+      let {blocks}: {
+            /** Parsed label blocks, in document order. */
+            blocks: LabelBlock[]
+      } = $props();
 
-      // A row is cited as its cells' text, the way the server reads a table.
+      /** A row is cited as its cells' text, the way the server reads a table. */
       const rowText = (cells: LabelCell[]) =>
             cells.map((cell) => cell.runs.map((run) => run.text).join('')).join(' ');
 </script>
