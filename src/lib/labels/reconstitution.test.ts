@@ -488,3 +488,29 @@ test('route dividers, "1 gram vial" stubs and starred volumes (ceftazidime 25021
 	assert.equal(resolved.concentrationMgPerMl, 100);
 	assert.equal(resolved.concentrationConflict, undefined);
 });
+
+test("a table's title names the diluent its columns leave unsaid", () => {
+	// Meropenem (Sandoz 0781-3000-94): "Amount of Diluent Added" names no
+	// diluent; the bold "Table 4" paragraph above it does.
+	const meropenem = `<table ID="Dose4"><thead><tr><th>Vial Size</th><th>Amount of Diluent Added (mL)</th><th>Approximate Withdrawable Volume (mL)</th><th>Approximate Average Concentration (mg/mL)</th></tr></thead><tbody><tr><td>500 mg</td><td>10</td><td>10</td><td>50</td></tr></tbody></table>`;
+	const spl = `<section><text><paragraph>Re-constitute injection vials with sterile Water for Injection (see <linkHtml href="#Dose4">Table 4</linkHtml> below).</paragraph><paragraph><content styleCode="bold">Table 4: Volume of Sterile Water for Injection for Reconstitution of Injection Vials</content></paragraph>${meropenem}</text></section>`;
+	assert.deepEqual(
+		reconstitutionFromLabel({ spl_tables_table: [spl] }).map((row) => row.diluents),
+		[['SWFI']]
+	);
+	// The same title as a <caption> inside the table.
+	const captioned = meropenem.replace(
+		'<thead>',
+		'<caption>Table 4: Volume of Sterile Water for Injection for Reconstitution</caption><thead>'
+	);
+	assert.deepEqual(parseReconstitutionTable(captioned)[0].diluents, ['SWFI']);
+	// A column or row that names its own diluent is more specific than the title.
+	const lidocaine = captioned.replace('Amount of Diluent Added', 'Amount of Lidocaine Added');
+	assert.deepEqual(parseReconstitutionTable(lidocaine)[0].diluents, ['lidocaine']);
+	// A sentence that isn't a title doesn't count: the prose parser reads those.
+	const prose = spl.replace(
+		/<paragraph><content styleCode="bold">Table 4:[^<]*<\/content><\/paragraph>/,
+		''
+	);
+	assert.equal(reconstitutionFromLabel({ spl_tables_table: [prose] })[0].diluents, undefined);
+});
