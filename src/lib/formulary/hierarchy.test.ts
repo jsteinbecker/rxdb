@@ -530,10 +530,101 @@ test('a container of many solid doses is bulk', () => {
 		assert.equal(packagingClass(row({ description })), 'Unit-dose packaging', description);
 });
 
+test('injectables are classed SDV, MDV, pharmacy bulk, RTU or PFS', () => {
+	const injectable = (description: string, isMultiDose: boolean | null = null) =>
+		packagingClass(
+			row({ description, isMultiDose, routes: ['INTRAVENOUS'], doseForm: 'INJECTION, SOLUTION' })
+		);
+	for (const [description, expected] of [
+		['10 VIAL, SINGLE-DOSE in 1 CARTON / 10 mL in 1 VIAL, SINGLE-DOSE', 'SDV'],
+		['10 AMPULE in 1 CARTON / 1 mL in 1 AMPULE', 'SDV'],
+		['1 VIAL, MULTI-DOSE in 1 CARTON / 30 mL in 1 VIAL, MULTI-DOSE', 'MDV'],
+		[
+			'1 VIAL, PHARMACY BULK PACKAGE in 1 CARTON / 100 mL in 1 VIAL, PHARMACY BULK PACKAGE',
+			'Pharmacy Bulk Packaging'
+		],
+		['1 INJECTION in 1 VIAL, PHARMACY BULK PACKAGE', 'Pharmacy Bulk Packaging'],
+		['12 BAG in 1 CARTON / 750 mL in 1 BAG', 'RTU'],
+		['24 CONTAINER in 1 CASE / 50 mL in 1 CONTAINER', 'RTU'],
+		['10 SYRINGE in 1 CARTON / 1 mL in 1 SYRINGE, GLASS', 'PFS'],
+		['5 PEN in 1 CARTON / 3 mL in 1 PEN', 'PFS'],
+		['10 VIAL in 1 CARTON / 10 mL in 1 VIAL', NOT_SPECIFIED]
+	] as const)
+		assert.equal(injectable(description), expected, description);
+	// A plain vial takes its dose type from the flag; the container's own beats it.
+	const vial = '10 VIAL in 1 TRAY / 100 mL in 1 VIAL';
+	assert.equal(injectable(vial, false), 'SDV');
+	assert.equal(injectable(vial, true), 'MDV');
+	assert.equal(injectable('1 mL in 1 VIAL, SINGLE-DOSE', true), 'SDV');
+	// A dose form is enough without a parenteral route.
+	assert.equal(
+		packagingClass(
+			row({ description: '1 mL in 1 VIAL, MULTI-DOSE', routes: [], doseForm: 'INJECTION' })
+		),
+		'MDV'
+	);
+});
+
+test('a "(Bulk)" item is pharmacy bulk and a bottle of powder is not RTU', () => {
+	const powder = (formularyItem: string, description: string, isMultiDose: boolean | null = null) =>
+		packagingClass(
+			row({
+				formularyItem,
+				description,
+				isMultiDose,
+				size: null,
+				routes: ['INTRAVENOUS'],
+				doseForm: 'INJECTION, POWDER, FOR SOLUTION'
+			})
+		);
+	const pipTazoBulk = 'piperacillin 36000 MG / tazobactam 4500 MG Injection (Bulk)';
+	const ampBulk = 'ampicillin 10000 MG Injection (Bulk)';
+	for (const [formularyItem, description, isMultiDose] of [
+		// 63323-304-74, 25021-197-99: bulk powder in a bottle.
+		[pipTazoBulk, '1 BOTTLE in 1 CARTON (63323-304-74)  / 180 mL in 1 BOTTLE', null],
+		[ampBulk, '1 BOTTLE in 1 CARTON (25021-197-99)  / 100 mL in 1 BOTTLE', null],
+		// 72485-423-10: bulk powder whose only container is the carton.
+		[ampBulk, '1 INJECTION, POWDER, FOR SOLUTION in 1 CARTON (72485-423-10)', null],
+		// 00781-3409-46: no package text, only a name.
+		[ampBulk, 'Ampicillin Sodium', false]
+	] as const)
+		assert.equal(
+			powder(formularyItem, description, isMultiDose),
+			'Pharmacy Bulk Packaging',
+			description
+		);
+	// 55150-179-99: a bottle of powder that is not a bulk product needs mixing, so not RTU.
+	assert.equal(
+		powder(
+			'ampicillin 2000 MG / sulbactam 1000 MG Injection',
+			'10 BOTTLE in 1 BOX (55150-179-99)  / 1 INJECTION, POWDER, FOR SOLUTION in 1 BOTTLE'
+		),
+		NOT_SPECIFIED
+	);
+	// 0264-3155-11: a dual-chamber powder container is ready to use once activated.
+	assert.equal(
+		powder(
+			'ceftriaxone 2000 MG Injection',
+			'24 CONTAINER in 1 CASE (0264-3155-11)  / 50 mL in 1 CONTAINER'
+		),
+		'RTU'
+	);
+});
+
 test('strength labels follow display rules; grouping keys do not', () => {
 	const rules = [
-		{ ingredient: 'epinephrine', withIngredients: ['lidocaine'], doseForm: 'Injection', style: 'ratio' as const },
-		{ ingredient: 'lidocaine', withIngredients: [], doseForm: 'Injection', style: 'percent' as const }
+		{
+			ingredient: 'epinephrine',
+			withIngredients: ['lidocaine'],
+			doseForm: 'Injection',
+			style: 'ratio' as const
+		},
+		{
+			ingredient: 'lidocaine',
+			withIngredients: [],
+			doseForm: 'Injection',
+			style: 'percent' as const
+		}
 	];
 	const lidoEpi = row({
 		displayTitle: 'Epinephrine 0.01 MG/ML / Lidocaine Hydrochloride 10 MG/ML Injectable Solution',
