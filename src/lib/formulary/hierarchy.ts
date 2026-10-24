@@ -133,7 +133,8 @@ const STOCK = /BOTTLE|\bJAR\b|PAIL|\bCAN\b|\bTUBE\b|\bBOX\b/i;
 const SOLID_DOSE = /TABLET|CAPSULE|LOZENGE|TROCHE|SUPPOSITOR|PELLET|WAFER/i;
 
 /**
- * Unit-dose packaging versus bulk stock, from the innermost container in the
+ * Unit-dose packaging versus bulk stock (for injectables, SDV, MDV, PFS, RTU or
+ * pharmacy bulk packaging), from the innermost container in the
  * package text ("10 VIAL in 1 CARTON / 10 mL in 1 VIAL, SINGLE-USE" is a vial).
  * A plain vial is classed by its dose type; anything unrecognized is not specified
  * rather than assumed bulk.
@@ -147,6 +148,7 @@ export function packagingClass(row: FormularyRow): string {
 			?.replace(/^.* in \d+ /i, '') ??
 		row.size?.container ??
 		'';
+	if (isInjectable(row)) return injectablePackaging(row, text, inner);
 	if (PHARMACY_BULK.test(inner)) return 'Bulk packaging';
 	// A bag or container of premix is one dose; of a hundred tablets, stock.
 	const content = text
@@ -169,6 +171,37 @@ export function packagingClass(row: FormularyRow): string {
 	if (/VIAL/i.test(inner) && row.isMultiDose !== null)
 		return row.isMultiDose ? 'Bulk packaging' : 'Unit-dose packaging';
 	return STOCK.test(inner) ? 'Bulk packaging' : NOT_SPECIFIED;
+}
+
+const isInjectable = (row: FormularyRow) =>
+	/INJECT/i.test(row.doseForm ?? '') ||
+	row.routes.some((route) => routeClass(route) === 'Parenteral');
+
+const PREFILLED = /PREFILLED|SYRINGE|CARTRIDGE|\bPEN\b|AUTO-?INJECTOR|INJECTOR/i;
+const READY_TO_USE = /\bBAG\b|CONTAINER|BOTTLE/i;
+/** The RxNorm title of a pharmacy bulk product: `ampicillin 10000 MG Injection (Bulk)`. */
+const BULK_TITLE = /\(Bulk\)/i;
+
+/**
+ * An injectable's packaging as a pharmacy stocks it: a pharmacy bulk package,
+ * a prefilled syringe (or pen, cartridge, autoinjector), a ready-to-use bag or
+ * container, or a vial (or ampule) by its dose type. A "(Bulk)" item is a
+ * pharmacy bulk package whatever its container says, and a bottle of powder
+ * still needs mixing, so it is not ready to use. The container's own dose type
+ * beats the isMultiDose flag; a vial with neither is not specified.
+ */
+function injectablePackaging(row: FormularyRow, text: string | null, inner: string): string {
+	if (/PHARMACY BULK/i.test(text ?? inner) || BULK_TITLE.test(row.formularyItem))
+		return 'Pharmacy Bulk Packaging';
+	if (PREFILLED.test(inner)) return 'PFS';
+	const powderBottle = /BOTTLE/i.test(inner) && /POWDER/i.test(row.doseForm ?? '');
+	if (READY_TO_USE.test(inner) && !powderBottle) return 'RTU';
+	if (/VIAL|AMPULE/i.test(inner)) {
+		if (/MULTI-DOSE/i.test(inner)) return 'MDV';
+		if (/SINGLE-(?:DOSE|USE)|AMPULE/i.test(inner)) return 'SDV';
+		if (row.isMultiDose !== null) return row.isMultiDose ? 'MDV' : 'SDV';
+	}
+	return NOT_SPECIFIED;
 }
 
 const amount = (value: number, unit: string | null) =>
@@ -443,7 +476,7 @@ export const DIMENSIONS: Dimension[] = [
 	{
 		key: 'packaging',
 		label: 'Packaging',
-		hint: 'Unit dose vs bulk',
+		hint: 'Unit dose vs bulk; SDV, MDV, PFS… for injectables',
 		values: (row) => [packagingClass(row)]
 	},
 	{
