@@ -1,10 +1,18 @@
-<script lang="ts">
-      import {mixedParts} from '$lib/quantity';
-      import type {Rational} from '$lib/rational';
+<!--
+@component
+A value set as a mixed number: the whole part at full size, the remainder
+stacked over its denominator. "131 11/19 mg/mL" says the vial holds 2500 mg
+in nineteen millilitres; "131.5789473684" says nothing checkable.
 
-      // A value set as a mixed number: the whole part at full size, the remainder
-      // stacked over its denominator. "131 11/19 mg/mL" says the vial holds 2500 mg
-      // in nineteen millilitres; "131.5789473684" says nothing checkable.
+Usage:
+```svelte
+<MixedFraction value={concentration} unit="mg/mL" />
+```
+-->
+<script lang="ts">
+      import {mixedParts} from "$lib/medication/quantity";
+      import type {Rational} from "$lib/medication/rational";
+
       let {value, unit = null}: { value: Rational; unit?: string | null } = $props();
 
       const parts = $derived(mixedParts(value));

@@ -1,24 +1,35 @@
 import { error, fail } from '@sveltejs/kit';
-import { prisma } from '$lib/server/prisma';
-import { trackJob } from '$lib/server/jobs';
-import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
-import { formularyRows } from '$lib/server/formulary-view';
-import { addBrandTag, itemBrands, removeBrandTag, restoreBrandTag } from '$lib/server/brand-tag-store';
-import { itemPackages, relatedItems } from '$lib/formulary-item';
-import { parseBrandName } from '$lib/brand-tags';
-import { parseReleaseAbbreviation } from '$lib/time-release';
-import { parseNameOverride } from '$lib/item-name';
-import { summarizeItem } from '$lib/item-summary';
-import { loadPackageSnapshots } from '$lib/server/catalog-store';
-import { loadStagedNode } from '$lib/server/catalog-sync';
-import { cmsBilling } from '$lib/server/cms-billing';
-import { withPharmClassRules } from '$lib/server/pharm-class-view';
-import { withLocalConcepts } from '$lib/server/local-concept-view';
-import { hasAppearance, isSolidDoseForm, type PillAppearance } from '$lib/spl-characteristics';
-import { refineAppearances } from '$lib/spl-appearance-text';
-import type { PillImageLayout, PillPhotoRef } from '$lib/pill-image-layout';
-import { storedPillPhotos } from '$lib/server/pill-photo';
-import { localPillPhotos } from '$lib/server/local-pill-photos';
+import { prisma } from '$lib/server/infrastructure/database';
+import { trackJob } from '$lib/server/infrastructure/jobs';
+import { defaultScope, loadedItems, localNamesOf } from '$lib/server/formulary/membership';
+import { formularyRows } from '$lib/server/formulary/read';
+import {
+	addBrandTag,
+	itemBrands,
+	removeBrandTag,
+	restoreBrandTag
+} from '$lib/server/formulary/brand-tag-store';
+import { itemPackages, relatedItems } from '$lib/formulary/item';
+import { parseBrandName } from '$lib/medication/brand-tags';
+import { parseReleaseAbbreviation } from '$lib/medication/time-release';
+import { parseNameOverride } from '$lib/formulary/item-name';
+import { parseItemStrengthStyle } from '$lib/medication/strength-style';
+import { parseSettings } from '$lib/formulary/settings';
+import { summarizeItem } from '$lib/formulary/item-summary';
+import { loadPackageSnapshots } from '../../../../lib/server/catalog/snapshot-store';
+import { loadStagedNode } from '$lib/server/catalog/sync';
+import { cmsBilling } from '$lib/server/providers/cms-billing';
+import { withPharmClassRules } from '$lib/server/curation/pharm-class-view';
+import { withLocalConcepts } from '$lib/server/curation/local-concept-view';
+import {
+	hasAppearance,
+	isSolidDoseForm,
+	type PillAppearance
+} from '$lib/labels/spl-characteristics';
+import { refineAppearances } from '$lib/labels/spl-appearance-text';
+import type { PillImageLayout, PillPhotoRef } from '$lib/imprints/pill-image-layout';
+import { storedPillPhotos } from '$lib/server/media/pill-photo';
+import { localPillPhotos } from '$lib/server/media/local-pill-photos';
 import { dev } from '$app/environment';
 import {
 	labelPhoto,
@@ -27,7 +38,7 @@ import {
 	queuePillImages,
 	unmeasured,
 	type PillImageTarget
-} from '$lib/server/pill-image-store';
+} from '$lib/server/media/pill-image-store';
 import type { Actions, PageServerLoad } from './$types';
 
 async function itemInScope(id: string) {
@@ -42,7 +53,10 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (!item) error(404, 'That item is not on this formulary.');
 	const rows = await formularyRows(prisma, scope.id, localNames);
 	const packages = itemPackages(rows, item.formularyItemId);
-	const snapshots = await loadPackageSnapshots(prisma, packages.map((row) => row.ndc));
+	const snapshots = await loadPackageSnapshots(
+		prisma,
+		packages.map((row) => row.ndc)
+	);
 	// Pill mockups by NDC, only for solid forms: a vial's label never states an
 	// appearance, and a stray one on a non-solid must not be drawn as a pill.
 	// Photos are the label's own, or ones an NDC page view already looked up;
@@ -62,11 +76,15 @@ export const load: PageServerLoad = async ({ params }) => {
 		// Indexed before filtering: a stored photo is keyed by the appearance's
 		// position in the package, which is its part.
 		// The label's prose in How Supplied or DF&S wins over the coded observations.
-		const refined = refineAppearances(snapshot?.details?.spl?.appearances ?? [], snapshot?.details?.label?.sections, {
-			ndc: row.ndc,
-			strengths: snapshot?.ingredients.map((ingredient) => ingredient.strength) ?? [],
-			doseForm
-		});
+		const refined = refineAppearances(
+			snapshot?.details?.spl?.appearances ?? [],
+			snapshot?.details?.label?.sections,
+			{
+				ndc: row.ndc,
+				strengths: snapshot?.ingredients.map((ingredient) => ingredient.strength) ?? [],
+				doseForm
+			}
+		);
 		const all = refined.map((appearance, index) => ({
 			appearance,
 			photo:
@@ -106,21 +124,23 @@ export const load: PageServerLoad = async ({ params }) => {
 	const summaryItems = new Map(snapshotNdcs.map((ndc, index) => [ndc, resolved[index]]));
 	const billing = await cmsBilling(
 		prisma,
-		packages.map((row) => ({ ndc: row.ndc, doseForm: row.doseForm ?? snapshots.get(row.ndc)?.item.doseForm ?? null }))
+		packages.map((row) => ({
+			ndc: row.ndc,
+			doseForm: row.doseForm ?? snapshots.get(row.ndc)?.item.doseForm ?? null
+		}))
 	);
 	return {
 		appearances,
 		layouts,
 		cmsBilling: Object.fromEntries(billing),
 		scope: { id: scope.id, name: scope.name },
+		// The formulary's rules, so the name editor previews what saving would show.
+		strengthStyles: parseSettings(scope.settings).strengthStyles,
 		item,
 		brands: await itemBrands(prisma, item.formularyItemId),
 		packages,
-		summary: summarizeItem(
-			packages,
-			summaryItems,
-			item.displayName
-		),
+		// The unstyled name: its strengths are parsed, and a display rule's "1:4,000" is not one.
+		summary: summarizeItem(packages, summaryItems, item.nameOverride ?? item.sourceName),
 		related: relatedItems(rows, item.formularyItemId)
 	};
 };
@@ -151,7 +171,7 @@ export const actions: Actions = {
 			data: {
 				// Saving the sourced name unchanged keeps the item following its source.
 				nameOverride: parsed.name === item.sourceName ? null : parsed.name,
-				strengthAsPercent: form.get('percent') === 'on'
+				strengthStyle: parseItemStrengthStyle(form.get('strengthStyle'))
 			}
 		});
 	},
@@ -160,7 +180,8 @@ export const actions: Actions = {
 		if ('error' in parsed) return fail(400, { releaseMessage: parsed.error });
 		const { item } = await itemInScope(params.id);
 		if (!item) error(404, 'That item is not on this formulary.');
-		if (!item.releasePeriod) return fail(400, { releaseMessage: 'This item has no release period.' });
+		if (!item.releasePeriod)
+			return fail(400, { releaseMessage: 'This item has no release period.' });
 		await prisma.formularyItem.update({
 			where: { id: params.id },
 			data: { releaseAbbreviation: parsed.abbreviation }
@@ -174,13 +195,15 @@ export const actions: Actions = {
 	},
 	removeBrand: async ({ params, request }) => {
 		const key = (await request.formData()).get('key');
-		if (typeof key !== 'string' || !key) return fail(400, { brandMessage: 'Choose a brand to remove.' });
+		if (typeof key !== 'string' || !key)
+			return fail(400, { brandMessage: 'Choose a brand to remove.' });
 		if (!(await itemInScope(params.id)).item) error(404, 'That item is not on this formulary.');
 		await removeBrandTag(prisma, params.id, key);
 	},
 	restoreBrand: async ({ params, request }) => {
 		const key = (await request.formData()).get('key');
-		if (typeof key !== 'string' || !key) return fail(400, { brandMessage: 'Choose a brand to restore.' });
+		if (typeof key !== 'string' || !key)
+			return fail(400, { brandMessage: 'Choose a brand to restore.' });
 		if (!(await itemInScope(params.id)).item) error(404, 'That item is not on this formulary.');
 		await restoreBrandTag(prisma, params.id, key);
 	}

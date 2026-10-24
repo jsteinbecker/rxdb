@@ -7,7 +7,7 @@
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/client.ts';
-import { passAlongSavedOverrides } from '../src/lib/server/override-propagation.ts';
+import { passAlongSavedOverrides } from "../src/lib/server/curation/override-propagation.ts";
 
 const apply = process.argv.includes('--apply');
 const db = new PrismaClient({

@@ -1,10 +1,18 @@
+<!--
+@component
+"Correct ingredient" wizard, in steps: what is wrong (the label names the wrong
+substance, states the strength as a different substance, or measures it as one it
+never lists), identify the substance (looked up in GSRS by name or UNII), convert the
+strength by molecular weight when its basis changes, cite the evidence, and review.
+The correction is footnoted beside the value, keeping the original.
+-->
 <script lang="ts">
       import {untrack} from 'svelte';
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
-      import type {StagedPackage} from '$lib/server/catalog-sync';
-      import type {EquivalentPackage} from '$lib/property-override-fields';
-      import type {StrengthBasis} from '$lib/spl-ingredients';
+      import type { StagedPackage } from '../catalog/types';
+      import type {EquivalentPackage} from "$lib/curation/property-override-fields";
+      import type {StrengthBasis} from "$lib/labels/spl-ingredients";
       import {
             describeCorrection,
             formatStrength,
@@ -15,9 +23,9 @@
             parseStrengthText,
             sameIngredientRow,
             serializeIngredientCorrection
-      } from '$lib/ingredient-correction';
-      import {conversionFactor, convertStrength, roundSignificant} from '$lib/strength-conversion';
-      import {appendCitation, type CitationDraft, citationReady, emptyCitation} from '$lib/citation-form';
+      } from "$lib/medication/ingredient-correction";
+      import {conversionFactor, convertStrength, roundSignificant} from "$lib/medication/strength-conversion";
+      import {appendCitation, type CitationDraft, citationReady, emptyCitation} from "$lib/curation/citation-form";
       import CitationPicker from './CitationPicker.svelte';
 
       type Answer =
@@ -34,7 +42,12 @@
       type Kind = 'substance' | 'basis' | 'unlisted';
       type Step = 'kind' | 'identify' | 'convert' | 'cite' | 'review';
 
-      let {item, equivalents = []}: { item: StagedPackage; equivalents?: EquivalentPackage[] } = $props();
+      let {item, equivalents = []}: {
+            /** The package whose ingredient is being corrected. */
+            item: StagedPackage;
+            /** Packages whose matching corrections can be cited instead. */
+            equivalents?: EquivalentPackage[];
+      } = $props();
 
       const KINDS: { id: Kind; title: string; hint: string }[] = [
             {id: 'substance', title: 'The label names the wrong substance', hint: 'The strength number is right; the substance is not.'},
@@ -58,7 +71,7 @@
       let busy = $state(false);
       let message = $state('');
 
-      // What the user typed; null means "use the default derived from the row and GSRS".
+      /** What the user typed; null means "use the default derived from the row and GSRS". */
       let ingUnii = $state('');
       let ingName = $state<string | null>(null);
       let basis = $state<StrengthBasis>('ingredient');
@@ -78,7 +91,7 @@
       const existing = $derived(
             parseIngredientCorrection(item.propertyOverrides?.[key]?.value ?? '') ?? null
       );
-      // Only a lone moiety is a default; NS lists chloride ion and sodium cation.
+      /** Only a lone moiety is a default; NS lists chloride ion and sodium cation. */
       const rowMoiety = $derived(row?.moieties.length === 1 && row.moieties[0].unii ? row.moieties[0] : null);
 
       // ── GSRS ──────────────────────────────────────────────────────────────────
@@ -147,7 +160,7 @@
       const toSubstance = $derived(substanceOf(measuredTo));
       const mwFromText = $derived(mwFromInput ?? (fromSubstance?.mw != null ? String(fromSubstance.mw) : ''));
       const mwToText = $derived(mwToInput ?? (toSubstance?.mw != null ? String(toSubstance.mw) : ''));
-      // Units of the measured-from substance per unit of the measured-to one.
+      /** Units of the measured-from substance per unit of the measured-to one. */
       const nDefault = $derived.by(() => {
             if (toSubstance?.moiety?.unii === fromFinal && toSubstance.moietyCount) return toSubstance.moietyCount;
             if (fromSubstance?.moiety?.unii === measuredTo && fromSubstance.moietyCount)
@@ -249,8 +262,10 @@
             }
       });
 
-      // While citing, the dialog docks small and non-modal so the page's label
-      // sections can be read and highlighted behind it.
+      /**
+       * While citing, the dialog docks small and non-modal so the page's label
+       * sections can be read and highlighted behind it.
+       */
       const docked = $derived(step === 'cite');
       $effect(() => {
             const dock = docked;
@@ -271,7 +286,9 @@
             confirmIng = false;
       });
 
+      let editingRevision: number | undefined;
       export function open(at: number) {
+            editingRevision = item.editRevision;
             // Docked while citing, the page stays usable and can ask for another row.
             if (dialog.open) {
                   if (touched && !confirm('Discard this correction?')) return;
@@ -317,7 +334,7 @@
 
       const go = (delta: number) => (step = steps[Math.max(0, Math.min(steps.length - 1, position + delta))]);
 
-      // The close event can arrive late, so the picker is unmounted here directly.
+      /** The close event can arrive late, so the picker is unmounted here directly. */
       function shut() {
             isOpen = false;
             dialog.close();
@@ -334,6 +351,7 @@
             busy = true;
             message = '';
             const form = new FormData();
+            form.set('revision', String(editingRevision));
             form.set('key', key);
             form.set('value', serializeIngredientCorrection(built));
             appendCitation(form, citation);

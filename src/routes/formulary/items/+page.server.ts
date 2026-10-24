@@ -1,11 +1,16 @@
 import { fail } from '@sveltejs/kit';
-import { prisma } from '$lib/server/prisma';
-import { defaultScope, loadedItems, removeFromFormulary, targetValue } from '$lib/server/catalog-formulary';
-import { PRODUCT_SETS, productSet } from '$lib/server/product-sets';
-import { loadStagedNode } from '$lib/server/catalog-sync';
-import { parseSettings } from '$lib/settings';
-import { jobFailure, jobItem, trackJob } from '$lib/server/jobs';
-import type { LoadedItem } from '$lib/server/catalog-formulary';
+import { prisma } from '$lib/server/infrastructure/database';
+import {
+	defaultScope,
+	loadedItems,
+	removeFromFormulary,
+	targetValue
+} from '$lib/server/formulary/membership';
+import { PRODUCT_SETS, productSet } from '$lib/server/catalog/product-sets';
+import { loadStagedNode } from '$lib/server/catalog/sync';
+import { parseSettings } from '$lib/formulary/settings';
+import { jobFailure, jobItem, trackJob } from '$lib/server/infrastructure/jobs';
+import type { LoadedItem } from '$lib/server/formulary/membership';
 import type { Actions, PageServerLoad } from './$types';
 
 function reloadItems(scopeId: string, items: LoadedItem[]) {
@@ -25,7 +30,9 @@ async function reloadEach(scopeId: string, items: LoadedItem[]) {
 			await loadStagedNode(item.target, scopeId, { force: true });
 			reloaded++;
 		} catch (error) {
-			failures.push(`${item.displayName}: ${error instanceof Error ? error.message : 'Could not reload.'}`);
+			failures.push(
+				`${item.displayName}: ${error instanceof Error ? error.message : 'Could not reload.'}`
+			);
 			jobFailure(failures.at(-1)!);
 		}
 	}
@@ -49,12 +56,17 @@ export const actions: Actions = {
 	},
 	reloadSelected: async ({ request }) => {
 		const ids = new Set(
-			(await request.formData()).getAll('formularyItemId').filter((id): id is string => typeof id === 'string' && !!id)
+			(await request.formData())
+				.getAll('formularyItemId')
+				.filter((id): id is string => typeof id === 'string' && !!id)
 		);
 		if (!ids.size) return fail(400, { message: 'Choose items to refresh.' });
 		const scope = await defaultScope(prisma);
-		const items = (await loadedItems(prisma, scope.id)).filter((item) => ids.has(item.formularyItemId));
-		if (!items.length) return fail(404, { message: 'Those items are no longer on this formulary.' });
+		const items = (await loadedItems(prisma, scope.id)).filter((item) =>
+			ids.has(item.formularyItemId)
+		);
+		if (!items.length)
+			return fail(404, { message: 'Those items are no longer on this formulary.' });
 		return { reloadAll: await reloadItems(scope.id, items) };
 	},
 	addSet: async ({ request }) => {
@@ -65,7 +77,9 @@ export const actions: Actions = {
 			const result = await trackJob(`Adding ${set.name} to the formulary`, () =>
 				loadStagedNode({ kind: 'set', key: set.key }, scope.id)
 			);
-			return { updated: { displayName: result.displayName, packagesLinked: result.packagesLinked } };
+			return {
+				updated: { displayName: result.displayName, packagesLinked: result.packagesLinked }
+			};
 		} catch (error) {
 			return fail(422, {
 				message: error instanceof Error ? error.message : 'The set could not be added.'
@@ -98,16 +112,16 @@ export const actions: Actions = {
 		)
 			return fail(400, { message: 'Choose a loaded item to update.' });
 		const scope = await defaultScope(prisma);
-		const item = (await loadedItems(prisma, scope.id)).find((candidate) => candidate.formularyItemId === itemId);
-		if (
-			!item ||
-			item.target.kind !== kind ||
-			targetValue(item.target) !== value
-		)
+		const item = (await loadedItems(prisma, scope.id)).find(
+			(candidate) => candidate.formularyItemId === itemId
+		);
+		if (!item || item.target.kind !== kind || targetValue(item.target) !== value)
 			return fail(404, { message: 'That item is no longer on this formulary.' });
 		try {
 			const result = await loadStagedNode(item.target, scope.id, { force: true });
-			return { updated: { displayName: result.displayName, packagesLinked: result.packagesLinked } };
+			return {
+				updated: { displayName: result.displayName, packagesLinked: result.packagesLinked }
+			};
 		} catch (error) {
 			return fail(422, {
 				message: error instanceof Error ? error.message : 'The item could not be updated.'

@@ -1,4 +1,5 @@
 <!--
+@component
 	Schematic of a dry-fill container after reconstitution, drawn to scale.
 
 	One linear mL → px scale covers every band, so a 0.4 mL powder displacement
@@ -40,7 +41,7 @@
 		radius: number;
 	}
 
-	/** Container outlines, smallest first within each kind. */
+	/** Container outlines, the smallest first within each kind. */
 	export const SHAPES: readonly ContainerShape[] = [
 		// Injectable vials: crimp cap over a stopper, narrow neck, sharp shoulder.
 		{ id: 'vial-3', kind: 'vial', label: '2–3 mL vial', upToMl: 4, bodyW: 72, bodyH: 104, neckW: 38, neckH: 10, shoulderH: 12, capW: 46, capH: 16, radius: 8 },
@@ -71,7 +72,7 @@
 		/** Volume the powder adds, mL. Derived from final − diluent when absent. */
 		powderDisplacementMl?: number | null;
 		/**
-		 * Reconstituted volume that cannot be withdrawn, mL. Presumed zero unless
+		 * Reconstituted volume that cannot be withdrawn mL. Presumed zero unless
 		 * the diluent and displacement add up to more than the final volume.
 		 */
 		inaccessibleMl?: number | null;

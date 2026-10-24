@@ -1,15 +1,28 @@
+<!--
+@component
+A package's SPL label as collapsible sections. Given a `scope`, a label shared with
+other forms or strengths shows only this NDC's passages, with a note saying what was
+left out.
+-->
 <script lang="ts">
       import {fade, fly, slide} from 'svelte/transition';
       import {cubicInOut, cubicOut} from 'svelte/easing';
-      import type {PackageDetails} from '$lib/server/catalog-providers';
+      import type { PackageDetails } from '../catalog/types';
       import LabelBlocks from './LabelBlocks.svelte';
-      import {filterLabelSection, type LabelScope, omissionNote} from '$lib/label-relevance';
+      import {filterLabelSection, type LabelScope, omissionNote} from "$lib/labels/label-relevance";
 
       type Label = NonNullable<PackageDetails['label']>;
-      let {sections, scope = null}: { sections: Label['sections']; scope?: LabelScope | null } = $props();
+      let {sections, scope = null}: {
+            /** The label's sections, in document order. */
+            sections: Label['sections'];
+            /** This NDC's form and strength, to filter a shared label by; null shows everything. */
+            scope?: LabelScope | null;
+      } = $props();
 
-      // Only this NDC's passages, when the label is shared with other forms or
-      // strengths ($lib/label-relevance.ts decides which sections qualify).
+      /**
+       * Only this NDC's passages, when the label is shared with other forms or
+       * strengths ($lib/labels/label-relevance.ts decides which sections qualify).
+       */
       const shown = $derived(
             sections.map((section) => {
                   const filtered =

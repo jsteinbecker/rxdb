@@ -1,7 +1,13 @@
+<!--
+@component
+The local superseding concept shown on a package: the RxCUI it supersedes, its own
+name and code, what RxNorm says instead, an ingredient diff against RxNorm when they
+differ, and any ionic content the label states.
+-->
 <script lang="ts">
-	import type { LocalConceptView } from '$lib/local-concept-view';
-	import type { IonicRow } from '$lib/local-concept-input';
-	import { asConceptIngredient, diffIngredients, parseScdName } from '$lib/local-concept';
+	import type { LocalConceptView } from "$lib/curation/local-concept-view";
+	import type { IonicRow } from "$lib/curation/local-concept-input";
+	import { asConceptIngredient, diffIngredients, parseScdName } from "$lib/curation/local-concept";
 	import RxCui from './RxCui.svelte';
 	import LocalConceptDiff from './LocalConceptDiff.svelte';
 
@@ -10,6 +16,7 @@
 		rxnormName,
 		scdRxcui = null
 	}: {
+		/** The resolved local concept for this package. */
 		localConcept: LocalConceptView;
 		/** RxNorm's name for this NDC's own concept ("RxNorm says"). */
 		rxnormName: string | null;

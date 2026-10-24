@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { toNdc11 } from '$lib/ndc';
-import { loadStagedNode } from '$lib/server/catalog-sync';
-import { trackJob } from '$lib/server/jobs';
-import { productSet } from '$lib/server/product-sets';
-import type { LoadTarget } from '$lib/server/catalog-formulary';
+import { toNdc11 } from '$lib/catalog/ndc';
+import { loadStagedNode } from '$lib/server/catalog/sync';
+import { trackJob } from '$lib/server/infrastructure/jobs';
+import { productSet } from '$lib/server/catalog/product-sets';
+import type { LoadTarget } from '$lib/server/formulary/membership';
 import type { RequestHandler } from './$types';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -32,7 +32,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		const ndc = toNdc11(body.ndc);
 		if (ndc) target = { kind: 'package', ndc };
 	}
-	if (!target) return json({ message: 'Provide an rxcui, an NDC or a curated set to load.' }, { status: 400 });
+	if (!target)
+		return json({ message: 'Provide an rxcui, an NDC or a curated set to load.' }, { status: 400 });
 	const scopeId = body?.scopeId;
 	if (scopeId !== undefined && (typeof scopeId !== 'string' || !UUID.test(scopeId)))
 		return json({ message: 'scopeId must be a UUID.' }, { status: 400 });

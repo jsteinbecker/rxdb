@@ -1,3 +1,11 @@
+<!--
+@component
+Placeholder page shown while a navigation loads, shaped like the destination `kind`.
+The header is the real thing wherever the destination is already known: static copy,
+the URL's own params, and the formulary name carried over from the page being left.
+Only names that need the load (an item, a compound, a labeler) stay as bones, along
+with everything below the header.
+-->
 <script module lang="ts">
 	export type SkeletonKind =
 		| 'formulary'
@@ -12,22 +20,20 @@
 
 <script lang="ts">
 	import Bone from './Bone.svelte';
-	import { formatNdc } from '$lib/ndc';
+	import { formatNdc } from "$lib/catalog/ndc";
 	import PageHeader from '../PageHeader.svelte';
 
-	/**
-	 * The header is the real thing wherever the destination is already known: static copy, the URL's
-	 * own params, and the formulary name carried over from the page being left. Only names that need
-	 * the load (an item, a compound, a labeler) stay as bones, along with everything below the header.
-	 */
 	let {
 		kind,
 		params = {},
 		scopeName = '',
 		tempTitle = ''
 	} = $props<{
+		/** Which page is loading. */
 		kind: SkeletonKind;
+		/** The destination route's params (e.g. `ndc`). */
 		params?: Record<string, string>;
+		/** The formulary name carried over from the page being left. */
 		scopeName?: string;
 		/** The clicked link's text, standing in for a title only the load can supply. */
 		tempTitle?: string;
