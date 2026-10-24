@@ -368,6 +368,8 @@ export const ProductIngredientScalarFieldEnum = {
   strengthDenMag: 'strengthDenMag',
   strengthDenUom: 'strengthDenUom',
   basis: 'basis',
+  deliveredNumMag: 'deliveredNumMag',
+  deliveredNumUom: 'deliveredNumUom',
   ordinal: 'ordinal',
   validFrom: 'validFrom',
   validTo: 'validTo'

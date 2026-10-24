@@ -29,12 +29,14 @@ export type AggregateProductIngredient = {
 export type ProductIngredientAvgAggregateOutputType = {
   strengthNumMag: runtime.Decimal | null
   strengthDenMag: runtime.Decimal | null
+  deliveredNumMag: runtime.Decimal | null
   ordinal: number | null
 }
 
 export type ProductIngredientSumAggregateOutputType = {
   strengthNumMag: runtime.Decimal | null
   strengthDenMag: runtime.Decimal | null
+  deliveredNumMag: runtime.Decimal | null
   ordinal: number | null
 }
 
@@ -49,6 +51,8 @@ export type ProductIngredientMinAggregateOutputType = {
   strengthDenMag: runtime.Decimal | null
   strengthDenUom: string | null
   basis: $Enums.StrengthBasis | null
+  deliveredNumMag: runtime.Decimal | null
+  deliveredNumUom: string | null
   ordinal: number | null
   validFrom: Date | null
   validTo: Date | null
@@ -65,6 +69,8 @@ export type ProductIngredientMaxAggregateOutputType = {
   strengthDenMag: runtime.Decimal | null
   strengthDenUom: string | null
   basis: $Enums.StrengthBasis | null
+  deliveredNumMag: runtime.Decimal | null
+  deliveredNumUom: string | null
   ordinal: number | null
   validFrom: Date | null
   validTo: Date | null
@@ -81,6 +87,8 @@ export type ProductIngredientCountAggregateOutputType = {
   strengthDenMag: number
   strengthDenUom: number
   basis: number
+  deliveredNumMag: number
+  deliveredNumUom: number
   ordinal: number
   validFrom: number
   validTo: number
@@ -91,12 +99,14 @@ export type ProductIngredientCountAggregateOutputType = {
 export type ProductIngredientAvgAggregateInputType = {
   strengthNumMag?: true
   strengthDenMag?: true
+  deliveredNumMag?: true
   ordinal?: true
 }
 
 export type ProductIngredientSumAggregateInputType = {
   strengthNumMag?: true
   strengthDenMag?: true
+  deliveredNumMag?: true
   ordinal?: true
 }
 
@@ -111,6 +121,8 @@ export type ProductIngredientMinAggregateInputType = {
   strengthDenMag?: true
   strengthDenUom?: true
   basis?: true
+  deliveredNumMag?: true
+  deliveredNumUom?: true
   ordinal?: true
   validFrom?: true
   validTo?: true
@@ -127,6 +139,8 @@ export type ProductIngredientMaxAggregateInputType = {
   strengthDenMag?: true
   strengthDenUom?: true
   basis?: true
+  deliveredNumMag?: true
+  deliveredNumUom?: true
   ordinal?: true
   validFrom?: true
   validTo?: true
@@ -143,6 +157,8 @@ export type ProductIngredientCountAggregateInputType = {
   strengthDenMag?: true
   strengthDenUom?: true
   basis?: true
+  deliveredNumMag?: true
+  deliveredNumUom?: true
   ordinal?: true
   validFrom?: true
   validTo?: true
@@ -246,6 +262,8 @@ export type ProductIngredientGroupByOutputType = {
   strengthDenMag: runtime.Decimal
   strengthDenUom: string
   basis: $Enums.StrengthBasis
+  deliveredNumMag: runtime.Decimal | null
+  deliveredNumUom: string | null
   ordinal: number
   validFrom: Date
   validTo: Date | null
@@ -285,6 +303,8 @@ export type ProductIngredientWhereInput = {
   strengthDenMag?: Prisma.DecimalFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFilter<"ProductIngredient"> | string
   basis?: Prisma.EnumStrengthBasisFilter<"ProductIngredient"> | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.DecimalNullableFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.StringNullableFilter<"ProductIngredient"> | string | null
   ordinal?: Prisma.IntFilter<"ProductIngredient"> | number
   validFrom?: Prisma.DateTimeFilter<"ProductIngredient"> | Date | string
   validTo?: Prisma.DateTimeNullableFilter<"ProductIngredient"> | Date | string | null
@@ -304,6 +324,8 @@ export type ProductIngredientOrderByWithRelationInput = {
   strengthDenMag?: Prisma.SortOrder
   strengthDenUom?: Prisma.SortOrder
   basis?: Prisma.SortOrder
+  deliveredNumMag?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveredNumUom?: Prisma.SortOrderInput | Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -326,6 +348,8 @@ export type ProductIngredientWhereUniqueInput = Prisma.AtLeast<{
   strengthDenMag?: Prisma.DecimalFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFilter<"ProductIngredient"> | string
   basis?: Prisma.EnumStrengthBasisFilter<"ProductIngredient"> | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.DecimalNullableFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.StringNullableFilter<"ProductIngredient"> | string | null
   ordinal?: Prisma.IntFilter<"ProductIngredient"> | number
   validFrom?: Prisma.DateTimeFilter<"ProductIngredient"> | Date | string
   validTo?: Prisma.DateTimeNullableFilter<"ProductIngredient"> | Date | string | null
@@ -345,6 +369,8 @@ export type ProductIngredientOrderByWithAggregationInput = {
   strengthDenMag?: Prisma.SortOrder
   strengthDenUom?: Prisma.SortOrder
   basis?: Prisma.SortOrder
+  deliveredNumMag?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveredNumUom?: Prisma.SortOrderInput | Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -369,6 +395,8 @@ export type ProductIngredientScalarWhereWithAggregatesInput = {
   strengthDenMag?: Prisma.DecimalWithAggregatesFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringWithAggregatesFilter<"ProductIngredient"> | string
   basis?: Prisma.EnumStrengthBasisWithAggregatesFilter<"ProductIngredient"> | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.DecimalNullableWithAggregatesFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.StringNullableWithAggregatesFilter<"ProductIngredient"> | string | null
   ordinal?: Prisma.IntWithAggregatesFilter<"ProductIngredient"> | number
   validFrom?: Prisma.DateTimeWithAggregatesFilter<"ProductIngredient"> | Date | string
   validTo?: Prisma.DateTimeNullableWithAggregatesFilter<"ProductIngredient"> | Date | string | null
@@ -382,6 +410,8 @@ export type ProductIngredientCreateInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -401,6 +431,8 @@ export type ProductIngredientUncheckedCreateInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -414,6 +446,8 @@ export type ProductIngredientUpdateInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -433,6 +467,8 @@ export type ProductIngredientUncheckedUpdateInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -449,6 +485,8 @@ export type ProductIngredientCreateManyInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -462,6 +500,8 @@ export type ProductIngredientUpdateManyMutationInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -478,6 +518,8 @@ export type ProductIngredientUncheckedUpdateManyInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -504,6 +546,8 @@ export type ProductIngredientCountOrderByAggregateInput = {
   strengthDenMag?: Prisma.SortOrder
   strengthDenUom?: Prisma.SortOrder
   basis?: Prisma.SortOrder
+  deliveredNumMag?: Prisma.SortOrder
+  deliveredNumUom?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
@@ -512,6 +556,7 @@ export type ProductIngredientCountOrderByAggregateInput = {
 export type ProductIngredientAvgOrderByAggregateInput = {
   strengthNumMag?: Prisma.SortOrder
   strengthDenMag?: Prisma.SortOrder
+  deliveredNumMag?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
 }
 
@@ -526,6 +571,8 @@ export type ProductIngredientMaxOrderByAggregateInput = {
   strengthDenMag?: Prisma.SortOrder
   strengthDenUom?: Prisma.SortOrder
   basis?: Prisma.SortOrder
+  deliveredNumMag?: Prisma.SortOrder
+  deliveredNumUom?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
@@ -542,6 +589,8 @@ export type ProductIngredientMinOrderByAggregateInput = {
   strengthDenMag?: Prisma.SortOrder
   strengthDenUom?: Prisma.SortOrder
   basis?: Prisma.SortOrder
+  deliveredNumMag?: Prisma.SortOrder
+  deliveredNumUom?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
@@ -550,6 +599,7 @@ export type ProductIngredientMinOrderByAggregateInput = {
 export type ProductIngredientSumOrderByAggregateInput = {
   strengthNumMag?: Prisma.SortOrder
   strengthDenMag?: Prisma.SortOrder
+  deliveredNumMag?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
 }
 
@@ -687,6 +737,8 @@ export type ProductIngredientCreateWithoutIngredientInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -704,6 +756,8 @@ export type ProductIngredientUncheckedCreateWithoutIngredientInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -727,6 +781,8 @@ export type ProductIngredientCreateWithoutBasisIngredientInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -744,6 +800,8 @@ export type ProductIngredientUncheckedCreateWithoutBasisIngredientInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -789,6 +847,8 @@ export type ProductIngredientScalarWhereInput = {
   strengthDenMag?: Prisma.DecimalFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFilter<"ProductIngredient"> | string
   basis?: Prisma.EnumStrengthBasisFilter<"ProductIngredient"> | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.DecimalNullableFilter<"ProductIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.StringNullableFilter<"ProductIngredient"> | string | null
   ordinal?: Prisma.IntFilter<"ProductIngredient"> | number
   validFrom?: Prisma.DateTimeFilter<"ProductIngredient"> | Date | string
   validTo?: Prisma.DateTimeNullableFilter<"ProductIngredient"> | Date | string | null
@@ -818,6 +878,8 @@ export type ProductIngredientCreateWithoutProductInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -835,6 +897,8 @@ export type ProductIngredientUncheckedCreateWithoutProductInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -876,6 +940,8 @@ export type ProductIngredientCreateManyIngredientInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -891,6 +957,8 @@ export type ProductIngredientCreateManyBasisIngredientInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -904,6 +972,8 @@ export type ProductIngredientUpdateWithoutIngredientInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -921,6 +991,8 @@ export type ProductIngredientUncheckedUpdateWithoutIngredientInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -936,6 +1008,8 @@ export type ProductIngredientUncheckedUpdateManyWithoutIngredientInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -949,6 +1023,8 @@ export type ProductIngredientUpdateWithoutBasisIngredientInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -966,6 +1042,8 @@ export type ProductIngredientUncheckedUpdateWithoutBasisIngredientInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -981,6 +1059,8 @@ export type ProductIngredientUncheckedUpdateManyWithoutBasisIngredientInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -996,6 +1076,8 @@ export type ProductIngredientCreateManyProductInput = {
   strengthDenMag?: runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom: string
   basis?: $Enums.StrengthBasis
+  deliveredNumMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: string | null
   ordinal?: number
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -1009,6 +1091,8 @@ export type ProductIngredientUpdateWithoutProductInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1026,6 +1110,8 @@ export type ProductIngredientUncheckedUpdateWithoutProductInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1041,6 +1127,8 @@ export type ProductIngredientUncheckedUpdateManyWithoutProductInput = {
   strengthDenMag?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   strengthDenUom?: Prisma.StringFieldUpdateOperationsInput | string
   basis?: Prisma.EnumStrengthBasisFieldUpdateOperationsInput | $Enums.StrengthBasis
+  deliveredNumMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  deliveredNumUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1059,6 +1147,8 @@ export type ProductIngredientSelect<ExtArgs extends runtime.Types.Extensions.Int
   strengthDenMag?: boolean
   strengthDenUom?: boolean
   basis?: boolean
+  deliveredNumMag?: boolean
+  deliveredNumUom?: boolean
   ordinal?: boolean
   validFrom?: boolean
   validTo?: boolean
@@ -1078,6 +1168,8 @@ export type ProductIngredientSelectCreateManyAndReturn<ExtArgs extends runtime.T
   strengthDenMag?: boolean
   strengthDenUom?: boolean
   basis?: boolean
+  deliveredNumMag?: boolean
+  deliveredNumUom?: boolean
   ordinal?: boolean
   validFrom?: boolean
   validTo?: boolean
@@ -1097,6 +1189,8 @@ export type ProductIngredientSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   strengthDenMag?: boolean
   strengthDenUom?: boolean
   basis?: boolean
+  deliveredNumMag?: boolean
+  deliveredNumUom?: boolean
   ordinal?: boolean
   validFrom?: boolean
   validTo?: boolean
@@ -1116,12 +1210,14 @@ export type ProductIngredientSelectScalar = {
   strengthDenMag?: boolean
   strengthDenUom?: boolean
   basis?: boolean
+  deliveredNumMag?: boolean
+  deliveredNumUom?: boolean
   ordinal?: boolean
   validFrom?: boolean
   validTo?: boolean
 }
 
-export type ProductIngredientOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "productId" | "ingredientId" | "basisIngredientId" | "isActive" | "strengthNumMag" | "strengthNumUom" | "strengthDenMag" | "strengthDenUom" | "basis" | "ordinal" | "validFrom" | "validTo", ExtArgs["result"]["productIngredient"]>
+export type ProductIngredientOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "productId" | "ingredientId" | "basisIngredientId" | "isActive" | "strengthNumMag" | "strengthNumUom" | "strengthDenMag" | "strengthDenUom" | "basis" | "deliveredNumMag" | "deliveredNumUom" | "ordinal" | "validFrom" | "validTo", ExtArgs["result"]["productIngredient"]>
 export type ProductIngredientInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
   ingredient?: boolean | Prisma.IngredientDefaultArgs<ExtArgs>
@@ -1156,6 +1252,11 @@ export type $ProductIngredientPayload<ExtArgs extends runtime.Types.Extensions.I
     strengthDenMag: runtime.Decimal
     strengthDenUom: string
     basis: $Enums.StrengthBasis
+    /**
+     * What one container delivers when the label says the printed strength includes an overfill (Cathflo: 2.2 mg printed, 2 mg delivered). Derived, never displayed in its place.
+     */
+    deliveredNumMag: runtime.Decimal | null
+    deliveredNumUom: string | null
     ordinal: number
     validFrom: Date
     validTo: Date | null
@@ -1595,6 +1696,8 @@ export interface ProductIngredientFieldRefs {
   readonly strengthDenMag: Prisma.FieldRef<"ProductIngredient", 'Decimal'>
   readonly strengthDenUom: Prisma.FieldRef<"ProductIngredient", 'String'>
   readonly basis: Prisma.FieldRef<"ProductIngredient", 'StrengthBasis'>
+  readonly deliveredNumMag: Prisma.FieldRef<"ProductIngredient", 'Decimal'>
+  readonly deliveredNumUom: Prisma.FieldRef<"ProductIngredient", 'String'>
   readonly ordinal: Prisma.FieldRef<"ProductIngredient", 'Int'>
   readonly validFrom: Prisma.FieldRef<"ProductIngredient", 'DateTime'>
   readonly validTo: Prisma.FieldRef<"ProductIngredient", 'DateTime'>

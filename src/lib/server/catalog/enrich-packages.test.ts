@@ -764,3 +764,114 @@ test('live search drops weak approximate candidates and sets combinations aside'
 		globalThis.fetch = original;
 	}
 });
+
+/** Cathflo Activase (50242-041-64): the label prints 2.2 mg and explains the 10% overfill. */
+function overfillFetch(
+	activeIngredients: { name: string; strength: string }[],
+	options: { splText?: string; labelDescription?: string } = {}
+) {
+	const xml = options.splText
+		? `<document><manufacturedProduct><manufacturedProduct>
+		<code code="50242-041" codeSystem="2.16.840.1.113883.6.69"/><name>Cathflo Activase</name>
+		<asContent><containerPackagedProduct><code code="50242-041-64" codeSystem="2.16.840.1.113883.6.69"/></containerPackagedProduct></asContent>
+	</manufacturedProduct></manufacturedProduct>
+	<section><text><paragraph>${options.splText}</paragraph></text></section></document>`
+		: null;
+	return async (input: string | URL | Request) => {
+		const url = new URL(String(input));
+		if (url.pathname === '/drug/ndc.json')
+			return Response.json({
+				results: [
+					{
+						product_ndc: '50242-041',
+						dosage_form: 'INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION',
+						active_ingredients: activeIngredients,
+						packaging: [{ package_ndc: '50242-041-64', description: '1 VIAL in 1 CARTON' }]
+					}
+				]
+			});
+		if (url.pathname === '/drug/label.json')
+			return Response.json(
+				options.labelDescription
+					? {
+							results: [
+								{
+									openfda: { package_ndc: ['50242-041-64'] },
+									description: [options.labelDescription]
+								}
+							]
+						}
+					: { results: [] }
+			);
+		if (url.pathname.endsWith('/spls.json'))
+			return Response.json({ data: xml ? [{ setid: 'cathflo' }] : [] });
+		if (url.pathname.endsWith('/cathflo.xml') && xml) return new Response(xml);
+		return Response.json({});
+	};
+}
+
+const CATHFLO_OVERFILL =
+	'Each vial of Cathflo Activase contains 2.2 mg of Alteplase (which includes a 10% overfill). ' +
+	'Each reconstituted vial will deliver 2 mg of Cathflo Activase.';
+
+test("an overfilled vial's delivered amount is stored beside the printed strength", async () => {
+	const original = globalThis.fetch;
+	globalThis.fetch = overfillFetch([{ name: 'ALTEPLASE', strength: '2.2 mg/2.2mL' }], {
+		splText: CATHFLO_OVERFILL
+	});
+	try {
+		const [item] = await enrichPackages(['50242004164']);
+		// The printed number stays what the directory says; delivered is beside it.
+		assert.deepEqual(item.ingredients, [
+			{ name: 'ALTEPLASE', strength: '2.2 mg/2.2mL', delivered: '2 mg' }
+		]);
+	} finally {
+		globalThis.fetch = original;
+	}
+});
+
+test('without an SPL the openFDA label description is read for the overfill', async () => {
+	const original = globalThis.fetch;
+	globalThis.fetch = overfillFetch([{ name: 'ALTEPLASE', strength: '2.2 mg/2.2mL' }], {
+		labelDescription: CATHFLO_OVERFILL
+	});
+	try {
+		const [item] = await enrichPackages(['50242004164']);
+		assert.equal(item.ingredients[0]?.delivered, '2 mg');
+	} finally {
+		globalThis.fetch = original;
+	}
+});
+
+test('a two-active label stating an overfill gives neither active a delivered amount', async () => {
+	const original = globalThis.fetch;
+	globalThis.fetch = overfillFetch(
+		[
+			{ name: 'ALTEPLASE', strength: '2.2 mg/2.2mL' },
+			{ name: 'OTHER', strength: '2.2 mg/2.2mL' }
+		],
+		{ splText: CATHFLO_OVERFILL }
+	);
+	try {
+		const [item] = await enrichPackages(['50242004164']);
+		assert.deepEqual(
+			item.ingredients.map((active) => active.delivered),
+			[undefined, undefined]
+		);
+	} finally {
+		globalThis.fetch = original;
+	}
+});
+
+test('a label without an overfill statement leaves the ingredient as the directory gave it', async () => {
+	const original = globalThis.fetch;
+	globalThis.fetch = overfillFetch([{ name: 'ALTEPLASE', strength: '2.2 mg/2.2mL' }], {
+		splText: 'Each reconstituted vial will deliver 2 mg of Cathflo Activase.'
+	});
+	try {
+		const [item] = await enrichPackages(['50242004164']);
+		assert.equal('delivered' in item.ingredients[0], false);
+	} finally {
+		globalThis.fetch = original;
+	}
+});

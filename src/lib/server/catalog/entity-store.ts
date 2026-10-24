@@ -103,7 +103,8 @@ async function persistProduct(db: Db, item: ExternalPackage, existingProductId?:
 	}
 	const parsed = item.ingredients.map((active) => ({
 		...active,
-		strength: parseStrength(active.strength)
+		strength: parseStrength(active.strength),
+		delivered: parseStrength(active.delivered ?? null)
 	}));
 	// A missing/unparseable upstream strength must not erase an existing ingredient list.
 	if (parsed.length && parsed.every((active) => active.strength !== null)) {
@@ -114,6 +115,8 @@ async function persistProduct(db: Db, item: ExternalPackage, existingProductId?:
 		const desired: (NonNullable<ReturnType<typeof parseStrength>> & {
 			productId: string;
 			ingredientId: string;
+			deliveredNumMag: number | null;
+			deliveredNumUom: string | null;
 			ordinal: number;
 		})[] = [];
 		for (const [index, active] of parsed.entries()) {
@@ -121,6 +124,8 @@ async function persistProduct(db: Db, item: ExternalPackage, existingProductId?:
 				productId,
 				ingredientId: await namedEntity(db, 'ingredient', active.name),
 				...active.strength!,
+				deliveredNumMag: active.delivered?.strengthNumMag ?? null,
+				deliveredNumUom: active.delivered?.strengthNumUom ?? null,
 				ordinal: index + 1
 			});
 		}
@@ -134,7 +139,10 @@ async function persistProduct(db: Db, item: ExternalPackage, existingProductId?:
 					Number(row.strengthNumMag) !== next.strengthNumMag ||
 					row.strengthNumUom !== next.strengthNumUom ||
 					Number(row.strengthDenMag) !== next.strengthDenMag ||
-					row.strengthDenUom !== next.strengthDenUom
+					row.strengthDenUom !== next.strengthDenUom ||
+					(row.deliveredNumMag === null ? null : Number(row.deliveredNumMag)) !==
+						next.deliveredNumMag ||
+					row.deliveredNumUom !== next.deliveredNumUom
 				);
 			});
 		if (changed) {

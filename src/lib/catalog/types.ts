@@ -207,7 +207,11 @@ export type ExternalPackage = PackageFacts & {
 	labelerName: string | null;
 	labelerCode: string | null;
 	productCode: string | null;
-	ingredients: { name: string; strength: string | null }[];
+	/**
+	 * `delivered` is what one container gives when the label says `strength`
+	 * includes an overfill ($lib/labels/overfill.ts): derived, never displayed.
+	 */
+	ingredients: { name: string; strength: string | null; delivered?: string }[];
 	rxcuiStatus: string | null;
 	splSetId: string | null;
 	splTitle: string | null;

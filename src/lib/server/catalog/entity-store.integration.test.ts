@@ -317,3 +317,85 @@ test(
 		}
 	}
 );
+
+test(
+	'PostgreSQL stores a delivered amount and versions the ingredients when only it changes',
+	{ skip: process.env.RUN_DB_TESTS !== '1', timeout: 60_000 },
+	async () => {
+		const db = new PrismaClient({
+			adapter: new PrismaPg({
+				connectionString: process.env.DATABASE_URL,
+				connectionTimeoutMillis: 5_000
+			})
+		});
+		const rollback = new Error('ROLLBACK_DELIVERED_FIXTURES');
+		const ndc = `99999${String(randomInt(1000, 9999))}01`;
+		const fixtureName = `Delivered test ${randomUUID()}`;
+		try {
+			await db.$transaction(
+				async (tx) => {
+					const nested = new Proxy(tx, {
+						get(target, property) {
+							if (property === '$transaction')
+								return (work: (client: Prisma.TransactionClient) => unknown) => work(tx);
+							return Reflect.get(target, property);
+						}
+					}) as unknown as PrismaClient;
+					const item = packageFixture({
+						ndc,
+						productCode: `${ndc.slice(0, 5)}-${ndc.slice(5, 9)}`,
+						labelerName: fixtureName,
+						ingredients: [{ name: fixtureName, strength: '2.2 mg/2.2mL', delivered: '2 mg' }],
+						description: '1 VIAL in 1 CARTON',
+						isDryFill: false
+					});
+					await persistCollection(nested, [], [item]);
+					const product = await tx.product.findFirstOrThrow({
+						where: { labeler: { name: fixtureName } }
+					});
+					const rows = (validOnly: boolean) =>
+						tx.productIngredient.findMany({
+							where: { productId: product.id, ...(validOnly ? { validTo: null } : {}) }
+						});
+					const [stored] = await rows(true);
+					// The printed strength stays the strength; the delivered amount sits beside it.
+					assert.equal(Number(stored.strengthNumMag), 2.2);
+					assert.equal(Number(stored.deliveredNumMag), 2);
+					assert.equal(stored.deliveredNumUom, 'mg');
+
+					await persistCollection(nested, [], [item]);
+					assert.equal((await rows(false)).length, 1, 'an unchanged amount writes no new version');
+
+					await persistCollection(
+						nested,
+						[],
+						[{ ...item, ingredients: [{ name: fixtureName, strength: '2.2 mg/2.2mL' }] }]
+					);
+					const current = await rows(true);
+					assert.equal(current.length, 1);
+					assert.equal(current[0].deliveredNumMag, null, 'a dropped delivered amount is cleared');
+					assert.equal((await rows(false)).length, 2);
+
+					await persistCollection(
+						nested,
+						[],
+						[
+							{
+								...item,
+								ingredients: [{ name: fixtureName, strength: '2.2 mg/2.2mL', delivered: '2 mcg' }]
+							}
+						]
+					);
+					const [byUnit] = await rows(true);
+					assert.equal(byUnit.deliveredNumUom, 'mcg', 'a unit change alone is a change');
+					throw rollback;
+				},
+				{ timeout: 50_000 }
+			);
+		} catch (error) {
+			if (error !== rollback) throw error;
+		} finally {
+			await db.$disconnect();
+		}
+	}
+);
