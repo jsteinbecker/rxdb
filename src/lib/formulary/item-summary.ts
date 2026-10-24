@@ -11,6 +11,7 @@ import { naturalCompare } from '../shared/natural-sort';
 import { packageSize, type FormularyRow } from './hierarchy';
 import { appearanceText, hasAppearance } from '../labels/spl-characteristics';
 import type { ExternalPackage } from '../catalog/types';
+import { scdShownStrength } from '../catalog/package-title';
 
 /** A value and the NDCs that state it. */
 export type Tally = { value: string; ndcs: string[] };
@@ -227,7 +228,13 @@ export function summarizeItem(
 		// merged after the loop into a same-named SPL ingredient when one exists.
 		const actives = spl?.ingredients.filter((ingredient) => ingredient.kind === 'active') ?? [];
 		if (actives.length)
-			for (const ingredient of actives) addActive(ingredient, ndc, actives.length === 1);
+			for (const ingredient of actives)
+				addActive(
+					// A liquid's SCD figure (`0.25 MG/ML`) over the label's container total.
+					{ ...ingredient, strength: scdShownStrength(item, ingredient) ?? ingredient.strength },
+					ndc,
+					actives.length === 1
+				);
 		else
 			for (const ingredient of item.ingredients)
 				unlabeled.push({ ...ingredient, ndc, sole: item.ingredients.length === 1 });

@@ -15,7 +15,7 @@ marks, and `editing` offers a pencil beside each overridable property.
       import {appearanceText, isSolidDoseForm, SHAPE_CODES} from "$lib/labels/spl-characteristics";
       import {refineAppearances} from "$lib/labels/spl-appearance-text";
       import PillMockup from './PillMockup.svelte';
-      import RouteBadge from './RouteBadge.svelte';
+      import RouteBadges from './RouteBadges.svelte';
       import {drugsComImprint, drugsComImprintUrl, drugsComNdcUrl} from "$lib/catalog/drugs-com";
       import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from "$lib/imprints/pill-image-layout";
       import {resolve} from '$app/paths';
@@ -30,7 +30,7 @@ marks, and `editing` offers a pencil beside each overridable property.
       import {pseudoScdFor} from "$lib/medication/pseudo-scd";
       import {editActionLabel} from "$lib/curation/local-concept-view";
       import {withBiosimilarSuffix} from "$lib/medication/biosimilar";
-      import {rxNormPackageTitle, timeReleaseAfterRelease} from "$lib/catalog/package-title";
+      import {liquidConcentration, rxNormPackageTitle, scdShownStrength, timeReleaseAfterRelease} from "$lib/catalog/package-title";
       import {formContext} from "$lib/medication/strength-style";
       import {styledStrength} from "$lib/client/strength-display.svelte";
       import {unitOfSaleLabel, unitOfUseLabel} from "$lib/catalog/package-unit-label";
@@ -313,6 +313,8 @@ marks, and `editing` offers a pencil beside each overridable property.
        * diluent: it is activated, never reconstituted from a vial.
        */
       const chambers = $derived(dualChamber(item));
+      /** A ready-to-use liquid's concentration and fill, where nothing is reconstituted. */
+      const liquid = $derived(!chambers && !volume && !item.reconstitution.length ? liquidConcentration(item) : null);
       /** A kit is sold as the kit; the unit of use is its drug bottle. */
       const kit = $derived(item.kit ?? null);
       const kitPartText = (part: NonNullable<typeof kit>['parts'][number]) =>
@@ -548,9 +550,12 @@ marks, and `editing` offers a pencil beside each overridable property.
 {/snippet}
 
 <!-- A strength as the display rules show it; the stored value is the hover. -->
-{#snippet strengthValue(ingredient: {name: string; strength: string | null; kind?: string}, actives: {name: string}[])}
+{#snippet strengthValue(ingredient: {name: string; strength: string | null; kind?: string; moieties?: {name: string}[]}, actives: {name: string}[])}
       {@const shown = displayedStrength(ingredient, actives)}
-      {#if !ingredient.strength}—{:else if shown}<span class="styled-strength" title={`Stored as ${strengthText(ingredient.strength)}`}>{shown}</span>{:else}{strengthText(ingredient.strength)}{/if}
+      {@const scd = ingredient.kind === 'active' ? scdShownStrength(item, ingredient) : null}
+      {#if !ingredient.strength}—{:else if scd}{displayedStrength({...ingredient, strength: scd}, actives) ?? scd}<span class="stated" title="The label's figure, for the whole container"
+      >{strengthText(ingredient.strength)}{item.size?.kind === 'volume' ? ` in ${item.size.value} ${item.size.unit}` : ''}</span
+      >{:else if shown}<span class="styled-strength" title={`Stored as ${strengthText(ingredient.strength)}`}>{shown}</span>{:else}{strengthText(ingredient.strength)}{/if}
 {/snippet}
 
 {#snippet strengthCell(ingredient: LabelIngredient)}
@@ -857,10 +862,7 @@ marks, and `editing` offers a pencil beside each overridable property.
                   </dd>
                   <dt>Routes</dt>
                   <dd>
-                        {#each d?.product?.routes ?? [] as route (route)}
-                              <RouteBadge {route}/>
-                        {:else}—
-                        {/each}{@render src('ndc')}
+                        {#if d?.product?.routes.length}<RouteBadges routes={d.product.routes}/>{:else}—{/if}{@render src('ndc')}
                   </dd>
                   {#if d?.product?.manufacturers.length}
                         <dt>Manufacturers</dt>
@@ -1124,9 +1126,17 @@ marks, and `editing` offers a pencil beside each overridable property.
       {/if}
 
       <!-- A tablet or capsule has nothing to reconstitute; offer the section only to forms that might. -->
-      {#if chambers || volume || item.reconstitution.length || (editing && !isSolidDoseForm(item.doseForm))}
+      {#if chambers || volume || liquid || item.reconstitution.length || (editing && !isSolidDoseForm(item.doseForm))}
             <section class="wide">
                   <h4>{chambers ? 'Activation' : 'Reconstitution'}, concentration and volume{@render src('spl')}</h4>
+                  {#if liquid}
+                        <!-- Nothing to reconstitute: the container already holds its final concentration. -->
+                        <p class="resolved-summary">
+                              <strong>Ready to use, no reconstitution.</strong>
+                              {liquid.volumeMl} mL at {liquid.actives.map((a) => `${substance(a.name)} ${a.concentration}`).join(' / ')}:
+                              {liquid.actives.map((a) => a.total).join(' / ')} in the container.
+                        </p>
+                  {/if}
                   {#if chambers}
                         <!-- Powder and diluent share one container behind a seal: no vial is
                              drawn up, so the vial diagram and "diluent to add" do not apply. -->
