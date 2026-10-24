@@ -55,6 +55,7 @@ import { correctDoseForm } from '../../labels/dose-form-correction';
 import { reconstitutionFromLabel } from '../../labels/reconstitution';
 import { labelSectionBlocks, sectionPlainText } from '../../labels/spl-sections';
 import { labelScope } from '../../labels/label-relevance';
+import { deliveredAmount } from '../../labels/overfill';
 import {
 	dryFillStrength,
 	isDryFillForm,
@@ -230,6 +231,19 @@ export function labelIngredientsOf(
  * local to a package so one unavailable provider does not discard RxNav data. */
 /** Steers which DailyMed SPL an NDC is interpreted from (reload & reinterpret). */
 /** `kind` is null only on snapshots cached before it was recorded. */
+
+/**
+ * A single active's delivered amount, when its label states an overfill. With
+ * two actives the label's "will deliver" cannot be told apart, so none is read.
+ */
+function withDelivered(
+	ingredients: { name: string; strength: string | null }[],
+	labelText: string | null
+): { name: string; strength: string | null; delivered?: string }[] {
+	if (ingredients.length !== 1) return ingredients;
+	const delivered = deliveredAmount(ingredients[0].strength, labelText);
+	return delivered ? [{ ...ingredients[0], delivered }] : ingredients;
+}
 
 export type SplPreference = { prefer?: string | null; avoid?: string[] };
 
@@ -999,7 +1013,10 @@ export async function enrichPackages(
 			// A kit's are its drug part's content; the directory lists none. The
 			// directory's own numbers, not the moiety restatement used to match
 			// label rows: the names are the salts', so the strengths must be too.
-			ingredients: [...sourceIngredients, ...kitIngredients],
+			ingredients: withDelivered(
+				[...sourceIngredients, ...kitIngredients],
+				splText ?? labelText('description')
+			),
 			rxcuiStatus: statusPayload?.ndcStatus?.status ?? null,
 			splSetId: splHit?.setid ?? null,
 			splTitle: splHit?.title ?? null,

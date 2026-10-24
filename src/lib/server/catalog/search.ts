@@ -91,7 +91,7 @@ function fitOf(result: SearchResult, parsed: ParsedQuery, known?: ReadonlySet<st
 		parsed,
 		{
 			name: result.name,
-			aliases: [result.detail ?? '', ...result.identifiers]
+			aliases: [result.detail ?? '', ...result.identifiers, ...(result.aliases ?? [])]
 		},
 		known
 	);
@@ -244,7 +244,9 @@ export async function searchResponse(url: URL) {
 							strengthNumMag: true,
 							strengthNumUom: true,
 							strengthDenMag: true,
-							strengthDenUom: true
+							strengthDenUom: true,
+							deliveredNumMag: true,
+							deliveredNumUom: true
 						}
 					}
 				},
@@ -368,6 +370,7 @@ export async function searchResponse(url: URL) {
 			row: (typeof products)[number];
 			name: string;
 			strength: string;
+			delivered: string[];
 			doseForm: string;
 			labelers: Set<string>;
 			matched: boolean;
@@ -384,6 +387,12 @@ export async function searchResponse(url: URL) {
 			row.productIngredients[0]?.ingredient.name ??
 			'Unnamed product';
 		const strength = row.productIngredients.map(strengthText).join(' / ');
+		// An overfilled vial prints 2.2 mg and gives 2 mg; it is found by either.
+		const delivered = row.productIngredients.flatMap((item) =>
+			item.deliveredNumMag === null
+				? []
+				: [`${amount(item.deliveredNumMag)} ${item.deliveredNumUom}`]
+		);
 		// One spelling per form and per company, as the formulary uses.
 		const doseForm = row.doseForm ? hierarchyDoseForm(row.doseForm) : '';
 		const key = [name.toLocaleLowerCase(), doseForm, strength].join('|');
@@ -391,6 +400,7 @@ export async function searchResponse(url: URL) {
 			row,
 			name,
 			strength,
+			delivered,
 			doseForm,
 			labelers: new Set<string>(),
 			matched: Boolean(
@@ -400,7 +410,7 @@ export async function searchResponse(url: URL) {
 		group.labelers.add(labelerLabel(row.labeler.name));
 		productGroups.set(key, group);
 	}
-	for (const { row, name, strength, doseForm, labelers, matched } of [
+	for (const { row, name, strength, delivered, doseForm, labelers, matched } of [
 		...productGroups.values()
 	].slice(0, limit)) {
 		const names = [...labelers];
@@ -411,6 +421,7 @@ export async function searchResponse(url: URL) {
 			detail:
 				[
 					doseForm,
+					delivered.length ? `delivers ${delivered.join(' / ')}` : null,
 					names.length === 1
 						? names[0]
 						: `${names.length} labelers (${names.slice(0, 3).join(', ')}${names.length > 3 ? ', …' : ''})`
@@ -418,7 +429,8 @@ export async function searchResponse(url: URL) {
 					.filter(Boolean)
 					.join(' · ') || null,
 			matchedOn: matched ? 'ingredient' : 'name',
-			identifiers: identifiersByEntity.get(row.id) ?? []
+			identifiers: identifiersByEntity.get(row.id) ?? [],
+			aliases: [...row.productIngredients.map((item) => item.ingredient.name), ...delivered]
 		});
 	}
 	for (const row of packages) {
