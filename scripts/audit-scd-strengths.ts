@@ -3,7 +3,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/client.ts';
 import { CATALOG_VERSION } from "../src/lib/server/catalog/cache.ts";
-import { correctedIngredients, packageTitle, packageStrengthText, packageDisplayTitle } from "../src/lib/catalog/package-title.ts";
+import { correctedIngredients, packageTitle, packageStrengthText, packageDisplayTitle, scdShownStrength } from "../src/lib/catalog/package-title.ts";
 import { mgPer, mlPer } from "../src/lib/medication/units.ts";
 import { rxNormStrengths, sameSubstance } from "../src/lib/labels/spl-strength-checks.ts";
 
@@ -45,6 +45,14 @@ for (const { ndc, payload } of rows) {
     const rxValue = scale(entry.value, entry.unit) / (rxMl ? entry.per * rxMl : 1);
     const own = scale(hit.value, hit.unit);
     if (!(Math.abs(own - rxValue) <= 0.02 * rxValue)) problems.push(`amount: SCD ${entry.name} ${want}; shown ${hit.value} ${hit.unit}${hit.perMl ? '/mL' : ''}`);
+  }
+  // The NDC page's ingredient table and the item page's Composition show each SPL
+  // active at `scdShownStrength ?? strength`; a per-volume SCD needs a per-mL figure there.
+  for (const a of (item.details?.spl?.ingredients ?? []).filter((i: any) => i.kind === 'active')) {
+    const entry = rx.find((e) => sameSubstance(e.name, a.name) || (a.moieties ?? []).some((m: any) => sameSubstance(e.name, m.name)));
+    if (!entry?.perUnit || !mlPer(entry.perUnit) || !a.strength) continue;
+    const table = scdShownStrength(item, a) ?? a.strength;
+    if (!/\/\s*[\d.]*\s*mL$/i.test(table)) problems.push(`table: SCD ${entry.name} ${entry.value} ${entry.unit}/${entry.perUnit}; shown ${table}`);
   }
   for (const s of parts) if (text && rx.length && !rx.some((e) => sameSubstance(e.name, s.name))) problems.push(`extra: ${s.name}`);
   out.push({ ndc, version: payload.version, stale: payload.version !== CATALOG_VERSION, concept, title, generated, text, shown, problems,

@@ -107,7 +107,7 @@ export function correctedIngredients(item: PackageTitleSource): Ingredient[] {
 	// A printed salt figure is never renamed to the SCD's moiety: the numbers
 	// agreeing there only means RxNorm copied the salt's mass.
 	const asScd = (ingredient: Ingredient) =>
-		ingredient.printed ? ingredient : scdNamed(ingredient, rx, item.size);
+		ingredient.printed ? ingredient : scdNamed(ingredient, rx, item.size, !item.isDryFill);
 	if (!item.ingredients?.length) return spl.map(plain).map(asScd);
 	const size = item.size;
 	const fillVolumeMl = size?.kind === 'volume' ? size.value * (size.unit === 'L' ? 1000 : 1) : null;
@@ -130,10 +130,64 @@ export function correctedIngredients(item: PackageTitleSource): Ingredient[] {
 		};
 		// A dry fill shows the vial's content, where the SCD may state the
 		// reconstituted concentration; the directory's own figure is compared.
-		return shown.strength === ingredient.strength
-			? asScd(shown)
-			: scdRenamed(shown, ingredient.strength, rx, item.size);
+		if (shown.strength === ingredient.strength) return asScd(shown);
+		// A liquid's label total that is the SCD's concentration over the fill
+		// (`2.5 mg` in 10 mL, SCD 0.25 MG/ML) reads as the SCD states it.
+		const scd = asScd(shown);
+		return scd.basisNamed ? scd : scdRenamed(shown, ingredient.strength, rx, item.size, !item.isDryFill);
 	});
+}
+
+/**
+ * The strength a label's active is shown at, where that is the SCD's per-volume
+ * figure and the label printed something else: `BUMETANIDE 2.5 mg` (per 10 mL
+ * vial) reads `0.25 MG/ML`. Null where the label's own figure stands. The
+ * label's figure is then the container total, a secondary value; see
+ * docs/strength-basis-rules.md §4.
+ */
+export function scdShownStrength(
+	item: PackageTitleSource,
+	ingredient: { name: string; strength: string | null; moieties?: { name: string }[] }
+): string | null {
+	const shown = correctedIngredients(item);
+	const actives = (item.details?.spl?.ingredients ?? []).filter((i) => i.kind === 'active');
+	const names = [ingredient.name, ...(ingredient.moieties ?? []).map((moiety) => moiety.name)];
+	const match =
+		shown.find((entry) => names.some((name) => sameSubstance(entry.name, name))) ??
+		(shown.length === 1 && actives.length === 1 ? shown[0] : undefined);
+	if (!match?.strength || match.strength === ingredient.strength) return null;
+	return /\/\s*[\d.]*\s*mL$/i.test(match.strength) ? match.strength : null;
+}
+
+/**
+ * A ready-to-use liquid's concentration and fill: 10 mL of `bumetanide 0.25 mg/mL`,
+ * 2.5 mg in the container. Built from the fill volume and the SCD-matched
+ * strengths. Null for a dry fill, a non-volume package, or an active with no
+ * per-mL figure.
+ */
+export function liquidConcentration(item: PackageTitleSource): {
+	volumeMl: number;
+	actives: { name: string; concentration: string; total: string }[];
+} | null {
+	const size = item.size;
+	if (item.isDryFill || size?.kind !== 'volume') return null;
+	const volumeMl = size.value * (mlPer(size.unit) ?? NaN);
+	if (!(volumeMl > 0)) return null;
+	const actives = [];
+	for (const ingredient of correctedIngredients(item)) {
+		const match = ingredient.strength?.match(/^([\d.,]+)\s*([A-Za-zµ]+)\s*\/\s*([\d.]*)\s*mL$/i);
+		if (!match) return null;
+		const value = Number(match[1].replace(/,/g, ''));
+		const per = match[3] ? Number(match[3]) : 1;
+		const unit = mgPer(match[2]) ? match[2].toLowerCase() : match[2];
+		const total = Number(((value / per) * volumeMl).toPrecision(6));
+		actives.push({
+			name: ingredient.name,
+			concentration: `${Number((value / per).toPrecision(6))} ${unit}/mL`,
+			total: `${total} ${unit}`
+		});
+	}
+	return actives.length ? { volumeMl, actives } : null;
 }
 
 /** Within this two amounts are the same. */
@@ -149,12 +203,13 @@ const SAME_AMOUNT = 0.005;
 function scdNamed(
 	ingredient: Ingredient,
 	rx: { name: string; value: number; unit: string; per: number; perUnit: string | null }[],
-	size: UnitOfUseSize | null | undefined
+	size: UnitOfUseSize | null | undefined,
+	liquid = false
 ): Ingredient {
 	if (!ingredient.strength) return ingredient;
 	const entry = rx.find((candidate) => key(candidate.name) === key(ingredient.name));
 	if (!entry) return ingredient;
-	const amount = amountOf(ingredient.strength, size);
+	const amount = amountOf(ingredient.strength, size, liquid);
 	const rxPerMl = entry.perUnit ? mlPer(entry.perUnit) : null;
 	const rxValue = entry.value * (mgPer(entry.unit) ?? 1);
 	const own = entry.perUnit ? (rxPerMl ? amount?.perMl : null) : amount?.total;
@@ -171,18 +226,20 @@ function scdRenamed(
 	shown: Ingredient,
 	stated: string | null,
 	rx: Parameters<typeof scdNamed>[1],
-	size: UnitOfUseSize | null | undefined
+	size: UnitOfUseSize | null | undefined,
+	liquid = false
 ): Ingredient {
-	const named = scdNamed({ name: shown.name, strength: stated }, rx, size);
+	const named = scdNamed({ name: shown.name, strength: stated }, rx, size, liquid);
 	return named.basisNamed ? { ...shown, name: named.name, basisNamed: true } : shown;
 }
 
 /**
  * A strength as the container's total and as per mL, in mg for a mass: `2 g/50mL`
  * in a 50 mL bag, `1 g/1.5g` in 1.5 g of powder, `500 mg/1` per vial. Null parts
- * where the package does not say.
+ * where the package does not say. In a `liquid` (not a dry fill), a whole-container
+ * amount is also per mL over the fill volume: `2.5 mg` in a 10 mL vial is 0.25 mg/mL.
  */
-function amountOf(strength: string, size: UnitOfUseSize | null | undefined) {
+function amountOf(strength: string, size: UnitOfUseSize | null | undefined, liquid = false) {
 	const match = strength
 		.trim()
 		.match(/^([\d.,]+)\s*([^\s\d/][^/]*?)\s*(?:\/\s*([\d.]*)\s*([^\d\s][^/]*?)?\s*)?$/);
@@ -205,7 +262,9 @@ function amountOf(strength: string, size: UnitOfUseSize | null | undefined) {
 		return { unit, perMl: null, total: mass ? (value * mass) / perMg : null };
 	}
 	// No denominator, or one dose unit (`/1`, `/1 VIAL`): the amount is the unit's.
-	return { unit, perMl: null, total: perValue === 1 ? value : null };
+	const total = perValue === 1 ? value : null;
+	const fillMl = liquid ? sizeIn(mlPer) : null;
+	return { unit, perMl: total != null && fillMl ? total / fillMl : null, total };
 }
 
 const key = (name: string) => ingredientGroup(name).toLowerCase();

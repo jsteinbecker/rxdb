@@ -163,3 +163,14 @@ remain, each with a known reason:
 
 Fixed: amoxicillin's empty snapshots (668), Fetroja (2), amox/clav clavulanate
 125→104.9 mg (93), ACD-A's title, and the Zosyn sodium rows (12).
+
+## Displayed strengths, 2026-10-23 (3442 live packages, catalog v35)
+
+The audit now also checks the strength the NDC page's ingredient table and the item
+page's Composition show for each SPL active (`table:` problems), not just the title.
+A liquid whose label codes the container total (bumetanide `2.5 mg` per 10 mL vial)
+now shows the SCD's `0.25 MG/ML`, with the total as a secondary value; dry fills are
+not divided by a vial volume. 135 packages still disagree, the same ones as before
+the change, each with a reason listed above. One new reason: alteplase (Cathflo, 1)
+shows `2.2 mg`, a dry fill whose SCD states 1 MG/ML. Spelling follows the SCD, so
+digoxin tablets now read `0.125 mg`, not `125 mcg`.

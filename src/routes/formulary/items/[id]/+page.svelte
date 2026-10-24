@@ -8,7 +8,7 @@
       import ItemSummary from '$lib/components/ItemSummary.svelte';
       import IngredientScenarios from '$lib/components/IngredientScenarios.svelte';
       import PillMockup from '$lib/components/PillMockup.svelte';
-      import RouteBadge from '$lib/components/RouteBadge.svelte';
+      import RouteBadges from "$lib/components/RouteBadges.svelte";
       import {pillImageKey, pillPhotoUrl} from "$lib/imprints/pill-image-layout";
       import {abbreviatedRelease} from "$lib/medication/time-release";
       import {itemName} from "$lib/formulary/item-name";
@@ -353,9 +353,7 @@
                   {layout.shared.join(' · ')}
                   {#if layout.sharedRoutes.length}
                         {#if layout.shared.length}{' · '}{/if}
-                        {#each layout.sharedRoutes as route (route)}
-                              <RouteBadge {route}/>
-                        {/each}
+                        <RouteBadges routes={layout.sharedRoutes}/>
                   {/if}
             </p>
             {#snippet sortHeader(key: SortKey, label: string)}
@@ -426,10 +424,7 @@
                               {/if}
                               {#if layout.showRoutes}
                                     <td>
-                                          {#each pkg.routes as route (route)}
-                                                <RouteBadge {route}/>
-                                          {:else}—
-                                          {/each}
+                                          {#if pkg.routes.length}<RouteBadges routes={pkg.routes}/>{:else}—{/if}
                                     </td>
                               {/if}
                         </tr>
