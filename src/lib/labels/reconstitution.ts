@@ -219,12 +219,22 @@ type ColumnRole = 'diluent' | 'final' | 'concentration' | 'unknown';
  * volume column. Ampicillin/sulbactam's "Vial Size | Volume of Diluent to be
  * Added | Withdrawal Volume" table otherwise reads as two diluent amounts per
  * vial; several unlabeled volume columns are ambiguous and yield nothing.
+ *
+ * The diluent may be named only in the table's title — its `<caption>`, or
+ * the "Table 4: Volume of Sterile Water for Injection…" paragraph a document
+ * puts above it (`contextTitle`) — and is read from there when neither the
+ * column nor the row names one.
  */
 export function parseReconstitutionTable(
 	tableMarkup: string,
-	contextRoutes: readonly ReconstitutionRoute[] = []
+	contextRoutes: readonly ReconstitutionRoute[] = [],
+	contextTitle = ''
 ): ReconstitutionRow[] {
 	const grid = toGrid(tableMarkup);
+	const caption = /<(?:[\w.-]+:)?caption\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?caption>/i.exec(
+		tableMarkup
+	);
+	const titleDiluents = diluentsIn(`${caption ? cellText(caption[1]) : ''} ${contextTitle}`);
 	// Units in column headers apply to bare numeric body cells only.
 	const units: (string | undefined)[] = [];
 	for (const row of grid) {
@@ -376,7 +386,8 @@ export function parseReconstitutionTable(
 			const routes = routeList(
 				columnRoutes.length ? columnRoutes : stubRoutes.length ? stubRoutes : section
 			);
-			const diluents = diluentList([...diluentsIn(headerText(column)), ...diluentsIn(rowText)]);
+			const named = [...diluentsIn(headerText(column)), ...diluentsIn(rowText)];
+			const diluents = diluentList(named.length ? named : titleDiluents);
 			rows.push({
 				vialMassMg,
 				diluentMl,
@@ -431,6 +442,28 @@ function routesAbove(markup: string, tableStart: number): ReconstitutionRoute[] 
 	return headings.length ? routesIn(headings[headings.length - 1][0]) : [];
 }
 
+/**
+ * The title a document gives the table that follows it: the paragraph
+ * immediately above, when it reads as one — "Table 4: …" or wholly bold, as
+ * meropenem's "Table 4: Volume of Sterile Water for Injection for
+ * Reconstitution of Injection Vials" is. An ordinary sentence above a table
+ * is the prose parser's to read, not a title.
+ */
+function titleAbove(markup: string, tableStart: number): string {
+	const before = markup.slice(Math.max(0, tableStart - HEADING_WINDOW), tableStart);
+	const last =
+		/<((?:[\w.-]+:)?(?:paragraph|p))\b[^>]*>((?:(?!<\/?\1\b)[\s\S])*)<\/\1>(?:\s|<\/?(?:[\w.-]+:)?(?:text|div|br)\b[^>]*>)*$/i.exec(
+			before
+		);
+	if (!last) return '';
+	const text = cellText(last[2]);
+	const bold =
+		/^\s*<(?:[\w.-]+:)?(?:content|b|strong)\b[^>]*>[\s\S]*<\/(?:[\w.-]+:)?(?:content|b|strong)>\s*$/i.test(
+			last[2]
+		);
+	return /^\s*table\s+\d+/i.test(text) || bold ? text : '';
+}
+
 /** Every reconstitution row across a label's tables, de-duplicated. */
 export function reconstitutionFromLabel(label: Record<string, unknown>): ReconstitutionRow[] {
 	const rows: ReconstitutionRow[] = [];
@@ -448,7 +481,13 @@ export function reconstitutionFromLabel(label: Record<string, unknown>): Reconst
 			];
 			if (!found.length) rows.push(...parseReconstitutionTable(table));
 			for (const match of found) {
-				rows.push(...parseReconstitutionTable(match[0], routesAbove(table, match.index)));
+				rows.push(
+					...parseReconstitutionTable(
+						match[0],
+						routesAbove(table, match.index),
+						titleAbove(table, match.index)
+					)
+				);
 			}
 		}
 	}
@@ -567,9 +606,14 @@ export function bottleReconstitutionFromLabel(
 /** Remove exact duplicates while preserving conflicting label alternatives. */
 export function dedupeReconstitutionRows(rows: readonly ReconstitutionRow[]): ReconstitutionRow[] {
 	const byInstruction = new Map<string, ReconstitutionRow>();
+	const instruction = (row: ReconstitutionRow) =>
+		`${row.vialMassMg}|${row.diluentMl}|${row.concentrationMgPerMl}|${row.finalVolumeMl}|${row.routes}`;
+	// openFDA's copy of a table has lost the title above it; the SPL's copy,
+	// read with its title, names the diluent. They are one instruction.
+	const named = new Set(rows.filter((row) => row.diluents).map(instruction));
 	for (const row of rows) {
-		const key = `${row.vialMassMg}|${row.diluentMl}|${row.concentrationMgPerMl}|${row.finalVolumeMl}|${row.routes}|${row.diluents}`;
-		byInstruction.set(key, row);
+		if (!row.diluents && named.has(instruction(row))) continue;
+		byInstruction.set(`${instruction(row)}|${row.diluents}`, row);
 	}
 	return [...byInstruction.values()];
 }
