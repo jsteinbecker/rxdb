@@ -5,6 +5,7 @@
       import PageHeader from '$lib/components/PageHeader.svelte';
       import {enhance} from '$app/forms';
       import {packageLayout, type PackageLine, runSpans} from "$lib/formulary/item";
+      import {NOT_SPECIFIED} from "$lib/formulary/hierarchy";
       import ItemSummary from '$lib/components/ItemSummary.svelte';
       import IngredientScenarios from '$lib/components/IngredientScenarios.svelte';
       import PillMockup from '$lib/components/PillMockup.svelte';
@@ -396,7 +397,10 @@
                                     href="/formulary/ndc/{pkg.ndc}" data-nav-title={pkg.title}>{formatNdc(pkg.ndc)}</a></td>
                               <td>
                                     {pkg.pack ?? '—'}
-                                    {#if pkg.multiDose}<span class="tag">multi-dose</span>{/if}
+                                    {#if pkg.doseType && pkg.doseType.value !== NOT_SPECIFIED}<span
+                                          class="tag" class:inherited={pkg.doseType.from}
+                                          title={pkg.doseType.reason}>{pkg.doseType.value}{pkg.doseType.from ? ' ↖' : ''}</span>{:else if pkg.doseType}<span
+                                          class="tag muted" title={pkg.doseType.reason}>dose type ?</span>{/if}
                               </td>
                               {#if showAppearance && spans[row] > 0}
                                     <td class="appearance" class:merged={spans[row] > 1}
@@ -419,7 +423,7 @@
                               {#if layout.showDoseForm}
                                     <td
                                           class:inferred={pkg.inferred?.doseForm}
-                                          title={pkg.inferred?.doseForm ? 'From the RxNorm concept and sibling labels; this package has not been enriched' : undefined}
+                                          title={[pkg.inferred?.doseForm ? 'From the RxNorm concept and sibling labels; this package has not been enriched' : null, pkg.doseFormRaw && pkg.doseFormRaw !== pkg.doseForm ? `Stored as ${pkg.doseFormRaw}` : null].filter(Boolean).join('\n') || undefined}
                                     >{pkg.doseForm ?? '—'}</td>
                               {/if}
                               {#if layout.showRoutes}

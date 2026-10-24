@@ -8,13 +8,15 @@ import { convertQuantity, formatQuantity, parseQuantity } from '../medication/qu
 import { multiply, parseRational } from '../medication/rational';
 import { rxNormStrengths, type RxStrength } from '../labels/spl-strength-checks';
 import { naturalCompare } from '../shared/natural-sort';
-import { packageSize, type FormularyRow } from './hierarchy';
+import { packageSize, projectDoseForm, projectRows, type FormularyRow } from './hierarchy';
 import { appearanceText, hasAppearance } from '../labels/spl-characteristics';
 import type { ExternalPackage } from '../catalog/types';
 import { scdShownStrength } from '../catalog/package-title';
 
-/** A value and the NDCs that state it. */
-export type Tally = { value: string; ndcs: string[] };
+/** A value and the NDCs that state it; `raw` keeps the stored spellings a grouped value gathers. */
+export type Tally = { value: string; ndcs: string[]; raw?: string[] };
+/** A dose type and the NDCs it applies to; `inherited` lists the ones a sibling lent it to. */
+export type DoseTypeTally = Tally & { reasons: Record<string, string>; inherited: string[] };
 export type ActiveIngredient = {
 	name: string;
 	unii: string | null;
@@ -52,7 +54,8 @@ export type ItemSummary = {
 	doseForms: Tally[];
 	routes: Tally[];
 	sizes: Tally[];
-	dosing: { multi: string[]; single: string[]; unknown: string[] };
+	/** Injectable dose types (SDV, MDV, …) from the hierarchy's classifier, siblings filling gaps. */
+	doseTypes: DoseTypeTally[];
 	dryFill: string[];
 	kits: string[];
 	samples: string[];
@@ -132,7 +135,8 @@ export function summarizeItem(
 	const ended = t(),
 		appearances = t(),
 		statuses = t();
-	const dosing = { multi: [] as string[], single: [] as string[], unknown: [] as string[] };
+	const doseTypes = new Map<string, DoseTypeTally>();
+	const formRaw = new Map<string, Set<string>>();
 	const dryFill: string[] = [],
 		kits: string[] = [],
 		samples: string[] = [];
@@ -176,20 +180,37 @@ export function summarizeItem(
 		active.set(key, entry);
 	};
 
-	for (const row of rows) {
+	// Unprojected rows still get the hierarchy's dose types, without equivalence groups.
+	const projected = rows.some((row) => row.doseType === undefined) ? projectRows(rows) : rows;
+	for (const row of projected) {
 		const { ndc } = row;
 		labelers.add(row.labeler, ndc);
 		products.add(row.brandName ?? row.genericName, ndc);
-		doseForms.add(row.doseForm, ndc);
+		// Rows from `projectRows` carry their equivalence group's display.
+		const form = projectDoseForm(row.doseForm);
+		if (form) {
+			const display = row.doseFormLabel ?? form.display;
+			doseForms.add(display, ndc);
+			formRaw.set(
+				display.toUpperCase(),
+				(formRaw.get(display.toUpperCase()) ?? new Set()).add(form.raw)
+			);
+		}
 		for (const route of row.routes) routes.add(route, ndc);
 		sizes.add(packageSize(row), ndc);
 		statuses.add(row.status, ndc);
-		(row.isMultiDose === true
-			? dosing.multi
-			: row.isMultiDose === false
-				? dosing.single
-				: dosing.unknown
-		).push(ndc);
+		if (row.doseType) {
+			const entry = doseTypes.get(row.doseType.value) ?? {
+				value: row.doseType.value,
+				ndcs: [],
+				reasons: {},
+				inherited: []
+			};
+			entry.ndcs.push(ndc);
+			entry.reasons[ndc] = row.doseType.reason;
+			if (row.doseType.from) entry.inherited.push(ndc);
+			doseTypes.set(row.doseType.value, entry);
+		}
 		if (row.kit?.parts.length) kits.push(ndc);
 
 		const item = snapshots.get(ndc);
@@ -290,10 +311,15 @@ export function summarizeItem(
 		enriched,
 		labelers: labelers.list(),
 		products: products.list(),
-		doseForms: doseForms.list(),
+		doseForms: doseForms.list().map((entry) => {
+			const raw = [...(formRaw.get(entry.value.toUpperCase()) ?? [])].sort(naturalCompare);
+			return raw.length === 1 && raw[0] === entry.value ? entry : { ...entry, raw };
+		}),
 		routes: routes.list(),
 		sizes: sizes.list(),
-		dosing,
+		doseTypes: [...doseTypes.values()].sort(
+			(a, b) => b.ndcs.length - a.ndcs.length || naturalCompare(a.value, b.value)
+		),
 		dryFill,
 		kits,
 		samples,

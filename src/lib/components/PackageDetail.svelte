@@ -51,6 +51,8 @@ marks, and `editing` offers a pencil beside each overridable property.
             parseStrengthText
       } from "$lib/medication/ingredient-correction";
       import {packageClassKey} from "$lib/formulary/pharm-class-key";
+      import {DOSE_TYPE_NAMES, NOT_SPECIFIED, packagingFacts, projectDoseForm, resolveDoseTypes, type PackagingFacts} from "$lib/formulary/hierarchy";
+      import type {EquivalenceGroup} from "$lib/formulary/equivalence";
       import {scopeOptions} from "$lib/formulary/pharm-class-scope-options";
       import LocalConceptBlock from './LocalConceptBlock.svelte';
 
@@ -66,10 +68,16 @@ marks, and `editing` offers a pencil beside each overridable property.
             oncorrect,
             localConceptScd = null,
             onlocalconcept = undefined,
-            onstoplocalconcept = undefined
+            onstoplocalconcept = undefined,
+            siblings = [],
+            equivalenceGroups = []
       }: {
             /** The package to show. */
             item: StagedPackage;
+            /** The same product's other packages, which fill a dose type this one's label leaves out. */
+            siblings?: (PackagingFacts & { ndc: string })[];
+            /** The formulary's equivalence groups, so the dose form reads as the hierarchy shows it. */
+            equivalenceGroups?: EquivalenceGroup[];
             /**
              * Every formulary item that lists this package, however it was loaded. Without it the
              * row can only say whether the NDC was loaded as an item of its own.
@@ -274,6 +282,12 @@ marks, and `editing` offers a pencil beside each overridable property.
             const pkg = code.replace('-', '').length === 9 ? item.ndc.slice(-1) : item.ndc.slice(-2);
             return `${code}-${pkg}`;
       });
+      // The hierarchy's projections, so this reads as the formulary tree and item page do.
+      const doseForm = $derived(projectDoseForm(item.doseForm, equivalenceGroups));
+      const doseFormGrouped = $derived(!!doseForm && doseForm.display !== projectDoseForm(item.doseForm)?.display);
+      const doseType = $derived(
+            resolveDoseTypes([packagingFacts(item), ...siblings.filter((other) => other.ndc !== item.ndc)]).get(item.ndc) ?? null
+      );
       const flag = (value: boolean | null, yes: string, no: string) =>
             value === true ? yes : value === false ? no : 'Unknown';
       const date = (value: string | null | undefined) =>
@@ -855,7 +869,8 @@ marks, and `editing` offers a pencil beside each overridable property.
                   </dd>
                   <dt>Dose form</dt>
                   <dd>
-                        {item.doseForm ?? '—'}{@render edit(['doseForm'], 'dose form', 'ndc')}
+                        {#if doseForm}<span title={doseForm.display !== doseForm.raw ? `Stored as ${doseForm.raw}` : undefined}>{doseForm.display}</span>{#if doseFormGrouped}<span
+                              class="muted" aria-label="Equivalence group"> ≡</span>{/if}{:else}—{/if}{@render edit(['doseForm'], 'dose form', 'ndc')}
                         {#if item.doseFormCorrection}
                               {@render correctionMark('dose-form')}
                         {/if}
@@ -909,10 +924,18 @@ marks, and `editing` offers a pencil beside each overridable property.
                         </dd>
                   {/if}
                   {#if !isSolidDoseForm(item.doseForm)}
-                        <dt>Multi-dose</dt>
-                        <dd>
-                              {flag(item.isMultiDose, 'Multi-dose', 'Single-dose')}{@render edit(['isMultiDose'], 'multi-dose', 'catalog')}
-                        </dd>
+                        {#if doseType}
+                              <dt>Dose type</dt>
+                              <dd>
+                                    <span title={doseType.reason}>{doseType.value === NOT_SPECIFIED ? 'Unknown' : `${DOSE_TYPE_NAMES[doseType.value] ?? doseType.value}${doseType.value.length <= 3 ? ` (${doseType.value})` : ''}`}</span>{#if doseType.from}<span
+                                          class="muted"> — from <a href={resolve('/formulary/ndc/[ndc]', { ndc: doseType.from })}>{formatNdc(doseType.from)}</a></span>{/if}{@render edit(['isMultiDose'], 'multi-dose', 'catalog')}
+                              </dd>
+                        {:else}
+                              <dt>Multi-dose</dt>
+                              <dd>
+                                    {flag(item.isMultiDose, 'Multi-dose', 'Single-dose')}{@render edit(['isMultiDose'], 'multi-dose', 'catalog')}
+                              </dd>
+                        {/if}
                         <dt>Dry fill</dt>
                         <dd>
                               {item.isDryFill

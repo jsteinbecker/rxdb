@@ -22,6 +22,8 @@ import { naturalCompare } from '../shared/natural-sort';
 import { mgPer } from '../medication/units';
 import { canonicalSplForm } from '../medication/concept-fill';
 import { equivalence, type EquivalenceGroup, type Equivalence } from './equivalence';
+import { formatNdc } from '../catalog/ndc';
+import type { ExternalPackage } from '../catalog/types';
 
 export type FormularyRow = {
 	packageId: string;
@@ -56,9 +58,40 @@ export type FormularyRow = {
 	enriched?: boolean;
 	/** Facts filled from the formulary concept because the package never stated them. */
 	inferred?: { ingredients?: boolean; doseForm?: boolean };
-	/** The dose form as its equivalence group reads; set by `buildTree`. */
+	/** The dose form as its equivalence group reads; set by `projectRows`. */
 	doseFormLabel?: string;
+	/** The injectable dose type, with sibling evidence; set by `projectRows`. */
+	doseType?: DoseType | null;
 };
+
+/**
+ * The facts packaging is classed from, shared by a formulary row and a catalog
+ * package (`packagingFacts`). `formularyItem` is the RxNorm title, whose
+ * "(Bulk)" marks a pharmacy bulk package.
+ */
+export type PackagingFacts = Pick<
+	FormularyRow,
+	'description' | 'doseForm' | 'routes' | 'isMultiDose' | 'size'
+> & { formularyItem?: string | null };
+
+/** A catalog package's packaging facts, read as a formulary row reads them. */
+export const packagingFacts = (
+	item: Pick<
+		ExternalPackage,
+		'ndc' | 'description' | 'doseForm' | 'isMultiDose' | 'size' | 'details'
+	>
+): PackagingFacts & { ndc: string } => ({
+	ndc: item.ndc,
+	description: item.description,
+	doseForm: item.doseForm,
+	routes: item.details?.product?.routes ?? [],
+	isMultiDose: item.isMultiDose,
+	size: item.size,
+	formularyItem: item.details?.rxnav?.conceptName ?? null
+});
+
+/** An injectable's dose type and what says so. `from` names the sibling NDC it came from. */
+export type DoseType = { value: string; reason: string; from?: string };
 
 /**
  * Per-combination dose display. Absent means "each": every ingredient's
@@ -139,7 +172,11 @@ const SOLID_DOSE = /TABLET|CAPSULE|LOZENGE|TROCHE|SUPPOSITOR|PELLET|WAFER/i;
  * A plain vial is classed by its dose type; anything unrecognized is not specified
  * rather than assumed bulk.
  */
-export function packagingClass(row: FormularyRow): string {
+export function packagingClass(row: PackagingFacts): string {
+	return classify(row).value;
+}
+
+function packageText(row: PackagingFacts) {
 	const text = row.description && / in \d+ /i.test(row.description) ? row.description : null;
 	const inner =
 		text
@@ -148,7 +185,16 @@ export function packagingClass(row: FormularyRow): string {
 			?.replace(/^.* in \d+ /i, '') ??
 		row.size?.container ??
 		'';
+	return { text, inner };
+}
+
+function classify(row: PackagingFacts): { value: string; reason: string } {
+	const { text, inner } = packageText(row);
 	if (isInjectable(row)) return injectablePackaging(row, text, inner);
+	return { value: otherPackaging(row, text, inner), reason: '' };
+}
+
+function otherPackaging(row: PackagingFacts, text: string | null, inner: string): string {
 	if (PHARMACY_BULK.test(inner)) return 'Bulk packaging';
 	// A bag or container of premix is one dose; of a hundred tablets, stock.
 	const content = text
@@ -173,7 +219,7 @@ export function packagingClass(row: FormularyRow): string {
 	return STOCK.test(inner) ? 'Bulk packaging' : NOT_SPECIFIED;
 }
 
-const isInjectable = (row: FormularyRow) =>
+const isInjectable = (row: PackagingFacts) =>
 	/INJECT/i.test(row.doseForm ?? '') ||
 	row.routes.some((route) => routeClass(route) === 'Parenteral');
 
@@ -190,18 +236,126 @@ const BULK_TITLE = /\(Bulk\)/i;
  * still needs mixing, so it is not ready to use. The container's own dose type
  * beats the isMultiDose flag; a vial with neither is not specified.
  */
-function injectablePackaging(row: FormularyRow, text: string | null, inner: string): string {
-	if (/PHARMACY BULK/i.test(text ?? inner) || BULK_TITLE.test(row.formularyItem))
-		return 'Pharmacy Bulk Packaging';
-	if (PREFILLED.test(inner)) return 'PFS';
+function injectablePackaging(
+	row: PackagingFacts,
+	text: string | null,
+	inner: string
+): { value: string; reason: string } {
+	if (/PHARMACY BULK/i.test(text ?? inner))
+		return { value: 'Pharmacy Bulk Packaging', reason: 'Package text says pharmacy bulk' };
+	if (BULK_TITLE.test(row.formularyItem ?? ''))
+		return { value: 'Pharmacy Bulk Packaging', reason: 'RxNorm title is a (Bulk) product' };
+	if (PREFILLED.test(inner)) return { value: 'PFS', reason: `Container is ${inner.trim()}` };
 	const powderBottle = /BOTTLE/i.test(inner) && /POWDER/i.test(row.doseForm ?? '');
-	if (READY_TO_USE.test(inner) && !powderBottle) return 'RTU';
+	if (READY_TO_USE.test(inner) && !powderBottle)
+		return { value: 'RTU', reason: `Container is ${inner.trim()}` };
 	if (/VIAL|AMPULE/i.test(inner)) {
-		if (/MULTI-DOSE/i.test(inner)) return 'MDV';
-		if (/SINGLE-(?:DOSE|USE)|AMPULE/i.test(inner)) return 'SDV';
-		if (row.isMultiDose !== null) return row.isMultiDose ? 'MDV' : 'SDV';
+		if (/MULTI-DOSE/i.test(inner)) return { value: 'MDV', reason: 'Package text says multi-dose' };
+		if (/SINGLE-(?:DOSE|USE)|AMPULE/i.test(inner))
+			return { value: 'SDV', reason: `Package text says ${inner.trim()}` };
+		if (row.isMultiDose !== null)
+			return {
+				value: row.isMultiDose ? 'MDV' : 'SDV',
+				reason: `Labeled ${row.isMultiDose ? 'multi' : 'single'}-dose`
+			};
+		return {
+			value: NOT_SPECIFIED,
+			reason: 'Neither the package text nor the label states a dose type'
+		};
 	}
-	return NOT_SPECIFIED;
+	return { value: NOT_SPECIFIED, reason: 'The container is not one a dose type is read from' };
+}
+
+/** What each injectable dose type stands for. */
+export const DOSE_TYPE_NAMES: Record<string, string> = {
+	SDV: 'Single-dose vial',
+	MDV: 'Multi-dose vial',
+	PFS: 'Prefilled syringe',
+	RTU: 'Ready to use',
+	'Pharmacy Bulk Packaging': 'Pharmacy bulk package'
+};
+
+/** An injectable's dose type (SDV, MDV, PFS, RTU, pharmacy bulk) and why; null for other forms. */
+export function doseTypeOf(row: PackagingFacts): DoseType | null {
+	return isInjectable(row) ? classify(row) : null;
+}
+
+/** The unit of use, ignoring how the container's dose type is spelled: "10 mL VIAL". */
+const unitOfUse = (row: PackagingFacts) =>
+	row.size
+		? `${row.size.value} ${row.size.unit ?? ''} ${row.size.container
+				.replace(/\b(?:SINGLE|MULTI(?:PLE)?)[-\s]?(?:DOSE|USE)\b|,/gi, '')
+				.trim()
+				.toLowerCase()}`
+		: null;
+
+/**
+ * Each package's dose type, with gaps filled from its product's other packages.
+ * A package whose own text and label say nothing takes the dose type of the
+ * same product's packages holding the same unit of use (0641-6285-01 is the
+ * 10 mL vial inside 0641-6285-10's carton, and only the carton's label says
+ * multi-dose). Siblings that disagree, or hold another size, lend nothing.
+ */
+export function resolveDoseTypes<T extends PackagingFacts & { ndc: string }>(
+	rows: T[]
+): Map<string, DoseType | null> {
+	const own = new Map(rows.map((row) => [row.ndc, doseTypeOf(row)]));
+	const resolved = new Map(own);
+	for (const row of rows) {
+		const type = own.get(row.ndc);
+		if (type?.value !== NOT_SPECIFIED) continue;
+		const use = unitOfUse(row);
+		const lenders = rows.filter(
+			(other) =>
+				other.ndc !== row.ndc &&
+				other.ndc.slice(0, 9) === row.ndc.slice(0, 9) &&
+				(unitOfUse(other) === use || other.description?.includes(`(${formatNdc(row.ndc)})`)) &&
+				own.get(other.ndc) &&
+				own.get(other.ndc)!.value !== NOT_SPECIFIED
+		);
+		const values = new Set(lenders.map((other) => own.get(other.ndc)!.value));
+		if (values.size !== 1) continue;
+		const [lender] = lenders;
+		const lent = own.get(lender.ndc)!;
+		resolved.set(row.ndc, {
+			value: lent.value,
+			from: lender.ndc,
+			reason: `${type.reason}; ${formatNdc(lender.ndc)} holds the same ${use ?? 'unit'} and says: ${lent.reason.toLowerCase()}`
+		});
+	}
+	return resolved;
+}
+
+/** A value as one equivalence group shows it, with the stored spelling behind it. */
+export type Projected = { display: string; raw: string };
+
+/** A dose form as the hierarchy shows it: canonical spelling, then its equivalence group. */
+export function projectDoseForm(
+	doseForm: string | null | undefined,
+	eq: Equivalence | EquivalenceGroup[] = []
+): Projected | null {
+	const raw = clean(doseForm);
+	if (!raw) return null;
+	const lookup = typeof eq === 'function' ? eq : equivalence(eq);
+	return { display: lookup('doseForm', hierarchyDoseForm(raw)), raw };
+}
+
+/**
+ * Rows as every view shows them: each dose form through its equivalence group
+ * and each injectable's dose type, gaps filled from sibling packages. The
+ * formulary tree, item page, NDC page and search all read these.
+ */
+export function projectRows<T extends FormularyRow>(
+	rows: T[],
+	groups: EquivalenceGroup[] = []
+): T[] {
+	const eq = equivalence(groups);
+	const doseTypes = resolveDoseTypes(rows);
+	return rows.map((row) => ({
+		...row,
+		doseFormLabel: projectDoseForm(row.doseForm, eq)?.display,
+		doseType: doseTypes.get(row.ndc) ?? null
+	}));
 }
 
 const amount = (value: number, unit: string | null) =>
@@ -477,14 +631,21 @@ export const DIMENSIONS: Dimension[] = [
 		key: 'packaging',
 		label: 'Packaging',
 		hint: 'Unit dose vs bulk; SDV, MDV, PFS… for injectables',
-		values: (row) => [packagingClass(row)]
+		values: (row) => [
+			row.doseType !== undefined
+				? (row.doseType?.value ?? packagingClass(row))
+				: packagingClass(row)
+		]
 	},
 	{
 		key: 'doseType',
 		label: 'Dose type',
 		hint: 'Single- vs multi-dose',
-		values: (row) =>
-			row.isMultiDose === null ? [] : [row.isMultiDose ? 'Multi-dose' : 'Single-dose']
+		values: (row) => {
+			const type = row.doseType?.value;
+			const multi = type === 'MDV' ? true : type === 'SDV' ? false : row.isMultiDose;
+			return multi === null ? [] : [multi ? 'Multi-dose' : 'Single-dose'];
+		}
 	},
 	{
 		key: 'packageSize',
@@ -588,16 +749,7 @@ export function buildTree(
 ): TreeNode[] {
 	const groups = options.equivalenceGroups ?? [];
 	const eq = equivalence(groups);
-	const formGroups = groups.some((group) => group.dimension === 'doseForm');
-	const prepared = formGroups
-		? rows.map((row) => {
-				const doseForm = clean(row.doseForm);
-				return doseForm
-					? { ...row, doseFormLabel: eq('doseForm', hierarchyDoseForm(doseForm)) }
-					: row;
-			})
-		: rows;
-	return grow(prepared, levels, groups.length ? eq : null, '');
+	return grow(projectRows(rows, groups), levels, groups.length ? eq : null, '');
 }
 
 /**

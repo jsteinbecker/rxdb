@@ -19,6 +19,8 @@ import type { LocalConceptView } from '$lib/curation/local-concept-view';
 import { packageClassKey } from '$lib/formulary/pharm-class-key';
 import { scopeOptions } from '$lib/formulary/pharm-class-scope-options';
 import { parseSettings } from '$lib/formulary/settings';
+import { packagingFacts } from '$lib/formulary/hierarchy';
+import { loadPackageSnapshots } from '$lib/server/catalog/snapshot-store';
 import {
 	countMatches,
 	knownClasses,
@@ -40,6 +42,19 @@ import { pillImageKey, type PillMedia } from '$lib/imprints/pill-image-layout';
 import { measuredToIln } from '$lib/imprints/measured-to-iln';
 import { guessIln } from '$lib/imprints/spl-to-iln';
 import { toSplAppearance } from '$lib/imprints/iln-render';
+
+/**
+ * The packaging facts of the product's other packages (the same labeler and
+ * product code), which fill a dose type this package's own label leaves out.
+ */
+export async function productSiblings(ndc: string) {
+	const candidates = Array.from(
+		{ length: 100 },
+		(_, at) => `${ndc.slice(0, 9)}${String(at).padStart(2, '0')}`
+	).filter((other) => other !== ndc);
+	const snapshots = await loadPackageSnapshots(prisma, candidates, { withoutLabel: true });
+	return [...snapshots.values()].map((snapshot) => packagingFacts(snapshot.item));
+}
 
 export async function loadPackageDetail(input: string) {
 	const ndc = toNdc11(input);
@@ -68,7 +83,8 @@ export async function loadPackageDetail(input: string) {
 		}
 	});
 	const scope = await defaultScope(prisma);
-	const styles = parseSettings(scope.settings).strengthStyles;
+	const settings = parseSettings(scope.settings);
+	const styles = settings.strengthStyles;
 	const scopeId = scope.id;
 	// A superseded concept's item reads by its local name; a nameOverride still wins (itemName).
 	const localNames = links.length
@@ -96,7 +112,9 @@ export async function loadPackageDetail(input: string) {
 			console.error('local concept editor lookup failed', cause);
 			return null;
 		}),
-		confirmRemove: parseSettings(scope.settings).confirmRemove,
+		confirmRemove: settings.confirmRemove,
+		equivalenceGroups: settings.equivalenceGroups,
+		siblings: await productSiblings(ndc),
 		// Streamed: counting matches scans the cached snapshots.
 		pharmClassRules: pharmClassRulesFor(scopeId, item),
 		equivalents,

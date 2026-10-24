@@ -11,6 +11,7 @@ packages that carry it. Strengths follow the item's display style.
 	import RxCui from '$lib/components/RxCui.svelte';
       import {nestTallies, type ItemSummary, type Tally, type TallyNode} from "$lib/formulary/item-summary";
       import RouteBadge from './RouteBadge.svelte';
+      import {DOSE_TYPE_NAMES} from "$lib/formulary/hierarchy";
 
       import {formContext} from "$lib/medication/strength-style";
       import {styledStrength} from "$lib/client/strength-display.svelte";
@@ -83,7 +84,8 @@ packages that carry it. Strengths follow the item's display style.
       {:else}
             <ul class="values">
                   {#each list as entry (entry.value)}
-                        <li title={'stored' in entry ? `Stored as ${entry.stored}\n${ndcList(entry.ndcs)}` : ndcList(entry.ndcs)}>
+                        <li title={"stored" in entry ? `Stored as ${entry.stored}\n${ndcList(entry.ndcs)}` : entry.raw ? `Equivalence group of ${entry.raw.join(', ')}\n${ndcList(entry.ndcs)}` : ndcList(entry.ndcs)}>
+                              {#if entry.raw}<span class="source-mark" aria-label="Equivalence group">≡</span>{/if}
                               {#if badge}
                                     <RouteBadge route={entry.value}/>
                               {:else}{entry.value}{/if}
@@ -235,8 +237,11 @@ packages that carry it. Strengths follow the item's display style.
                         <dt>Characteristics</dt>
                         <dd>
                               <ul class="values">
-                                    {@render subset(summary.dosing.multi, 'multi-dose')}
-                                    {@render subset(summary.dosing.single, 'single-dose')}
+                                    {#each summary.doseTypes as type (type.value)}
+                                          <li title={type.ndcs.map((ndc) => `${formatNdc(ndc)}: ${type.reasons[ndc]}`).join('\n')}>
+                                                {DOSE_TYPE_NAMES[type.value] ?? type.value}{#if type.inherited.length}<span class="source-mark" aria-label="Partly from sibling packages">↖</span>{/if}<span class="count">{type.ndcs.length}/{total}</span>
+                                          </li>
+                                    {/each}
                                     {@render subset(summary.dryFill, 'dry fill')}
                                     {@render subset(summary.kits, 'kit')}
                                     {@render subset(summary.samples, 'sample')}
@@ -539,5 +544,10 @@ packages that carry it. Strengths follow the item's display style.
 
       .inactive p {
             margin: 0.5rem 0 0.25rem;
+      }
+      .source-mark {
+            color: var(--muted, #888);
+            font-size: 0.85em;
+            margin: 0 0.2em;
       }
 </style>

@@ -15,6 +15,7 @@ import { parseReleaseAbbreviation } from '$lib/medication/time-release';
 import { parseNameOverride } from '$lib/formulary/item-name';
 import { parseItemStrengthStyle } from '$lib/medication/strength-style';
 import { parseSettings } from '$lib/formulary/settings';
+import { projectRows } from '$lib/formulary/hierarchy';
 import { summarizeItem } from '$lib/formulary/item-summary';
 import { loadPackageSnapshots } from '../../../../lib/server/catalog/snapshot-store';
 import { loadStagedNode } from '$lib/server/catalog/sync';
@@ -51,7 +52,12 @@ async function itemInScope(id: string) {
 export const load: PageServerLoad = async ({ params }) => {
 	const { scope, item, localNames } = await itemInScope(params.id);
 	if (!item) error(404, 'That item is not on this formulary.');
-	const rows = await formularyRows(prisma, scope.id, localNames);
+	const settings = parseSettings(scope.settings);
+	// Projected once over the whole formulary, as the tree reads them, so every view agrees.
+	const rows = projectRows(
+		await formularyRows(prisma, scope.id, localNames),
+		settings.equivalenceGroups
+	);
 	const packages = itemPackages(rows, item.formularyItemId);
 	const snapshots = await loadPackageSnapshots(
 		prisma,
@@ -135,7 +141,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		cmsBilling: Object.fromEntries(billing),
 		scope: { id: scope.id, name: scope.name },
 		// The formulary's rules, so the name editor previews what saving would show.
-		strengthStyles: parseSettings(scope.settings).strengthStyles,
+		strengthStyles: settings.strengthStyles,
 		item,
 		brands: await itemBrands(prisma, item.formularyItemId),
 		packages,

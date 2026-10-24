@@ -47,7 +47,7 @@ test('packageLayout groups by labeler then product and hoists shared facts', () 
 	assert.equal(layout.groups[0].products[0].product, 'Lipitor');
 	assert.equal(layout.groups[0].products[0].packages.length, 2);
 	assert.equal(layout.groups[1].products[0].product, 'atorvastatin');
-	assert.deepEqual(layout.shared, ['Atorvastatin 10 mg', 'TABLET']);
+	assert.deepEqual(layout.shared, ['Atorvastatin 10 mg', 'Tablet']);
 	assert.deepEqual(layout.sharedRoutes, ['ORAL']);
 	assert.equal(layout.showDoseForm, false);
 	assert.equal(layout.showRank, true);

@@ -128,7 +128,7 @@ test('summarizeItem consolidates facts and keeps which NDCs state each', () => {
 		[['617310', ['1', '2']]]
 	);
 	assert.equal(summary.labels.length, 2);
-	assert.deepEqual(summary.dosing.unknown, ['1', '2', '3']);
+	assert.deepEqual(summary.doseTypes, []);
 });
 
 test('summarizeItem folds directory-only ingredients into the same-named SPL ingredient', () => {

@@ -9,6 +9,8 @@
       import {ttyLabel, ttyTitle} from '$lib/rxnorm-tty';
       import {SvelteMap, SvelteSet} from 'svelte/reactivity';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
+      import {packagingFacts} from '$lib/formulary/hierarchy';
+      import type {EquivalenceGroup} from '$lib/formulary/equivalence';
       import PageHeader from '$lib/components/PageHeader.svelte';
       import {packageTitle} from "$lib/catalog/package-title";
       import {styledName} from "$lib/client/strength-display.svelte";
@@ -24,6 +26,7 @@
 		identifiers: string[];
 		href?: string | null;
 		localConcept?: true;
+		detailNote?: string;
 	};
 
 	/** A curated product set the query names (`water`, `swfi`): no source returns it. */
@@ -68,8 +71,17 @@
 	let query = $state('');
 	let results: Result[] = $state([]);
 	let sets: SetResult[] = $state([]);
+	/** The formulary's equivalence groups, so packages read as its hierarchy shows them. */
+	let equivalenceGroups: EquivalenceGroup[] = $state([]);
 	let staged: Staged | null = $state(null);
 	let loading = $state(false);
+	/** Every staged package's packaging facts: a package's siblings fill the dose type its label omits. */
+	const stagedFacts = $derived.by(() => {
+		const tree = staged as Staged | null;
+		return tree
+			? [...tree.concepts.flatMap((concept) => concept.packages ?? []), ...tree.packages].map(packagingFacts)
+			: [];
+	});
 	let loadingMore = $state(false);
 	let sync: SyncSummary | null = $state(null);
 	let message = $state(EMPTY_MESSAGE);
@@ -213,6 +225,7 @@
 			if (controller !== request) return;
 			results = payload.results;
 			sets = payload.sets ?? [];
+			equivalenceGroups = payload.equivalenceGroups ?? [];
 			if (!live) {
 				message = results.length || sets.length ? '' : `No local results for “${term}”.`;
 				return;
@@ -836,7 +849,8 @@
 						<span class="kind">{result.localConcept ? 'Local concept' : (KIND_LABELS[result.kind] ?? result.kind.replace('_', ' '))}</span>
 						<h2>{#if result.href}<a href={result.href}>{result.name}</a>{:else}{result.name}{/if}</h2>
 					</div>
-					{#if result.detail}<p>{result.detail}</p>{/if}
+					{#if result.detail}<p title={result.detailNote}>{result.detail}{#if result.detailNote}<span
+								class="muted" aria-label="Equivalence group"> ≡</span>{/if}</p>{/if}
 					{#if result.identifiers.length}<p class="identifiers">
 							{result.identifiers.join(' · ')}
 						</p>{/if}
@@ -892,7 +906,7 @@
 		{#if notices[key]}<p class:warning-text={!notices[key].ok} class="notice">
 				{notices[key].text}
 			</p>{/if}
-		{#if open.has(key)}<PackageDetail {item} />{/if}
+		{#if open.has(key)}<PackageDetail {item} siblings={stagedFacts} {equivalenceGroups} />{/if}
 	</li>
 {/snippet}
 

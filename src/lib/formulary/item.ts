@@ -18,6 +18,9 @@ import {
 	labelerLabel,
 	normalizeStrength,
 	packageSize,
+	projectDoseForm,
+	projectRows,
+	type DoseType,
 	type FormularyRow
 } from './hierarchy';
 
@@ -79,9 +82,11 @@ export type PackageLine = {
 	/** The package's own title, which its NDC link names for the page it opens. */
 	title: string;
 	pack: string | null;
-	multiDose: boolean | null;
-	/** Dose form and routes, only when they differ between this item's packages. */
+	/** The injectable dose type the hierarchy classes this package as. */
+	doseType: DoseType | null;
+	/** Dose form as its equivalence group shows it; `doseFormRaw` is the stored spelling. */
 	doseForm: string | null;
+	doseFormRaw: string | null;
 	routes: string[];
 	rank: number;
 	status: string;
@@ -136,16 +141,20 @@ const strengthLine = (row: FormularyRow, normalize = false, rules: StrengthStyle
  * are listed apart, by labeler. Groups and rows keep the best-preference-first order.
  */
 export function packageLayout(
-	packages: FormularyRow[],
+	rows: FormularyRow[],
 	/** Strength display rules for the shared strength line and package titles. */
 	rules: StrengthStyleRule[] = []
 ): PackageLayout {
+	// Unprojected rows still get the hierarchy's dose types, without equivalence groups.
+	const packages = rows.some((row) => row.doseType === undefined) ? projectRows(rows) : rows;
 	const enriched = packages.filter((row) => row.enriched !== false);
 	const distinct = (rows: FormularyRow[], pick: (row: FormularyRow) => string) =>
 		new Set(rows.map(pick));
-	const doseForms = distinct(packages, (r) => r.doseForm ?? '');
+	const formOf = (row: FormularyRow) =>
+		row.doseFormLabel ?? projectDoseForm(row.doseForm)?.display ?? '';
+	const doseForms = distinct(packages, formOf);
 	// Columns describe the tables, so only the packages shown in them decide them.
-	const tableForms = distinct(enriched, (r) => r.doseForm ?? '');
+	const tableForms = distinct(enriched, formOf);
 	const routes = distinct(enriched, (r) => [...r.routes].sort().join(', '));
 	// Compared in one spelling: a concept's `500 MG` and a label's `500 mg/1` are the same strength.
 	const strengths = distinct(packages, (row) => strengthLine(row, true));
@@ -155,7 +164,7 @@ export function packageLayout(
 	const shared = first
 		? [
 				strengths.size === 1 ? strengthLine(first, false, rules) : '',
-				doseForms.size === 1 ? (first.doseForm ?? '') : ''
+				doseForms.size === 1 ? formOf(first) : ''
 			].filter(Boolean)
 		: [];
 
@@ -182,8 +191,9 @@ export function packageLayout(
 			ndc: row.ndc,
 			title: applyStrengthStyles(packageTitle(row), rules),
 			pack: packageSize(row),
-			multiDose: row.isMultiDose,
-			doseForm: row.doseForm,
+			doseType: row.doseType ?? null,
+			doseForm: formOf(row) || null,
+			doseFormRaw: row.doseForm,
 			routes: [...row.routes].sort(),
 			rank: row.preferenceRank,
 			status: row.status,

@@ -6,7 +6,9 @@
  */
 import { toNdc11 } from '$lib/catalog/ndc';
 import { naturalCompare } from '$lib/shared/natural-sort';
-import { hierarchyDoseForm, labelerLabel } from '$lib/formulary/hierarchy';
+import { labelerLabel, projectDoseForm } from '$lib/formulary/hierarchy';
+import { equivalence } from '$lib/formulary/equivalence';
+import { parseSettings } from '$lib/formulary/settings';
 import { ttyLabel } from '$lib/rxnorm-tty';
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/server/infrastructure/database';
@@ -364,6 +366,11 @@ export async function searchResponse(url: URL) {
 	}
 	// The same drug from many repackagers reads as one row: name, form and strength,
 	// with how many labelers sell it.
+	// Dose forms read through the formulary's equivalence groups, as its tree does.
+	const settingsScope = scopeId
+		? await prisma.scope.findUnique({ where: { id: scopeId }, select: { settings: true } })
+		: await defaultScope(prisma);
+	const eq = equivalence(parseSettings(settingsScope?.settings).equivalenceGroups);
 	const productGroups = new Map<
 		string,
 		{
@@ -372,6 +379,7 @@ export async function searchResponse(url: URL) {
 			strength: string;
 			delivered: string[];
 			doseForm: string;
+			rawForms: Set<string>;
 			labelers: Set<string>;
 			matched: boolean;
 		}
@@ -394,7 +402,8 @@ export async function searchResponse(url: URL) {
 				: [`${amount(item.deliveredNumMag)} ${item.deliveredNumUom}`]
 		);
 		// One spelling per form and per company, as the formulary uses.
-		const doseForm = row.doseForm ? hierarchyDoseForm(row.doseForm) : '';
+		const form = projectDoseForm(row.doseForm, eq);
+		const doseForm = form?.display ?? '';
 		const key = [name.toLocaleLowerCase(), doseForm, strength].join('|');
 		const group = productGroups.get(key) ?? {
 			row,
@@ -402,15 +411,17 @@ export async function searchResponse(url: URL) {
 			strength,
 			delivered,
 			doseForm,
+			rawForms: new Set<string>(),
 			labelers: new Set<string>(),
 			matched: Boolean(
 				matchedIngredient && !row.proprietaryName?.toLocaleLowerCase().includes(needle)
 			)
 		};
 		group.labelers.add(labelerLabel(row.labeler.name));
+		if (form) group.rawForms.add(form.raw);
 		productGroups.set(key, group);
 	}
-	for (const { row, name, strength, delivered, doseForm, labelers, matched } of [
+	for (const { row, name, strength, delivered, doseForm, rawForms, labelers, matched } of [
 		...productGroups.values()
 	].slice(0, limit)) {
 		const names = [...labelers];
@@ -428,6 +439,9 @@ export async function searchResponse(url: URL) {
 				]
 					.filter(Boolean)
 					.join(' · ') || null,
+			...([...rawForms].some((raw) => projectDoseForm(raw)?.display !== doseForm)
+				? { detailNote: `${doseForm} gathers ${[...rawForms].sort(naturalCompare).join(', ')}` }
+				: {}),
 			matchedOn: matched ? 'ingredient' : 'name',
 			identifiers: identifiersByEntity.get(row.id) ?? [],
 			aliases: [...row.productIngredients.map((item) => item.ingredient.name), ...delivered]
@@ -576,6 +590,7 @@ export async function searchResponse(url: URL) {
 		sync,
 		staged,
 		sets: await setResults(query, scopeId),
+		equivalenceGroups: parseSettings(settingsScope?.settings).equivalenceGroups,
 		results: ranked.slice(0, limit)
 	});
 }

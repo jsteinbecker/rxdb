@@ -20,6 +20,8 @@ export type SearchResult = {
 	localConcept?: true;
 	/** What else the row answers to: a product's ingredients, the dose an overfilled vial delivers. */
 	aliases?: string[];
+	/** The stored spellings behind a grouped value in `detail`, e.g. an equivalence group's dose forms. */
+	detailNote?: string;
 };
 
 /** A curated product set the query names: loadable though no source returns it. */

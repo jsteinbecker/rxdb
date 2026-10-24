@@ -164,7 +164,7 @@
       </dialog>
       <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.action === 'dosingMeasure' ? form.message : null}/>
       <div class="body" class:with-panel={editKeys.length}>
-            <PackageDetail {editKeys} editing {item} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }} localConceptScd={localConceptEditor?.target.scd?.rxcui ?? null} onlocalconcept={(mode) => withLocalConceptDialog((dialog) => dialog.open(mode))} onstoplocalconcept={() => withLocalConceptDialog((dialog) => dialog.confirmStop())}/>
+            <PackageDetail {editKeys} editing {item} siblings={data.siblings} equivalenceGroups={data.equivalenceGroups} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }} localConceptScd={localConceptEditor?.target.scd?.rxcui ?? null} onlocalconcept={(mode) => withLocalConceptDialog((dialog) => dialog.open(mode))} onstoplocalconcept={() => withLocalConceptDialog((dialog) => dialog.confirmStop())}/>
             {#if editKeys.length}
                   {#key editKeys}
                         <div class="panel-slot">
