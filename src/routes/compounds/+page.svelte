@@ -20,8 +20,10 @@
 	</PageHeader>
 
 	<form method="POST" action="?/create" class="new" use:enhance>
-		<input name="name" placeholder="New compound name…" aria-label="New compound name" required />
 		<button>+ Compound</button>
+		<span class="hint">
+			Named automatically from its components — rules in <a href={resolve('/settings')}>Settings</a>.
+		</span>
 	</form>
 	{#if form?.message}<p class="notice" role="alert">{form.message}</p>{/if}
 
@@ -37,7 +39,7 @@
 		</ul>
 	{:else}
 		<p class="empty">
-			No compounds yet. Name one above, then add components from
+			No compounds yet. Start one above, then add components from
 			<a href={resolve('/formulary')}>the formulary</a>.
 		</p>
 	{/if}
@@ -54,12 +56,12 @@
 		gap: 0.5rem;
 		margin: 1.5rem 0 0.5rem;
 	}
-	.new input {
-		flex: 1;
-		padding: 0.55rem 0.7rem;
-		border: 1px solid #c9d1dc;
-		border-radius: 8px;
-		font: inherit;
+	.new {
+		align-items: center;
+	}
+	.hint {
+		color: #5c6777;
+		font-size: 0.85rem;
 	}
 	.new button {
 		padding: 0.55rem 0.9rem;

@@ -111,19 +111,7 @@
     {/snippet}
     {#snippet title()}
       <div class="titlebar">
-        {#if locked}
-          <h1>{compound.name}</h1>
-        {:else}
-          <form method="POST" action="?/rename" use:enhance={() => async ({ update }) => update({ reset: false })}>
-            <input
-              class="name"
-              name="name"
-              value={compound.name}
-              aria-label="Compound name"
-              onchange={(event) => event.currentTarget.form?.requestSubmit()}
-            />
-          </form>
-        {/if}
+        <h1 title="Named automatically from its components">{compound.name}</h1>
         <span class="count">{plural(compound.lines.length, 'component')}</span>
         {#if locked}<span class="badge">Saved</span>{/if}
 
@@ -253,22 +241,6 @@
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
-  }
-  .name {
-    min-width: 16rem;
-    margin: 0;
-    padding: 0.1rem 0.3rem;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    background: transparent;
-    font: inherit;
-    font-size: 1.6rem;
-    font-weight: 700;
-  }
-  .name:hover,
-  .name:focus {
-    border-color: #c9d1dc;
-    background: #fff;
   }
   .count {
     color: #5c6777;

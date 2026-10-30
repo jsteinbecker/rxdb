@@ -9,18 +9,20 @@ import {
 	deleteCompound,
 	loadCompound,
 	removeComponent,
-	renameCompound,
 	saveLines,
 	setSaved
 } from '$lib/server/compound-store';
+import { refreshCompoundName } from '$lib/server/compound-naming';
 import { packageConcentration, parseLinesPayload, type Role } from '$lib/compound-builder';
 import { parseRational, serializeRational } from '$lib/rational';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Run a store call; a CompoundError becomes a notice, anything else is a real failure. */
-async function run(work: () => Promise<unknown>) {
+async function run(work: () => Promise<unknown>, id?: string) {
 	try {
 		await work();
+		// Components changed: the name follows them.
+		if (id) await refreshCompoundName(prisma, id);
 	} catch (cause) {
 		if (cause instanceof CompoundError) return fail(cause.status, { message: cause.message });
 		throw cause;
@@ -62,11 +64,6 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	rename: async ({ params, request }) => {
-		const name = (await request.formData()).get('name');
-		const scope = await defaultScope(prisma);
-		return run(() => renameCompound(prisma, scope.id, params.id, typeof name === 'string' ? name : ''));
-	},
 	add: async ({ params, request }) => {
 		const data = await request.formData();
 		let picked: { packageId?: unknown; conc?: unknown; doseUnit?: unknown } = {};
@@ -84,19 +81,20 @@ export const actions: Actions = {
 				role,
 				conc: conc && conc.n > 0 ? conc : null,
 				doseUnit: typeof picked.doseUnit === 'string' && picked.doseUnit ? picked.doseUnit : 'mg'
-			})
+			}),
+			params.id
 		);
 	},
 	saveLines: async ({ params, request }) => {
 		const payload = parseLinesPayload((await request.formData()).get('payload'));
 		if ('error' in payload) return fail(400, { message: payload.error });
 		const scope = await defaultScope(prisma);
-		return run(() => saveLines(prisma, scope.id, params.id, payload));
+		return run(() => saveLines(prisma, scope.id, params.id, payload), params.id);
 	},
 	remove: async ({ params, request }) => {
 		const slotId = (await request.formData()).get('slotId');
 		const scope = await defaultScope(prisma);
-		return run(() => removeComponent(prisma, scope.id, params.id, typeof slotId === 'string' ? slotId : ''));
+		return run(() => removeComponent(prisma, scope.id, params.id, typeof slotId === 'string' ? slotId : ''), params.id);
 	},
 	setSaved: async ({ params, request }) => {
 		const saved = (await request.formData()).get('saved') === 'true';

@@ -9,6 +9,7 @@ import {
   type LinesPayload,
   type Role
 } from '../compound-builder';
+import { uniqueName } from '../compound-naming';
 import { divide, fromNumber, type Rational } from '../rational';
 
 /** A failure with a message fit to show the technician, and the status to send with it. */
@@ -159,6 +160,17 @@ export async function createCompound(db: PrismaClient, scopeId: string, name: st
     if (code(error) === 'P2002') throw duplicate(parsed.name);
     throw error;
   }
+}
+
+/** Give a compound `base` as its name, suffixed " (2)", " (3)"… when another compound has it. */
+export async function applyCompoundName(db: PrismaClient, scopeId: string, id: string, base: string) {
+  const others = await db.compoundFormula.findMany({
+    where: { scopeId, id: { not: id }, name: { startsWith: base } },
+    select: { name: true }
+  });
+  const name = uniqueName(base, new Set(others.map((other) => other.name)));
+  await db.compoundFormula.update({ where: { id }, data: { name } });
+  return name;
 }
 
 export async function renameCompound(db: PrismaClient, scopeId: string, id: string, name: string) {

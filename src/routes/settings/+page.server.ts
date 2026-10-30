@@ -6,6 +6,8 @@ import { formularyRows } from '$lib/server/formulary-view';
 import { DIMENSIONS, dimensionValues } from '$lib/formulary-hierarchy';
 import { parseEquivalenceGroups } from '$lib/equivalence';
 import { parseStrengthStyleRule, ruleKey } from '$lib/strength-style';
+import { DEFAULT_NAMING, parseNaming } from '$lib/compound-naming';
+import { refreshDraftNames } from '$lib/server/compound-naming';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -36,6 +38,7 @@ export const actions: Actions = {
 			comboDoseDisplay: current.comboDoseDisplay,
 			equivalenceGroups: current.equivalenceGroups,
 			strengthStyles: current.strengthStyles,
+			compoundNaming: current.compoundNaming,
 			views: current.views,
 			defaultView: current.defaultView,
 			defaultLevels: current.defaultLevels,
@@ -148,6 +151,30 @@ export const actions: Actions = {
 			}),
 			{ section: 'strengthStyles' }
 		);
+	},
+
+	/** Replace the compound naming rules and rename every draft compound to match. */
+	saveNaming: async ({ request }) => {
+		const form = await request.formData();
+		const naming = parseNaming(
+			form.get('reset') === 'true'
+				? DEFAULT_NAMING
+				: Object.fromEntries(
+						['template', 'active', 'diluent', 'joiner', 'letterCase', 'untitled'].map((key) => [
+							key,
+							form.get(key)
+						])
+					)
+		);
+		if (!naming.template.includes('{actives}') && !naming.template.includes('{diluents}'))
+			return fail(400, {
+				section: 'naming',
+				message: 'The name template needs {actives} or {diluents}.'
+			});
+		const scope = await defaultScope(prisma);
+		await updateSettings((settings) => ({ ...settings, compoundNaming: naming }), null);
+		await refreshDraftNames(prisma, scope.id, naming);
+		return { section: 'naming', saved: true };
 	},
 
 	clear: async ({ request }) => {

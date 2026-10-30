@@ -12,6 +12,7 @@ import {
   validLevelKeys
 } from './formulary-hierarchy';
 import { type EquivalenceGroup, parseEquivalenceGroups } from './equivalence';
+import { DEFAULT_NAMING, parseNaming, type CompoundNaming } from './compound-naming';
 import { parseStrengthStyles, type StrengthStyleRule } from './strength-style';
 
 export type ExpandDepth = 'none' | 'first' | 'all';
@@ -46,6 +47,8 @@ export type FormularySettings = {
 	equivalenceGroups: EquivalenceGroup[];
 	/** Ingredients (optionally per dose form) whose strength names show as a percent or ratio. */
 	strengthStyles: StrengthStyleRule[];
+	/** Rules that build each compound's name from its components. */
+	compoundNaming: CompoundNaming;
 };
 
 export const DEFAULT_SETTINGS: FormularySettings = {
@@ -57,7 +60,8 @@ export const DEFAULT_SETTINGS: FormularySettings = {
 	comboDoseDisplay: {},
 	uniformImprintSize: false,
 	equivalenceGroups: [],
-	strengthStyles: []
+	strengthStyles: [],
+	compoundNaming: DEFAULT_NAMING
 };
 
 export function parseComboDoseDisplay(value: unknown): ComboDoseDisplay | null {
@@ -132,6 +136,7 @@ export function parseSettings(value: unknown): FormularySettings {
 			new Set(DIMENSION_BY_KEY.keys())
 		),
 		strengthStyles: parseStrengthStyles(raw.strengthStyles),
+		compoundNaming: parseNaming(raw.compoundNaming),
 		comboDoseDisplay: Object.fromEntries(
 			Object.entries(
 				raw.comboDoseDisplay && typeof raw.comboDoseDisplay === 'object' ? raw.comboDoseDisplay : {}

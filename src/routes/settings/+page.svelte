@@ -7,6 +7,7 @@
 	import EquivalenceGroups from '$lib/components/EquivalenceGroups.svelte';
 	import type { ExpandDepth } from '$lib/settings';
 	import { STRENGTH_STYLES } from '$lib/strength-style';
+	import { buildCompoundName, NAME_CASES, type CompoundNaming } from '$lib/compound-naming';
 
 	let { data, form } = $props();
 
@@ -20,8 +21,11 @@
 	let expandDepth = $state<ExpandDepth>(initial.settings.expandDepth);
 	let confirmRemove = $state(initial.settings.confirmRemove);
 	let uniformImprintSize = $state(initial.settings.uniformImprintSize);
+	let naming = $state<CompoundNaming>({ ...initial.settings.compoundNaming });
+	let savingNaming = $state(false);
 	$effect(() => {
 		if (data === initial) return;
+		naming = { ...data.settings.compoundNaming };
 		name = data.scope.name;
 		expandDepth = data.settings.expandDepth;
 		confirmRemove = data.settings.confirmRemove;
@@ -34,6 +38,33 @@
 	let clearing = $state(false);
 	let saveError = $state<string | null>(null);
 	let clearError = $state<string | null>(null);
+
+	const CASE_LABELS: Record<string, string> = {
+		'as-is': 'As written',
+		upper: 'UPPER CASE',
+		lower: 'lower case',
+		title: 'Title Case'
+	};
+	// Sample compounds the preview names with the rules as typed.
+	const SAMPLES = [
+		[
+			{ role: 'active', ingredients: ['vancomycin'], doseUnit: 'mg', dose: { n: 1250, d: 1 }, conc: { n: 50, d: 1 }, volume: { n: 25, d: 1 } },
+			{ role: 'diluent', ingredients: ['sodium chloride'], doseUnit: 'mg', dose: null, conc: null, volume: { n: 250, d: 1 } }
+		],
+		[
+			{ role: 'active', ingredients: ['fentanyl'], doseUnit: 'mcg', dose: { n: 1000, d: 1 }, conc: { n: 50, d: 1 }, volume: { n: 20, d: 1 } },
+			{ role: 'active', ingredients: ['bupivacaine'], doseUnit: 'mg', dose: { n: 125, d: 1 }, conc: { n: 5, d: 2 }, volume: { n: 50, d: 1 } }
+		],
+		[]
+	] as const;
+	const previews = $derived(
+		SAMPLES.map((sample) =>
+			buildCompoundName(
+				sample.map((line) => ({ ...line, ingredients: [...line.ingredients] })),
+				naming
+			)
+		)
+	);
 
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 </script>
@@ -111,6 +142,73 @@
 		<div class="actions">
 			<button class="primary" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</button>
 		</div>
+	</form>
+
+	<form
+		method="POST"
+		action="?/saveNaming"
+		use:enhance={() => {
+			savingNaming = true;
+			return async ({ update }) => {
+				await update({ reset: false });
+				savingNaming = false;
+			};
+		}}
+	>
+		<section class="card" aria-labelledby="naming-heading">
+			<h2 id="naming-heading">Compound naming</h2>
+			<p class="small">
+				Compounds are named from their components as they are added. Use
+				<code>{'{tokens}'}</code> for values; text in <code>[brackets]</code> is left out when a
+				token inside it is empty. Saving renames every draft compound; saved compounds keep their
+				names.
+			</p>
+			<label class="field">
+				<span>Name <span class="small"><code>{'{actives}'}</code> <code>{'{diluents}'}</code> <code>{'{total}'}</code></span></span>
+				<input name="template" bind:value={naming.template} maxlength="200" required />
+			</label>
+			<label class="field">
+				<span>Each active <span class="small"><code>{'{ingredient}'}</code> <code>{'{dose}'}</code> <code>{'{conc}'}</code> <code>{'{volume}'}</code></span></span>
+				<input name="active" bind:value={naming.active} maxlength="200" required />
+			</label>
+			<label class="field">
+				<span>Each diluent <span class="small"><code>{'{ingredient}'}</code> <code>{'{conc}'}</code> <code>{'{volume}'}</code></span></span>
+				<input name="diluent" bind:value={naming.diluent} maxlength="200" required />
+			</label>
+			<label class="field">
+				<span>Between components</span>
+				<input name="joiner" bind:value={naming.joiner} maxlength="20" />
+			</label>
+			<label class="field">
+				<span>Letter case</span>
+				<select name="letterCase" bind:value={naming.letterCase}>
+					{#each NAME_CASES as value (value)}<option {value}>{CASE_LABELS[value]}</option>{/each}
+				</select>
+			</label>
+			<label class="field">
+				<span>Before any component is added</span>
+				<input name="untitled" bind:value={naming.untitled} maxlength="120" required />
+			</label>
+			<div class="field">
+				<span>Preview</span>
+				<ul class="previews">
+					{#each previews as preview, index (index)}<li>{preview}</li>{/each}
+				</ul>
+			</div>
+			{#if form?.section === 'naming'}
+				{#if form.saved}
+					<p class="notice" role="status">Naming rules saved; drafts renamed.</p>
+				{:else if form.message}
+					<p class="notice error" role="alert">{form.message}</p>
+				{/if}
+			{/if}
+			<div class="actions">
+				<button class="primary" disabled={savingNaming}>
+					{savingNaming ? 'Saving…' : 'Save naming rules'}
+				</button>
+				<button name="reset" value="true" formnovalidate>Restore defaults</button>
+			</div>
+		</section>
 	</form>
 
 	<section class="card" aria-labelledby="views-heading">
@@ -589,5 +687,10 @@
 		.row.between {
 			flex-wrap: wrap;
 		}
+	}
+	.previews {
+		margin: 0.25rem 0 0;
+		padding-left: 1.1rem;
+		font-weight: 600;
 	}
 </style>
