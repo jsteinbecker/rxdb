@@ -1,6 +1,13 @@
+<!--
+@component
+Slim top bar that creeps toward the end while a navigation is pending, plus a corner
+spinner.
+-->
 <script lang="ts">
-	/** Slim top bar that creeps toward the end while a navigation is pending, plus a corner spinner. */
-	let { active } = $props<{ active: boolean }>();
+	let { active } = $props<{
+		/** Whether a navigation is pending. */
+		active: boolean;
+	}>();
 </script>
 
 <div class="bar" class:active role="progressbar" aria-hidden={!active} aria-label="Loading page">

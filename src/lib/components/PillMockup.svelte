@@ -1,9 +1,15 @@
+<!--
+@component
+A drawn mockup of a solid oral dose form from its SPL appearance (shape, colors,
+score, imprint laid out as ILN), front and back side by side, or the label's photo
+when there is one; clicking switches between them. `compact` drops the caption.
+-->
 <script lang="ts">
-import type {PillAppearance} from '$lib/spl-characteristics';
-import {appearanceText, swatchOf} from '$lib/spl-characteristics';
-import {SECTION_TITLES} from '$lib/spl-appearance-text';
+import type {PillAppearance} from "$lib/labels/spl-characteristics";
+import {appearanceText, swatchOf} from "$lib/labels/spl-characteristics";
+import {SECTION_TITLES} from "$lib/labels/spl-appearance-text";
 import {drawPill, type ShellLook, holeBevel, markTransform, symbolPath} from '$lib/imprints/iln-render';
-import type {PillImageLayout} from '$lib/pill-image-layout';
+import type {PillImageLayout} from "$lib/imprints/pill-image-layout";
 import {page} from '$app/state';
 
 type SymbolMark = Extract<ReturnType<typeof drawPill>['views'][number]['marks'][number], {kind: 'symbol'}>;
@@ -16,29 +22,35 @@ let {
       layout = null,
       photoUrl = null
 }: {
+      /** The SPL appearance to draw. */
       appearance: PillAppearance;
+      /** Dose form text, which decides tablet, capsule or softgel. */
       doseForm: string | null;
+      /** A round tablet's width in px; a capsule is drawn larger. */
       size?: number;
+      /** Hide the caption under the drawing. */
       compact?: boolean;
+      /** Imprint layout measured from a photo, used in place of the SPL-derived one. */
       layout?: PillImageLayout | null;
+      /** The label's photo of the product, offered as an alternative to the drawing. */
       photoUrl?: string | null;
 } = $props();
 
 let showPhoto = $state(false);
 let photoFailed = $state(false);
 const photo = $derived(photoFailed ? null : photoUrl);
-// The label's own photo, NLM's C3PI archive, or one saved by hand in development.
+/** The label's own photo, NLM's C3PI archive, or one saved by hand in development. */
 const photoName = $derived(
       photoUrl?.includes('dailymed') ? 'label photo' : photoUrl?.startsWith('/dev/') ? 'local photo' : 'NLM archive photo'
 );
 
 const uid = $props.id();
-// Loaded once for every page by the root layout.
+/** Loaded once for every page by the root layout. */
 const uniformText = $derived(page.data.uniformImprintSize === true);
 const drawing = $derived(drawPill(appearance, doseForm, layout, {uniformText}));
-// Room for the outline stroke, in box units.
+/** Room for the outline stroke, in box units. */
 const PAD = 2;
-// px per box unit: `size` is a round tablet's width; a capsule is drawn larger.
+/** px per box unit: `size` is a round tablet's width; a capsule is drawn larger. */
 const scaleOf = (label: string) => (size / 84) * (label.startsWith('CAPSULE') ? 1.3 : 1);
 const FACE_NAMES: Record<string, string> = {F: 'Front', B: 'Back', E: 'Edge', CAPSULE: 'Capsule', 'CAPSULE-BACK': 'Capsule, back'};
 
@@ -157,7 +169,7 @@ const bevelOf = (view: {width: number; height: number}) => Math.min(view.width, 
 const turn = (deg: number) => (deg ? `rotate(${deg} 50 50)` : undefined);
 const inkFor = (fill: string) => (luminance(fill) < 0.45 ? '#f4f4f0' : '#26262a');
 
-// The photo takes the mockup's width, so swapping never reflows the row.
+/** The photo takes the mockup's width, so swapping never reflows the row. */
 const viewsWidth = $derived(
       drawing.views.reduce((sum, view) => sum + (view.width + 2 * PAD) * scaleOf(view.label), 0) +
       (drawing.views.length - 1) * 9.6

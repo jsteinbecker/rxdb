@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { watchJobs } from '$lib/jobs-watch';
+	import { watchJobs } from "$lib/client/jobs-watch";
 	import RxCui from '$lib/components/RxCui.svelte';
 	import BrandedName from '$lib/components/BrandedName.svelte';
       import {resolve} from '$app/paths';
@@ -9,10 +9,13 @@
       import {ttyLabel, ttyTitle} from '$lib/rxnorm-tty';
       import {SvelteMap, SvelteSet} from 'svelte/reactivity';
       import PackageDetail from '$lib/components/PackageDetail.svelte';
+      import {packagingFacts} from '$lib/formulary/hierarchy';
+      import type {EquivalenceGroup} from '$lib/formulary/equivalence';
       import PageHeader from '$lib/components/PageHeader.svelte';
-      import {packageTitle} from '$lib/package-title';
-      import type {StagedConcept, StagedPackage} from '$lib/server/catalog-sync';
-      import {filtersQuery, type MatchReason, type SearchFacets, type SearchFilters} from '$lib/search-relevance';
+      import {packageTitle} from "$lib/catalog/package-title";
+      import {styledName} from "$lib/client/strength-display.svelte";
+      import type { StagedConcept, StagedPackage } from '../lib/catalog/types';
+      import {filtersQuery, type MatchReason, type SearchFacets, type SearchFilters} from "$lib/catalog/search-relevance";
 
       type Result = {
 		id: string;
@@ -23,6 +26,15 @@
 		identifiers: string[];
 		href?: string | null;
 		localConcept?: true;
+		detailNote?: string;
+	};
+
+	/** A curated product set the query names (`water`, `swfi`): no source returns it. */
+	type SetResult = {
+		key: string;
+		name: string;
+		description: string;
+		formularyItemId: string | null;
 	};
 
 	type SyncSummary = {
@@ -58,8 +70,18 @@
 
 	let query = $state('');
 	let results: Result[] = $state([]);
+	let sets: SetResult[] = $state([]);
+	/** The formulary's equivalence groups, so packages read as its hierarchy shows them. */
+	let equivalenceGroups: EquivalenceGroup[] = $state([]);
 	let staged: Staged | null = $state(null);
 	let loading = $state(false);
+	/** Every staged package's packaging facts: a package's siblings fill the dose type its label omits. */
+	const stagedFacts = $derived.by(() => {
+		const tree = staged as Staged | null;
+		return tree
+			? [...tree.concepts.flatMap((concept) => concept.packages ?? []), ...tree.packages].map(packagingFacts)
+			: [];
+	});
 	let loadingMore = $state(false);
 	let sync: SyncSummary | null = $state(null);
 	let message = $state(EMPTY_MESSAGE);
@@ -84,6 +106,7 @@
 	type Snapshot = {
 		query: string;
 		results: Result[];
+		sets: SetResult[];
 		staged: Staged | null;
 		sync: SyncSummary | null;
 		message: string;
@@ -100,6 +123,7 @@
 		capture: (): Snapshot => ({
 			query,
 			results,
+			sets,
 			staged,
 			sync,
 			message,
@@ -111,6 +135,7 @@
 		restore: (value: Snapshot) => {
 			query = value.query;
 			results = value.results;
+			sets = value.sets ?? [];
 			staged = value.staged;
 			sync = value.sync;
 			message = value.message;
@@ -137,6 +162,7 @@
 			rememberQuery('');
 			controller?.abort();
 			results = [];
+			sets = [];
 			staged = null;
 			sync = null;
 			loading = false;
@@ -145,6 +171,7 @@
 		}
 		if (term.length < 2) {
 			results = [];
+			sets = [];
 			message = 'Enter at least two characters.';
 			return;
 		}
@@ -188,6 +215,7 @@
 				const msg = payload.message ?? 'Search could not be completed.';
 				if (controller === request) {
 					results = [];
+					sets = [];
 					staged = null;
 					sync = null;
 					message = msg;
@@ -196,15 +224,18 @@
 			}
 			if (controller !== request) return;
 			results = payload.results;
+			sets = payload.sets ?? [];
+			equivalenceGroups = payload.equivalenceGroups ?? [];
 			if (!live) {
-				message = results.length ? '' : `No local results for “${term}”.`;
+				message = results.length || sets.length ? '' : `No local results for “${term}”.`;
 				return;
 			}
 			staged = null;
 			sync = null;
 			notices = {};
 			packageState.clear();
-			message = results.length ? '' : `No local results for “${term}”. Checking live sources…`;
+			message =
+				results.length || sets.length ? '' : `No local results for “${term}”. Checking live sources…`;
 			const externalResponse = await fetch(
 				`/api/v1/search?q=${encodeURIComponent(term)}&external=1${filtersQuery(filters)}`,
 				{ signal: request.signal }
@@ -214,6 +245,7 @@
 				const msg = externalPayload.message ?? 'Live search could not be completed.';
 				if (controller === request) {
 					results = [];
+					sets = [];
 					staged = null;
 					sync = null;
 					message = msg;
@@ -224,13 +256,14 @@
 			staged = externalPayload.staged;
 			sync = externalPayload.sync;
 			message =
-				results.length || staged?.concepts.length || staged?.packages.length
+				results.length || sets.length || staged?.concepts.length || staged?.packages.length
 					? ''
 					: `No results for “${term}”.`;
 		} catch (error) {
 			if ((error as Error).name === 'AbortError') return;
 			if (controller === request) {
 				results = [];
+				sets = [];
 				staged = null;
 				sync = null;
 				message = error instanceof Error ? error.message : 'Search could not be completed.';
@@ -382,7 +415,9 @@
 		}
 	}
 
-	async function load(key: string, body: ({ rxcui: string } | { ndc: string }) & { label?: string }) {
+	type LoadBody = ({ rxcui: string } | { ndc: string } | { set: string }) & { label?: string };
+
+	async function load(key: string, body: LoadBody) {
 		pending.add(key);
 		watchJobs();
 		try {
@@ -417,7 +452,8 @@
 		}
 	}
 
-	function markLoaded(body: { rxcui: string } | { ndc: string }, formularyItemId: string) {
+	function markLoaded(body: LoadBody, formularyItemId: string) {
+		for (const set of sets) if ('set' in body && set.key === body.set) set.formularyItemId = formularyItemId;
 		if (!staged) return;
 		for (const concept of staged.concepts) {
 			if ('rxcui' in body && concept.rxcui === body.rxcui) {
@@ -519,6 +555,40 @@
 
 	{#if loading}<p class="status" aria-live="polite">{results.length ? 'Checking live sources…' : 'Searching local catalog…'}</p>{/if}
 	{#if message}<p class="status" aria-live="polite">{message}</p>{/if}
+
+	{#if sets.length}
+		<h2 class="section-title">Curated sets</h2>
+		<ul class="tree">
+			{#each sets as set (set.key)}
+				{@const key = `s:${set.key}`}
+				<li class="node set">
+					<div class="node-head">
+						<div class="node-title">
+							<span class="kind">Curated set</span>
+							<h3>{set.name}</h3>
+							<p class="meta">{set.description}</p>
+						</div>
+						{#if set.formularyItemId}
+							{@render onFormulary(set.formularyItemId)}
+						{/if}
+						<button
+							class="load"
+							disabled={pending.has(key)}
+							onclick={() => void load(key, { set: set.key, label: set.name })}
+							type="button"
+							title={set.formularyItemId
+								? 'Fetch its packages again and update the formulary item'
+								: undefined}
+							>{pending.has(key) ? 'Adding…' : set.formularyItemId ? 'Refresh' : 'Add to formulary'}</button
+						>
+					</div>
+					{#if notices[key]}<p class:warning-text={!notices[key].ok} class="notice">
+							{notices[key].text}
+						</p>{/if}
+				</li>
+			{/each}
+		</ul>
+	{/if}
 
 	{#if sync}
 		<!-- Counts follow the list below: the concepts on screen and the total the pager walks. -->
@@ -779,7 +849,8 @@
 						<span class="kind">{result.localConcept ? 'Local concept' : (KIND_LABELS[result.kind] ?? result.kind.replace('_', ' '))}</span>
 						<h2>{#if result.href}<a href={result.href}>{result.name}</a>{:else}{result.name}{/if}</h2>
 					</div>
-					{#if result.detail}<p>{result.detail}</p>{/if}
+					{#if result.detail}<p title={result.detailNote}>{result.detail}{#if result.detailNote}<span
+								class="muted" aria-label="Equivalence group"> ≡</span>{/if}</p>{/if}
 					{#if result.identifiers.length}<p class="identifiers">
 							{result.identifiers.join(' · ')}
 						</p>{/if}
@@ -806,7 +877,7 @@
 			>
 			<div class="node-title">
 				<span class="kind">package</span>
-				<h3><BrandedName text={packageTitle(item)} /></h3>
+				<h3><BrandedName text={styledName(packageTitle(item))} /></h3>
 				<p class="meta">
 					<span class="mono">{item.ndc}</span>
 					{[
@@ -835,17 +906,11 @@
 		{#if notices[key]}<p class:warning-text={!notices[key].ok} class="notice">
 				{notices[key].text}
 			</p>{/if}
-		{#if open.has(key)}<PackageDetail {item} />{/if}
+		{#if open.has(key)}<PackageDetail {item} siblings={stagedFacts} {equivalenceGroups} />{/if}
 	</li>
 {/snippet}
 
 <style>
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 5rem 1.5rem;
-	}
-
 	label {
 		display: block;
 		margin-bottom: 0.5rem;
@@ -1088,6 +1153,11 @@
 		background: #fbfcfd;
 	}
 
+	.node.set {
+		border-color: #c9d8ec;
+		background: #f7faff;
+	}
+
 	.node-head {
 		display: flex;
 		align-items: flex-start;
@@ -1207,10 +1277,6 @@
 	}
 
 	@media (max-width: 480px) {
-		main {
-			padding-top: 3rem;
-		}
-
 		.search-box {
 			flex-direction: column;
 		}

@@ -1,3 +1,10 @@
+<!--
+@component
+Editor for a local concept that supersedes RxNorm's for an NDC: its ingredients and
+strengths, the label's ionic content, and a live diff against RxNorm's concept. Also
+asks to stop superseding. Posts to the page's `localConceptSave` and
+`localConceptStop` actions.
+-->
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import {
@@ -6,15 +13,20 @@
 		localConceptName,
 		parseScdName,
 		type LocalIngredient
-	} from '$lib/local-concept';
-	import type { IonicRow, LocalConceptInput } from '$lib/local-concept-input';
-	import type { LocalConceptView } from '$lib/local-concept-view';
+	} from "$lib/curation/local-concept";
+	import type { IonicRow, LocalConceptInput } from "$lib/curation/local-concept-input";
+	import type { LocalConceptView } from "$lib/curation/local-concept-view";
 	import LocalConceptDiff from './LocalConceptDiff.svelte';
 
+	/** What the page loads for the editor. */
 	type Editor = {
+		/** A first draft built from the label, with any warnings about it. */
 		draft: { input: LocalConceptInput; warnings: string[] };
+		/** The saved concept, when one is being edited. */
 		existing: { id: string; code: string; input: LocalConceptInput } | null;
+		/** The SCD to supersede, or why none can be. */
 		target: { scd: { rxcui: string; name: string | null } | null; blocked: string | null };
+		/** Substances offered when picking an ingredient. */
 		substances: { unii: string; name: string }[];
 	};
 
@@ -25,6 +37,7 @@
 		message = null
 	}: {
 		editor: Editor;
+		/** The concept currently in effect, when there is one. */
 		localConcept?: LocalConceptView;
 		/** RxNorm's name for this NDC's own concept, the diff's fallback baseline. */
 		rxnormName?: string | null;
@@ -48,7 +61,7 @@
 	let warnings = $state<string[]>([]);
 	let pending = $state(false);
 	let submitted = $state(false);
-	// UNIIs looked up in GSRS this session: name, or null when it had none.
+	/** UNIIs looked up in GSRS this session: name, or null when it had none. */
 	let lookups = $state<Record<string, string | null>>({});
 
 	const editing = $derived(mode === 'edit' ? editor.existing : null);
@@ -64,7 +77,7 @@
 			? localConceptName({ ingredients: rows.filter(filled), doseForm: doseForm.trim() || '…' })
 			: ''
 	);
-	// What the concept replaces: the SCD's own name when known, else this NDC's concept.
+	/** What the concept replaces: the SCD's own name when known, else this NDC's concept. */
 	const baseline = $derived(
 		(mode === 'edit' ? localConcept?.supersedes.name : target.scd?.name) ?? rxnormName
 	);
@@ -435,7 +448,7 @@
 
 	h2 {
 		margin: 0 0 0.4rem;
-		font-size: 1.05rem;
+		font-size: 1.15rem;
 	}
 
 	p {

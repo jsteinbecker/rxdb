@@ -1,6 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
-import { LOCAL_PHOTO_TYPES, localPhotoFile, readLocalPhoto } from '$lib/server/local-pill-photos';
+import {
+	LOCAL_PHOTO_TYPES,
+	localPhotoFile,
+	readLocalPhoto
+} from '$lib/server/media/local-pill-photos';
 import type { RequestHandler } from './$types';
 
 /** Hand-saved pill photos from `dev-pill-photos/`, under `vite dev` only. */

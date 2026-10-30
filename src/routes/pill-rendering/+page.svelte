@@ -3,7 +3,7 @@
 	import { ILN_DOC_EXAMPLES, type IlnDocExample } from '$lib/imprints/iln-doc-examples';
 	import { explainIln, formatIln, validateIln } from '$lib/imprints/iln-parse';
 	import { formatShapeProportion, MAX_PROPORTION, PROPORTIONS, SHAPES, splitShapeProportion } from '$lib/imprints/shapes';
-	import { NAMED_SWATCHES, type PillAppearance } from '$lib/spl-characteristics';
+	import { NAMED_SWATCHES, type PillAppearance } from "$lib/labels/spl-characteristics";
 
 	// The help documentation (docs/iln.md) as a walkthrough: each section
 	// explains one idea and offers examples that load into the editor.

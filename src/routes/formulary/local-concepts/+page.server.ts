@@ -1,18 +1,18 @@
 import { fail } from '@sveltejs/kit';
-import { editTargetError } from '$lib/local-concept-input';
-import { prisma } from '$lib/server/prisma';
-import { defaultScope } from '$lib/server/catalog-formulary';
-import { syncExternalPackages } from '$lib/server/catalog-sync';
-import { supersedeTarget } from '$lib/server/local-concept-target';
-import { editNdc } from '$lib/local-concept-list';
-import { parseSettings } from '$lib/settings';
+import { editTargetError } from '$lib/curation/local-concept-input';
+import { prisma } from '$lib/server/infrastructure/database';
+import { defaultScope } from '$lib/server/formulary/membership';
+import { syncExternalPackages } from '$lib/server/catalog/sync';
+import { supersedeTarget } from '$lib/server/curation/local-concept-target';
+import { editNdc } from '$lib/curation/local-concept-list';
+import { parseSettings } from '$lib/formulary/settings';
 import {
 	listLocalConcepts,
 	LocalConceptInputError,
 	retireLocalConcept,
 	stopSuperseding,
 	supersede
-} from '$lib/server/local-concept-store';
+} from '$lib/server/curation/local-concept-store';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -33,7 +33,8 @@ export const actions: Actions = {
 			const scopeId = (await defaultScope(prisma)).id;
 			const concepts = await listLocalConcepts(prisma, scopeId);
 			const refused = editTargetError(id, concepts);
-			if (refused) return fail(refused.status, { action: 'localConceptStop', message: refused.message });
+			if (refused)
+				return fail(refused.status, { action: 'localConceptStop', message: refused.message });
 			const mapping = concepts.find((c) => c.id === id)?.supersedes;
 			if (!mapping?.active) throw new LocalConceptInputError('No active supersede mapping found');
 			await stopSuperseding(prisma, scopeId, mapping.mappingId);
@@ -47,14 +48,20 @@ export const actions: Actions = {
 	/** Re-creates the supersede mapping of a stopped concept; the rxcui is the stored one. */
 	localConceptResupersede: async ({ request }) => {
 		const id = String((await request.formData()).get('id') ?? '');
-		if (!id) return fail(400, { action: 'localConceptResupersede', message: 'No local concept chosen.' });
+		if (!id)
+			return fail(400, { action: 'localConceptResupersede', message: 'No local concept chosen.' });
 		try {
 			const scopeId = (await defaultScope(prisma)).id;
 			const concepts = await listLocalConcepts(prisma, scopeId);
 			const refused = editTargetError(id, concepts);
-			if (refused) return fail(refused.status, { action: 'localConceptResupersede', message: refused.message });
+			if (refused)
+				return fail(refused.status, {
+					action: 'localConceptResupersede',
+					message: refused.message
+				});
 			const mapping = concepts.find((c) => c.id === id)?.supersedes;
-			if (!mapping?.rxcui) throw new LocalConceptInputError('This concept never superseded an RxNorm concept.');
+			if (!mapping?.rxcui)
+				throw new LocalConceptInputError('This concept never superseded an RxNorm concept.');
 			if (mapping.active) throw new LocalConceptInputError('This concept is already superseding.');
 			await supersede(prisma, scopeId, id, mapping.rxcui, null);
 		} catch (cause) {
@@ -70,12 +77,14 @@ export const actions: Actions = {
 	 */
 	localConceptSupersede: async ({ request }) => {
 		const id = String((await request.formData()).get('id') ?? '');
-		if (!id) return fail(400, { action: 'localConceptSupersede', message: 'No local concept chosen.' });
+		if (!id)
+			return fail(400, { action: 'localConceptSupersede', message: 'No local concept chosen.' });
 		try {
 			const scopeId = (await defaultScope(prisma)).id;
 			const concepts = await listLocalConcepts(prisma, scopeId);
 			const refused = editTargetError(id, concepts);
-			if (refused) return fail(refused.status, { action: 'localConceptSupersede', message: refused.message });
+			if (refused)
+				return fail(refused.status, { action: 'localConceptSupersede', message: refused.message });
 			const concept = concepts.find((c) => c.id === id)!;
 			if (concept.supersedes)
 				throw new LocalConceptInputError(
@@ -85,7 +94,9 @@ export const actions: Actions = {
 				);
 			const ndc = editNdc(concept.evidence.ndc);
 			if (!ndc)
-				throw new LocalConceptInputError('No evidence NDC was recorded for this concept, so its RxNorm SCD is unknown.');
+				throw new LocalConceptInputError(
+					'No evidence NDC was recorded for this concept, so its RxNorm SCD is unknown.'
+				);
 			const [item] = await syncExternalPackages([ndc]);
 			if (!item) throw new LocalConceptInputError(`No package data available for NDC ${ndc}.`);
 			const target = await supersedeTarget(prisma, scopeId, item);
@@ -101,11 +112,13 @@ export const actions: Actions = {
 	},
 	localConceptRetire: async ({ request }) => {
 		const id = String((await request.formData()).get('id') ?? '');
-		if (!id) return fail(400, { action: 'localConceptRetire', message: 'No local concept chosen.' });
+		if (!id)
+			return fail(400, { action: 'localConceptRetire', message: 'No local concept chosen.' });
 		try {
 			const scopeId = (await defaultScope(prisma)).id;
 			const refused = editTargetError(id, await listLocalConcepts(prisma, scopeId));
-			if (refused) return fail(refused.status, { action: 'localConceptRetire', message: refused.message });
+			if (refused)
+				return fail(refused.status, { action: 'localConceptRetire', message: refused.message });
 			await retireLocalConcept(prisma, id);
 		} catch (cause) {
 			if (cause instanceof LocalConceptInputError)

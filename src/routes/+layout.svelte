@@ -85,6 +85,29 @@
 		font-family: 'Inter', sans-serif;
 	}
 
+	/* A dialog otherwise takes the browser's black text instead of the page's ink. */
+	:global(dialog) {
+		color: inherit;
+	}
+
+	/*
+	 * The page shell every view shares: one gutter, one top and bottom margin. A page picks its
+	 * column with `--page-width`: 760px for a single form column, 1040px by default, 1180px for a
+	 * record with a side column.
+	 */
+	.page > :global(main) {
+		box-sizing: content-box;
+		max-width: var(--page-width, 1040px);
+		margin: 0 auto;
+		padding: 3rem 1.5rem 4rem;
+	}
+
+	@media (max-width: 640px) {
+		.page > :global(main) {
+			padding: 2rem 1rem 3rem;
+		}
+	}
+
 	.page {
 		transition:
 			opacity 0.18s ease,

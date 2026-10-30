@@ -1,8 +1,8 @@
 import { fail, isHttpError } from '@sveltejs/kit';
-import { isUuid } from '$lib/pharm-class-rule-input';
-import { prisma } from '$lib/server/prisma';
-import { defaultScope } from '$lib/server/catalog-formulary';
-import { parseSettings } from '$lib/settings';
+import { isUuid } from '$lib/formulary/pharm-class-rule-input';
+import { prisma } from '$lib/server/infrastructure/database';
+import { defaultScope } from '$lib/server/formulary/membership';
+import { parseSettings } from '$lib/formulary/settings';
 import {
 	countMatchesForRules,
 	deleteRule,
@@ -10,7 +10,7 @@ import {
 	listRules,
 	RuleInputError,
 	upsertRule
-} from '$lib/server/pharm-class-rule-store';
+} from '$lib/server/curation/pharm-class-rule-store';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -63,7 +63,8 @@ export const actions: Actions = {
 			});
 			return { pharmClassRuleSaved: true };
 		} catch (cause) {
-			if (cause instanceof RuleInputError) return fail(400, { action: 'pharmClassRule', message: cause.message });
+			if (cause instanceof RuleInputError)
+				return fail(400, { action: 'pharmClassRule', message: cause.message });
 			throw cause;
 		}
 	},

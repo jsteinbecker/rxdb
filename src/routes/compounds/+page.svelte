@@ -47,9 +47,7 @@
 
 <style>
 	main {
-		max-width: 760px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
+		--page-width: 760px;
 	}
 	.new {
 		display: flex;

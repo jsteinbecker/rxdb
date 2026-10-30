@@ -15,8 +15,8 @@
     VOLUME_UNIT,
     type Field,
     type Line
-  } from '$lib/compound-builder';
-  import { formatRational, serializeRational, type Rational } from '$lib/rational';
+  } from "$lib/compounds/compound-builder";
+  import { formatRational, serializeRational, type Rational } from "$lib/medication/rational";
 
   let { data, form } = $props();
 
@@ -231,11 +231,6 @@
 </main>
 
 <style>
-  main {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 3rem 1.5rem 5rem;
-  }
   .titlebar {
     display: flex;
     align-items: center;

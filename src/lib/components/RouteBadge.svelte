@@ -1,7 +1,15 @@
+<!--
+@component
+A route of administration as its short code (e.g. "IV" for "INTRAVENOUS"), with the
+full route as the tooltip.
+-->
 <script lang="ts">
-      import {routeCode} from '$lib/route-code';
+      import {routeCode} from "$lib/labels/route-code";
 
-      let {route}: { route: string } = $props();
+      let {route}: {
+            /** The route as a source names it, e.g. "INTRAVENOUS". */
+            route: string
+      } = $props();
 </script>
 
 <abbr class="route" title={route}>{routeCode(route)}</abbr>

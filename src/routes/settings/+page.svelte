@@ -2,12 +2,12 @@
 	import { enhance } from '$app/forms';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { untrack } from 'svelte';
-	import { DEFAULT_LEVELS, levelLabel } from '$lib/formulary-hierarchy';
+	import { DEFAULT_LEVELS, levelLabel } from "$lib/formulary/hierarchy";
 	import HierarchyBuilder from '$lib/components/HierarchyBuilder.svelte';
 	import EquivalenceGroups from '$lib/components/EquivalenceGroups.svelte';
-	import type { ExpandDepth } from '$lib/settings';
-	import { STRENGTH_STYLES } from '$lib/strength-style';
-	import { buildCompoundName, NAME_CASES, type CompoundNaming } from '$lib/compound-naming';
+	import type { ExpandDepth } from "$lib/formulary/settings";
+	import StrengthStyleRules from '$lib/components/StrengthStyleRules.svelte';
+	import { buildCompoundName, NAME_CASES, type CompoundNaming } from '$lib/compounds/compound-naming';
 
 	let { data, form } = $props();
 
@@ -19,15 +19,18 @@
 	let viewName = $state(initial.settings.defaultView ?? '');
 	let savingView = $state(false);
 	let expandDepth = $state<ExpandDepth>(initial.settings.expandDepth);
+	let singleExpand = $state(initial.settings.singleExpand);
 	let confirmRemove = $state(initial.settings.confirmRemove);
 	let uniformImprintSize = $state(initial.settings.uniformImprintSize);
 	let naming = $state<CompoundNaming>({ ...initial.settings.compoundNaming });
 	let savingNaming = $state(false);
+
 	$effect(() => {
 		if (data === initial) return;
 		naming = { ...data.settings.compoundNaming };
 		name = data.scope.name;
 		expandDepth = data.settings.expandDepth;
+		singleExpand = data.settings.singleExpand;
 		confirmRemove = data.settings.confirmRemove;
 		uniformImprintSize = data.settings.uniformImprintSize;
 	});
@@ -75,7 +78,12 @@
 
 <main>
 	<PageHeader title="Settings">
-		{#snippet eyebrow()}<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Settings{/snippet}
+		{#snippet eyebrow()}
+                  <a href="/">RxDB</a>
+                  /
+                  <a href="/formulary">Formulary</a>
+                  / Settings
+            {/snippet}
 		<p>Preferences for {data.scope.name}.</p>
 	</PageHeader>
 
@@ -128,6 +136,16 @@
 					</label>
 				{/each}
 			</fieldset>
+			<label class="check">
+				<input type="checkbox" name="singleExpand" bind:checked={singleExpand} />
+				<span>
+					One open node per level
+					<span class="small">
+						Opening a node closes the others beside it, and they fade slightly so the open
+						branch stands out.
+					</span>
+				</span>
+			</label>
 		</section>
 
 		{#if saveError}
@@ -314,59 +332,20 @@
 	<section class="card" aria-labelledby="strength-styles-heading">
 		<h2 id="strength-styles-heading">Strength display</h2>
 		<p class="hint">
-			Ingredients whose strength is named in special terms — e.g. sodium chloride as “0.9%”, or
-			epinephrine in an injection as “1:100000”. Leave the dose form blank to apply it to every
-			form; a rule naming the form wins over one that doesn’t. An item’s own “show as percent”
-			choice still takes precedence.
+			Ingredients whose strength is shown in special terms, such as sodium chloride as “0.9%” or
+			epinephrine with lidocaine as “1:100,000”. This changes names, package titles, the hierarchy
+			and ingredient tables everywhere; stored strengths stay as they are. A rule naming companion
+			ingredients or a dose form wins over a broader one, and an item’s own strength style wins
+			over every rule.
 		</p>
 
-		{#if data.settings.strengthStyles.length}
-			<ul class="views">
-				{#each data.settings.strengthStyles as rule, index (`${rule.ingredient}|${rule.doseForm}`)}
-					<li>
-						<span class="desc">
-							{rule.ingredient}
-							<span class="small">
-								{rule.doseForm ?? 'Any dose form'} · {STRENGTH_STYLES.find(
-									(option) => option.value === rule.style
-								)?.label}
-							</span>
-						</span>
-						<form method="POST" action="?/deleteStrengthStyle" use:enhance>
-							<input type="hidden" name="index" value={index} />
-							<button class="icon" aria-label="Delete rule for {rule.ingredient}">×</button>
-						</form>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="empty">No rules — strengths show as named in RxNorm.</p>
-		{/if}
-
-		<form class="view-builder" method="POST" action="?/saveStrengthStyle" use:enhance>
-			<div class="row">
-				<label class="field grow">
-					<span>Ingredient</span>
-					<input name="ingredient" placeholder="sodium chloride" maxlength="200" required />
-				</label>
-				<label class="field grow">
-					<span>Dose form (optional)</span>
-					<input name="doseForm" placeholder="Injection" maxlength="200" />
-				</label>
-				<label class="field">
-					<span>Show as</span>
-					<select name="style">
-						{#each STRENGTH_STYLES as option (option.value)}
-							<option value={option.value}>{option.label} ({option.example})</option>
-						{/each}
-					</select>
-				</label>
-				<button class="primary">Add rule</button>
-			</div>
-			{#if form?.section === 'strengthStyles' && 'message' in form && form.message}
-				<p class="notice error" role="alert">{form.message}</p>
-			{/if}
-		</form>
+		<StrengthStyleRules
+			rules={data.settings.strengthStyles}
+			ingredients={data.dimensionValues.ingredient?.map((value) => value.label) ?? []}
+			doseForms={data.dimensionValues.doseForm?.map((value) => value.label) ?? []}
+			samples={data.strengthSamples}
+			message={form?.section === 'strengthStyles' && 'message' in form ? form.message : null}
+		/>
 	</section>
 
 	<section class="card danger-zone">
@@ -446,9 +425,7 @@
 
 <style>
 	main {
-		max-width: 760px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
+		--page-width: 760px;
 	}
 
 	.hint {
@@ -680,10 +657,6 @@
 	}
 
 	@media (max-width: 640px) {
-		main {
-			padding: 2.5rem 1rem;
-		}
-
 		.row.between {
 			flex-wrap: wrap;
 		}

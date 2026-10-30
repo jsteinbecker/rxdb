@@ -1,9 +1,15 @@
+<!--
+@component
+One component line of the compound builder: its concentration, amount and volume as
+quantity fields, and a row menu to remove it. Diluent lines show only a volume.
+`locked` shows the values read-only.
+-->
 <script lang="ts">
       import QuantityField from './QuantityField.svelte';
       import BrandedName from '$lib/components/BrandedName.svelte';
       import MixedFraction from './MixedFraction.svelte';
-      import {formatRational, type Rational} from '$lib/rational';
-      import {type Field, type Line, VOLUME_UNIT} from '$lib/compound-builder';
+      import {formatRational, type Rational} from "$lib/medication/rational";
+      import {type Field, type Line, VOLUME_UNIT} from "$lib/compounds/compound-builder";
 
       let {
             line,
@@ -13,19 +19,26 @@
             ontoggleMenu,
             onremove
       }: {
+            /** The line to show and edit. */
             line: Line;
+            /** Show values read-only, without the row menu. */
             locked?: boolean;
+            /** Whether this row's menu is the one open. */
             menuOpen?: boolean;
             /** A field was committed; false means it was refused and the box should show the old value. */
             oncommit: (field: Field, value: Rational | null) => boolean;
+            /** Open or close this row's menu. */
             ontoggleMenu: () => void;
+            /** Remove the line from the compound. */
             onremove: () => void;
       } = $props();
 
       const show = (value: Rational | null) => (value ? formatRational(value) : '');
 
-      // Each box shows its line value; it follows the line whenever the line
-      // changes (a solved Vol, a reload) and is the user's own text while typing.
+      /**
+       * Each box shows its line value; it follows the line whenever the line
+       * changes (a solved Vol, a reload) and is the user's own text while typing.
+       */
       let concText = $state('');
       let doseText = $state('');
       let volumeText = $state('');

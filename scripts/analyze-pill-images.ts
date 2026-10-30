@@ -9,18 +9,18 @@
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/client.ts';
-import { CACHE_SOURCE, readSnapshot } from '../src/lib/server/catalog-cache.ts';
-import { storedPillPhotos } from '../src/lib/server/pill-photo.ts';
-import { localPillPhotos } from '../src/lib/server/local-pill-photos.ts';
+import { CACHE_SOURCE, readSnapshot } from "../src/lib/server/catalog/cache.ts";
+import { storedPillPhotos } from "../src/lib/server/media/pill-photo.ts";
+import { localPillPhotos } from "../src/lib/server/media/local-pill-photos.ts";
 import {
 	labelPhoto,
 	measurePillImage,
 	pillImageTarget,
 	unmeasured,
 	type PillImageTarget
-} from '../src/lib/server/pill-image-store.ts';
-import { tesseractAvailable } from '../src/lib/server/pill-image-ocr.ts';
-import { pillImageKey } from '../src/lib/pill-image-layout.ts';
+} from "../src/lib/server/media/pill-image-store.ts";
+import { tesseractAvailable } from "../src/lib/server/media/pill-image-ocr.ts";
+import { pillImageKey } from "../src/lib/imprints/pill-image-layout.ts";
 
 const force = process.argv.includes('--force');
 const limitAt = process.argv.indexOf('--limit');

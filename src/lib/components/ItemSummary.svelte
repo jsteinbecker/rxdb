@@ -1,12 +1,37 @@
+<!--
+@component
+"Summary across" a formulary item's packages: composition (ingredients, strengths,
+excipients), packaging, regulatory facts and sources, each value counted over the
+packages that carry it. Strengths follow the item's display style.
+-->
 <script lang="ts">
-	import { racemicDisplayName } from '$lib/ingredient-group';
-	import {formatNdc} from '$lib/ndc';
-	import { constituentName } from '$lib/ions';
+	import { racemicDisplayName } from "$lib/medication/ingredient-group";
+	import {formatNdc} from "$lib/catalog/ndc";
+	import { constituentName } from "$lib/medication/ions";
 	import RxCui from '$lib/components/RxCui.svelte';
-      import {nestTallies, type ItemSummary, type Tally, type TallyNode} from '$lib/item-summary';
+      import {nestTallies, type ItemSummary, type Tally, type TallyNode} from "$lib/formulary/item-summary";
       import RouteBadge from './RouteBadge.svelte';
+      import {DOSE_TYPE_NAMES} from "$lib/formulary/hierarchy";
 
-      let {summary}: { summary: ItemSummary } = $props();
+      import {formContext} from "$lib/medication/strength-style";
+      import {styledStrength} from "$lib/client/strength-display.svelte";
+
+      let {summary, title = null, itemStyle = null}: {
+            /** Facts aggregated over the item's packages. */
+            summary: ItemSummary;
+            /** The item's unstyled name; its dose form is what strength display rules match. */
+            title?: string | null;
+            /** The item's own strength style, which replaces the formulary's rules. */
+            itemStyle?: string | null;
+      } = $props();
+
+      const strengthForm = $derived(formContext(title, summary.doseForms.map((entry) => entry.value).join(' '), summary.routes.map((entry) => entry.value)));
+      /** An active ingredient's strengths as the display rules show them; the stored value is the hover. */
+      const shownStrengths = (name: string, list: Tally[]): Tally[] =>
+            list.map((entry) => {
+                  const shown = styledStrength({name, strength: entry.value}, strengthForm, summary.active.map((other) => other.name).filter((other) => other !== name), itemStyle);
+                  return shown ? {...entry, value: shown, stored: entry.value} : entry;
+            });
 
       let labelsOpen = $state(false);
       const total = $derived(summary.packageCount);
@@ -59,7 +84,8 @@
       {:else}
             <ul class="values">
                   {#each list as entry (entry.value)}
-                        <li title={ndcList(entry.ndcs)}>
+                        <li title={"stored" in entry ? `Stored as ${entry.stored}\n${ndcList(entry.ndcs)}` : entry.raw ? `Equivalence group of ${entry.raw.join(', ')}\n${ndcList(entry.ndcs)}` : ndcList(entry.ndcs)}>
+                              {#if entry.raw}<span class="source-mark" aria-label="Equivalence group">≡</span>{/if}
                               {#if badge}
                                     <RouteBadge route={entry.value}/>
                               {:else}{entry.value}{/if}
@@ -144,7 +170,7 @@
                                                       {#if ingredient.moieties.length && !ingredient.moieties.includes(ingredient.name)}
                                                             <span class="small">as {ingredient.moieties.map(constituentName).join(', ')}</span>
                                                       {/if}
-                                                      {@render tallies(ingredient.strengths, summary.enriched)}
+                                                      {@render tallies(shownStrengths(ingredient.name, ingredient.strengths), summary.enriched)}
                                                 </li>
                                           {/each}
                                     </ul>
@@ -171,6 +197,8 @@
                         <dt>Applications</dt>
                         <dd>
                               {#if summary.applications.length}
+                                    <details class="collapsed">
+                                    <summary>{plural(summary.applications.length, 'application')}</summary>
                                     <ul class="values">
                                           {#each summary.applications as application (application.number)}
                                                 <li title={ndcList(application.ndcs)}>
@@ -181,6 +209,7 @@
                                                 </li>
                                           {/each}
                                     </ul>
+                                    </details>
                               {:else}<span class="unknown">—</span>{/if}
                         </dd>
                         {#if summary.deaSchedules.length}
@@ -208,8 +237,11 @@
                         <dt>Characteristics</dt>
                         <dd>
                               <ul class="values">
-                                    {@render subset(summary.dosing.multi, 'multi-dose')}
-                                    {@render subset(summary.dosing.single, 'single-dose')}
+                                    {#each summary.doseTypes as type (type.value)}
+                                          <li title={type.ndcs.map((ndc) => `${formatNdc(ndc)}: ${type.reasons[ndc]}`).join('\n')}>
+                                                {DOSE_TYPE_NAMES[type.value] ?? type.value}{#if type.inherited.length}<span class="source-mark" aria-label="Partly from sibling packages">↖</span>{/if}<span class="count">{type.ndcs.length}/{total}</span>
+                                          </li>
+                                    {/each}
                                     {@render subset(summary.dryFill, 'dry fill')}
                                     {@render subset(summary.kits, 'kit')}
                                     {@render subset(summary.samples, 'sample')}
@@ -512,5 +544,10 @@
 
       .inactive p {
             margin: 0.5rem 0 0.25rem;
+      }
+      .source-mark {
+            color: var(--muted, #888);
+            font-size: 0.85em;
+            margin: 0 0.2em;
       }
 </style>

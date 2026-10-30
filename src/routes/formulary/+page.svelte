@@ -1,8 +1,8 @@
 <script lang="ts">
       import {page} from '$app/state';
       import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from '$lib/ndc';
-      import {packageTitle} from '$lib/package-title';
+      import {formatNdc} from "$lib/catalog/ndc";
+      import {packageTitle} from "$lib/catalog/package-title";
       import PageHeader from '$lib/components/PageHeader.svelte';
       import {onMount, untrack} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
@@ -11,8 +11,9 @@
       import {
             buildTree, type ComboDoseDisplay, comboKey, DIMENSION_BY_KEY, type FormularyRow, levelLabel, MERGE_SEPARATOR,
             packageSize, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
-      } from '$lib/formulary-hierarchy';
+      } from "$lib/formulary/hierarchy";
       import RouteBadge from '$lib/components/RouteBadge.svelte';
+      import {strengthRules, styledName} from "$lib/client/strength-display.svelte";
 
       let { data } = $props();
 
@@ -68,6 +69,11 @@
 
 	const firstRow = (node: TreeNode): FormularyRow | undefined =>
 		node.rows[0] ?? (node.children[0] && firstRow(node.children[0]));
+	/** A strength node as the display rules show it; one an equivalence group renamed keeps its name. */
+	const strengthLabel = (node: TreeNode, label: string) => {
+		const row = firstRow(node);
+		return row && strengthOf(row) === label ? strengthOf(row, strengthRules(row.strengthStyle)) : label;
+	};
 
 	const doseChoice = (combo: string) => {
 		const display = comboDoseDisplay[combo];
@@ -164,14 +170,41 @@
 
 	// Open the tree to the depth chosen in Settings. Done once at setup, so the
 	// server renders it open too; later hierarchy changes start collapsed.
+	// With one open node per level, "all" opens the first branch down to its packages.
 	untrack(() => {
-		if (data.settings.expandDepth === 'all') expandAll();
+		if (data.settings.singleExpand) {
+			if (data.settings.expandDepth === 'none') return;
+			for (let node = tree[0]; node; node = node.children[0]) {
+				expanded.add(node.id);
+				if (data.settings.expandDepth === 'first') break;
+			}
+		} else if (data.settings.expandDepth === 'all') expandAll();
 		else if (data.settings.expandDepth === 'first') for (const node of tree) expanded.add(node.id);
+	});
+
+	/** Each node's siblings, itself included, for keeping one open per level. */
+	const siblingsOf = $derived.by(() => {
+		const siblings = new Map<string, TreeNode[]>();
+		const visit = (nodes: TreeNode[]) => {
+			for (const node of nodes) {
+				siblings.set(node.id, nodes);
+				visit(node.children);
+			}
+		};
+		visit(tree);
+		return siblings;
 	});
 
 	function toggle(id: string) {
 		if (expanded.has(id)) expanded.delete(id);
-		else expanded.add(id);
+		else {
+			// Close the open sibling and everything under it, so reopening it starts fresh.
+			if (data.settings.singleExpand)
+				for (const sibling of siblingsOf.get(id) ?? [])
+					if (sibling.id !== id && expanded.has(sibling.id))
+						walk([sibling], (node) => expanded.delete(node.id));
+			expanded.add(id);
+		}
 	}
 
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -207,15 +240,15 @@
 					class="package"
                               onmousedown={() => snapshot.capture()}
 					href={resolve('/formulary/ndc/[ndc]', { ndc: row.ndc })}
-					data-nav-title={packageTitle(row)}
+					data-nav-title={styledName(packageTitle(row), row.strengthStyle)}
 				>
 					<span class="mono ndc">{formatNdc(row.ndc)}</span>
 					<span class="desc">
-						<BrandedName text={packageTitle(row)}>
+						<BrandedName text={styledName(packageTitle(row), row.strengthStyle)}>
 							{#snippet name(text)}{@render summedText(text, row.doseDisplay)}{/snippet}
 						</BrandedName>
 						<span class="small">
-							{[strengthOf(row), packageSize(row), row.labeler]
+							{[strengthOf(row, strengthRules(row.strengthStyle)), packageSize(row), row.labeler]
 								.filter(Boolean)
 								.join(' · ')}
 						</span>
@@ -236,13 +269,16 @@
 			: null}
 	{#if segment.dimension === 'formularyItem'}<BrandedName text={segment.label}
 			>{#snippet name(text)}{@render summedText(text, firstRow(node)?.doseDisplay)}{/snippet}</BrandedName
-		>{:else if route}<RouteBadge {route} />{:else}{segment.label}{/if}
+		>{:else if route}<RouteBadge {route} />{:else if segment.dimension === 'strength'}{strengthLabel(node, segment.label)}{:else}{segment.label}{/if}
 {/snippet}
 
 {#snippet branch(nodes: TreeNode[], depth: number)}
 	<ul class="tree" role={depth ? 'group' : 'tree'}>
 		{#each nodes as node (node.id)}
 			{@const isOpen = expanded.has(node.id)}
+			<!-- In one-open-per-level mode, siblings of the open node step back. -->
+			{@const faded =
+				data.settings.singleExpand && !isOpen && nodes.some((other) => expanded.has(other.id))}
 			<!-- A merged node reads as its absorbed ancestors' labels, then its own. -->
 			{@const segments = [...(node.merged ?? []), { dimension: node.dimension, label: node.label }]}
 			{@const combo = segments.find(
@@ -250,7 +286,7 @@
 			)?.label}
 			{@const item = segments.find((segment) => segment.dimension === 'formularyItem')?.label}
 			<li role="treeitem" aria-expanded={isOpen} aria-selected="false">
-				<div class="node-row" style:--recede={recede.get(node.id) ?? 0}>
+				<div class="node-row" class:faded style:--recede={recede.get(node.id) ?? 0}>
 					<button class="node" onclick={() => toggle(node.id)} style:--depth={depth}>
 						<span class="twisty" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
 						<span class="node-label"
@@ -381,7 +417,13 @@
 				bind:value={filter}
 				placeholder="Filter by name, ingredient, NDC, labeler"
 			/>
-			<button class="ghost" onclick={expandAll} disabled={!levels.length}>Expand all</button>
+			<button
+				class="ghost"
+				onclick={expandAll}
+				disabled={!levels.length || data.settings.singleExpand}
+				title={data.settings.singleExpand ? 'Off while only one node per level can be open' : undefined}
+				>Expand all</button
+			>
 			<button class="ghost" onclick={() => expanded.clear()} disabled={!levels.length}
 				>Collapse all</button
 			>
@@ -402,12 +444,6 @@
 </main>
 
 <style>
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
-	}
-
 	h2 {
 		margin: 0;
 		font-size: 1rem;
@@ -528,6 +564,16 @@
 	.node-row .node {
 		flex: 1;
 		min-width: 0;
+	}
+
+	.node-row.faded {
+		opacity: 0.6;
+		transition: opacity 0.15s;
+	}
+
+	.node-row.faded:hover,
+	.node-row.faded:focus-within {
+		opacity: 1;
 	}
 
 	.toast {
@@ -770,10 +816,6 @@
 	}
 
 	@media (max-width: 640px) {
-		main {
-			padding: 2.5rem 1rem;
-		}
-
 		.toolbar {
 			flex-wrap: wrap;
 		}

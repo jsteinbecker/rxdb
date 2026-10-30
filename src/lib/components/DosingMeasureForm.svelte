@@ -1,21 +1,37 @@
+<!--
+@component
+A "⋯" popover for choosing a combination product's dosing measure — the sum of its
+ingredients (or a chosen subset), or one ingredient. The choice is saved for the whole
+SCD concept through the page's `?/setDosingMeasure` and `?/clearDosingMeasure`
+actions.
+-->
 <script lang="ts">
       import {enhance} from '$app/forms';
-      import type {StagedPackage} from '$lib/server/catalog-sync';
-      import {type DosingMeasure, dosingMeasureText, ingredientGroups, isCombo} from '$lib/dosing-measure';
+      import type { StagedPackage } from '../catalog/types';
+      import {type DosingMeasure, dosingMeasureText, ingredientGroups, isCombo} from "$lib/medication/dosing-measure";
 
       let {
             item,
             measure,
             message = null
-      }: { item: StagedPackage; measure: DosingMeasure | null; message?: string | null } = $props();
+      }: {
+            /** The package whose concept the measure is saved for. */
+            item: StagedPackage;
+            /** The saved measure, or null for the default. */
+            measure: DosingMeasure | null;
+            /** An error from the last submission, shown in the popover. */
+            message?: string | null;
+      } = $props();
 
       const groups = $derived(ingredientGroups(item));
       const current = $derived(measure ? dosingMeasureText(item, measure) : null);
-      // The radio value: `sum`, `single` (an ingredient not yet picked), or `ingredient:<group>`.
+      /**
+       * The radio value: `sum`, `single` (an ingredient not yet picked), or `ingredient:<group>`.
+       */
       let open = $state(false);
       let root = $state<HTMLElement>();
       let choice = $state('');
-      // Groups checked for a sum; all of them unless a subset was saved.
+      /** Groups checked for a sum; all of them unless a subset was saved. */
       let summed = $state<string[]>([]);
       $effect(() => {
             choice = !measure ? '' : measure.mode === 'sum' ? 'sum' : `ingredient:${measure.ingredient}`;

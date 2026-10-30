@@ -1,43 +1,48 @@
 /**
- * iln-parse.ts
- *
  * Read ILN strings back in.
- *   parseIln     string → Surface[] (throws IlnSyntaxError with column + caret)
- *   validateIln  syntax + semantic checks → { ok, surfaces, issues }
- *   formatIln    canonical rewrite (legacy modifiers → location codes, surface order, defaults dropped)
- *   explainIln   plain-English description, one line per surface
+ *
+ * | Function | Does |
+ * | --- | --- |
+ * | {@link parseIln} | string → `Surface[]`; throws {@link IlnSyntaxError} with column and caret |
+ * | {@link validateIln} | syntax and semantic checks → `{ ok, surfaces, issues }` |
+ * | {@link formatIln} | canonical rewrite: legacy modifiers → location codes, surface order, defaults dropped |
+ * | {@link explainIln} | plain-English description, one line per surface |
+ *
+ * See `docs/iln.md` for the notation itself.
+ *
+ * @module
  */
 
-import {type Node, serializeSurfaces, type Surface} from './spl-to-iln.ts';
+import { type Node, serializeSurfaces, type Surface } from './spl-to-iln.ts';
 import {
-  describeLocation,
-  formatLocation,
-  formatPoint,
-  type LocationCode,
-  LocationError,
-  parseLocation,
-  parseModifiers,
-  tryParseLocation,
+	describeLocation,
+	formatLocation,
+	formatPoint,
+	type LocationCode,
+	LocationError,
+	parseLocation,
+	parseModifiers,
+	tryParseLocation
 } from './iln-location.ts';
 import {
-  checkHoleOrient,
-  checkShapeOrient,
-  describeHoleOrient,
-  describeShapeOrient,
-  findHole,
-  holeFromName,
-  isHoleName,
-  checkShapeProportion,
-  findShape,
-  formatHoleOrient,
-  formatShapeOrient,
-  type HoleDef,
-  isDefaultHoleOrient,
-  isDefaultOrient,
-  isHoleTagToken,
-  parseHoleOrient,
-  parseShapeOrient,
-  type ShapeDef,
+	checkHoleOrient,
+	checkShapeOrient,
+	describeHoleOrient,
+	describeShapeOrient,
+	findHole,
+	holeFromName,
+	isHoleName,
+	checkShapeProportion,
+	findShape,
+	formatHoleOrient,
+	formatShapeOrient,
+	type HoleDef,
+	isDefaultHoleOrient,
+	isDefaultOrient,
+	isHoleTagToken,
+	parseHoleOrient,
+	parseShapeOrient,
+	type ShapeDef
 } from './shapes.ts';
 import { describeShell, formatShell, parseShell, ShellError } from './capsule-shell.ts';
 
@@ -288,10 +293,16 @@ export const METHOD_MOD = /^(deboss|emboss|print)$/;
 export const INK_MOD = /^ink:([a-z][a-z ]*[a-z]|[a-z]|#[0-9a-f]{3}|#[0-9a-f]{6})$/i;
 
 /** The marking method and ink an element's own modifiers set; `ink:` alone implies `print`. */
-export function markingStyle(mods: string[] | undefined): { method?: 'deboss' | 'emboss' | 'print'; ink?: string } {
+export function markingStyle(mods: string[] | undefined): {
+	method?: 'deboss' | 'emboss' | 'print';
+	ink?: string;
+} {
 	const method = mods?.find((m) => METHOD_MOD.test(m)) as 'deboss' | 'emboss' | 'print' | undefined;
 	const ink = mods?.map((m) => INK_MOD.exec(m)?.[1]).find(Boolean);
-	return { method: method ?? (ink ? 'print' : undefined), ...(ink ? { ink: ink.toLowerCase() } : {}) };
+	return {
+		method: method ?? (ink ? 'print' : undefined),
+		...(ink ? { ink: ink.toLowerCase() } : {})
+	};
 }
 
 interface ModAnalysis {
@@ -348,7 +359,8 @@ export interface Issue {
 }
 
 export interface ValidationResult {
-	ok: boolean; // no errors (warnings allowed)
+	/** True when there are no errors; warnings are allowed. */
+	ok: boolean;
 	surfaces?: Surface[];
 	issues: Issue[];
 }
@@ -378,7 +390,8 @@ function symbolNames(n: Node | null, acc = new Set<string>()): Set<string> {
 }
 
 export interface IlnOptions {
-	shape?: string; // SPL shape term, NCI code, or ILN extension name; enables shape checks
+	/** SPL shape term, NCI code or ILN extension name; when given, enables shape checks. */
+	shape?: string;
 }
 
 export function validateIln(src: string, opts: IlnOptions = {}): ValidationResult {
@@ -472,7 +485,11 @@ export function validateIln(src: string, opts: IlnOptions = {}): ValidationResul
 				if (def === null) add('error', `Unknown hole shape in <${n.name}>`, s.label);
 				else if (def) {
 					if (hole && named.size && hole.id !== def.id)
-						add('error', `The hole goes through the tablet, so every face names the same shape`, s.label);
+						add(
+							'error',
+							`The hole goes through the tablet, so every face names the same shape`,
+							s.label
+						);
 					hole = def;
 					named.add(s.label);
 				}
@@ -560,12 +577,24 @@ export function validateIln(src: string, opts: IlnOptions = {}): ValidationResul
 			}
 			const methods = rest.filter((m) => METHOD_MOD.test(m));
 			const inks = rest.filter((m) => INK_MOD.test(m));
-			if (methods.length > 1) add('error', `More than one marking method (${methods.join(', ')})`, s.label);
+			if (methods.length > 1)
+				add('error', `More than one marking method (${methods.join(', ')})`, s.label);
 			if (inks.length > 1) add('error', `More than one ink (${inks.join(', ')})`, s.label);
 			if (inks.length && methods.some((m) => m !== 'print'))
-				add('error', `Ink applies to printed markings, not ${methods.find((m) => m !== 'print')}ed ones`, s.label);
-			if ((methods.length || inks.length) && (n.k === 'blank' || (n.k === 'sym' && (isHoleName(n.name) || n.name === 'orifice'))))
-				add('warning', `A marking method on ${n.k === 'blank' ? 'blank' : `<${n.name}>`} has nothing to mark`, s.label);
+				add(
+					'error',
+					`Ink applies to printed markings, not ${methods.find((m) => m !== 'print')}ed ones`,
+					s.label
+				);
+			if (
+				(methods.length || inks.length) &&
+				(n.k === 'blank' || (n.k === 'sym' && (isHoleName(n.name) || n.name === 'orifice')))
+			)
+				add(
+					'warning',
+					`A marking method on ${n.k === 'blank' ? 'blank' : `<${n.name}>`} has nothing to mark`,
+					s.label
+				);
 			if (rest.includes('fill')) {
 				if (rest.includes('small') || rest.includes('large')) {
 					add('error', 'fill sets the size itself; drop small/large', s.label);
@@ -610,7 +639,11 @@ const MOD_ORDER = (m: string) =>
 /** Lowercase method words and inks; `print` is implied by an ink, so it is dropped beside one. */
 function canonicalStyle(mods: string[]): string[] {
 	const out = mods.map((m) =>
-		METHOD_MOD.test(m.toLowerCase()) ? m.toLowerCase() : INK_MOD.test(m) ? `ink:${INK_MOD.exec(m)![1].toLowerCase()}` : m
+		METHOD_MOD.test(m.toLowerCase())
+			? m.toLowerCase()
+			: INK_MOD.test(m)
+				? `ink:${INK_MOD.exec(m)![1].toLowerCase()}`
+				: m
 	);
 	return out.some((m) => INK_MOD.test(m)) ? out.filter((m) => m !== 'print') : out;
 }
@@ -624,7 +657,9 @@ function canonicalNode(n: Node, shape?: ShapeDef): Node {
 		let holeTag: string[] = [];
 		if (tag.length) {
 			const o = parseHoleOrient(tag.join(', '));
-			const hole = (n.k === 'sym' ? holeFromName(n.name) : undefined) ?? (shape?.hole ? findHole(shape.hole) : undefined);
+			const hole =
+				(n.k === 'sym' ? holeFromName(n.name) : undefined) ??
+				(shape?.hole ? findHole(shape.hole) : undefined);
 			if (!(hole && isDefaultHoleOrient(hole, o)))
 				holeTag = formatHoleOrient(o).split(', ').filter(Boolean);
 		}
@@ -921,7 +956,13 @@ function explainSurfaces(src: string): string {
 	return parseIln(src)
 		.map((s) => {
 			const extra = [
-				...(s.color ? [s.label === 'CAP' || s.label === 'BODY' ? shellText(s.color, true) : s.color.toLowerCase()] : []),
+				...(s.color
+					? [
+							s.label === 'CAP' || s.label === 'BODY'
+								? shellText(s.color, true)
+								: s.color.toLowerCase()
+						]
+					: []),
 				...(s.orient ? [describeShapeOrient(parseShapeOrient(s.orient))] : [])
 			];
 			const head = SURFACE_WORD[s.label] + (extra.length ? ` (${extra.join('; ')})` : '');

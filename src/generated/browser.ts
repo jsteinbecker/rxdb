@@ -348,3 +348,13 @@ export type PharmClassRule = Prisma.PharmClassRuleModel
  * Replaced whole when a newer quarter is published; see `cms-billing.ts`.
  */
 export type CmsCrosswalkRow = Prisma.CmsCrosswalkRowModel
+/**
+ * Model PackageCuration
+ * Durable provider baseline and user decisions, independent of enrichment cache versions.
+ */
+export type PackageCuration = Prisma.PackageCurationModel
+/**
+ * Model PackageReviewPreview
+ * Review previews survive process changes and apply only to the revision they reviewed.
+ */
+export type PackageReviewPreview = Prisma.PackageReviewPreviewModel

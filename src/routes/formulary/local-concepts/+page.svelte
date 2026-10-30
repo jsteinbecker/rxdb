@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
-	import { editState, evidenceText, supersedeItem, supersedesText } from '$lib/local-concept-list';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { editState, evidenceText, supersedeItem, supersedesText } from "$lib/curation/local-concept-list";
 
 	let { data, form } = $props();
 
@@ -22,17 +23,16 @@
 </svelte:head>
 
 <main>
-	<header>
-		<p class="eyebrow">
+	<PageHeader title="Local concepts">
+		{#snippet eyebrow()}
 			<a href={resolve('/')}>RxDB</a> / <a href={resolve('/formulary')}>Formulary</a> / Local concepts ·
 			<a href={resolve('/settings')}>Settings</a>
-		</p>
-		<h1>Local concepts</h1>
+		{/snippet}
 		<p>
 			{plural(data.concepts.length, 'local concept')} in {data.scope.name}. A local concept replaces
 			the name and ingredients of the RxNorm concept it supersedes; RxNorm's own data is untouched.
 		</p>
-	</header>
+	</PageHeader>
 
 	{#if (form?.action === 'localConceptStop' ||
 		form?.action === 'localConceptRetire' ||
@@ -150,37 +150,6 @@
 </main>
 
 <style>
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
-	}
-
-	header p:last-child {
-		color: #5c6777;
-		line-height: 1.55;
-		max-width: 46rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #3464a5;
-		font-size: 0.8rem;
-		font-weight: 750;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.eyebrow a {
-		color: inherit;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3rem);
-		letter-spacing: -0.045em;
-	}
-
 	.notice {
 		border-radius: 0.55rem;
 		padding: 0.6rem 0.85rem;

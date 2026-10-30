@@ -1,6 +1,4 @@
 /**
- * spl-to-iln.ts
- *
  * First-pass conversion of FDA SPL appearance characteristics
  * (SPLCOLOR, SPLSHAPE, SPLSIZE, SPLSCORE, SPLIMPRINT, SPLSYMBOL, ...)
  * into Imprint Layout Notation (ILN).
@@ -12,17 +10,21 @@
  * ranked alternative readings.
  *
  * Converter-only conventions (extensions to base ILN):
- *   blank      may appear as an operand inside a layout, e.g. "B: blank | blank"
- *              means a scored face with no markings.
- *   <logo>     a logo whose identity is unknown (SPL imprint said "LOGO").
- *   <symbol>   SPLSYMBOL=true but the imprint doesn't say what or where.
- *   +          used without an anchor means "also on this face, position unknown".
+ *
+ * | Token | Means |
+ * | --- | --- |
+ * | `blank` | may appear as an operand inside a layout: `B: blank \| blank` is a scored face with no markings |
+ * | `<logo>` | a logo whose identity is unknown (the SPL imprint said "LOGO") |
+ * | `<symbol>` | SPLSYMBOL=true, but the imprint doesn't say what or where |
+ * | `+` | without an anchor: "also on this face, position unknown" |
  *
  * Text and symbol nodes may carry modifiers (e.g. location codes from
  * iln-location.ts), serialized as "ACME"[RIM:W>N>E, small].
  *
  * Dependency-free. Input may be SPL XML, parsed characteristics, or a
  * flat record (Pillbox-style keys such as splimprint, splcolor_text).
+ *
+ * @module
  */
 
 import { findShape, isElongated } from './shapes.ts';
@@ -30,23 +32,35 @@ import { findShape, isElongated } from './shapes.ts';
 // ───────────────────────── Types ─────────────────────────
 
 export interface SplCharacteristic {
-	code: string; // SPLCOLOR, SPLSHAPE, SPLSIZE, SPLSCORE, SPLIMPRINT, SPLSYMBOL, SPLCOATING, ...
-	xsiType?: string; // CE, PQ, INT, ST, BL
-	value?: string; // @value
-	valueCode?: string; // @code on <value> (NCI Thesaurus code for CE values)
-	displayName?: string; // @displayName
-	unit?: string; // @unit (PQ)
-	text?: string; // element text (ST values, e.g. the imprint)
+	/** Characteristic code: SPLCOLOR, SPLSHAPE, SPLSIZE, SPLSCORE, SPLIMPRINT, SPLSYMBOL, SPLCOATING, … */
+	code: string;
+	/** The value's `xsi:type`: CE, PQ, INT, ST or BL. */
+	xsiType?: string;
+	/** The `<value>` element's `value` attribute. */
+	value?: string;
+	/** The `<value>` element's `code` attribute (the NCI Thesaurus code for CE values). */
+	valueCode?: string;
+	/** The `<value>` element's `displayName` attribute. */
+	displayName?: string;
+	/** The `<value>` element's `unit` attribute (PQ values). */
+	unit?: string;
+	/** Element text (ST values, e.g. the imprint). */
+	text?: string;
 }
 
 export interface SplAppearance {
 	name?: string;
-	dosageForm?: string; // formCode displayName, e.g. "TABLET, FILM COATED", "CAPSULE"
-	colors: string[]; // e.g. ["WHITE", "BLUE"], in SPL listing order
-	shape?: string; // e.g. "ROUND", "OVAL", "CAPSULE"
+	/** The `formCode` display name, e.g. "TABLET, FILM COATED" or "CAPSULE". */
+	dosageForm?: string;
+	/** SPLCOLOR values in SPL listing order, e.g. `["WHITE", "BLUE"]`. */
+	colors: string[];
+	/** SPLSHAPE term, e.g. "ROUND", "OVAL" or "CAPSULE". */
+	shape?: string;
 	sizeMm?: number;
-	score?: number; // SPLSCORE: 1 = unscored, 2–4 = number of pieces
-	imprint?: string; // raw SPL imprint, e.g. "M;30"
+	/** SPLSCORE: 1 means unscored; 2–4 is the number of pieces the score breaks it into. */
+	score?: number;
+	/** Raw SPLIMPRINT text, with faces separated by `;`, e.g. "M;30". */
+	imprint?: string;
 	symbol?: boolean;
 	coating?: boolean;
 }
@@ -67,22 +81,34 @@ export interface IlnGuess {
 	alternatives: IlnAlternative[];
 }
 
-/** ILN layout tree. Any node may carry modifiers; groups with modifiers serialize as (...)[mods]. */
+/**
+ * ILN layout tree. Any node may carry modifiers; groups with modifiers serialize as (...)[mods].
+ * A `text` node is imprint text; U+FFFD in its `v` marks an illegible character, written `\?` in ILN.
+ */
 export type Node = (
-	| { k: 'text'; v: string } // U+FFFD in v = illegible character, written \? in ILN
-	| { k: 'sym'; name: string; inner?: Node } // <name> or <name: inner>
+	| { k: 'text'; v: string }
+	/** A symbol, `<name>`, or a symbol enclosing a node, `<name: inner>`. */
+	| { k: 'sym'; name: string; inner?: Node }
+	/** An explicitly blank region. */
 	| { k: 'blank' }
-	| { k: 'line'; items: Node[] } // juxtaposition: same line, left to right
-	| { k: 'stack'; items: Node[] } // "/"  lines top to bottom
-	| { k: 'score'; dir: '|' | '-'; items: Node[] } // scores
-	| { k: 'plus'; items: Node[] } // "+"  out-of-flow additions
+	/** Juxtaposition: items on the same line, left to right. */
+	| { k: 'line'; items: Node[] }
+	/** `/`: lines from top to bottom. */
+	| { k: 'stack'; items: Node[] }
+	/** Score lines (`|` vertical, `-` horizontal) separating the items. */
+	| { k: 'score'; dir: '|' | '-'; items: Node[] }
+	/** `+`: out-of-flow additions. */
+	| { k: 'plus'; items: Node[] }
 ) & { mods?: string[] };
 
 export interface Surface {
-	label: string; // F, B, E, CAP, BODY, CAP+BODY
+	/** Which surface this is: F (front), B (back), E (edge), CAP, BODY or CAP+BODY. */
+	label: string;
 	color?: string;
-	orient?: string; // shape direction tag, e.g. "TIP@E" (see shapes.ts)
-	body: Node | null; // null = blank
+	/** Shape direction tag, e.g. "TIP@E"; see `shapes.ts`. */
+	orient?: string;
+	/** The surface's layout tree, or null when the surface is blank. */
+	body: Node | null;
 }
 
 // ───────────────────────── XML input ─────────────────────────
@@ -439,10 +465,9 @@ function detectForm(app: SplAppearance): { form: PillForm; penalty: number; note
 	return {
 		form: 'tablet',
 		penalty: capsuleShape ? 1 : 0,
-		note:
-			capsuleShape
-				? 'No dosage form given; capsule-shaped item treated as a tablet (caplet).'
-				: undefined
+		note: capsuleShape
+			? 'No dosage form given; capsule-shaped item treated as a tablet (caplet).'
+			: undefined
 	};
 }
 
