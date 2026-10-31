@@ -59,6 +59,22 @@ function massStrength(strength: string | null): MassStrength | null {
 }
 
 /**
+ * How much of a printed salt mass is the moiety, when the label printed a heavy
+ * salt's own mass (rule 3, `moiety-equivalent`): TrophAmine's lysine acetate
+ * is 4.253 g of lysine in 6 g of salt. 1 otherwise. A sum is derived, so it
+ * counts the moiety; see docs/strength-basis-rules.md §4.
+ */
+function moietyShare(item: DosingMeasureSource, name: string): number {
+	const spl = item.details?.spl?.ingredients.find(
+		(ingredient) => ingredient.kind === 'active' && ingredient.name === name
+	);
+	if (spl?.labelStrength?.correction !== 'moiety-equivalent') return 1;
+	const moiety = massStrength(spl.strength);
+	const printed = massStrength(spl.labelStrength.strength ?? null);
+	return moiety && printed && printed.mg > 0 ? moiety.mg / printed.mg : 1;
+}
+
+/**
  * Every strength scaled to the first one's denominator, so `0.974 g/500 mL`
  * counts as 194.8 mg beside `1.4 g/100 mL`. Null when any is not a mass or
  * the denominators are of different kinds (per mL against per tablet).
@@ -69,7 +85,10 @@ function summedMass(
 ): { mg: number; base: MassStrength } | null {
 	const parts = (item.ingredients ?? [])
 		.filter((i) => !only || only.includes(group(i.name)))
-		.map((i) => massStrength(i.strength));
+		.map((i) => {
+			const mass = massStrength(i.strength);
+			return mass && { ...mass, mg: mass.mg * moietyShare(item, i.name) };
+		});
 	const base = parts[0];
 	if (!base || parts.some((part) => !part || part.unit !== base.unit)) return null;
 	const mg = (parts as MassStrength[]).reduce(

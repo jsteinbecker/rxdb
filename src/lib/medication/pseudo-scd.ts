@@ -36,7 +36,14 @@ export type PseudoScdSource = {
 	reconstitution?: readonly { vialMassMg: number | null }[] | null;
 	details?: {
 		rxnav?: { rxcui?: string | null; conceptName?: string | null } | null;
-		spl?: { ingredients: { name: string; kind: string; strength: string | null }[] } | null;
+		spl?: {
+			ingredients: {
+				name: string;
+				kind: string;
+				strength: string | null;
+				labelStrength?: { strength: string | null; correction?: string | null } | null;
+			}[];
+		} | null;
 	} | null;
 };
 

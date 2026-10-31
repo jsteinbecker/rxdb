@@ -107,3 +107,29 @@ test('sum may cover a subset of ingredient groups', () => {
 	assert.ok('error' in parseDosingMeasure(amino, 'sum', null, ['leucine']));
 	assert.ok('error' in parseDosingMeasure(amino, 'sum', null, ['leucine', 'warfarin']));
 });
+
+// NDC 0264-1933 (TrophAmine 10%): the listing gives lysine acetate's printed
+// 1.2 g/100 mL, but only 0.8506 g of that is lysine. Summing the salt's mass
+// put total amino acids at ~104 g/L against the label's 100.
+test('sum counts a heavy salt by its moiety equivalent, not its printed mass', () => {
+	const trophamine: DosingMeasureSource = {
+		ingredients: [
+			{ name: 'LEUCINE', strength: '1.4 g/100mL' },
+			{ name: 'LYSINE ACETATE', strength: '1.2 g/100mL' }
+		],
+		details: {
+			spl: {
+				ingredients: [
+					{ name: 'LEUCINE', kind: 'active', strength: '7 g' },
+					{
+						name: 'LYSINE ACETATE',
+						kind: 'active',
+						strength: '4.253 g',
+						labelStrength: { strength: '6 g', correction: 'moiety-equivalent' }
+					}
+				]
+			}
+		}
+	};
+	assert.equal(dosingMeasureText(trophamine, { mode: 'sum' }), '22.506 mg/mL (sum)');
+});
