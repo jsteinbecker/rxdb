@@ -189,7 +189,7 @@
 
 	/** The search lives in the URL, so it can be shared, bookmarked and reopened. */
 	function rememberQuery(term: string) {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (term) url.searchParams.set('q', term);
 		else url.searchParams.delete('q');
 		if (url.search !== page.url.search) replaceState(url, page.state);

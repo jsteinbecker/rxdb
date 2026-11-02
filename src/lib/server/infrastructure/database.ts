@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../../generated/client.ts';
 

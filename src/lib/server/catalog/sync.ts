@@ -12,7 +12,7 @@ import {
 	type SearchFacets,
 	type SearchFilters
 } from '../../catalog/search-relevance';
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import {
 	gsrsMoieties,
 	gsrsMoietyFactor,
