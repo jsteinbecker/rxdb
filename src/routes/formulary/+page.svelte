@@ -11,7 +11,7 @@
       import {SvelteSet} from 'svelte/reactivity';
       import {
             buildTree, type ComboDoseDisplay, comboKey, DIMENSION_BY_KEY, type FormularyRow, levelLabel, MERGE_SEPARATOR,
-            orderedComboLabel, packageSize, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
+            orderedComboLabel, packageSize, sharedIngredientOrder, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
       } from "$lib/formulary/hierarchy";
       import RouteBadge from '$lib/components/RouteBadge.svelte';
       import {strengthRules, styledName} from "$lib/client/strength-display.svelte";
@@ -71,10 +71,7 @@
 	const firstRow = (node: TreeNode): FormularyRow | undefined =>
 		node.rows[0] ?? (node.children[0] && firstRow(node.children[0]));
 	/** The ingredient order every item under a node chose alike; none when they differ. */
-	const nodeOrder = (node: TreeNode): string[] => {
-		const orders = new Set(nodeRows(node).map((row) => (row.ingredientOrder ?? []).join('\n')));
-		return orders.size === 1 ? [...orders][0].split('\n').filter(Boolean) : [];
-	};
+	const nodeOrder = (node: TreeNode): string[] => sharedIngredientOrder(nodeRows(node));
 	/** A row's package title with its ingredients in the item's chosen order. */
 	const rowTitle = (row: FormularyRow) =>
 		styledName(orderNameIngredients(packageTitle(row), row.ingredientOrder), row.strengthStyle);

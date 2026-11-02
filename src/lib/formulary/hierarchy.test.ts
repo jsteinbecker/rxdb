@@ -658,3 +658,28 @@ test("an item's ingredient order reorders its combo label and strengths, never i
 	assert.equal(strengthOf(amoxClav), '875mg / 125mg');
 	assert.equal(strengthOf(amoxClav, [], ['clavulanate']), '125mg / 875mg');
 });
+
+test('siblings sort by the label they show, with their items\' ingredient order applied', () => {
+	const combo = (id: string, a: string, b: string, order?: string[]) =>
+		row({
+			formularyItemId: id,
+			ndc: id,
+			ingredients: [
+				{ name: a, strength: '5 MG' },
+				{ name: b, strength: '325 MG' }
+			],
+			ingredientOrder: order
+		});
+	const tree = buildTree(
+		[
+			combo('1', 'Hydrocodone', 'Acetaminophen', ['hydrocodone', 'acetaminophen']),
+			combo('2', 'Codeine', 'Acetaminophen'),
+			combo('3', 'Ibuprofen', 'Famotidine')
+		],
+		['ingredientCombo']
+	);
+	assert.deepEqual(
+		tree.map((node) => node.label),
+		['Acetaminophen / Codeine', 'Famotidine / Ibuprofen', 'Acetaminophen / Hydrocodone']
+	);
+});

@@ -420,6 +420,25 @@ export function comboKey(row: FormularyRow): string | null {
 export const orderedComboLabel = (key: string, order: readonly string[] | null | undefined) =>
 	orderIngredients(key.split(' / '), order, (name) => name).join(' / ');
 
+/** The ingredient order every row's item chose alike; none when they differ. */
+export function sharedIngredientOrder(rows: FormularyRow[]): string[] {
+	const orders = new Set(rows.map((row) => (row.ingredientOrder ?? []).join('\n')));
+	return orders.size === 1 ? [...orders][0].split('\n').filter(Boolean) : [];
+}
+
+/**
+ * A node's label as shown, with its items' shared ingredient order applied, so
+ * siblings sort as they read. Grouping still uses the label itself.
+ */
+function shownLabel(key: string, label: string, rows: FormularyRow[]): string {
+	if (key !== 'ingredientCombo' && key !== 'strength') return label;
+	const order = sharedIngredientOrder(rows);
+	if (!order.length) return label;
+	if (key === 'ingredientCombo') return orderedComboLabel(label, order);
+	// A strength an equivalence group renamed keeps its name.
+	return strengthOf(rows[0]) === label ? strengthOf(rows[0], [], order) : label;
+}
+
 // ── Racemates beside one of their own enantiomers ────────────────────────────
 // Mixed amphetamine salts list `AMPHETAMINE SULFATE` and `AMPHETAMINE ASPARTATE`
 // (racemic) beside `DEXTROAMPHETAMINE SULFATE` and `… SACCHARATE`, so read by
@@ -816,8 +835,15 @@ function grow(
 			]);
 	}
 	return [...buckets]
-		.sort(([a], [b]) => (a === NOT_SPECIFIED ? 1 : b === NOT_SPECIFIED ? -1 : compare(a, b)))
-		.map(([label, members]) => {
+		.map(([label, members]) => ({ label, members, shown: shownLabel(key, label, members) }))
+		.sort((a, b) =>
+			a.label === NOT_SPECIFIED
+				? 1
+				: b.label === NOT_SPECIFIED
+					? -1
+					: compare(a.shown, b.shown) || compare(a.label, b.label)
+		)
+		.map(({ label, members }) => {
 			const id = `${parent}${parent ? '|' : ''}${key}=${label}`;
 			const children = grow(members, rest, eq, id);
 			// Every row lands in some child, so an only child holds them all.
