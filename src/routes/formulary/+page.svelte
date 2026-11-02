@@ -379,13 +379,6 @@
 		</div>
 	{/if}
 	<PageHeader title={data.scope.name}>
-		{#snippet eyebrow()}
-			<a href={resolve('/')}>RxDB</a> / Formulary · <a href={resolve('/formulary/items')}>Manage loaded items →</a> ·
-			<a href={resolve('/formulary/pharm-classes')}>Class rules</a> ·
-			<a href={resolve('/formulary/local-concepts')}>Local concepts</a> ·
-			<a href={resolve('/compounds')}>Compounds</a> ·
-			<a href={resolve('/settings')}>Settings</a>
-		{/snippet}
 		<p>
 			{plural(data.rows.length, 'package')} across {plural(
 				new Set(data.rows.map((row: FormularyRow) => row.formularyItemId)).size,

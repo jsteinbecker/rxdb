@@ -524,9 +524,6 @@
 
 <main>
 	<PageHeader title="Search and import medications">
-		{#snippet eyebrow()}
-			RxDB · <a href={resolve('/formulary')}>View formulary →</a> · <a href={resolve('/settings')}>Settings</a>
-		{/snippet}
 		<p>
 			Search RxNav, openFDA, and DailyMed. Results are only for review until you add a drug or a
 			package to the formulary.

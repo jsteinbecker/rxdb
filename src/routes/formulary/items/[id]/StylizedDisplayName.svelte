@@ -33,25 +33,17 @@
       });
 </script>
 
-{#each runs as run, i (i)}{#if run.numerator}<span class="mixed">{run.text}<span class="numerator">{run.numerator}</span><span class="denominator">{run.denominator}</span></span>{:else}{run.text}{/if}{/each}
+{#each runs as run, i (i)}
+      {#if run.numerator}
+            <span class="mixed">{run.text}<span class="numerator">{run.numerator}</span>
+            <span class="denominator">{run.denominator}</span></span>
+      {:else}
+            {run.text}
+      {/if}
+{/each}
 
 <style>
-      .numerator,
-      .denominator {
-            display: inline-block;
-            font-size: 0.6em;
-            line-height: 1;
-            white-space: nowrap;
-      }
-
-      /* Zero width lets the denominator start at the same x, so the two stack. */
-      .numerator {
-            width: 0;
-            vertical-align: 0.55em;
-      }
-
-      .denominator {
-            vertical-align: -0.15em;
-            border-top: 1px solid currentColor;
-      }
+      .numerator, .denominator {display: inline-block;font-size: 0.6em;line-height: 1;white-space: nowrap;}
+      .numerator {width: 0;vertical-align: 0.55em;}
+      .denominator {vertical-align: -0.15em;border-top: 1px solid currentColor;}
 </style>

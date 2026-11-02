@@ -78,12 +78,6 @@
 
 <main>
 	<PageHeader title="Settings">
-		{#snippet eyebrow()}
-                  <a href="/">RxDB</a>
-                  /
-                  <a href="/formulary">Formulary</a>
-                  / Settings
-            {/snippet}
 		<p>Preferences for {data.scope.name}.</p>
 	</PageHeader>
 

@@ -99,10 +99,6 @@
 
 <main>
 	<PageHeader title={data.scope.name}>
-		{#snippet eyebrow()}
-			<a href="/">RxDB</a> / <a href="/formulary">Formulary</a> / Loaded items ·
-			<a href="/settings">Settings</a>
-		{/snippet}
 		<p>
 			Each row is one load, at the level it was loaded. Removing a concept takes off every package
 			it brought in; removing an NDC takes off just that package.

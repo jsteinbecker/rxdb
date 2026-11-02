@@ -12,7 +12,9 @@ full route as the tooltip.
       } = $props();
 </script>
 
-<abbr class="route" title={route}>{routeCode(route)}</abbr>
+<abbr class="route" title={route}>
+      {routeCode(route)}
+</abbr>
 
 <style>
       /* Circle stroke matches the glyph stroke of the monospace face at this weight. */

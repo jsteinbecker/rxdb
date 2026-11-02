@@ -385,6 +385,13 @@ The correction is footnoted beside the value, keeping the original.
             `${name} · ${strength ?? '—'}${basisText ? ` · basis ${basisText}` : ''}`;
 </script>
 
+{#snippet uniiLookup(name: string | null | undefined)}
+      <a class="lookup" target="_blank" rel="noopener noreferrer"
+         href={name?.trim() ? `https://gsrs.ncats.nih.gov/ginas/app/beta/browse-substance?search=${encodeURIComponent(name.trim())}` : 'https://gsrs.ncats.nih.gov/ginas/app/beta/browse-substance'}>
+            Find UNII in GSRS{name?.trim() ? ` for “${name.trim()}”` : ''} ↗
+      </a>
+{/snippet}
+
 {#snippet substanceCard(unii: string)}
       {@const answer = card(unii)}
       {#if UNII.test(unii) && answer}
@@ -441,6 +448,7 @@ The correction is footnoted beside the value, keeping the original.
                   <label>Ingredient UNII
                         <input class="mono" bind:value={ingUnii} maxlength="10" spellcheck="false" placeholder="10 letters and digits"/>
                   </label>
+                  {@render uniiLookup(ingName || row?.name)}
                   {@render substanceCard(ingFinal)}
                   {#if ingChanged}
                         <label>Name <input bind:value={ingName} placeholder={ingSubstance?.name ?? ''} maxlength="300"/></label>
@@ -465,6 +473,7 @@ The correction is footnoted beside the value, keeping the original.
                               <input class="mono" value={moietyUnii ?? moietyDefault?.unii ?? ''} oninput={(event) => (moietyUnii = event.currentTarget.value)}
                                      maxlength="10" spellcheck="false"/>
                         </label>
+                        {@render uniiLookup(moietyName || moietyDefault?.name || moietySubstance?.name)}
                         {@render substanceCard(moietyFinalUnii)}
                         <label>Name <input bind:value={moietyName} placeholder={moietyDefault?.name ?? moietySubstance?.name ?? ''} maxlength="300"/></label>
                         {#if UNII.test(moietyFinalUnii) && !moietyListed}
@@ -486,6 +495,7 @@ The correction is footnoted beside the value, keeping the original.
                         <label>Label’s number measures (UNII)
                               <input class="mono" value={fromFinal} oninput={(event) => (fromUnii = event.currentTarget.value)} maxlength="10"/>
                         </label>
+                        {@render uniiLookup(fromSubstance?.name ?? row?.name)}
                         {@render substanceCard(fromFinal)}
                         <div class="mws">
                               <label>MW of {fromFinal}
@@ -749,6 +759,12 @@ The correction is footnoted beside the value, keeping the original.
             border-radius: 8px;
             background: #f4f6f9;
             overflow-wrap: anywhere;
+      }
+
+      .lookup {
+            align-self: flex-start;
+            font-size: 0.8rem;
+            color: #2b5fb3;
       }
 
       .hint {

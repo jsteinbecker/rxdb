@@ -1,5 +1,6 @@
 <!--
 @component
+
 Renders SPL label content (headings, styled paragraphs, nested lists and tables) as
 parsed by `labels/spl-sections.ts`. While a citation is being captured, each table row
 gets a checkbox so it can be cited as its cells' text.

@@ -24,10 +24,6 @@
 
 <main>
 	<PageHeader title="Local concepts">
-		{#snippet eyebrow()}
-			<a href={resolve('/')}>RxDB</a> / <a href={resolve('/formulary')}>Formulary</a> / Local concepts ·
-			<a href={resolve('/settings')}>Settings</a>
-		{/snippet}
 		<p>
 			{plural(data.concepts.length, 'local concept')} in {data.scope.name}. A local concept replaces
 			the name and ingredients of the RxNorm concept it supersedes; RxNorm's own data is untouched.

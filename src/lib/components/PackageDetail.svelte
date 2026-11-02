@@ -556,13 +556,11 @@ marks, and `editing` offers a pencil beside each overridable property.
       ><a href={`#${uid}-source-${n}`} title={sources[n - 1].name}>[{n}]</a></sup
       >{/if}
 {/snippet}
-
 {#snippet edit(keys: string[], label: string, source: SourceId | null = null)}
       {#if keys.some((key) => citeNumber(key) > 0)}{@render cite(keys)}{:else if source}{@render src(
             source
       )}{/if}{@render editButton(keys, label)}
 {/snippet}
-
 <!-- A strength as the display rules show it; the stored value is the hover. -->
 {#snippet strengthValue(ingredient: {name: string; strength: string | null; kind?: string; moieties?: {name: string}[]}, actives: {name: string}[])}
       {@const shown = displayedStrength(ingredient, actives)}
@@ -571,7 +569,6 @@ marks, and `editing` offers a pencil beside each overridable property.
       >{strengthText(ingredient.strength)}{item.size?.kind === 'volume' ? ` in ${item.size.value} ${item.size.unit}` : ''}</span
       >{:else if shown}<span class="styled-strength" title={`Stored as ${strengthText(ingredient.strength)}`}>{shown}</span>{:else}{strengthText(ingredient.strength)}{/if}
 {/snippet}
-
 {#snippet strengthCell(ingredient: LabelIngredient)}
 {#if manualMark(ingredient)}<sup
             class="manual-mark"
@@ -587,7 +584,6 @@ marks, and `editing` offers a pencil beside each overridable property.
             `${ingredient.name} strength`
       )}{@render statedOnLabel(ingredient)}
 {/snippet}
-
 <!-- What the label printed, under the corrected value it was read as; the full
      reasoning is the hover. A correction with no printed number of its own (a
      miscoded denominator) says what it changed instead. -->
@@ -596,7 +592,6 @@ marks, and `editing` offers a pencil beside each overridable property.
       >{#if ingredient.labelStrength}label: {strengthText(ingredient.labelStrength.strength)}{:else}{ingredient.strengthNotes.join(' ')}{/if}</span
       >{/if}
 {/snippet}
-
 {#snippet ingredientRow(ingredient: LabelIngredient, constituents: Constituent[], branch: Branch = null)}
       <tr
             class:muted={ingredient.kind !== 'active'}
@@ -646,7 +641,6 @@ marks, and `editing` offers a pencil beside each overridable property.
             </td>
       </tr>
 {/snippet}
-
 {#snippet constituentRow(piece: Constituent, last: boolean, branch: Branch = null)}
       <tr class="constituent" class:last>
             <td>{piece.kind}</td>
@@ -667,7 +661,6 @@ marks, and `editing` offers a pencil beside each overridable property.
             <td class="row-end"></td>
       </tr>
 {/snippet}
-
 {#snippet deleteButton(key: string, label: string)}
       {#if editing}
             <button
@@ -680,7 +673,6 @@ marks, and `editing` offers a pencil beside each overridable property.
             >{deletingKey === key ? 'Deleting…' : 'Delete'}</button>
       {/if}
 {/snippet}
-
 {#snippet editButton(keys: string[], label: string)}
       {@const available = keys.filter((key) => overrideFields.some((field) => field.key === key))}
       {#if editing && available.length}
@@ -708,16 +700,13 @@ marks, and `editing` offers a pencil beside each overridable property.
             >
       {/if}
 {/snippet}
-
 {#snippet ok(good: boolean | null | undefined)}
 	{#if good}<span class="ok" aria-label="OK">✓</span>{/if}
 {/snippet}
-
 {#snippet qty(value: number, unit: string)}
 	{@const r = asFraction(value)}
 	{#if r}<MixedFraction value={r} {unit}/>{:else}{round(value)} {unit}{/if}
 {/snippet}
-
 {#snippet calcChip(value: number, unit: string, formula: string)}
 	<span class="calc-chip" title={`Not stated on the label. ${formula}`}
       ><svg viewBox="0 0 16 16" aria-hidden="true"
@@ -2350,6 +2339,20 @@ marks, and `editing` offers a pencil beside each overridable property.
       .ing-table td.row-end {
             position: relative;
             padding-right: 2rem;
+      }
+
+      /* Pinned to the corner, so a hidden button never wraps under the block-level
+         label note and pads only the rows that carry one. */
+      .ing-table td:nth-child(3) {
+            position: relative;
+            padding-right: 2rem;
+      }
+
+      .ing-table td:nth-child(3) > .edit {
+            position: absolute;
+            top: 0.2rem;
+            right: 0.35rem;
+            margin: 0;
       }
 
       .edit.correct {

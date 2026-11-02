@@ -120,8 +120,7 @@
 <main>
       <PageHeader compact>
             {#snippet eyebrow()}
-                  <a href="/">RxDB</a> / <a href="/formulary">Formulary</a> /
-                  <a href="/formulary/items">Loaded items</a> / {level}
+                  {level}
             {/snippet}
             {#snippet title()}
                   <h1 class="title-row">{@render displayName(item)}

@@ -34,10 +34,6 @@
 
 <main>
 	<PageHeader title="Pharmacologic class rules">
-		{#snippet eyebrow()}
-			<a href={resolve('/')}>RxDB</a> / <a href={resolve('/formulary')}>Formulary</a> / Class rules ·
-			<a href={resolve('/settings')}>Settings</a>
-		{/snippet}
 		<p>
 			{plural(data.rules.length, 'rule')} in {data.scope.name}. Rules replace, add to or hide the
 			classes shown for matching packages; the source data is untouched.

@@ -1,6 +1,6 @@
 <!--
 @component
-Every page's header: an eyebrow (breadcrumbs, or a record's kind and code), the title,
+Every page's header: an optional eyebrow (a record's kind and code), the title,
 and the description lines under it, muted and stacked. A title ending in `[Brand]`
 (RxNorm's form) shows the brand as a superheading over the rest. `compact` sizes the
 title for a record page (a package, an ingredient, a compound); `actions` sit to the
@@ -27,8 +27,8 @@ Usage:
 		name: renderName,
 		children
 	}: {
-		/** The line above the title: breadcrumbs, or a record's kind and code. */
-		eyebrow: Snippet;
+		/** The line above the title: a record's kind and code. The toolbar carries the breadcrumbs. */
+		eyebrow?: Snippet;
 		/** A string becomes the `<h1>`; a snippet renders its own (an editable name, a placeholder). */
 		title: string | Snippet;
 		/** Sizes the title for a record page rather than a list page. */
@@ -44,7 +44,7 @@ Usage:
 
 <header class:compact>
 	<div class="text">
-		<p class="eyebrow">{@render eyebrow()}</p>
+		{#if eyebrow}<p class="eyebrow">{@render eyebrow()}</p>{/if}
 		{#if typeof title === 'string'}
 			{@const { name, brand } = splitBrand(title)}
 			{#if brand}<p class="brand">{brand}</p>{/if}

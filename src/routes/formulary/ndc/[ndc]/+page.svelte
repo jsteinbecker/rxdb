@@ -3,7 +3,6 @@
       import {tick} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {page} from '$app/state';
-      import BrandedName from '$lib/components/BrandedName.svelte';
       import {formatNdc} from "$lib/catalog/ndc";
       import PageHeader from '$lib/components/PageHeader.svelte';
       import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
@@ -86,7 +85,6 @@
       const displayTitle = $derived(styledName(rxNormPackageTitle(item) ?? '', itemStyle) || null);
       const labelName = $derived(labelProductName(item));
       // The header is usually the formulary item's own RxNorm name; it isn't repeated.
-      const sameName = (name: string) => !!displayTitle && displayTitle.toLowerCase().startsWith(name.trim().toLowerCase());
 </script>
 
 <svelte:head>
@@ -120,13 +118,14 @@
             {#if labelName}<p class="label-name">Labeled as {labelName}</p>{/if}
             {#if item.labelerName}<p><a href={resolve('/formulary/labeler/[code]', {code: item.ndc.slice(0, 5)})}>{item.labelerName}</a></p>{/if}
             {#if data.formularyItems.length}
-                  <p>
-                        On formulary as
-                        {#each data.formularyItems as formularyItem, index (formularyItem.id)}
-                              {index ? ', ' : ''}
-                              <a href={resolve('/formulary/items/[id]', {id: formularyItem.id})} data-nav-title={formularyItem.displayName}>
-                                    {#if sameName(formularyItem.displayName)}this item{:else}<BrandedName text={formularyItem.displayName} />{/if}
-                              </a>
+                  <p class="formulary-links">
+                        {#each data.formularyItems as formularyItem (formularyItem.id)}
+                              <a
+                                    class="formulary-button"
+                                    href={resolve('/formulary/items/[id]', {id: formularyItem.id})}
+                                    data-nav-title={formularyItem.displayName}
+                                    title={formularyItem.displayName}
+                              >View Formulary Item</a>
                         {/each}
                   </p>
             {/if}
@@ -164,7 +163,22 @@
       </dialog>
       <DosingMeasureForm {item} measure={data.dosingMeasure} message={form?.action === 'dosingMeasure' ? form.message : null}/>
       <div class="body" class:with-panel={editKeys.length}>
-            <PackageDetail {editKeys} editing {item} siblings={data.siblings} equivalenceGroups={data.equivalenceGroups} pillMedia={data.pillMedia} formularyItems={data.formularyItems} onretry={() => reinterpret.open()} onassignclass={() => pharmClassRule.open()} onedit={(keys) => (editKeys = keys)} oncorrect={(index) => { editKeys = []; correction.open(index); }} localConceptScd={localConceptEditor?.target.scd?.rxcui ?? null} onlocalconcept={(mode) => withLocalConceptDialog((dialog) => dialog.open(mode))} onstoplocalconcept={() => withLocalConceptDialog((dialog) => dialog.confirmStop())}/>
+            <PackageDetail
+                  {editKeys}
+                  editing
+                  {item}
+                  siblings={data.siblings}
+                  equivalenceGroups={data.equivalenceGroups}
+                  pillMedia={data.pillMedia}
+                  formularyItems={data.formularyItems}
+                  onretry={() => reinterpret.open()}
+                  onassignclass={() => pharmClassRule.open()}
+                  onedit={(keys) => (editKeys = keys)}
+                  oncorrect={(index) => { editKeys = []; correction.open(index); }}
+                  localConceptScd={localConceptEditor?.target.scd?.rxcui ?? null}
+                  onlocalconcept={(mode) => withLocalConceptDialog((dialog) => dialog.open(mode))}
+                  onstoplocalconcept={() => withLocalConceptDialog((dialog) => dialog.confirmStop())}
+            />
             {#if editKeys.length}
                   {#key editKeys}
                         <div class="panel-slot">
@@ -180,9 +194,20 @@
                   {/key}
             {/if}
       </div>
-      <PharmClassRuleDialog bind:this={pharmClassRule} rules={data.pharmClassRules} confirmRemove={data.confirmRemove} message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete' ? form.message : null}/>
+      <PharmClassRuleDialog
+            bind:this={pharmClassRule}
+            rules={data.pharmClassRules}
+            confirmRemove={data.confirmRemove}
+            message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete' ? form.message : null}
+      />
       {#if localConceptEditor}
-            <LocalConceptDialog bind:this={localConcept} editor={localConceptEditor} localConcept={item.localConcept} rxnormName={item.details?.rxnav?.conceptName ?? null} message={form?.action === 'localConceptSave' || form?.action === 'localConceptStop' ? form.message : null}/>
+            <LocalConceptDialog
+                  bind:this={localConcept}
+                  editor={localConceptEditor}
+                  localConcept={item.localConcept}
+                  rxnormName={item.details?.rxnav?.conceptName ?? null}
+                  message={form?.action === 'localConceptSave' || form?.action === 'localConceptStop' ? form.message : null}
+            />
       {/if}
       <ReinterpretDialog bind:this={reinterpret} {item}/>
       <IngredientCorrectionDialog bind:this={correction} {item} equivalents={data.equivalents}/>
@@ -190,8 +215,9 @@
 
 <svelte:window
       onkeydown={(event) => {
-    if (event.key === 'Escape' && editKeys.length) editKeys = [];
-  }}
+          if (event.key === 'Escape' && editKeys.length) editKeys = [];
+        }
+      }
 />
 
 <style>
@@ -206,6 +232,28 @@
 
       .back:hover {
             text-decoration: underline;
+      }
+
+      .formulary-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+      }
+
+      .formulary-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid #c9d6e8;
+            border-radius: 7px;
+            background: #fff;
+            color: #3464a5;
+            font-weight: 650;
+            text-decoration: none;
+      }
+
+      .formulary-button:hover {
+            background: #eef3fa;
       }
 
       .ellipsis {

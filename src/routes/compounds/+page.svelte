@@ -13,9 +13,6 @@
 
 <main>
 	<PageHeader title="Compounds">
-		{#snippet eyebrow()}
-			<a href={resolve('/')}>RxDB</a> / <a href={resolve('/formulary')}>Formulary</a> / Compounds
-		{/snippet}
 		<p>{data.scope.name}</p>
 	</PageHeader>
 
