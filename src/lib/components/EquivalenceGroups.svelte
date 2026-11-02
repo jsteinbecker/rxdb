@@ -11,6 +11,7 @@ formulary's values, and edits, saves and deletes groups.
 	import {
 		equivalenceKey,
 		equivalenceWords,
+		genericDisplay,
 		memberMatches,
 		preferredDisplay,
 		relatedValues,
@@ -80,6 +81,17 @@ formulary's values, and edits, saves and deletes groups.
 		).filter((suggestion) => !dismissed.has(suggestionId(suggestion)))
 	);
 	let showAllSuggestions = $state(false);
+	let addingAll = $state(false);
+	/** Every shown suggestion as a group, each shown under its most generic member. */
+	const allSuggestionsPayload = $derived(
+		JSON.stringify(
+			suggestions.map((suggestion) => ({
+				dimension,
+				display: genericDisplay(suggestion.members) ?? suggestion.display,
+				members: suggestion.members.map((member) => member.label)
+			}))
+		)
+	);
 
 	// ── Editor ──
 	type Draft = { index: number | null; members: string[]; display: string; displayChosen: boolean };
@@ -281,6 +293,24 @@ formulary's values, and edits, saves and deletes groups.
 					</li>
 				{/each}
 			</ul>
+			<form
+				method="POST"
+				action="?/saveGroups"
+				class="add-all"
+				use:enhance={() => {
+					addingAll = true;
+					return async ({ update }) => {
+						await update({ reset: false });
+						addingAll = false;
+					};
+				}}
+			>
+				<input type="hidden" name="groups" value={allSuggestionsPayload} />
+				<button class="ghost" disabled={addingAll}
+					>{addingAll ? 'Adding…' : `Add all ${plural(suggestions.length, 'suggestion')}`}</button
+				>
+				<span class="small">Each is shown as its most generic value.</span>
+			</form>
 			{#if suggestions.length > 4}
 				<button
 					type="button"
@@ -621,6 +651,13 @@ formulary's values, and edits, saves and deletes groups.
 		border-radius: 0.6rem;
 		padding: 0.75rem 0.9rem;
 		background: #fbfcfe;
+	}
+
+	.add-all {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0.5rem 0 0;
 	}
 
 	.suggestions li:last-child {

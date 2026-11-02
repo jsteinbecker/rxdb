@@ -128,6 +128,22 @@ export const actions: Actions = {
 		);
 	},
 
+	/** Add several new groups at once, e.g. every suggestion accepted in one go. */
+	saveGroups: async ({ request }) => {
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(String((await request.formData()).get('groups') ?? ''));
+		} catch {
+			return fail(400, { section: 'groups', message: 'The groups could not be read.' });
+		}
+		const added = parseEquivalenceGroups(parsed).filter((group) => group.members.length);
+		if (!added.length) return fail(400, { section: 'groups', message: 'No groups to add.' });
+		return updateSettings(
+			(settings) => ({ ...settings, equivalenceGroups: [...settings.equivalenceGroups, ...added] }),
+			{ section: 'groups', savedGroup: `${added.length} groups` }
+		);
+	},
+
 	deleteGroup: async ({ request }) => {
 		const index = Number((await request.formData()).get('index'));
 		return updateSettings(

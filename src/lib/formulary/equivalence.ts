@@ -248,6 +248,17 @@ export function preferredDisplay(values: ValueCount[]): string | null {
 	);
 }
 
+/**
+ * The most generic member: the one with the fewest qualifying words, so
+ * "Tablet" is shown over "Tablet, film coated". Ties fall back to {@link preferredDisplay}.
+ */
+export function genericDisplay(values: ValueCount[]): string | null {
+	const fewest = Math.min(...values.map((value) => equivalenceWords(value.label).length));
+	return preferredDisplay(
+		values.filter((value) => equivalenceWords(value.label).length === fewest)
+	);
+}
+
 export type Suggestion = {
 	display: string;
 	members: ValueCount[];
