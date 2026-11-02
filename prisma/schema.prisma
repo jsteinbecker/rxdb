@@ -1313,6 +1313,8 @@ model FormulaSlot {
       tolerancePct        Decimal                          @default(0) @map("tolerance_pct") @db.Decimal
       allowMultiComponent Boolean                          @default(true) @map("allow_multi_component")
       ordinal             Int                              @default(1)
+      /// adopted consensus vial preparation (`AdoptedVialPrep`); null = none adopted
+      vialPrep            Json?                            @map("vial_prep")
 
       formula        CompoundFormula  @relation(fields: [formulaId], references: [id], onDelete: Cascade)
       ingredientTerm CompoundingTerm? @relation(fields: [ingredientTermId], references: [id])

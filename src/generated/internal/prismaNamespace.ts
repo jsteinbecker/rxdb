@@ -6180,7 +6180,8 @@ export const FormulaSlotScalarFieldEnum = {
   volumeUom: 'volumeUom',
   tolerancePct: 'tolerancePct',
   allowMultiComponent: 'allowMultiComponent',
-  ordinal: 'ordinal'
+  ordinal: 'ordinal',
+  vialPrep: 'vialPrep'
 } as const
 
 export type FormulaSlotScalarFieldEnum = (typeof FormulaSlotScalarFieldEnum)[keyof typeof FormulaSlotScalarFieldEnum]

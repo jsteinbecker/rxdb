@@ -4,7 +4,8 @@
  *
  * @module
  */
-import type { PrismaClient } from '../../../generated/client';
+import { Prisma, type PrismaClient } from '../../../generated/client';
+import { parseAdoptedVialPrep, type AdoptedVialPrep } from '../../compounds/vial-prep-consensus';
 import {
 	decimalOf,
 	fromMixed,
@@ -28,7 +29,10 @@ export class CompoundError extends Error {
 	}
 }
 
-export type StoredLine = Omit<Line, 'label'> & { packageId: string };
+export type StoredLine = Omit<Line, 'label'> & {
+	packageId: string;
+	vialPrep: AdoptedVialPrep | null;
+};
 export interface StoredCompound {
 	id: string;
 	name: string;
@@ -109,6 +113,7 @@ export async function loadCompound(
 					volumeWhole: true,
 					volumeNum: true,
 					volumeDen: true,
+					vialPrep: true,
 					slotCandidates: { take: 1, select: { packageId: true, sourceConcMag: true } }
 				}
 			}
@@ -138,7 +143,8 @@ export async function loadCompound(
 			doseUnit: slot.targetAmountUom ?? 'mg',
 			conc,
 			dose,
-			volume
+			volume,
+			vialPrep: parseAdoptedVialPrep(slot.vialPrep)
 		};
 	});
 
@@ -339,4 +345,26 @@ export async function setSaved(db: PrismaClient, scopeId: string, id: string, sa
 	}
 	if (formula.status !== 'saved') throw new CompoundError('This compound is not saved.', 409);
 	await db.compoundFormula.update({ where: { id }, data: { status: 'draft' } });
+}
+
+/**
+ * Adopt a vial preparation step into components, or clear it (`prep` null).
+ * Only a draft takes it: a saved compound's procedure is fixed.
+ */
+export async function setVialPrep(
+	db: PrismaClient,
+	scopeId: string,
+	id: string,
+	slotIds: string[],
+	prep: AdoptedVialPrep | null
+) {
+	await draftIn(db, scopeId, id);
+	const ids = slotIds.filter((slotId) => UUID.test(slotId));
+	const { count } = ids.length
+		? await db.formulaSlot.updateMany({
+				where: { id: { in: ids }, formulaId: id },
+				data: { vialPrep: prep ? (prep as unknown as Prisma.InputJsonValue) : Prisma.DbNull }
+			})
+		: { count: 0 };
+	if (count === 0) throw new CompoundError('That component no longer exists.', 404);
 }

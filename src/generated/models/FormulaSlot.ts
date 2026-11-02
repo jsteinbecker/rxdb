@@ -108,6 +108,7 @@ export type FormulaSlotCountAggregateOutputType = {
   tolerancePct: number
   allowMultiComponent: number
   ordinal: number
+  vialPrep: number
   _all: number
 }
 
@@ -194,6 +195,7 @@ export type FormulaSlotCountAggregateInputType = {
   tolerancePct?: true
   allowMultiComponent?: true
   ordinal?: true
+  vialPrep?: true
   _all?: true
 }
 
@@ -301,6 +303,7 @@ export type FormulaSlotGroupByOutputType = {
   tolerancePct: runtime.Decimal
   allowMultiComponent: boolean
   ordinal: number
+  vialPrep: runtime.JsonValue | null
   _count: FormulaSlotCountAggregateOutputType | null
   _avg: FormulaSlotAvgAggregateOutputType | null
   _sum: FormulaSlotSumAggregateOutputType | null
@@ -344,6 +347,7 @@ export type FormulaSlotWhereInput = {
   tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
+  vialPrep?: Prisma.JsonNullableFilter<"FormulaSlot">
   formula?: Prisma.XOR<Prisma.CompoundFormulaScalarRelationFilter, Prisma.CompoundFormulaWhereInput>
   ingredientTerm?: Prisma.XOR<Prisma.CompoundingTermNullableScalarRelationFilter, Prisma.CompoundingTermWhereInput> | null
   slotCandidates?: Prisma.SlotCandidateListRelationFilter
@@ -368,6 +372,7 @@ export type FormulaSlotOrderByWithRelationInput = {
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
+  vialPrep?: Prisma.SortOrderInput | Prisma.SortOrder
   formula?: Prisma.CompoundFormulaOrderByWithRelationInput
   ingredientTerm?: Prisma.CompoundingTermOrderByWithRelationInput
   slotCandidates?: Prisma.SlotCandidateOrderByRelationAggregateInput
@@ -395,6 +400,7 @@ export type FormulaSlotWhereUniqueInput = Prisma.AtLeast<{
   tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
+  vialPrep?: Prisma.JsonNullableFilter<"FormulaSlot">
   formula?: Prisma.XOR<Prisma.CompoundFormulaScalarRelationFilter, Prisma.CompoundFormulaWhereInput>
   ingredientTerm?: Prisma.XOR<Prisma.CompoundingTermNullableScalarRelationFilter, Prisma.CompoundingTermWhereInput> | null
   slotCandidates?: Prisma.SlotCandidateListRelationFilter
@@ -419,6 +425,7 @@ export type FormulaSlotOrderByWithAggregationInput = {
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
+  vialPrep?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.FormulaSlotCountOrderByAggregateInput
   _avg?: Prisma.FormulaSlotAvgOrderByAggregateInput
   _max?: Prisma.FormulaSlotMaxOrderByAggregateInput
@@ -447,6 +454,7 @@ export type FormulaSlotScalarWhereWithAggregatesInput = {
   tolerancePct?: Prisma.DecimalWithAggregatesFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolWithAggregatesFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntWithAggregatesFilter<"FormulaSlot"> | number
+  vialPrep?: Prisma.JsonNullableWithAggregatesFilter<"FormulaSlot">
 }
 
 export type FormulaSlotCreateInput = {
@@ -465,6 +473,7 @@ export type FormulaSlotCreateInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
@@ -489,6 +498,7 @@ export type FormulaSlotUncheckedCreateInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
 }
@@ -509,6 +519,7 @@ export type FormulaSlotUpdateInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
@@ -533,6 +544,7 @@ export type FormulaSlotUncheckedUpdateInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
 }
@@ -555,6 +567,7 @@ export type FormulaSlotCreateManyInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type FormulaSlotUpdateManyMutationInput = {
@@ -573,6 +586,7 @@ export type FormulaSlotUpdateManyMutationInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type FormulaSlotUncheckedUpdateManyInput = {
@@ -593,6 +607,7 @@ export type FormulaSlotUncheckedUpdateManyInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type FormulaSlotListRelationFilter = {
@@ -623,6 +638,7 @@ export type FormulaSlotCountOrderByAggregateInput = {
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
+  vialPrep?: Prisma.SortOrder
 }
 
 export type FormulaSlotAvgOrderByAggregateInput = {
@@ -822,6 +838,7 @@ export type FormulaSlotCreateWithoutIngredientTermInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
@@ -844,6 +861,7 @@ export type FormulaSlotUncheckedCreateWithoutIngredientTermInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
 }
@@ -895,6 +913,7 @@ export type FormulaSlotScalarWhereInput = {
   tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
+  vialPrep?: Prisma.JsonNullableFilter<"FormulaSlot">
 }
 
 export type FormulaSlotCreateWithoutFormulaInput = {
@@ -913,6 +932,7 @@ export type FormulaSlotCreateWithoutFormulaInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
@@ -935,6 +955,7 @@ export type FormulaSlotUncheckedCreateWithoutFormulaInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
 }
@@ -981,6 +1002,7 @@ export type FormulaSlotCreateWithoutSlotCandidatesInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
@@ -1004,6 +1026,7 @@ export type FormulaSlotUncheckedCreateWithoutSlotCandidatesInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
 }
 
@@ -1039,6 +1062,7 @@ export type FormulaSlotUpdateWithoutSlotCandidatesInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
@@ -1062,6 +1086,7 @@ export type FormulaSlotUncheckedUpdateWithoutSlotCandidatesInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
 }
 
@@ -1081,6 +1106,7 @@ export type FormulaSlotCreateWithoutBuildPlanLinesInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
@@ -1104,6 +1130,7 @@ export type FormulaSlotUncheckedCreateWithoutBuildPlanLinesInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
 }
 
@@ -1139,6 +1166,7 @@ export type FormulaSlotUpdateWithoutBuildPlanLinesInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
@@ -1162,6 +1190,7 @@ export type FormulaSlotUncheckedUpdateWithoutBuildPlanLinesInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
 }
 
@@ -1182,6 +1211,7 @@ export type FormulaSlotCreateManyIngredientTermInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type FormulaSlotUpdateWithoutIngredientTermInput = {
@@ -1200,6 +1230,7 @@ export type FormulaSlotUpdateWithoutIngredientTermInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
@@ -1222,6 +1253,7 @@ export type FormulaSlotUncheckedUpdateWithoutIngredientTermInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
 }
@@ -1243,6 +1275,7 @@ export type FormulaSlotUncheckedUpdateManyWithoutIngredientTermInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type FormulaSlotCreateManyFormulaInput = {
@@ -1262,6 +1295,7 @@ export type FormulaSlotCreateManyFormulaInput = {
   tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: boolean
   ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type FormulaSlotUpdateWithoutFormulaInput = {
@@ -1280,6 +1314,7 @@ export type FormulaSlotUpdateWithoutFormulaInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
@@ -1302,6 +1337,7 @@ export type FormulaSlotUncheckedUpdateWithoutFormulaInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
 }
@@ -1323,6 +1359,7 @@ export type FormulaSlotUncheckedUpdateManyWithoutFormulaInput = {
   tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 
@@ -1383,6 +1420,7 @@ export type FormulaSlotSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
+  vialPrep?: boolean
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
   slotCandidates?: boolean | Prisma.FormulaSlot$slotCandidatesArgs<ExtArgs>
@@ -1408,6 +1446,7 @@ export type FormulaSlotSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
+  vialPrep?: boolean
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
 }, ExtArgs["result"]["formulaSlot"]>
@@ -1430,6 +1469,7 @@ export type FormulaSlotSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
+  vialPrep?: boolean
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
 }, ExtArgs["result"]["formulaSlot"]>
@@ -1452,9 +1492,10 @@ export type FormulaSlotSelectScalar = {
   tolerancePct?: boolean
   allowMultiComponent?: boolean
   ordinal?: boolean
+  vialPrep?: boolean
 }
 
-export type FormulaSlotOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formulaId" | "role" | "ingredientTermId" | "targetAmountWhole" | "targetAmountNum" | "targetAmountDen" | "targetAmountUom" | "targetConcMag" | "targetConcUom" | "volumeWhole" | "volumeNum" | "volumeDen" | "volumeUom" | "tolerancePct" | "allowMultiComponent" | "ordinal", ExtArgs["result"]["formulaSlot"]>
+export type FormulaSlotOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formulaId" | "role" | "ingredientTermId" | "targetAmountWhole" | "targetAmountNum" | "targetAmountDen" | "targetAmountUom" | "targetConcMag" | "targetConcUom" | "volumeWhole" | "volumeNum" | "volumeDen" | "volumeUom" | "tolerancePct" | "allowMultiComponent" | "ordinal" | "vialPrep", ExtArgs["result"]["formulaSlot"]>
 export type FormulaSlotInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
@@ -1503,6 +1544,10 @@ export type $FormulaSlotPayload<ExtArgs extends runtime.Types.Extensions.Interna
     tolerancePct: runtime.Decimal
     allowMultiComponent: boolean
     ordinal: number
+    /**
+     * adopted consensus vial preparation (`AdoptedVialPrep`); null = none adopted
+     */
+    vialPrep: runtime.JsonValue | null
   }, ExtArgs["result"]["formulaSlot"]>
   composites: {}
 }
@@ -1947,6 +1992,7 @@ export interface FormulaSlotFieldRefs {
   readonly tolerancePct: Prisma.FieldRef<"FormulaSlot", 'Decimal'>
   readonly allowMultiComponent: Prisma.FieldRef<"FormulaSlot", 'Boolean'>
   readonly ordinal: Prisma.FieldRef<"FormulaSlot", 'Int'>
+  readonly vialPrep: Prisma.FieldRef<"FormulaSlot", 'Json'>
 }
     
 

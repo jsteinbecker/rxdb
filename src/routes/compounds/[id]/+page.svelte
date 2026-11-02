@@ -6,6 +6,7 @@
   import CompoundLineRow from '$lib/components/CompoundLineRow.svelte';
   import FinalConcentrations from '$lib/components/FinalConcentrations.svelte';
   import QuantityField from '$lib/components/QuantityField.svelte';
+  import VialPreparation from '$lib/components/VialPreparation.svelte';
   import {
     applyEdit,
     effectiveTotalVolume,
@@ -253,6 +254,8 @@
         </div>
       </div>
     </section>
+
+    <VialPreparation items={data.vialPrep} {locked} />
 
     <FinalConcentrations {rows} />
   {/if}
