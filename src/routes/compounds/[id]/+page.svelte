@@ -2,7 +2,6 @@
   import { enhance } from '$app/forms';
   import PageHeader from '$lib/components/PageHeader.svelte';
   import { invalidateAll } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import AddComponentPanel from '$lib/components/AddComponentPanel.svelte';
   import CompoundLineRow from '$lib/components/CompoundLineRow.svelte';
   import FinalConcentrations from '$lib/components/FinalConcentrations.svelte';
@@ -28,7 +27,8 @@
   let total = $derived<Rational | null>(compound.total);
   let totalText = $derived(compound.total ? formatRational(compound.total) : '');
 
-  let pickerOpen = $state(false);
+  // An empty compound opens straight into the search.
+  let pickerOpen = $state(!data.compound.lines.length && !data.compound.locked);
   let menuFor = $state<string | null>(null); // 'header' or a slotId
   let saveForm: HTMLFormElement | undefined = $state();
   let payloadInput: HTMLInputElement | undefined = $state();
@@ -100,15 +100,20 @@
   onclick={(event) => {
     if (menuFor && !(event.target as Element).closest('.row-menu')) menuFor = null;
   }}
-  onkeydown={(event) => event.key === 'Escape' && (menuFor = null)}
+  onkeydown={(event) => {
+    if (event.key === 'Escape') menuFor = null;
+    // "/" opens the search from anywhere outside a text box.
+    const target = event.target;
+    const typing = target instanceof Element && target.closest('input, textarea, select, [contenteditable]');
+    if (event.key === '/' && !locked && !typing) {
+      event.preventDefault();
+      pickerOpen = true;
+    }
+  }}
 />
 
 <main>
   <PageHeader compact>
-    {#snippet eyebrow()}
-      <a href={resolve('/')}>RxDB</a> / <a href={resolve('/compounds')}>Compounds</a> /
-      {data.scope.name}
-    {/snippet}
     {#snippet title()}
       <div class="titlebar">
         <h1 title="Named automatically from its components">{compound.name}</h1>
@@ -123,7 +128,7 @@
             </form>
           {:else}
             <button type="button" onclick={() => (pickerOpen = !pickerOpen)}>
-              {pickerOpen ? '× Close' : '+ Component'}
+              {pickerOpen ? '× Done adding' : '+ Component'}
             </button>
             <form method="POST" action="?/setSaved" use:enhance>
               <input type="hidden" name="saved" value="true" />
@@ -160,7 +165,11 @@
   </PageHeader>
 
   {#if pickerOpen && !locked}
-    <AddComponentPanel candidates={data.candidates} />
+    <AddComponentPanel
+      candidates={data.candidates}
+      used={compound.lines.map((line) => line.packageId)}
+      onclose={() => (pickerOpen = false)}
+    />
   {/if}
 
   <!-- Hidden helpers: one form saves every line, one removes a component. -->
@@ -186,7 +195,7 @@
 
   {#if !compound.lines.length}
     <p class="empty">
-      No components yet — use <b>+ Component</b> to search the formulary and add the exact package.
+      No components yet — search above for a formulary item; its preferred package is added.
     </p>
   {:else}
     <section aria-label="Components">

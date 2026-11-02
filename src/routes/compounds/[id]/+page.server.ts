@@ -66,6 +66,9 @@ export const load: PageServerLoad = async ({ params }) => {
 			const found = packageConcentration(row.ingredients);
 			return {
 				packageId: row.packageId,
+				itemId: row.formularyItemId,
+				item: row.formularyItem,
+				rank: row.preferenceRank,
 				ndc: row.ndc,
 				title: shownTitle(row),
 				conc: found ? serializeRational(found.conc) : null,
