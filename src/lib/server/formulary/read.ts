@@ -39,7 +39,7 @@ export async function formularyRows(
 		select: {
 			preferenceRank: true,
 			formularyItem: {
-				select: { id: true, displayName: true, nameOverride: true, strengthStyle: true }
+				select: { id: true, displayName: true, nameOverride: true, strengthStyle: true, ingredientOrder: true }
 			},
 			package: {
 				select: {

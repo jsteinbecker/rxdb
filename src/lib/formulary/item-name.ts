@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { orderNameIngredients } from '../medication/ingredient-order';
 import { quantifiedScdName } from '../medication/quantified-scd';
 import {
 	applyStrengthStyles,
@@ -15,8 +16,15 @@ import {
 
 export const MAX_NAME_OVERRIDE = 500;
 
-/** `strengthStyle` is the stored text; anything unrecognised follows the formulary's rules. */
-export type ItemNaming = { nameOverride: string | null; strengthStyle: string | null };
+/**
+ * `strengthStyle` is the stored text; anything unrecognised follows the formulary's rules.
+ * `ingredientOrder` lists a combination's ingredient keys first-shown first.
+ */
+export type ItemNaming = {
+	nameOverride: string | null;
+	strengthStyle: string | null;
+	ingredientOrder?: readonly string[] | null;
+};
 
 export const itemStrengthStyle = (naming: Pick<ItemNaming, 'strengthStyle'>): ItemStrengthStyle | null =>
 	parseItemStrengthStyle(naming.strengthStyle);
@@ -39,6 +47,10 @@ export function itemName(
 	naming: ItemNaming,
 	styles: StrengthStyleRule[] = []
 ): string {
-	const base = naming.nameOverride ?? quantifiedScdName(sourced);
+	// Ordered before styling, so each ingredient moves with its own strength as sourced.
+	const base = orderNameIngredients(
+		naming.nameOverride ?? quantifiedScdName(sourced),
+		naming.ingredientOrder
+	);
 	return applyStrengthStyles(base, stylesForItem(styles, itemStrengthStyle(naming)));
 }

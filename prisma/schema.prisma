@@ -362,6 +362,8 @@ model FormularyItem {
       nameOverride        String?    @map("name_override")
       /// How strengths show in this item's name: percent | ratio | stored; null follows the formulary's strength display rules.
       strengthStyle       String?    @map("strength_style")
+      /// Ingredient keys ("clavulanate") in the order a combination's name lists them; empty keeps the sourced order.
+      ingredientOrder     String[]   @default([]) @map("ingredient_order")
 
       entity                Entity                 @relation(fields: [id, type], references: [id, type])
       scope                 Scope                  @relation(fields: [scopeId], references: [id])

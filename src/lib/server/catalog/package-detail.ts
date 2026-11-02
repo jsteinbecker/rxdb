@@ -78,7 +78,7 @@ export async function loadPackageDetail(input: string) {
 		},
 		select: {
 			formularyItem: {
-				select: { id: true, displayName: true, nameOverride: true, strengthStyle: true }
+				select: { id: true, displayName: true, nameOverride: true, strengthStyle: true, ingredientOrder: true }
 			}
 		}
 	});

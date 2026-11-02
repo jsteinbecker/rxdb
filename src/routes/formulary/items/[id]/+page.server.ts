@@ -13,6 +13,7 @@ import { itemPackages, relatedItems } from '$lib/formulary/item';
 import { parseBrandName } from '$lib/medication/brand-tags';
 import { parseReleaseAbbreviation } from '$lib/medication/time-release';
 import { parseNameOverride } from '$lib/formulary/item-name';
+import { nameIngredients, ingredientOrderKey, parseIngredientOrder } from '$lib/medication/ingredient-order';
 import { parseItemStrengthStyle } from '$lib/medication/strength-style';
 import { parseSettings } from '$lib/formulary/settings';
 import { projectRows } from '$lib/formulary/hierarchy';
@@ -172,12 +173,17 @@ export const actions: Actions = {
 		if ('error' in parsed) return fail(400, { nameMessage: parsed.error });
 		const { item } = await itemInScope(params.id);
 		if (!item) error(404, 'That item is not on this formulary.');
+		const nameOverride = parsed.name === item.sourceName ? null : parsed.name;
+		const order = parseIngredientOrder(form.getAll('ingredientOrder'));
+		const sourced = nameIngredients(nameOverride ?? item.sourceName).map(ingredientOrderKey);
 		await prisma.formularyItem.update({
 			where: { id: params.id },
 			data: {
 				// Saving the sourced name unchanged keeps the item following its source.
-				nameOverride: parsed.name === item.sourceName ? null : parsed.name,
-				strengthStyle: parseItemStrengthStyle(form.get('strengthStyle'))
+				nameOverride,
+				strengthStyle: parseItemStrengthStyle(form.get('strengthStyle')),
+				// The sourced order saved unchanged is stored as no order, so the item keeps following its source.
+				ingredientOrder: order.join('\n') === sourced.join('\n') ? [] : order
 			}
 		});
 	},

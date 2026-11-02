@@ -13,6 +13,7 @@
       import {pillImageKey, pillPhotoUrl} from "$lib/imprints/pill-image-layout";
       import {abbreviatedRelease} from "$lib/medication/time-release";
       import {itemName} from "$lib/formulary/item-name";
+      import {ingredientOrderKey, nameIngredients, orderIngredients} from "$lib/medication/ingredient-order";
       import {ITEM_STRENGTH_STYLES} from "$lib/medication/strength-style";
       import {strengthRules} from "$lib/client/strength-display.svelte";
       import {badgeText} from "$lib/curation/local-concept-list";
@@ -26,9 +27,19 @@
       let editingName = $state(false);
       let nameDraft = $state('');
       let styleDraft = $state<string | null>(null);
+      let orderDraft = $state<string[]>([]);
       let refreshing = $state(false);
 
       const item = $derived(data.item);
+      // A combination's ingredients as the draft name lists them, in the drafted order.
+      const draftIngredients = $derived(
+            orderIngredients(nameIngredients(nameDraft || item.sourceName), orderDraft, (name) => name)
+      );
+      const moveIngredient = (index: number, by: -1 | 1) => {
+            const keys = draftIngredients.map(ingredientOrderKey);
+            [keys[index], keys[index + by]] = [keys[index + by], keys[index]];
+            orderDraft = keys;
+      };
       const layout = $derived(packageLayout(data.packages, strengthRules(item.strengthStyle)));
       const showAppearance = $derived(Object.keys(data.appearances).length > 0);
       // What a row's mockup draws, so adjacent identical pills share one merged cell.
@@ -118,6 +129,7 @@
                               editingName = !editingName;
                               nameDraft = item.nameOverride ?? item.sourceName;
                               styleDraft = item.strengthStyle;
+                              orderDraft = [...item.ingredientOrder];
                         })}</h1>
             {/snippet}
             {#if editingName}
@@ -145,18 +157,32 @@
                                     {/each}
                               </select>
                         </label>
+                        {#if draftIngredients.length > 1}
+                              <ol class="ingredient-order" aria-label="Ingredient order">
+                                    {#each draftIngredients as name, index (ingredientOrderKey(name))}
+                                          <li>
+                                                <input type="hidden" name="ingredientOrder" value={ingredientOrderKey(name)}/>
+                                                <span>{name}</span>
+                                                <button type="button" class="ghost" disabled={index === 0}
+                                                        aria-label="Move {name} earlier" onclick={() => moveIngredient(index, -1)}>↑</button>
+                                                <button type="button" class="ghost" disabled={index === draftIngredients.length - 1}
+                                                        aria-label="Move {name} later" onclick={() => moveIngredient(index, 1)}>↓</button>
+                                          </li>
+                                    {/each}
+                              </ol>
+                        {/if}
                         <p class="none">
-                              Preview: {itemName(item.sourceName, {nameOverride: nameDraft && nameDraft !== item.sourceName ? nameDraft : null, strengthStyle: styleDraft}, data.strengthStyles)}
+                              Preview: {itemName(item.sourceName, {nameOverride: nameDraft && nameDraft !== item.sourceName ? nameDraft : null, strengthStyle: styleDraft, ingredientOrder: orderDraft}, data.strengthStyles)}
                         </p>
                         <div class="name-actions">
                               <button class="ghost">Save</button>
-                              <button type="button" class="ghost" onclick={() => (nameDraft = item.sourceName)}>Reset to sourced
+                              <button type="button" class="ghost" onclick={() => {nameDraft = item.sourceName; orderDraft = [];}}>Reset to sourced
                                                                                                   name
                               </button>
                         </div>
                   </form>
                   {#if form?.nameMessage}<p class="error" role="alert">{form.nameMessage}</p>{/if}
-            {:else if item.nameOverride || item.strengthStyle || item.displayName !== item.sourceName}
+            {:else if item.nameOverride || item.strengthStyle || item.ingredientOrder.length || item.displayName !== item.sourceName}
                   <p class="none">Sourced as {item.sourceName}</p>
             {/if}
       </PageHeader>
@@ -527,6 +553,9 @@
 </main>
 
 <style>
+      .ingredient-order {display: flex;flex-direction: column;gap: 0.25rem;margin: 0;padding-left: 1.25rem;}
+      .ingredient-order li {display: flex;align-items: center;gap: 0.4rem;}
+      .ingredient-order span {flex: 1;}
       .name-form {
             display: grid;
             gap: 0.4rem;

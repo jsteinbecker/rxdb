@@ -208,6 +208,8 @@ export type LoadedItem = {
 	nameOverride: string | null;
 	/** The item's own strength style; null follows the formulary's rules. */
 	strengthStyle: ItemStrengthStyle | null;
+	/** Ingredient keys a combination's name lists first; empty keeps the sourced order. */
+	ingredientOrder: string[];
 	target: LoadTarget;
 	/** The local concept superseding this concept load's RxCUI in the scope, when one does. */
 	localConcept: {
@@ -255,6 +257,7 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 							releaseAbbreviation: true,
 							nameOverride: true,
 							strengthStyle: true,
+							ingredientOrder: true,
 							_count: {
 								select: {
 									formularyItemPackages: {
@@ -315,6 +318,7 @@ export async function loadedItems(db: PrismaClient, scopeId: string): Promise<Lo
 			sourceName: quantifiedScdName(baseName),
 			nameOverride: item.nameOverride,
 			strengthStyle: itemStrengthStyle(item),
+			ingredientOrder: item.ingredientOrder,
 			releasePeriod: releasePeriod(baseName),
 			releaseAbbreviation: item.releaseAbbreviation,
 			target,
