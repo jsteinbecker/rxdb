@@ -23,6 +23,7 @@ import { mgPer } from '../medication/units';
 import { canonicalSplForm } from '../medication/concept-fill';
 import { equivalence, type EquivalenceGroup, type Equivalence } from './equivalence';
 import { formatNdc } from '../catalog/ndc';
+import { orderIngredients } from '../medication/ingredient-order';
 import type { ExternalPackage } from '../catalog/types';
 
 export type FormularyRow = {
@@ -32,6 +33,8 @@ export type FormularyRow = {
 	formularyItem: string;
 	/** The item's own strength display style (`ItemStrengthStyle`); absent follows the formulary's rules. */
 	strengthStyle?: string | null;
+	/** The item's chosen ingredient order (keys); display only, never how rows group. */
+	ingredientOrder?: string[];
 	description: string | null;
 	displayTitle?: string | null;
 	routes: string[];
@@ -410,6 +413,13 @@ export function comboKey(row: FormularyRow): string | null {
 	return names.length > 1 ? names.join(' / ') : null;
 }
 
+/**
+ * A `comboKey` as an item's chosen order shows it: "Clavulanate / Amoxicillin".
+ * The key itself stays alphabetical, since settings and grouping are keyed by it.
+ */
+export const orderedComboLabel = (key: string, order: readonly string[] | null | undefined) =>
+	orderIngredients(key.split(' / '), order, (name) => name).join(' / ');
+
 // ── Racemates beside one of their own enantiomers ────────────────────────────
 // Mixed amphetamine salts list `AMPHETAMINE SULFATE` and `AMPHETAMINE ASPARTATE`
 // (racemic) beside `DEXTROAMPHETAMINE SULFATE` and `… SACCHARATE`, so read by
@@ -528,8 +538,13 @@ export function normalizeStrength(strength: string): string {
  * The row's strengths in `comboKey`'s order. With display rules, each is shown
  * as they ask (`1:100,000 / 1%`); without, normalized so equal amounts share a
  * hierarchy node. A summed total is derived, so it always stays in its units.
+ * `order` is an item's chosen ingredient order, for display; grouping passes none.
  */
-export function strengthOf(row: FormularyRow, rules: StrengthStyleRule[] = []): string {
+export function strengthOf(
+	row: FormularyRow,
+	rules: StrengthStyleRule[] = [],
+	order: readonly string[] = []
+): string {
 	// In `comboKey`'s order, so the n-th strength is the n-th name's whatever
 	// order the directory listed them in (Wyeth's pip/tazo leads with tazobactam).
 	const each = row.ingredients
@@ -551,7 +566,7 @@ export function strengthOf(row: FormularyRow, rules: StrengthStyleRule[] = []): 
 		const total = summedStrength(each.map((item) => item.strength!));
 		if (total) return `${normalizeStrength(total)} total`;
 	}
-	return each.map(shown).join(' / ');
+	return orderIngredients(each, order, (item) => item.name).map(shown).join(' / ');
 }
 
 export const DIMENSIONS: Dimension[] = [

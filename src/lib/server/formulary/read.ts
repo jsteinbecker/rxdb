@@ -130,6 +130,7 @@ export async function formularyRows(
 						styles
 					),
 					strengthStyle: link.formularyItem.strengthStyle,
+					ingredientOrder: link.formularyItem.ingredientOrder,
 					description: facts.description,
 					displayTitle: view.displayTitle,
 					routes: item?.details?.product?.routes ?? [],

@@ -3,6 +3,7 @@
       import BrandedName from '$lib/components/BrandedName.svelte';
       import {formatNdc} from "$lib/catalog/ndc";
       import {packageTitle} from "$lib/catalog/package-title";
+      import {orderNameIngredients} from "$lib/medication/ingredient-order";
       import PageHeader from '$lib/components/PageHeader.svelte';
       import {onMount, untrack} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
@@ -10,7 +11,7 @@
       import {SvelteSet} from 'svelte/reactivity';
       import {
             buildTree, type ComboDoseDisplay, comboKey, DIMENSION_BY_KEY, type FormularyRow, levelLabel, MERGE_SEPARATOR,
-            packageSize, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
+            orderedComboLabel, packageSize, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
       } from "$lib/formulary/hierarchy";
       import RouteBadge from '$lib/components/RouteBadge.svelte';
       import {strengthRules, styledName} from "$lib/client/strength-display.svelte";
@@ -69,10 +70,20 @@
 
 	const firstRow = (node: TreeNode): FormularyRow | undefined =>
 		node.rows[0] ?? (node.children[0] && firstRow(node.children[0]));
+	/** The ingredient order every item under a node chose alike; none when they differ. */
+	const nodeOrder = (node: TreeNode): string[] => {
+		const orders = new Set(nodeRows(node).map((row) => (row.ingredientOrder ?? []).join('\n')));
+		return orders.size === 1 ? [...orders][0].split('\n').filter(Boolean) : [];
+	};
+	/** A row's package title with its ingredients in the item's chosen order. */
+	const rowTitle = (row: FormularyRow) =>
+		styledName(orderNameIngredients(packageTitle(row), row.ingredientOrder), row.strengthStyle);
 	/** A strength node as the display rules show it; one an equivalence group renamed keeps its name. */
 	const strengthLabel = (node: TreeNode, label: string) => {
 		const row = firstRow(node);
-		return row && strengthOf(row) === label ? strengthOf(row, strengthRules(row.strengthStyle)) : label;
+		return row && strengthOf(row) === label
+			? strengthOf(row, strengthRules(row.strengthStyle), nodeOrder(node))
+			: label;
 	};
 
 	const doseChoice = (combo: string) => {
@@ -240,15 +251,15 @@
 					class="package"
                               onmousedown={() => snapshot.capture()}
 					href={resolve('/formulary/ndc/[ndc]', { ndc: row.ndc })}
-					data-nav-title={styledName(packageTitle(row), row.strengthStyle)}
+					data-nav-title={rowTitle(row)}
 				>
 					<span class="mono ndc">{formatNdc(row.ndc)}</span>
 					<span class="desc">
-						<BrandedName text={styledName(packageTitle(row), row.strengthStyle)}>
+						<BrandedName text={rowTitle(row)}>
 							{#snippet name(text)}{@render summedText(text, row.doseDisplay)}{/snippet}
 						</BrandedName>
 						<span class="small">
-							{[strengthOf(row, strengthRules(row.strengthStyle)), packageSize(row), row.labeler]
+							{[strengthOf(row, strengthRules(row.strengthStyle), row.ingredientOrder), packageSize(row), row.labeler]
 								.filter(Boolean)
 								.join(' · ')}
 						</span>
@@ -269,7 +280,7 @@
 			: null}
 	{#if segment.dimension === 'formularyItem'}<BrandedName text={segment.label}
 			>{#snippet name(text)}{@render summedText(text, firstRow(node)?.doseDisplay)}{/snippet}</BrandedName
-		>{:else if route}<RouteBadge {route} />{:else if segment.dimension === 'strength'}{strengthLabel(node, segment.label)}{:else}{segment.label}{/if}
+		>{:else if route}<RouteBadge {route} />{:else if segment.dimension === 'strength'}{strengthLabel(node, segment.label)}{:else if segment.dimension === 'ingredientCombo'}{orderedComboLabel(segment.label, nodeOrder(node))}{:else}{segment.label}{/if}
 {/snippet}
 
 {#snippet branch(nodes: TreeNode[], depth: number)}
@@ -329,7 +340,7 @@
 							{#if menuFor === node.id}
 								<div class="menu" role="menu">
 									<p class="menu-heading">Show dose as</p>
-									{#each [['each', 'Each ingredient'], ['sum', 'Sum (same unit)'], ...combo
+									{#each [['each', 'Each ingredient'], ['sum', 'Sum (same unit)'], ...orderedComboLabel(combo, nodeOrder(node))
 											.split(' / ')
 											.map((name) => [`single:${name}`, `Only ${name}`])] as [value, text] (value)}
 										<button

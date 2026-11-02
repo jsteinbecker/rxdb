@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
 	buildTree,
 	comboKey,
+	orderedComboLabel,
 	normalizeStrength,
 	strengthOf,
 	summedStrength,
@@ -642,4 +643,18 @@ test('strength labels follow display rules; grouping keys do not', () => {
 		strengthOf({ ...lidoEpi, doseDisplay: { mode: 'single', ingredient: 'Epinephrine' } }, rules),
 		'1:100,000'
 	);
+});
+
+test("an item's ingredient order reorders its combo label and strengths, never its key", () => {
+	const amoxClav = row({
+		ingredients: [
+			{ name: 'Amoxicillin', strength: '875 MG' },
+			{ name: 'Clavulanate Potassium', strength: '125 MG' }
+		]
+	});
+	assert.equal(comboKey(amoxClav), 'Amoxicillin / Clavulanate');
+	assert.equal(orderedComboLabel('Amoxicillin / Clavulanate', ['clavulanate']), 'Clavulanate / Amoxicillin');
+	assert.equal(orderedComboLabel('Amoxicillin / Clavulanate', []), 'Amoxicillin / Clavulanate');
+	assert.equal(strengthOf(amoxClav), '875mg / 125mg');
+	assert.equal(strengthOf(amoxClav, [], ['clavulanate']), '125mg / 875mg');
 });
