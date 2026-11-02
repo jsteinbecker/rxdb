@@ -2,7 +2,7 @@ import { logger } from "$lib/server/infrastructure/log";
 import { prisma } from "$lib/server/infrastructure/database";
 import { reconcileFormularyEligibility } from "$lib/server/catalog/entity-store";
 import { fdaApiKeysFrom, setFdaApiKeys } from './lib/server/providers/transport';
-import * as env from '$app/env/private';
+import { env } from '$env/dynamic/private';
 
 // openFDA requests to rotate through every configured key when one is rate-limited.
 setFdaApiKeys(fdaApiKeysFrom(env));
