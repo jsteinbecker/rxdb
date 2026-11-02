@@ -71,179 +71,175 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
       const isDiluent = $derived(line.role === 'diluent');
 </script>
 
-<div class="line" class:diluent={isDiluent}>
-      <div class="identity">
+<div class="line" class:diluent={isDiluent} role="row">
+      <div class="cell identity" role="cell">
             <span class="label"><BrandedName text={line.label} /></span>
-            {#if isDiluent}<span class="tag">Diluent</span>{/if}
+            <span class="sub">{isDiluent ? 'Diluent' : `${line.doseUnit} per ${VOLUME_UNIT}`}</span>
       </div>
 
-      <div class="fields">
-            {#if !isDiluent}
-                  <div class="field">
-                        <span class="caption">Conc</span>
-                        {#if locked}
-                              {#if line.conc}
-                                    <MixedFraction value={line.conc} unit={concUnit}/>
-                              {:else}—
-                              {/if}
-                        {:else}
-                              <QuantityField
-                                    bind:value={concText}
-                                    unit={concUnit}
-                                    variant="field"
-                                    showUnit={false}
-                                    exclusiveMin
-                                    min={0}
-                                    ariaLabel="Concentration, {line.label}"
-                                    placeholder="—"
-                                    oncommit={(quantity) => commit('conc', quantity, concText, () => (concText = show(line.conc)))}
-                              />
-                              <span class="unit">{concUnit}</span>
-                        {/if}
-                  </div>
-                  <div class="field">
-                        <span class="caption">Dose</span>
-                        {#if locked}
-                              {#if line.dose}
-                                    <MixedFraction value={line.dose} unit={line.doseUnit}/>
-                              {:else}—
-                              {/if}
-                        {:else}
-                              <QuantityField
-                                    bind:value={doseText}
-                                    unit={line.doseUnit}
-                                    variant="field"
-                                    showUnit={false}
-                                    exclusiveMin
-                                    min={0}
-                                    ariaLabel="Dose, {line.label}"
-                                    placeholder="—"
-                                    oncommit={(quantity) => commit('dose', quantity, doseText, () => (doseText = show(line.dose)))}
-                              />
-                              <span class="unit">{line.doseUnit}</span>
-                        {/if}
-                  </div>
-            {/if}
-            <div class="field">
-                  <span class="caption">Vol</span>
+      {#snippet entry(field: Field, caption: string, value: Rational | null, unit: string, text: string, setText: (next: string) => void)}
+            <div class="cell field" role="cell" data-caption={caption}>
                   {#if locked}
-                        {#if line.volume}
-                              <MixedFraction value={line.volume} unit={VOLUME_UNIT}/>
-                        {:else}—
+                        {#if value}
+                              <strong><MixedFraction {value} {unit}/></strong>
+                        {:else}<span class="blank">—</span>
                         {/if}
                   {:else}
                         <QuantityField
-                              bind:value={volumeText}
-                              unit={VOLUME_UNIT}
+                              bind:value={() => text, setText}
+                              {unit}
                               variant="field"
                               showUnit={false}
                               exclusiveMin
                               min={0}
-                              ariaLabel="Volume, {line.label}"
+                              ariaLabel="{caption}, {line.label}"
                               placeholder="—"
-                              oncommit={(quantity) => commit('volume', quantity, volumeText, () => (volumeText = show(line.volume)))}
+                              oncommit={(quantity) => commit(field, quantity, text, () => setText(show(value)))}
                         />
-                        <span class="unit">{VOLUME_UNIT}</span>
+                        <span class="unit">{unit}</span>
                   {/if}
             </div>
-      </div>
+      {/snippet}
 
-      {#if !locked}
-            <div class="row-menu" class:open={menuOpen}>
-                  <button
-                        type="button"
-                        class="menu-trigger"
-                        aria-label="Options for {line.label}"
-                        aria-haspopup="menu"
-                        aria-expanded={menuOpen}
-                        onclick={ontoggleMenu}>⋯
-                  </button
-                  >
-                  {#if menuOpen}
-                        <div class="menu" role="menu">
-                              <button type="button" role="menuitem" onclick={onremove}>Remove component</button>
-                        </div>
-                  {/if}
-            </div>
+      {#if isDiluent}
+            <div class="cell field empty" role="cell" data-caption="Conc"><span class="blank">—</span></div>
+            <div class="cell field empty" role="cell" data-caption="Dose"><span class="blank">—</span></div>
+      {:else}
+            {@render entry('conc', 'Conc', line.conc, concUnit, concText, (next) => (concText = next))}
+            {@render entry('dose', 'Dose', line.dose, line.doseUnit, doseText, (next) => (doseText = next))}
       {/if}
+      {@render entry('volume', 'Vol', line.volume, VOLUME_UNIT, volumeText, (next) => (volumeText = next))}
+
+      <div class="cell menu-cell" role="cell">
+            {#if !locked}
+                  <div class="row-menu" class:open={menuOpen}>
+                        <button
+                              type="button"
+                              class="menu-trigger"
+                              aria-label="Options for {line.label}"
+                              aria-haspopup="menu"
+                              aria-expanded={menuOpen}
+                              onclick={ontoggleMenu}>⋯
+                        </button
+                        >
+                        {#if menuOpen}
+                              <div class="menu" role="menu">
+                                    <button type="button" role="menuitem" onclick={onremove}>Remove component</button>
+                              </div>
+                        {/if}
+                  </div>
+            {/if}
+      </div>
 </div>
 
 <style>
+      /* Columns come from the enclosing table (--compound-cols). */
       .line {
             display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
-            gap: 0.4rem 1rem;
-            padding: 0.7rem 0;
-            border-bottom: 1px solid #e3e7ee;
+            grid-template-columns: var(--compound-cols);
+            border-top: 1px solid #e3e7ee;
       }
 
-      .identity {
-            grid-column: 1;
+      .cell {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
             min-width: 0;
-            font-weight: 600;
-      }
-
-      .row-menu {
-            grid-column: 2;
-            grid-row: 1;
-      }
-
-      .tag {
-            margin-left: 0.5rem;
-            padding: 0.05rem 0.45rem;
-            border-radius: 999px;
-            background: #eef2f8;
-            color: #3464a5;
-            font-size: 0.7rem;
-            font-weight: 700;
-      }
-
-      .fields {
-            grid-column: 1 / -1;
-            grid-row: 2;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
-      }
-
-      .field {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            min-width: 8.5rem;
-            padding: 0 0.7rem;
+            padding: 0.7rem 1rem;
             border-left: 1px solid #e3e7ee;
       }
 
-      .field:first-child {
+      .identity {
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 0.15rem;
             border-left: 0;
+            font-weight: 600;
+            font-size: 1.05rem;
       }
 
-      .caption {
-            color: #5c6777;
-            font-size: 0.7rem;
-            font-weight: 700;
+      .sub {
+            color: #7a8494;
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+      }
+
+      .diluent .identity .sub {
+            color: #3464a5;
+            font-weight: 650;
             text-transform: uppercase;
             letter-spacing: 0.08em;
+            font-size: 0.7rem;
+      }
+
+      .field strong {
+            font-size: 1.05rem;
+      }
+
+      .empty,
+      .diluent .cell:not(.identity) {
+            background: #fafbfd;
+      }
+
+      .blank {
+            color: #a3acb9;
+      }
+
+      .menu-cell {
+            justify-content: center;
+            padding: 0.4rem;
       }
 
       .field :global(.entry) {
             min-width: 4.5rem;
-            height: 2rem;
+            height: 2.2rem;
       }
 
       .field :global(input) {
             text-align: right;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            background: #f6f8fb;
-            padding: 0 0.4rem;
+            border: 1px solid #d5dbe4;
+            border-radius: 8px;
+            background: #fff;
+            padding: 0 0.5rem;
+            font-variant-numeric: tabular-nums;
+            font-size: 1rem;
       }
 
       .field :global(input:focus) {
-            border-color: #3464a5;
-            background: #fff;
+            border-color: #4b45a8;
+            outline: 2px solid rgb(75 69 168 / 0.15);
+      }
+
+      /* Narrow screens: each line stacks, cells name themselves. */
+      @media (max-width: 720px) {
+            .line {
+                  grid-template-columns: 1fr 1fr 1fr auto;
+            }
+            .identity {
+                  grid-column: 1 / 4;
+            }
+            .menu-cell {
+                  grid-column: 4;
+                  grid-row: 1;
+            }
+            .field {
+                  flex-wrap: wrap;
+                  border-top: 1px solid #eef1f5;
+            }
+            .field:nth-child(2) {
+                  border-left: 0;
+            }
+            .field::before {
+                  content: attr(data-caption);
+                  flex-basis: 100%;
+                  color: #5c6777;
+                  font-size: 0.65rem;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+            }
       }
 
       .unit {

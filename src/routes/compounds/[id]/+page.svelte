@@ -198,42 +198,61 @@
       No components yet — search above for a formulary item; its preferred package is added.
     </p>
   {:else}
-    <section aria-label="Components">
-      {#each lines as line (line.slotId)}
-        <CompoundLineRow
-          {line}
-          {locked}
-          menuOpen={menuFor === line.slotId}
-          oncommit={(field, value) => commit(line.slotId, field, value)}
-          ontoggleMenu={() => (menuFor = menuFor === line.slotId ? null : line.slotId)}
-          onremove={() => remove(line.slotId)}
-        />
-      {/each}
+    <section class="card" aria-labelledby="components-heading">
+      <header class="card-head">
+        <h2 id="components-heading">Components</h2>
+        <span>{plural(lines.length, 'line')} · {locked ? 'saved' : 'editing'}</span>
+      </header>
+      <div class="table" role="table" aria-labelledby="components-heading">
+        <div class="cols" role="row">
+          <span role="columnheader">Component</span>
+          <span role="columnheader">Concentration</span>
+          <span role="columnheader">Dose</span>
+          <span role="columnheader">Volume</span>
+          <span role="columnheader"><span class="sr-only">Options</span></span>
+        </div>
+        {#each lines as line (line.slotId)}
+          <CompoundLineRow
+            {line}
+            {locked}
+            menuOpen={menuFor === line.slotId}
+            oncommit={(field, value) => commit(line.slotId, field, value)}
+            ontoggleMenu={() => (menuFor = menuFor === line.slotId ? null : line.slotId)}
+            onremove={() => remove(line.slotId)}
+          />
+        {/each}
+        <div class="totals" role="row">
+          <span class="summary" role="cell">
+            {sum ? `${formatRational(sum)} ${VOLUME_UNIT} from components` : 'Enter volumes to total them'}
+          </span>
+          <span class="total-cell" role="cell">
+            <span class="caption">Total volume</span>
+            {#if locked}
+              <strong>{total ? formatRational(total) : sum ? formatRational(sum) : '—'} {VOLUME_UNIT}</strong>
+            {:else}
+              <span class="total-entry">
+                <QuantityField
+                  bind:value={totalText}
+                  unit={VOLUME_UNIT}
+                  variant="field"
+                  showUnit={false}
+                  exclusiveMin
+                  min={0}
+                  ariaLabel="Total volume"
+                  placeholder={sum ? formatRational(sum) : '0'}
+                  oncommit={(quantity) =>
+                    !quantity && totalText.trim()
+                      ? (totalText = total ? formatRational(total) : '')
+                      : commitTotal(quantity?.rational ?? null) ||
+                        (totalText = total ? formatRational(total) : '')}
+                />
+                <span class="unit">{VOLUME_UNIT}</span>
+              </span>
+            {/if}
+          </span>
+        </div>
+      </div>
     </section>
-
-    <div class="totals">
-      <span class="caption">Total volume</span>
-      {#if locked}
-        <strong>{total ? formatRational(total) : sum ? formatRational(sum) : '—'} {VOLUME_UNIT}</strong>
-      {:else}
-        <QuantityField
-          bind:value={totalText}
-          unit={VOLUME_UNIT}
-          variant="field"
-          showUnit={false}
-          exclusiveMin
-          min={0}
-          ariaLabel="Total volume"
-          placeholder={sum ? formatRational(sum) : '0'}
-          oncommit={(quantity) =>
-            !quantity && totalText.trim()
-              ? (totalText = total ? formatRational(total) : '')
-              : commitTotal(quantity?.rational ?? null) ||
-                (totalText = total ? formatRational(total) : '')}
-        />
-        <span class="unit">{VOLUME_UNIT}</span>
-      {/if}
-    </div>
 
     <FinalConcentrations {rows} />
   {/if}
@@ -289,23 +308,103 @@
     margin: 2rem 0;
     color: #5c6777;
   }
+  .card {
+    --compound-cols: minmax(14rem, 1.6fr) minmax(10rem, 1fr) minmax(9rem, 1fr) minmax(9rem, 1fr) 3rem;
+    margin: 1rem 0;
+    border: 1px solid #dfe3ec;
+    border-left: 4px solid #4b45a8;
+    border-radius: 10px;
+    background: #fff;
+    overflow: visible;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    padding: 0.75rem 1rem;
+    background: #f7f7fc;
+    border-bottom: 1px solid #e3e7ee;
+    border-radius: 6px 10px 0 0;
+  }
+  .card-head h2 {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 750;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #2a2f3a;
+  }
+  .card-head span {
+    color: #7a8494;
+    font-size: 0.9rem;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: var(--compound-cols);
+  }
+  .cols > span {
+    padding: 0.55rem 1rem;
+    border-left: 1px solid #e3e7ee;
+    color: #6b7585;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .cols > span:first-child {
+    border-left: 0;
+  }
   .totals {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    padding: 0.9rem 0;
-    border-bottom: 1px solid #e3e7ee;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-top: 1px solid #e3e7ee;
+    background: #f1f1f8;
+    border-radius: 0 0 10px 6px;
+  }
+  .summary {
+    color: #6b7585;
+    font-size: 0.85rem;
+  }
+  .total-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .total-cell .caption {
+    color: #4b45a8;
+  }
+  .total-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
   }
   .totals :global(.entry) {
-    min-width: 5rem;
-    height: 2rem;
+    min-width: 6rem;
+    height: 2.4rem;
   }
   .totals :global(input) {
     text-align: right;
     border: 1px solid #c9d1dc;
-    border-radius: 6px;
-    padding: 0 0.4rem;
+    border-radius: 8px;
+    background: #fff;
+    padding: 0 0.6rem;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  @media (max-width: 720px) {
+    .cols {
+      display: none;
+    }
   }
   .caption {
     color: #5c6777;
