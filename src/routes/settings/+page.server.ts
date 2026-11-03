@@ -77,17 +77,33 @@ export const actions: Actions = {
 		const levels = String(form.get('levels') ?? '')
 			.split(',')
 			.filter(Boolean);
-		return updateViews((settings) => {
-			const index = settings.views.findIndex((view) => view.name === name);
-			const views = [...settings.views];
-			if (index === -1) views.push({ name, levels });
-			else views[index] = { name, levels };
-			return { ...settings, views, defaultView: settings.defaultView ?? name };
-		}, name);
+		// The view being edited, if any; saving under a new name renames it.
+		const original = String(form.get('originalName') ?? '');
+		const { views: existing } = parseSettings((await defaultScope(prisma)).settings);
+		if (name !== original && existing.some((view) => view.name === name))
+			return fail(400, {
+				section: 'views',
+				message: `A view named “${name}” already exists — pick another name.`
+			});
+		return updateViews(
+			(settings) => {
+				const index = settings.views.findIndex((view) => view.name === original);
+				const views = [...settings.views];
+				if (index === -1) views.push({ name, levels });
+				else views[index] = { name, levels };
+				const defaultView =
+					settings.defaultView === original && index !== -1
+						? name
+						: (settings.defaultView ?? name);
+				return { ...settings, views, defaultView };
+			},
+			name
+		);
 	},
 
 	deleteView: async ({ request }) => {
-		const name = String((await request.formData()).get('viewName') ?? '');
+		const form = await request.formData();
+		const name = String(form.get('originalName') || form.get('viewName') || '');
 		return updateViews((settings) => {
 			const views = settings.views.filter((view) => view.name !== name);
 			const defaultView =
@@ -97,7 +113,8 @@ export const actions: Actions = {
 	},
 
 	defaultView: async ({ request }) => {
-		const name = String((await request.formData()).get('viewName') ?? '');
+		const form = await request.formData();
+		const name = String(form.get('originalName') || form.get('viewName') || '');
 		return updateViews((settings) => ({ ...settings, defaultView: name }));
 	},
 

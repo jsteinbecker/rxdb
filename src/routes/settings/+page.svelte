@@ -15,9 +15,30 @@
 	const initial = untrack(() => data);
 	let name = $state(initial.scope.name);
 	// The builder keeps its draft across saves so a view can be tweaked and saved again.
-	let levels = $state<string[]>([...initial.settings.defaultLevels]);
-	let viewName = $state(initial.settings.defaultView ?? '');
+	let levels = $state<string[]>([
+		...(initial.settings.views.find((view) => view.name === initial.settings.defaultView)
+			?.levels ?? initial.settings.defaultLevels)
+	]);
 	let savingView = $state(false);
+	/** The saved view open in the builder, or null for a new one. */
+	let editing = $state<string | null>(
+		initial.settings.views.find((view) => view.name === initial.settings.defaultView)?.name ?? null
+	);
+	let viewName = $state(editing ?? '');
+	// What the open view looked like when loaded, to tell whether there is anything to save.
+	let savedLevels = $state<string[]>([...levels]);
+	let savedName = $state(viewName);
+	const dirty = $derived(
+		viewName.trim() !== savedName || levels.join(',') !== savedLevels.join(',')
+	);
+
+	function openView(name: string | null) {
+		const view = data.settings.views.find((other) => other.name === name);
+		editing = view?.name ?? null;
+		viewName = savedName = view?.name ?? '';
+		levels = [...(view?.levels ?? DEFAULT_LEVELS)];
+		savedLevels = view ? [...view.levels] : [];
+	}
 	let expandDepth = $state<ExpandDepth>(initial.settings.expandDepth);
 	let singleExpand = $state(initial.settings.singleExpand);
 	let confirmRemove = $state(initial.settings.confirmRemove);
@@ -224,88 +245,130 @@
 	</form>
 
 	<section class="card" aria-labelledby="views-heading">
-		<h2 id="views-heading">Views</h2>
-		<p class="hint">
-			Each view is a hierarchy the formulary can be shown as. Drag attributes in to decide how it
-			splits; each level nests under the one before it, and the last holds the packages.
-		</p>
+		<div class="row between">
+			<div>
+				<h2 id="views-heading">Views</h2>
+				<p class="hint">
+					A view is a way of grouping the formulary. Pick one to edit it, or start a new one.
+				</p>
+			</div>
+			<button type="button" class="ghost" onclick={() => openView(null)}>+ New view</button>
+		</div>
 
-		{#if data.settings.views.length}
-			<ul class="views">
+		<div class="views-layout">
+			<ul class="views" aria-label="Saved views">
 				{#each data.settings.views as view (view.name)}
-					<li>
-						<span class="desc">
-							{view.name}
-							{#if view.name === data.settings.defaultView}<span class="badge">Default</span>{/if}
-							<span class="small">
-								{view.levels.map(levelLabel).join(' → ') ||
-									'Flat package list'}
+					{@const isDefault = view.name === data.settings.defaultView}
+					<li class:selected={editing === view.name}>
+						<button
+							type="button"
+							class="view-pick"
+							aria-current={editing === view.name}
+							onclick={() => openView(view.name)}
+						>
+							<span class="desc">
+								{view.name}
+								{#if isDefault}<span class="badge">Default</span>{/if}
+								<span class="small">
+									{view.levels.map(levelLabel).join(' › ') || 'Flat package list'}
+								</span>
 							</span>
-						</span>
+						</button>
+					</li>
+				{:else}
+					<li class="empty">No views yet — the formulary opens as a flat package list.</li>
+				{/each}
+				{#if editing === null}
+					<li class="selected new"><span class="desc">New view <span class="small">Unsaved</span></span></li>
+				{/if}
+			</ul>
+
+			<form
+				class="view-builder"
+				method="POST"
+				action="?/saveView"
+				use:enhance={({ action }) => {
+					savingView = true;
+					return async ({ update, result }) => {
+						await update({ reset: false });
+						savingView = false;
+						if (result.type !== 'success') return;
+						if (action.search === '?/deleteView') openView(data.settings.defaultView);
+						else if (action.search === '?/saveView') {
+							editing = savedName = viewName.trim();
+							savedLevels = [...levels];
+						}
+					};
+				}}
+			>
+				<input type="hidden" name="levels" value={levels.join(',')} />
+				<input type="hidden" name="originalName" value={editing ?? ''} />
+				<div class="row editor-head">
+					<label class="field grow">
+						<span>{editing === null ? 'Name the new view' : 'View name'}</span>
+						<input
+							name="viewName"
+							bind:value={viewName}
+							maxlength="80"
+							required
+							placeholder="e.g. By route, then ingredient"
+						/>
+					</label>
+					{#if dirty}<span class="unsaved" role="status">Unsaved changes</span>{/if}
+				</div>
+
+				<HierarchyBuilder bind:levels />
+
+				<div class="row editor-actions">
+					<button class="primary" disabled={savingView || !viewName.trim() || !dirty}>
+						{savingView ? 'Saving…' : editing === null ? 'Create view' : 'Save changes'}
+					</button>
+					{#if editing !== null && dirty}
+						<button type="button" class="ghost" onclick={() => openView(editing)}>Discard</button>
+					{/if}
+					{#if editing !== null}
 						<button
 							type="button"
 							class="ghost"
 							onclick={() => {
-								viewName = view.name;
-								levels = [...view.levels];
-							}}>Edit</button
+								const base = viewName.trim() || 'View';
+								editing = null;
+								viewName = `${base} copy`;
+								savedLevels = [];
+								savedName = '';
+							}}>Duplicate</button
 						>
-						{#if view.name !== data.settings.defaultView}
-							<form method="POST" action="?/defaultView" use:enhance>
-								<input type="hidden" name="viewName" value={view.name} />
-								<button class="ghost">Make default</button>
-							</form>
-						{/if}
-						<form method="POST" action="?/deleteView" use:enhance>
-							<input type="hidden" name="viewName" value={view.name} />
-							<button class="icon" aria-label="Delete view {view.name}">×</button>
-						</form>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="empty">No views yet — the formulary opens as a flat package list.</p>
-		{/if}
-
-		<form
-			class="view-builder"
-			method="POST"
-			action="?/saveView"
-			use:enhance={() => {
-				savingView = true;
-				return async ({ update }) => {
-					await update({ reset: false });
-					savingView = false;
-				};
-			}}
-		>
-			<h3>Hierarchy builder</h3>
-			<HierarchyBuilder bind:levels />
-			<input type="hidden" name="levels" value={levels.join(',')} />
-			<div class="row">
-				<label class="field grow">
-					<span>View name</span>
-					<input name="viewName" bind:value={viewName} maxlength="80" required />
-				</label>
-				<button class="primary" disabled={savingView || !viewName.trim()}>
-					{savingView
-						? 'Saving…'
-						: data.settings.views.some((view) => view.name === viewName.trim())
-							? 'Update view'
-							: 'Save view'}
-				</button>
-				<button type="button" class="ghost" onclick={() => (levels = [...DEFAULT_LEVELS])}>
-					Reset
-				</button>
-			</div>
-			{#if form?.section === 'views'}
-				{#if form.message}
-					<p class="notice error" role="alert">{form.message}</p>
-				{:else if form.savedView}
-					<p class="notice" role="status">Saved “{form.savedView}”.</p>
+					{/if}
+					<button type="button" class="ghost" onclick={() => (levels = [...DEFAULT_LEVELS])}>
+						Use default levels
+					</button>
+					<span class="spacer"></span>
+					{#if editing !== null && editing !== data.settings.defaultView}
+						<button type="submit" class="ghost" formaction="?/defaultView" formnovalidate>
+							Make default
+						</button>
+					{/if}
+					{#if editing !== null}
+						<button
+							type="submit"
+							class="danger"
+							formaction="?/deleteView"
+							formnovalidate
+							onclick={(event) => {
+								if (!confirm(`Delete the view “${editing}”?`)) event.preventDefault();
+							}}>Delete</button
+						>
+					{/if}
+				</div>
+				{#if form?.section === 'views'}
+					{#if form.message}
+						<p class="notice error" role="alert">{form.message}</p>
+					{:else if form.savedView}
+						<p class="notice" role="status">Saved “{form.savedView}”.</p>
+					{/if}
 				{/if}
-			{/if}
-		</form>
+			</form>
+		</div>
 	</section>
 
 	<section class="card" aria-labelledby="groups-heading">
@@ -485,22 +548,71 @@
 		font-weight: 650;
 	}
 
+	.views-layout {
+		display: grid;
+		grid-template-columns: minmax(12rem, 16rem) 1fr;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	@media (max-width: 720px) {
+		.views-layout {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	.views {
-		margin: 1rem 0;
+		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
 
 	.views li {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.6rem 0;
-		border-bottom: 1px solid #e3e8ee;
+		margin-bottom: 0.35rem;
+		border: 1px solid #e3e8ee;
+		border-radius: 0.6rem;
 	}
 
-	.views form {
-		margin: 0;
+	.views li.selected {
+		border-color: #3464a5;
+		background: #e8f0fb;
+	}
+
+	.views li.new {
+		padding: 0.55rem 0.7rem;
+		border-style: dashed;
+	}
+
+	.views li.empty {
+		border: 0;
+	}
+
+	.view-pick {
+		display: block;
+		width: 100%;
+		border: 0;
+		background: none;
+		padding: 0.55rem 0.7rem;
+		text-align: left;
+		color: inherit;
+	}
+
+	.editor-head {
+		align-items: flex-end;
+	}
+
+	.unsaved {
+		color: #9a6a00;
+		font-size: 0.8rem;
+		font-weight: 650;
+	}
+
+	.editor-actions {
+		margin-top: 1rem;
+	}
+
+	.spacer {
+		flex: 1;
 	}
 
 	.badge {
@@ -514,18 +626,11 @@
 	}
 
 	.view-builder {
-		margin-top: 1.25rem;
-		padding-top: 1rem;
-		border-top: 1px solid #e3e8ee;
-	}
-
-	.view-builder h3 {
-		margin: 0;
-		font-size: 0.95rem;
-	}
-
-	.view-builder .row {
-		align-items: flex-end;
+		min-width: 0;
+		padding: 0.9rem;
+		border: 1px solid #e3e8ee;
+		border-radius: 0.75rem;
+		background: #fbfcfd;
 	}
 
 	.grow {

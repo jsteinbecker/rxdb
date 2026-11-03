@@ -1,8 +1,9 @@
 <!--
 @component
-Drag-and-drop editor for a formulary hierarchy; each level nests under the one before
-it. Dimensions are dragged from a palette into the hierarchy as chips, reordered, swapped
-for a variant (e.g. separated ↔ combined ingredients), or set to absorb an only child.
+Editor for a formulary hierarchy, drawn as the outline it produces: each level is indented
+under the one before it and the packages sit at the bottom. Levels are added from a list of
+attributes, reordered with the arrows (or by dragging), switched to a variant (e.g.
+separated ↔ combined ingredients), or set to absorb an only child.
 -->
 <script lang="ts">
 	import {
@@ -11,7 +12,7 @@ for a variant (e.g. separated ↔ combined ingredients), or set to absorb an onl
 		levelDimension,
 		mergesChildren,
 		withMerge
-	} from "$lib/formulary/hierarchy";
+	} from '$lib/formulary/hierarchy';
 
 	let {
 		levels = $bindable()
@@ -23,10 +24,6 @@ for a variant (e.g. separated ↔ combined ingredients), or set to absorb an onl
 	/** Levels by dimension key; a level's key may carry a merge mark. */
 	const inUse = $derived(new Set(levels.map(levelDimension)));
 
-	/** Chip being dragged, and where it came from (a hierarchy index or the palette). */
-	let dragging: { key: string; from: number | null } | null = $state(null);
-	let dropAt: number | null = $state(null);
-
 	const available = $derived(
 		DIMENSIONS.filter(
 			(dimension) =>
@@ -36,13 +33,13 @@ for a variant (e.g. separated ↔ combined ingredients), or set to absorb an onl
 		)
 	);
 
-	/** Swap a chip for its variant in place, e.g. separated ↔ combined ingredients. */
-	function switchVariant(level: string) {
-		const variant = DIMENSION_BY_KEY.get(levelDimension(level))?.variant;
-		if (variant)
-			levels = levels.map((other) =>
-				other === level ? withMerge(variant.key, mergesChildren(level)) : other
-			);
+	/** Index of the level being dragged, and the gap it would land in. */
+	let dragging: number | null = $state(null);
+	let dropAt: number | null = $state(null);
+
+	/** Swap a level for its variant in place, e.g. separated ↔ combined ingredients. */
+	function setVariant(level: string, key: string) {
+		levels = levels.map((other) => (other === level ? withMerge(key, mergesChildren(level)) : other));
 	}
 
 	/** Have a level's nodes absorb an only child ("IV – Thiamine"), or stop. */
@@ -51,15 +48,8 @@ for a variant (e.g. separated ↔ combined ingredients), or set to absorb an onl
 			other === level ? withMerge(level, !mergesChildren(level)) : other
 		));
 
-	function place(key: string, index: number) {
-		const next = levels.filter((level) => level !== key);
-		const from = levels.indexOf(key);
-		// Removing the chip first shifts every later slot left by one.
-		next.splice(from !== -1 && from < index ? index - 1 : index, 0, key);
-		levels = next;
-	}
-
-	const remove = (key: string) => (levels = levels.filter((level) => level !== key));
+	const add = (key: string) => (levels = [...levels, key]);
+	const remove = (index: number) => (levels = levels.filter((_, other) => other !== index));
 
 	function move(index: number, delta: number) {
 		const target = index + delta;
@@ -69,277 +59,297 @@ for a variant (e.g. separated ↔ combined ingredients), or set to absorb an onl
 		levels = next;
 	}
 
-	function startDrag(event: DragEvent, key: string, from: number | null) {
-		dragging = { key, from };
-		event.dataTransfer?.setData('text/plain', key);
-		if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-	}
-
-	function endDrag() {
-		dragging = null;
-		dropAt = null;
-	}
-
-	function over(event: DragEvent, index: number) {
-		if (!dragging) return;
+	function overRow(event: DragEvent, index: number) {
+		if (dragging === null) return;
 		event.preventDefault();
-		dropAt = index;
-	}
-
-	/** Which gap a pointer over a chip means: before it or after it. */
-	function overChip(event: DragEvent, index: number) {
-		if (!dragging) return;
 		const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
-		over(event, event.clientX < box.left + box.width / 2 ? index : index + 1);
+		dropAt = event.clientY < box.top + box.height / 2 ? index : index + 1;
 	}
 
 	function drop(event: DragEvent) {
 		event.preventDefault();
-		if (dragging && dropAt !== null) place(dragging.key, dropAt);
-		endDrag();
+		if (dragging !== null && dropAt !== null) {
+			const next = [...levels];
+			const [moved] = next.splice(dragging, 1);
+			// Removing the row first shifts every later slot up by one.
+			next.splice(dropAt > dragging ? dropAt - 1 : dropAt, 0, moved);
+			levels = next;
+		}
+		dragging = dropAt = null;
 	}
 
-	function dropOnPalette(event: DragEvent) {
-		event.preventDefault();
-		if (dragging?.from !== null && dragging) remove(dragging.key);
-		endDrag();
+	/** The variants a level can switch between, itself included. */
+	function variantsOf(key: string) {
+		const dimension = DIMENSION_BY_KEY.get(key);
+		if (!dimension?.variant) return [];
+		const other = DIMENSION_BY_KEY.get(dimension.variant.key)!;
+		return [dimension, other].map((d) => ({ key: d.key, mode: d.variant!.mode }));
 	}
 </script>
 
-<ol
-	class="levels"
-	class:dragging={!!dragging}
-	ondragover={(event) => over(event, levels.length)}
-	ondrop={drop}
-	ondragleave={(event) => {
-		if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node)) dropAt = null;
-	}}
->
-	{#each levels as key, index (levelDimension(key))}
-		{@const dimension = DIMENSION_BY_KEY.get(levelDimension(key))}
-		{@const merging = mergesChildren(key)}
-		{#if dropAt === index}<li class="gap" aria-hidden="true"></li>{/if}
+<ol class="outline" ondrop={drop} ondragover={(event) => dragging !== null && event.preventDefault()}>
+	{#each levels as level, index (levelDimension(level))}
+		{@const key = levelDimension(level)}
+		{@const dimension = DIMENSION_BY_KEY.get(key)}
+		{@const merging = mergesChildren(level)}
+		{@const last = index === levels.length - 1}
 		<li
-			class="chip level"
-			class:lifted={dragging?.key === key}
+			class="level"
+			class:lifted={dragging === index}
+			class:drop-before={dropAt === index && dragging !== null}
+			class:drop-after={dropAt === index + 1 && last && dragging !== null}
+			style:--depth={index}
 			draggable="true"
-			ondragstart={(event) => startDrag(event, key, index)}
-			ondragend={endDrag}
-			ondragover={(event) => {
-				event.stopPropagation();
-				overChip(event, index);
+			ondragstart={(event) => {
+				dragging = index;
+				event.dataTransfer?.setData('text/plain', level);
 			}}
+			ondragend={() => (dragging = dropAt = null)}
+			ondragover={(event) => overRow(event, index)}
 		>
+			<span class="grip" aria-hidden="true">⋮⋮</span>
 			<span class="step">{index + 1}</span>
-			<span>{dimension?.label}</span>
-			{#if dimension?.variant}
-				<button
-					type="button"
-					class="mode"
-					title="Toggle separated ingredients vs combinations"
-					onclick={() => switchVariant(key)}>⇄ {dimension.variant.mode}</button
+			<span class="name">
+				{dimension?.label}
+				<span class="example">{dimension?.hint}</span>
+			</span>
+
+			{#if variantsOf(key).length}
+				<select
+					aria-label="How {dimension?.label} splits"
+					value={key}
+					onchange={(event) => setVariant(level, event.currentTarget.value)}
 				>
+					{#each variantsOf(key) as option (option.key)}
+						<option value={option.key}>{option.mode}</option>
+					{/each}
+				</select>
 			{/if}
-			<button
-				type="button"
-				class="mode merge"
-				class:on={merging}
-				aria-pressed={merging}
-				disabled={index === levels.length - 1 && !merging}
-				title={index === levels.length - 1
-					? 'The last level has no children to merge'
-					: merging
-						? 'Merging: a node with one child reads as one row, e.g. “IV – Thiamine”'
-						: 'Merge a node with its only child into one row, e.g. “IV – Thiamine”'}
-				onclick={() => toggleMerge(key)}>{merging ? '⤓ Merged' : '⤓ Merge'}</button
+
+			<label
+				class="merge"
+				title="When a group holds just one item, show both on a single row, e.g. “IV – Thiamine”"
 			>
-			<span class="chip-actions">
+				<input
+					type="checkbox"
+					checked={merging}
+					disabled={last && !merging}
+					onchange={() => toggleMerge(level)}
+				/>
+				Merge
+			</label>
+
+			<span class="actions">
 				<button
 					type="button"
-					class="icon"
-					aria-label="Move {dimension?.label} up a level"
+					aria-label="Move {dimension?.label} up"
 					disabled={index === 0}
-					onclick={() => move(index, -1)}>←</button
+					onclick={() => move(index, -1)}>↑</button
 				>
 				<button
 					type="button"
-					class="icon"
-					aria-label="Move {dimension?.label} down a level"
-					disabled={index === levels.length - 1}
-					onclick={() => move(index, 1)}>→</button
+					aria-label="Move {dimension?.label} down"
+					disabled={last}
+					onclick={() => move(index, 1)}>↓</button
 				>
 				<button
 					type="button"
-					class="icon"
+					class="remove"
 					aria-label="Remove {dimension?.label}"
-					onclick={() => remove(key)}>×</button
+					onclick={() => remove(index)}>✕</button
 				>
 			</span>
 		</li>
 	{/each}
-	{#if dropAt === levels.length}<li class="gap" aria-hidden="true"></li>{/if}
-	<li class="leaf-level">NDCs</li>
+	<li class="leaf" style:--depth={levels.length}>
+		Packages (NDCs)
+		{#if !levels.length}<span class="example">No levels — the formulary is a flat list</span>{/if}
+	</li>
 </ol>
 
-<div
-	class="palette"
-	role="group"
-	aria-label="Available attributes"
-	ondragover={(event) => dragging?.from !== null && dragging && event.preventDefault()}
-	ondrop={dropOnPalette}
->
-	{#each available as dimension (dimension.key)}
-		<button
-			type="button"
-			class="chip"
-			draggable="true"
-			title={dimension.hint}
-			ondragstart={(event) => startDrag(event, dimension.key, null)}
-			ondragend={endDrag}
-			onclick={() => place(dimension.key, levels.length)}
-		>
-			<span aria-hidden="true">+</span>
-			{dimension.label}
-		</button>
-	{:else}
-		<p class="small">Every attribute is in use.</p>
-	{/each}
+<div class="add">
+	<span class="add-label">Add a level</span>
+	<div class="palette">
+		{#each available as dimension (dimension.key)}
+			<button type="button" class="chip" title={dimension.hint} onclick={() => add(dimension.key)}>
+				+ {dimension.label}
+			</button>
+		{:else}
+			<span class="example">Every attribute is in use.</span>
+		{/each}
+	</div>
 </div>
 
 <style>
-	button {
-		border: 0;
-		border-radius: 0.55rem;
-		background: #204f91;
-		color: white;
-		font: inherit;
-		font-weight: 650;
-		cursor: pointer;
+	.outline {
+		margin: 0.75rem 0;
+		padding: 0;
+		list-style: none;
 	}
 
-	button:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
-
-	.levels {
+	.level,
+	.leaf {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem;
-		min-height: 3rem;
-		margin: 1rem 0;
-		padding: 0.75rem;
-		border: 2px dashed #dbe1e8;
-		border-radius: 0.75rem;
-		list-style: none;
-		background: #fbfcfd;
+		margin-left: calc(min(var(--depth), 6) * 0.9rem);
+		margin-bottom: 0.35rem;
 	}
 
-	.levels.dragging {
-		border-color: #8fb3e6;
-		background: #f2f7fe;
-	}
-
-	.chip {
-		display: inline-flex;
-		flex-wrap: wrap;
-		max-width: 100%;
-		box-sizing: border-box;
-		align-items: center;
-		gap: 0.4rem;
+	.level {
+		flex-wrap: nowrap;
+		position: relative;
+		padding: 0.45rem 0.5rem;
 		border: 1px solid #cdd6e1;
-		border-radius: 999px;
+		border-radius: 0.6rem;
 		background: white;
-		color: #18212f;
-		padding: 0.35rem 0.75rem;
-		font-size: 0.875rem;
-		font-weight: 600;
 		cursor: grab;
-		user-select: none;
 	}
 
-	.chip.level {
-		border-color: #3464a5;
-		background: #e8f0fb;
-		padding-right: 0.3rem;
+	.level:hover {
+		border-color: #8fb3e6;
 	}
 
-	.chip.lifted {
+	.level.lifted {
 		opacity: 0.4;
+	}
+
+	.level.drop-before {
+		box-shadow: 0 -3px 0 #3464a5;
+	}
+
+	.level.drop-after {
+		box-shadow: 0 3px 0 #3464a5;
+	}
+
+	.grip {
+		color: #a9b3c0;
+		font-size: 0.8rem;
+		letter-spacing: -0.15em;
 	}
 
 	.step {
 		display: inline-grid;
+		flex: none;
 		place-items: center;
-		width: 1.25rem;
-		height: 1.25rem;
+		width: 1.4rem;
+		height: 1.4rem;
 		border-radius: 50%;
 		background: #204f91;
 		color: white;
-		font-size: 0.7rem;
-	}
-
-	.mode {
 		font-size: 0.75rem;
-		padding: 0.1rem 0.4rem;
-		border-radius: 999px;
+		font-weight: 700;
 	}
 
-	.mode.merge {
+	.name {
+		flex: 1;
+		min-width: 0;
+		font-weight: 650;
+	}
+
+	.name .example {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.example {
+		display: block;
+		color: #7a8594;
+		font-size: 0.75rem;
+		font-weight: 400;
+	}
+
+	select {
+		border: 1px solid #cdd6e1;
+		border-radius: 0.45rem;
+		padding: 0.25rem 0.4rem;
+		font: inherit;
+		font-size: 0.8rem;
+	}
+
+	.merge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		color: #3a4452;
+		font-size: 0.8rem;
+		white-space: nowrap;
+		cursor: pointer;
+	}
+
+	.actions {
+		display: inline-flex;
+		gap: 0.15rem;
+	}
+
+	.actions button {
+		border: 1px solid #d5dce5;
+		border-radius: 0.4rem;
 		background: white;
 		color: #3464a5;
-		box-shadow: inset 0 0 0 1px #8fb3e6;
+		padding: 0.15rem 0.45rem;
+		font: inherit;
+		cursor: pointer;
 	}
 
-	.mode.merge.on {
-		background: #204f91;
-		color: white;
-		box-shadow: none;
+	.actions button:disabled {
+		opacity: 0.35;
+		cursor: default;
 	}
 
-	.chip-actions {
-		display: inline-flex;
+	.actions .remove {
+		color: #9a2a2a;
 	}
 
-	.icon {
-		background: none;
-		color: #3464a5;
-		padding: 0.1rem 0.35rem;
-		font-size: 0.9rem;
-	}
-
-	.gap {
-		width: 0.3rem;
-		height: 1.9rem;
-		border-radius: 1rem;
-		background: #3464a5;
-	}
-
-	.leaf-level {
+	.leaf {
+		padding: 0.35rem 0.5rem;
 		color: #7a8594;
 		font-size: 0.8rem;
 		font-weight: 650;
 		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		letter-spacing: 0.06em;
 	}
 
-	.leaf-level::before {
-		content: '› ';
+	.leaf .example {
+		text-transform: none;
+		letter-spacing: 0;
+	}
+
+	.add {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.5rem;
+	}
+
+	.add-label {
+		color: #3a4452;
+		font-size: 0.85rem;
+		font-weight: 650;
 	}
 
 	.palette {
 		display: flex;
+		flex: 1;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: 0.35rem;
 	}
 
-	.palette .chip {
-		color: #3464a5;
+	.chip {
+		border: 1px dashed #8fb3e6;
+		border-radius: 999px;
+		background: #f2f7fe;
+		color: #204f91;
+		padding: 0.3rem 0.7rem;
+		font: inherit;
+		font-size: 0.8rem;
+		font-weight: 650;
+		cursor: pointer;
 	}
 
-	.small {
-		color: #7a8594;
-		font-size: 0.85rem;
+	.chip:hover {
+		border-style: solid;
 	}
 </style>
