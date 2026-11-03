@@ -184,11 +184,34 @@
             {:else if item.nameOverride || item.strengthStyle || item.ingredientOrder.length || item.displayName !== item.sourceName}
                   <p class="none">Sourced as {item.sourceName}</p>
             {/if}
+            {#snippet actions()}
+                  <form
+                        method="POST"
+                        action="?/refresh"
+                        use:enhance={() => {
+                              refreshing = true;
+                              return async ({update}) => {
+                                    try { await update(); } finally { refreshing = false; }
+                              };
+                        }}
+                  >
+                        <button class="ghost" disabled={refreshing}>
+                              <span aria-hidden="true" class:spin={refreshing}>↻</span>
+                              {refreshing ? 'Refreshing…' : 'Refresh'}
+                        </button>
+                  </form>
+            {/snippet}
       </PageHeader>
 
-      <div class="ledger">
-            <dl>
-                  <div class="lead">
+      {#if form?.refreshMessage}
+            <p class="notice error" role="alert">{form.refreshMessage}</p>
+      {:else if form?.refreshed}
+            <p class="notice" role="status">Refreshed · {plural(form.refreshed.packagesLinked, 'package')} linked.</p>
+      {/if}
+
+      <!-- The record's vital signs as a row of tiles, like the dashboard's other views. -->
+      <dl class="stats">
+                  <div>
                         <dt>Level</dt>
                         <dd>
                               <span class="level">{level}</span>
@@ -215,29 +238,7 @@
                         <dt>Formulary</dt>
                         <dd>{data.scope.name}</dd>
                   </div>
-            </dl>
-            <form
-                  method="POST"
-                  action="?/refresh"
-                  class="refresh"
-                  use:enhance={() => {
-                        refreshing = true;
-                        return async ({update}) => {
-                              try { await update(); } finally { refreshing = false; }
-                        };
-                  }}
-            >
-                  <button class="ghost" disabled={refreshing}>
-                        <span aria-hidden="true" class:spin={refreshing}>↻</span>
-                        {refreshing ? 'Refreshing…' : 'Refresh'}
-                  </button>
-            </form>
-      </div>
-      {#if form?.refreshMessage}
-            <p class="notice error" role="alert">{form.refreshMessage}</p>
-      {:else if form?.refreshed}
-            <p class="notice" role="status">Refreshed · {plural(form.refreshed.packagesLinked, 'package')} linked.</p>
-      {/if}
+      </dl>
 
       <div class="layout">
       <aside class="identity">
@@ -367,14 +368,17 @@
 
       <div class="content">
       {#if data.packages.length}
-            <ItemSummary summary={data.summary} title={item.nameOverride ?? item.sourceName} itemStyle={item.strengthStyle}/>
-            <IngredientScenarios summary={data.summary}/>
+            <div class="panel">
+                  <ItemSummary summary={data.summary} title={item.nameOverride ?? item.sourceName} itemStyle={item.strengthStyle}/>
+                  <IngredientScenarios summary={data.summary}/>
+            </div>
       {/if}
 
       {#if !data.packages.length}
-            <p class="empty">This item has no packages linked.</p>
+            <p class="panel empty">This item has no packages linked.</p>
       {:else}
-            <div class="section-head"><h2 class="packages-heading">Packages</h2><span class="count">{plural(data.packages.length, 'package')}</span></div>
+            <section class="panel" aria-labelledby="packages-heading">
+            <div class="section-head"><h2 id="packages-heading">Packages</h2><span class="count">{plural(data.packages.length, 'package')}</span></div>
             <p class="shared">
                   {layout.shared.join(' · ')}
                   {#if layout.sharedRoutes.length}
@@ -507,11 +511,12 @@
                         </ul>
                   </details>
             {/if}
+            </section>
       {/if}
 
       {#if data.packages.length}
             {@const billed = data.packages.flatMap((pkg) => (data.cmsBilling[pkg.ndc] ?? []).map((bill) => ({pkg, bill})))}
-            <section aria-labelledby="cms-heading" class="cms card">
+            <section aria-labelledby="cms-heading" class="cms panel">
                   <h2 id="cms-heading">CMS billing (Medicare Part B)</h2>
                   {#if billed.length}
                         <table>
@@ -591,7 +596,7 @@
       }
 
       .pending {
-            margin-top: 2rem;
+            margin-top: 1rem;
             border: 1px solid #e3e8ee;
             border-radius: 0.6rem;
             background: white;
@@ -669,7 +674,7 @@
       }
 
       main {
-            --page-width: 1180px;
+            --page-width: 1680px;
             --ink: #1b2430;
             --muted: #7a8594;
             --line: #e3e8ee;
@@ -677,34 +682,23 @@
             color: var(--ink);
       }
 
-      .ledger {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 1.75rem 0 1rem;
-            border-top: 2px solid var(--ink);
-            border-bottom: 1px solid var(--line);
+      /* Stat tiles: one row of cards across the top, wrapping on narrow views. */
+      .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+            gap: 0.75rem;
+            margin: 0 0 1.5rem;
       }
 
-      .ledger dl {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0;
-            flex: 1;
+      .stats > div {
+            border: 1px solid var(--line);
+            border-radius: 0.75rem;
+            background: white;
+            padding: 0.75rem 1rem;
             min-width: 0;
       }
 
-      .ledger dl > div {
-            padding: 0.7rem 1.25rem 0.7rem 0;
-            margin-right: 1.25rem;
-            border-right: 1px solid var(--line);
-      }
-
-      .ledger dl > div:last-child {
-            border-right: 0;
-      }
-
-      .ledger dt {
+      .stats dt {
             color: var(--muted);
             font-size: 0.66rem;
             font-weight: 700;
@@ -712,20 +706,21 @@
             text-transform: uppercase;
       }
 
-      .ledger dd {
-            margin: 0.25rem 0 0;
+      .stats dd {
+            margin: 0.35rem 0 0;
             font-size: 0.95rem;
             font-variant-numeric: tabular-nums;
+            overflow-wrap: anywhere;
       }
 
-      .ledger dd.big {
-            margin-top: 0;
+      .stats dd.big {
+            margin-top: 0.1rem;
             font-size: 1.5rem;
             font-weight: 300;
             line-height: 1.2;
       }
 
-      .ledger sup {
+      .stats sup {
             margin-left: 0.3rem;
             color: #b07a1f;
             font-size: 0.65rem;
@@ -782,8 +777,8 @@
 
       .layout {
             display: grid;
-            grid-template-columns: 17rem minmax(0, 1fr);
-            gap: 2.5rem;
+            grid-template-columns: 18rem minmax(0, 1fr);
+            gap: 1.5rem;
             align-items: start;
       }
 
@@ -816,30 +811,42 @@
             box-sizing: border-box;
       }
 
-      .content > :global(*:first-child) {
+      .content {
+            display: grid;
+            gap: 1.5rem;
+      }
+
+      /* Every content section is a card of the same weight as the identity panel. */
+      .panel {
+            margin: 0;
+            border: 1px solid var(--line);
+            border-radius: 0.75rem;
+            background: white;
+            padding: 1rem 1.25rem;
+            min-width: 0;
+      }
+
+      .panel > :global(*:first-child) {
             margin-top: 0;
+      }
+
+      /* Wide package tables scroll inside their card instead of pushing the page sideways. */
+      section.panel {
+            overflow-x: auto;
       }
 
       .section-head {
             display: flex;
             align-items: baseline;
             gap: 0.25rem;
-            margin: 2.5rem 0 0;
+            margin: 0;
             padding-bottom: 0.4rem;
-            border-bottom: 2px solid var(--ink);
+            border-bottom: 1px solid var(--line);
       }
 
       .section-head h2 {
             margin: 0;
             color: var(--ink);
-      }
-
-      .card {
-            margin-top: 2.5rem;
-            border: 1px solid var(--line);
-            border-radius: 0.75rem;
-            background: white;
-            padding: 0.9rem 1rem;
       }
 
       @media (max-width: 860px) {
@@ -1250,7 +1257,6 @@
       }
 
       .empty {
-            margin-top: 2rem;
             color: #5c6777;
       }
 
