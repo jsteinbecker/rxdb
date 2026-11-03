@@ -12,6 +12,7 @@ import {
 	loadCompound,
 	removeComponent,
 	saveLines,
+	setRoute,
 	setSaved,
 	setVialPrep
 } from '$lib/server/compounds/store';
@@ -82,7 +83,9 @@ async function analyze(scopeId: string, id: string, settings: unknown) {
 					isDryFill: item ? item.isDryFill : null,
 					reconstitution: item?.reconstitution ?? []
 				};
-			})
+			}),
+			// The route picks between label steps that differ by route.
+			compound.route
 		);
 		const adopted = lines.find((line) => line.vialPrep)?.vialPrep ?? null;
 		const steps = consensus.status === 'not-needed' ? [] : consensus.steps;
@@ -171,12 +174,19 @@ export const actions: Actions = {
 		const scope = await defaultScope(prisma);
 		return run(() => setSaved(prisma, scope.id, params.id, saved));
 	},
+	setRoute: async ({ params, request }) => {
+		const route = (await request.formData()).get('route');
+		const scope = await defaultScope(prisma);
+		return run(() => setRoute(prisma, scope.id, params.id, route));
+	},
 	adoptVialPrep: async ({ params, request }) => {
 		const data = await request.formData();
 		const itemId = String(data.get('itemId') ?? '');
 		const index = Number(data.get('step'));
 		const scope = await defaultScope(prisma);
-		const { vialPrep } = await analyze(scope.id, params.id, scope.settings);
+		const { compound, vialPrep } = await analyze(scope.id, params.id, scope.settings);
+		if (!compound.route)
+			return fail(409, { message: 'Choose a route before adopting a vial preparation step.' });
 		const entry = vialPrep.find((candidate) => candidate.itemId === itemId);
 		if (!entry) return fail(404, { message: 'That component no longer exists.' });
 		const result = entry.consensus;

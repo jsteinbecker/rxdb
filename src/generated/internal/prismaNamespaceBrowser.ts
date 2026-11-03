@@ -883,7 +883,8 @@ export const CompoundFormulaScalarFieldEnum = {
   totalVolumeWhole: 'totalVolumeWhole',
   totalVolumeNum: 'totalVolumeNum',
   totalVolumeDen: 'totalVolumeDen',
-  totalVolumeUom: 'totalVolumeUom'
+  totalVolumeUom: 'totalVolumeUom',
+  route: 'route'
 } as const
 
 export type CompoundFormulaScalarFieldEnum = (typeof CompoundFormulaScalarFieldEnum)[keyof typeof CompoundFormulaScalarFieldEnum]

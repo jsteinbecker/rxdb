@@ -79,3 +79,26 @@ test('steps compare on volume, concentration, diluents and routes', () => {
 	assert.ok(!sameConsensusStep(step, { ...step, concentrationMgPerMl: 95 }));
 	assert.ok(!sameConsensusStep(step, { ...step, diluents: ['NS'] }));
 });
+
+test("the compound's route sets aside label steps for other routes", () => {
+	const ceftriaxone = [
+		pkg('a', [row(9.6, 100, { routes: ['IV'] }), row(2.1, 350, { routes: ['IM'] }), row(5, 200)]),
+		pkg('b', [row(9.6, 100, { routes: ['IV'] }), row(2.1, 350, { routes: ['IM'] }), row(5, 200)])
+	];
+	const steps = (route: 'IV' | 'IM' | null) => {
+		const result = vialPrepConsensus(ceftriaxone, route);
+		return 'steps' in result ? result.steps.map((step) => step.diluentMl) : [];
+	};
+	assert.deepEqual(steps(null), [9.6, 2.1, 5]);
+	assert.deepEqual(steps('IV'), [9.6, 5]);
+	assert.deepEqual(steps('IM'), [2.1, 5]);
+});
+
+test('a vial whose label covers only other routes is missing for this one', () => {
+	const result = vialPrepConsensus(
+		[pkg('a', [row(9.6, 100, { routes: ['IV'] })]), pkg('b', [row(2.1, 350, { routes: ['IM'] })])],
+		'IV'
+	);
+	assert.equal(result.status, 'partial');
+	assert.deepEqual('missing' in result && result.missing.map((p) => p.ndc), ['b']);
+});

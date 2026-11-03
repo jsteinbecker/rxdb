@@ -17,6 +17,7 @@
     type Line
   } from "$lib/compounds/compound-builder";
   import { formatRational, serializeRational, type Rational } from "$lib/medication/rational";
+  import { RECONSTITUTION_ROUTES } from '$lib/labels/reconstitution-terms';
 
   let { data, form } = $props();
 
@@ -120,6 +121,25 @@
         <h1 title="Named automatically from its components">{compound.name}</h1>
         <span class="count">{plural(compound.lines.length, 'component')}</span>
         {#if locked}<span class="badge">Saved</span>{/if}
+        {#if locked}
+          <span class="route">Route <strong>{compound.route ?? '—'}</strong></span>
+        {:else}
+          <form method="POST" action="?/setRoute" use:enhance class="route">
+            <label>
+              Route
+              <select
+                name="route"
+                required
+                class:unset={!compound.route}
+                value={compound.route ?? ''}
+                onchange={(event) => event.currentTarget.form?.requestSubmit()}
+              >
+                <option value="" disabled>Choose…</option>
+                {#each RECONSTITUTION_ROUTES as route}<option value={route}>{route}</option>{/each}
+              </select>
+            </label>
+          </form>
+        {/if}
 
         <div class="actions">
           {#if locked}
@@ -133,7 +153,11 @@
             </button>
             <form method="POST" action="?/setSaved" use:enhance>
               <input type="hidden" name="saved" value="true" />
-              <button class="primary" disabled={!compound.lines.length}>Save</button>
+              <button
+                class="primary"
+                disabled={!compound.lines.length || !compound.route}
+                title={compound.route ? undefined : 'Choose a route first'}>Save</button
+              >
             </form>
             <div class="row-menu" class:open={menuFor === 'header'}>
               <button
@@ -255,7 +279,7 @@
       </div>
     </section>
 
-    <VialPreparation items={data.vialPrep} {locked} />
+    <VialPreparation items={data.vialPrep} {locked} route={compound.route} />
 
     <FinalConcentrations {rows} />
   {/if}
@@ -319,6 +343,16 @@
     border-radius: 10px;
     background: #fff;
     overflow: visible;
+  }
+  .route {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #6b7585;
+    font-size: 0.85rem;
+  }
+  .route select.unset {
+    border-color: #c0392b;
   }
   .card-head {
     display: flex;

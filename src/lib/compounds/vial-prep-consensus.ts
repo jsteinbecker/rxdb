@@ -13,6 +13,10 @@
  * fill whose label yielded no instruction is reported, and blocks consensus:
  * silence is not agreement.
  *
+ * When the compound's route is given, label instructions that name only other
+ * routes are set aside first: an IM-only 2.1 mL step says nothing about an IV
+ * compound. Instructions that name no route still apply to every route.
+ *
  * Pure and offline; the caller supplies each package's parsed facts.
  *
  * @module
@@ -96,8 +100,9 @@ function mergeStep(rows: ProseReconstitution[]): ConsensusStep {
 	};
 }
 
-/** Vial rows only: oral-constitution bottle rows are not vial preparation. */
-const vialRows = (pkg: VialPrepPackage) => pkg.reconstitution.filter((row) => !row.bottle);
+/** Whether a label instruction applies to `route`; one naming no route applies to all. */
+const forRoute = (row: ProseReconstitution, route: ReconstitutionRoute | null) =>
+	!route || !row.routes?.length || row.routes.includes(route);
 
 /**
  * The preparation every allowed package agrees on.
@@ -106,7 +111,13 @@ const vialRows = (pkg: VialPrepPackage) => pkg.reconstitution.filter((row) => !r
  * - `partial`: common steps exist among the voters, but some dry fills gave no instruction.
  * - `conflict`: the voters share no step.
  */
-export function vialPrepConsensus(packages: readonly VialPrepPackage[]): VialPrepConsensus {
+export function vialPrepConsensus(
+	packages: readonly VialPrepPackage[],
+	route: ReconstitutionRoute | null = null
+): VialPrepConsensus {
+	/** Vial rows only (oral-constitution bottle rows are not vial preparation), for this route. */
+	const vialRows = (pkg: VialPrepPackage) =>
+		pkg.reconstitution.filter((row) => !row.bottle && forRoute(row, route));
 	const relevant = packages.filter((pkg) => pkg.isDryFill !== false);
 	if (!relevant.length || relevant.every((pkg) => pkg.isDryFill === null && !vialRows(pkg).length))
 		return { status: 'not-needed', packages: [...packages] };

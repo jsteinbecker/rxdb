@@ -14,6 +14,7 @@ import {
 	removeComponent,
 	renameCompound,
 	saveLines,
+	setRoute,
 	setSaved
 } from './store';
 
@@ -127,8 +128,15 @@ test(
 						409
 					);
 
+					// a route is required to save, and must be one of IV, IM, SC
+					await rejects(setSaved(nested, scope.id, id, true), 409);
+					await rejects(setRoute(nested, scope.id, id, 'PO'), 400);
+					await setRoute(nested, scope.id, id, 'IV');
+					assert.equal((await loadCompound(nested, scope.id, id)).route, 'IV');
+
 					// saving locks every mutator
 					await setSaved(nested, scope.id, id, true);
+					await rejects(setRoute(nested, scope.id, id, 'IM'), 409);
 					await rejects(renameCompound(nested, scope.id, id, 'Nope'), 409);
 					await rejects(removeComponent(nested, scope.id, id, active.slotId), 409);
 					await rejects(deleteCompound(nested, scope.id, id), 409);

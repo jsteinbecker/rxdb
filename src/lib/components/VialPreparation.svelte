@@ -9,7 +9,8 @@
 
   let {
     items,
-    locked
+    locked,
+    route
   }: {
     items: {
       itemId: string;
@@ -20,6 +21,8 @@
       adoptedCurrent: boolean | null;
     }[];
     locked: boolean;
+    /** The compound's route; label steps for other routes are already set aside. */
+    route: string | null;
   } = $props();
 
   // Only components that involve a dry fill, or that kept an adopted step, have anything to say.
@@ -51,8 +54,11 @@
   <section class="card" aria-labelledby="vial-prep-heading">
     <header class="card-head">
       <h2 id="vial-prep-heading">Vial preparation</h2>
-      <span>across every package each formulary item allows</span>
+      <span>across every package each formulary item allows{route ? ` · ${route} steps` : ''}</span>
     </header>
+    {#if !route}
+      <p class="warn">Choose the compound's route: labels may give different steps per route, so none can be adopted until it is set.</p>
+    {/if}
     {#each shown as entry (entry.itemId)}
       {@const result = entry.consensus}
       <div class="item">
@@ -86,7 +92,7 @@
                   <span>{describe(step)}</span>
                   {#if entry.adopted && sameConsensusStep(step, entry.adopted.step)}
                     <span class="when">adopted</span>
-                  {:else if !locked}
+                  {:else if !locked && route}
                     <form method="POST" action="?/adoptVialPrep" use:enhance>
                       <input type="hidden" name="itemId" value={entry.itemId} />
                       <input type="hidden" name="step" value={index} />

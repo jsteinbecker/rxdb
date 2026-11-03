@@ -1279,6 +1279,9 @@ model CompoundFormula {
       totalVolumeNum   BigInt?          @map("total_volume_num")
       totalVolumeDen   BigInt?          @map("total_volume_den")
       totalVolumeUom   String?          @map("total_volume_uom")
+      /// route of administration (IV, IM, SC), entered by hand; picks the label's vial
+      /// preparation when it differs by route. Null until chosen; required to save.
+      route            String?
 
       scope         Scope          @relation(fields: [scopeId], references: [id])
       formularyItem FormularyItem? @relation(fields: [formularyItemId], references: [id])

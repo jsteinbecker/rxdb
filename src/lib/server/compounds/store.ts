@@ -18,6 +18,10 @@ import {
 } from '../../compounds/compound-builder';
 import { uniqueName } from '../../compounds/compound-naming';
 import { divide, fromNumber, type Rational } from '../../medication/rational';
+import {
+	RECONSTITUTION_ROUTES,
+	type ReconstitutionRoute
+} from '../../labels/reconstitution-terms';
 
 /** A failure with a message fit to show the technician, and the status to send with it. */
 export class CompoundError extends Error {
@@ -38,11 +42,15 @@ export interface StoredCompound {
 	name: string;
 	status: string;
 	locked: boolean;
+	/** Route of administration, entered by hand; null until chosen. */
+	route: ReconstitutionRoute | null;
 	total: Rational | null;
 	lines: StoredLine[];
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const isRoute = (value: unknown): value is ReconstitutionRoute =>
+	RECONSTITUTION_ROUTES.includes(value as ReconstitutionRoute);
 const code = (error: unknown) => (error as { code?: string } | null)?.code;
 
 const DEFAULTS = {
@@ -98,6 +106,7 @@ export async function loadCompound(
 			id: true,
 			name: true,
 			status: true,
+			route: true,
 			totalVolumeWhole: true,
 			totalVolumeNum: true,
 			totalVolumeDen: true,
@@ -153,6 +162,7 @@ export async function loadCompound(
 		name: formula.name,
 		status: formula.status,
 		locked: formula.status !== 'draft',
+		route: isRoute(formula.route) ? formula.route : null,
 		total: fromMixed({
 			whole: formula.totalVolumeWhole,
 			num: formula.totalVolumeNum,
@@ -340,11 +350,26 @@ export async function setSaved(db: PrismaClient, scopeId: string, id: string, sa
 		if (formula.status !== 'draft') throw new CompoundError('This compound is already saved.', 409);
 		const components = await db.formulaSlot.count({ where: { formulaId: id } });
 		if (!components) throw new CompoundError('Add a component before saving.', 409);
+		const { route } = await db.compoundFormula.findFirstOrThrow({
+			where: { id },
+			select: { route: true }
+		});
+		if (!isRoute(route)) throw new CompoundError('Choose a route before saving.', 409);
 		await db.compoundFormula.update({ where: { id }, data: { status: 'saved' } });
 		return;
 	}
 	if (formula.status !== 'saved') throw new CompoundError('This compound is not saved.', 409);
 	await db.compoundFormula.update({ where: { id }, data: { status: 'draft' } });
+}
+
+/**
+ * Set the compound's route. Adopted vial preparation steps stay stored, but the
+ * page flags any the labels no longer agree on for the new route.
+ */
+export async function setRoute(db: PrismaClient, scopeId: string, id: string, route: unknown) {
+	if (!isRoute(route)) throw new CompoundError(`Choose a route: ${RECONSTITUTION_ROUTES.join(', ')}.`);
+	await draftIn(db, scopeId, id);
+	await db.compoundFormula.update({ where: { id }, data: { route } });
 }
 
 /**
