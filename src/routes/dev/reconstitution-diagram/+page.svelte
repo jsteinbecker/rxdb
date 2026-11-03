@@ -19,6 +19,7 @@
 	});
 </script>
 
+<main>
 <h2>Cases</h2>
 <div class="grid">
 	{#each cases as c (c.title)}
@@ -42,10 +43,12 @@
 		</section>
 	{/each}
 </div>
+</main>
 
 <style>
-	h2 { padding: 0 1rem; }
-	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem; padding: 1rem; align-items: end; }
+	h2 { margin: 0 0 1rem; }
+	h2 + .grid { margin-bottom: 2.5rem; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem; align-items: end; }
 	h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
 	code { font-size: 0.75rem; color: #5c6777; }
 </style>

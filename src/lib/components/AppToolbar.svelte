@@ -80,7 +80,8 @@ usable while a navigation dims the page.
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		height: 3.25rem;
+		height: var(--toolbar-height, 3.25rem);
+		box-sizing: border-box;
 		padding: 0 1.5rem;
 		border-bottom: 1px solid #e1e5ec;
 		background: rgb(255 255 255 / 92%);

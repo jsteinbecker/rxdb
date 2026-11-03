@@ -60,6 +60,7 @@
 	const shown = $derived(only ? items.filter((i) => i.key === only) : items);
 </script>
 
+<main>
 <div class="gallery">
 	{#each shown as item (item.key)}
 		<figure data-key={item.key}>
@@ -68,9 +69,10 @@
 		</figure>
 	{/each}
 </div>
+</main>
 
 <style>
-	.gallery {display: flex;flex-wrap: wrap;gap: 16px;padding: 16px;background: white;}
+	.gallery {display: flex;flex-wrap: wrap;gap: 16px;}
 	figure {margin: 0;padding: 12px;border: 1px solid #ddd;border-radius: 8px;max-width: 440px;}
 	figcaption {display: flex;flex-direction: column;gap: 4px;margin-top: 8px;font-size: 12px;}
 	figcaption span {color: #555;}

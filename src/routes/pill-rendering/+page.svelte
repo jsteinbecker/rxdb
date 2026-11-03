@@ -264,7 +264,8 @@
 	.playground {
 		display: grid;
 		grid-template-columns: minmax(300px, 420px) 1fr;
-		height: calc(100vh - 60px);
+		/* A full-bleed tool: fills the view under the toolbar; each pane scrolls on its own. */
+		height: calc(100vh - var(--toolbar-height, 3.25rem));
 		gap: 0;
 	}
 	.library {

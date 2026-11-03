@@ -785,12 +785,11 @@
             grid-template-columns: 17rem minmax(0, 1fr);
             gap: 2.5rem;
             align-items: start;
-            margin-top: 1.5rem;
       }
 
       .identity {
             position: sticky;
-            top: 1rem;
+            top: calc(var(--sticky-top, 0px) + 1rem);
             overflow: hidden;
             border: 1px solid var(--line);
             border-radius: 0.75rem;

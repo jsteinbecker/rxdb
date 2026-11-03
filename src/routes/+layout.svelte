@@ -86,7 +86,10 @@
 		<AppToolbar onmenu={() => (drawerOpen = true)} />
 
 		{#if showSkeleton && kind}
-			<PageSkeleton {kind} {tempTitle} params={navigating.to?.params ?? {}} scopeName={page.data.scope?.name ?? ''} />
+			<!-- Same frame as the page it stands in for, so nothing shifts when the page arrives. -->
+			<div class="page">
+				<PageSkeleton {kind} {tempTitle} params={navigating.to?.params ?? {}} scopeName={page.data.scope?.name ?? ''} />
+			</div>
 		{/if}
 
 		<div class="page" class:pending class:replaced={showSkeleton} inert={pending}>
@@ -123,6 +126,9 @@
 	/* The app frame: a permanent sidebar, then a workspace of toolbar over the view. */
 	.shell {
 		--sidebar-width: 15rem;
+		/* Sticky page elements park below the sticky toolbar: `top: calc(var(--sticky-top) + …)`. */
+		--toolbar-height: 3.25rem;
+		--sticky-top: var(--toolbar-height);
 		display: grid;
 		grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 		min-height: 100vh;

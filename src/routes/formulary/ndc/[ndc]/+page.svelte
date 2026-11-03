@@ -323,7 +323,7 @@
 
       .panel-slot {
             position: sticky;
-            top: 1rem;
+            top: calc(var(--sticky-top, 0px) + 1rem);
             margin-top: 0.75rem;
       }
 

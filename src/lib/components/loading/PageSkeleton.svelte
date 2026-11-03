@@ -238,19 +238,18 @@ with everything below the header.
 </main>
 
 <style>
+	/* The layout's page frame sets the gutter; each kind matches its page's `--page-width`. */
 	main {
-		margin: 0 auto;
-		max-width: 1040px;
-		padding: 4rem 1.5rem;
 		animation: arrive 0.25s ease both;
 	}
 
-	.kind-compounds {
-		max-width: 760px;
+	.kind-compounds,
+	.kind-settings {
+		--page-width: 760px;
 	}
 
-	.kind-compound {
-		max-width: 880px;
+	.kind-item {
+		--page-width: 1180px;
 	}
 
 	.mono {

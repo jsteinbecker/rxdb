@@ -398,7 +398,7 @@
 
 	.bar {
 		position: sticky;
-		top: 0;
+		top: var(--sticky-top, 0);
 		z-index: 2;
 		display: flex;
 		align-items: center;
