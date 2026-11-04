@@ -171,3 +171,118 @@ export function parseAdoptedVialPrep(value: unknown): AdoptedVialPrep | null {
 		return null;
 	return { step: step as ConsensusStep, ndcs: ndcs.map(String), adoptedAt };
 }
+
+/** One step as some of the item's labels state it, and which NDCs state it. */
+export interface VialPrepVariant {
+	step: ConsensusStep;
+	ndcs: string[];
+}
+
+/** Every step stated for one route (null: the labels name no route at all). */
+export interface VialPrepRouteGroup {
+	route: ReconstitutionRoute | null;
+	/** Most-stated first. */
+	variants: VialPrepVariant[];
+	/**
+	 * Judged against the labels that state any step for this route (voters).
+	 * Two steps every voter states are alternatives (IM 2.1 mL → 350 mg/mL and
+	 * 3.6 mL → 250 mg/mL on the same labels), not disagreement.
+	 * - `unanimous`: every variant is stated by every voter, and no dry fill is silent.
+	 * - `incomplete`: the same, but some dry fills state no step for this route.
+	 * - `split`: some variant is stated by only some voters.
+	 * - `unassigned`: the route-null group beside routed ones: steps a few labels give without a route.
+	 */
+	status: 'unanimous' | 'split' | 'incomplete' | 'unassigned';
+	/** Labels stating any step for this route. */
+	voters: number;
+	/** Dry fills (or unknowns) stating no step for this route. */
+	missing: string[];
+	/** Per variant, the fields that differ from the most-stated variant (the first's are all false). */
+	differs: { diluentMl: boolean; concentration: boolean; diluents: boolean }[];
+}
+
+export type VialPrepVariants =
+	| { status: 'not-needed'; readyToUse: string[] }
+	| {
+			status: 'stated';
+			groups: VialPrepRouteGroup[];
+			/** Dry fills whose labels gave no vial step at all. */
+			missing: string[];
+			readyToUse: string[];
+	  };
+
+/**
+ * Every vial preparation an item's packages' labels state, grouped by route and
+ * clustered by `sameStep`, with the NDCs stating each — the item-level view of
+ * the variation `vialPrepConsensus` collapses to a yes or no.
+ *
+ * Steps that name a route go in that route's group; steps naming none go in a
+ * group of their own (route null), shown as such rather than copied into every
+ * route, where a lidocaine IM step would read as an IV one. A package with a
+ * route-less step is not counted missing from a route group.
+ */
+export function vialPrepVariants(packages: readonly VialPrepPackage[]): VialPrepVariants {
+	const vialRows = (pkg: VialPrepPackage) => pkg.reconstitution.filter((row) => !row.bottle);
+	const readyToUse = packages.filter((pkg) => pkg.isDryFill === false).map((pkg) => pkg.ndc);
+	const relevant = packages.filter((pkg) => pkg.isDryFill !== false);
+	if (!relevant.length || relevant.every((pkg) => pkg.isDryFill === null && !vialRows(pkg).length))
+		return { status: 'not-needed', readyToUse };
+
+	const named = [...new Set(relevant.flatMap((pkg) => vialRows(pkg).flatMap((row) => row.routes ?? [])))];
+	const order = (r: ReconstitutionRoute) => ['IV', 'IM', 'SC'].indexOf(r);
+	const routes: (ReconstitutionRoute | null)[] = [...named.sort((a, b) => order(a) - order(b)), null];
+	const routeless = (pkg: VialPrepPackage) => vialRows(pkg).some((row) => !row.routes?.length);
+
+	const groups: VialPrepRouteGroup[] = [];
+	for (const route of routes) {
+		const clusters: { rows: ProseReconstitution[]; ndcs: string[] }[] = [];
+		const missing: string[] = [];
+		for (const pkg of relevant) {
+			const rows = vialRows(pkg).filter((row) =>
+				route ? row.routes?.includes(route) : !row.routes?.length
+			);
+			if (!rows.length && (route ? !routeless(pkg) : !named.length)) missing.push(pkg.ndc);
+			for (const row of rows) {
+				const cluster = clusters.find((c) => c.rows.every((other) => sameStep(row, other)));
+				if (!cluster) clusters.push({ rows: [row], ndcs: [pkg.ndc] });
+				else {
+					cluster.rows.push(row);
+					if (!cluster.ndcs.includes(pkg.ndc)) cluster.ndcs.push(pkg.ndc);
+				}
+			}
+		}
+		if (!clusters.length) continue;
+		const variants = clusters
+			.map((c) => {
+				const step = mergeStep(c.rows);
+				// Within a route group the route is implied; keep only the group's.
+				return { step: { ...step, routes: route ? [route] : step.routes }, ndcs: c.ndcs };
+			})
+			.sort((a, b) => b.ndcs.length - a.ndcs.length || a.step.diluentMl - b.step.diluentMl);
+		const [top] = variants.map((v) => v.step);
+		const voters = new Set(clusters.flatMap((c) => c.ndcs)).size;
+		const agreed = (v: VialPrepVariant) => v.ndcs.length === voters;
+		groups.push({
+			route,
+			variants,
+			status:
+				route === null && named.length
+					? 'unassigned'
+					: !variants.every(agreed)
+						? 'split'
+						: missing.length
+							? 'incomplete'
+							: 'unanimous',
+			voters,
+			missing,
+			// An alternative every voter states is not a difference to flag.
+			differs: variants.map((variant) => ({ step: variant.step, agreed: agreed(variant) })).map(({ step, agreed }) => ({
+				diluentMl: !agreed && !near(step.diluentMl, top.diluentMl),
+				concentration: !agreed && step.concentrationMgPerMl !== top.concentrationMgPerMl,
+				diluents: !agreed && step.diluents.join() !== top.diluents.join()
+			}))
+		});
+	}
+	const missing = relevant.filter((pkg) => !vialRows(pkg).length).map((pkg) => pkg.ndc);
+	return { status: 'stated', groups, missing, readyToUse };
+}

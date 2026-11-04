@@ -41,6 +41,7 @@ import {
 	unmeasured,
 	type PillImageTarget
 } from '$lib/server/media/pill-image-store';
+import { vialPrepVariants } from '$lib/compounds/vial-prep-consensus';
 import type { Actions, PageServerLoad } from './$types';
 
 async function itemInScope(id: string) {
@@ -136,8 +137,22 @@ export const load: PageServerLoad = async ({ params }) => {
 			doseForm: row.doseForm ?? snapshots.get(row.ndc)?.item.doseForm ?? null
 		}))
 	);
+	// Every vial preparation the packages' labels state, and where they differ.
+	const vialPrep = vialPrepVariants(
+		packages.map((row) => {
+			const snapshot = snapshots.get(row.ndc)?.item;
+			return {
+				packageId: row.packageId,
+				ndc: row.ndc,
+				title: row.ndc,
+				isDryFill: snapshot ? snapshot.isDryFill : null,
+				reconstitution: snapshot?.reconstitution ?? []
+			};
+		})
+	);
 	return {
 		appearances,
+		vialPrep,
 		layouts,
 		cmsBilling: Object.fromEntries(billing),
 		scope: { id: scope.id, name: scope.name },

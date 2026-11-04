@@ -102,3 +102,75 @@ test('a vial whose label covers only other routes is missing for this one', () =
 	assert.equal(result.status, 'partial');
 	assert.deepEqual('missing' in result && result.missing.map((p) => p.ndc), ['b']);
 });
+
+import { vialPrepVariants } from './vial-prep-consensus';
+
+const stated = (packages: VialPrepPackage[]) => {
+	const result = vialPrepVariants(packages);
+	assert.equal(result.status, 'stated');
+	return result as Extract<typeof result, { status: 'stated' }>;
+};
+
+test('variants: all ready-to-use needs no preparation', () => {
+	assert.deepEqual(vialPrepVariants([pkg('a', [], false)]), { status: 'not-needed', readyToUse: ['a'] });
+});
+
+test('variants: agreeing labels are one unanimous variant', () => {
+	const result = stated([pkg('a', [row(9.6, 100)]), pkg('b', [row(9.6, 100)]), pkg('c', [], false)]);
+	assert.equal(result.groups.length, 1);
+	assert.equal(result.groups[0].route, null);
+	assert.equal(result.groups[0].status, 'unanimous');
+	assert.deepEqual(result.groups[0].variants[0].ndcs, ['a', 'b']);
+	assert.deepEqual(result.readyToUse, ['c']);
+});
+
+test('variants: a different volume splits, most-stated first, and flags the field', () => {
+	const group = stated([pkg('a', [row(10, 95)]), pkg('b', [row(9.6, 100)]), pkg('c', [row(9.6, 100)])]).groups[0];
+	assert.equal(group.status, 'split');
+	assert.deepEqual(group.variants.map((v) => v.ndcs), [['b', 'c'], ['a']]);
+	assert.deepEqual(group.differs[1], { diluentMl: true, concentration: true, diluents: false });
+});
+
+test('variants: concentration-only difference flags only concentration', () => {
+	const group = stated([pkg('a', [row(9.6, 100)]), pkg('b', [row(9.6, 90)])]).groups[0];
+	assert.equal(group.variants.length, 2);
+	assert.deepEqual(group.differs[1], { diluentMl: false, concentration: true, diluents: false });
+});
+
+test('variants: routes group separately; route-less steps get their own group', () => {
+	const result = stated([
+		pkg('a', [row(9.6, 100, { routes: ['IV'] }), row(2.1, 350, { routes: ['IM'] })]),
+		pkg('b', [row(9.6, 100)])
+	]);
+	assert.deepEqual(result.groups.map((g) => g.route), ['IV', 'IM', null]);
+	// b states a route-less step, so it is not missing from the routed groups.
+	assert.deepEqual(result.groups.map((g) => g.missing), [[], [], []]);
+	assert.deepEqual(result.groups[2].variants[0].ndcs, ['b']);
+});
+
+test('variants: an IM-only label leaves the IV group incomplete', () => {
+	const result = stated([pkg('a', [row(9.6, 100, { routes: ['IV'] })]), pkg('b', [row(2.1, 350, { routes: ['IM'] })])]);
+	const iv = result.groups.find((g) => g.route === 'IV')!;
+	assert.equal(iv.status, 'incomplete');
+	assert.deepEqual(iv.missing, ['b']);
+});
+
+test('variants: a dry fill with no instruction is reported missing', () => {
+	const result = stated([pkg('a', [row(9.6, 100)]), pkg('b', [])]);
+	assert.deepEqual(result.missing, ['b']);
+	assert.equal(result.groups[0].status, 'incomplete');
+});
+
+test('variants: two steps every label states are alternatives, not a split', () => {
+	const group = stated([
+		pkg('a', [row(2.1, 350, { routes: ['IM'] }), row(3.6, 250, { routes: ['IM'] })]),
+		pkg('b', [row(2.1, 350, { routes: ['IM'] }), row(3.6, 250, { routes: ['IM'] })])
+	]).groups[0];
+	assert.equal(group.status, 'unanimous');
+	assert.deepEqual(group.differs[1], { diluentMl: false, concentration: false, diluents: false });
+});
+
+test('variants: a route-less step beside routed ones is unassigned', () => {
+	const result = stated([pkg('a', [row(9.6, 100, { routes: ['IV'] })]), pkg('b', [row(50, 20)])]);
+	assert.equal(result.groups.find((g) => g.route === null)!.status, 'unassigned');
+});

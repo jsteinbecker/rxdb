@@ -1,4 +1,5 @@
 <script lang="ts">
+      import ItemVialPrep from "./ItemVialPrep.svelte";
       import RxCui from '$lib/components/RxCui.svelte';
       import BrandedName from '$lib/components/BrandedName.svelte';
       import {formatNdc} from "$lib/catalog/ndc";
@@ -372,6 +373,10 @@
                   <ItemSummary summary={data.summary} title={item.nameOverride ?? item.sourceName} itemStyle={item.strengthStyle}/>
                   <IngredientScenarios summary={data.summary}/>
             </div>
+      {/if}
+
+      {#if data.vialPrep.status === "stated"}
+            <ItemVialPrep prep={data.vialPrep} total={data.packages.length} />
       {/if}
 
       {#if !data.packages.length}
