@@ -130,7 +130,7 @@ const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().t
 
 const HYDRATION_WORD =
 	/\b(?:anhydrous|(?:mono|di|tri|tetra|penta|hexa|hepta|hemi|sesqui)?hydrate)\b/gi;
-const withoutHydration = (name: string) =>
+export const withoutHydration = (name: string) =>
 	name.replace(HYDRATION_WORD, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 
 /** An acid as RxNorm names its moiety, by the anion: `clavulanic acid` → `clavulanate`. */
@@ -205,6 +205,7 @@ export function checkProductStrengths(
 
 	correctMassDenominators(product, checked);
 	correctSaltAsMoiety(product.ingredients, checked, options.rxNormName ?? null);
+	correctSaltAsMoietyByLabel(product.ingredients, checked, options.labelText ?? null);
 	correctHeavySaltAsMoiety(
 		product.ingredients,
 		checked,
@@ -426,6 +427,66 @@ function statesAs(
 	const between = '[^\\d;]{0,40}?';
 	const stated = 'salt' in as ? saltAmount : amount;
 	return new RegExp(`${named}${between}${stated}|${stated}\\s+(?:of\\s+)?${named}`, 'i').test(text);
+}
+
+/**
+ * Rule 2, with the label's own words as the arbiter where RxNorm can't be:
+ * `10 g vancomycin (equivalent to 10.25 g vancomycin hydrochloride)`. The
+ * mapped SCD is often the reconstituted concentration (`100 MG/ML`), which a
+ * per-vial strength can't be compared with, so rule 2 stays silent and the
+ * salt's mass is shown as moiety strength. A formula line giving the salt the
+ * row's number and the moiety a smaller one, a light salt apart, is proof.
+ */
+function correctSaltAsMoietyByLabel(
+	ingredients: SplIngredient[],
+	checked: CheckedStrength[],
+	labelText: string | null
+): void {
+	if (!labelText) return;
+	ingredients.forEach((ingredient, index) => {
+		const row = checked[index];
+		if (ingredient.kind !== 'active' || ingredient.basis !== 'moiety') return;
+		if (ingredient.moieties.length !== 1 || row.strength === null || !row.strengthUnit) return;
+		if (row.corrections.some((c) => c.kind !== 'presentation-unit')) return;
+		const moiety = ingredient.moieties[0];
+		if (sameSubstance(ingredient.name, moiety.name)) return;
+		if (!namesMoiety(ingredient.name, moiety.name)) return;
+		const labelMg = massMg(row.strength, row.strengthUnit);
+		if (labelMg === null || labelMg <= 0) return;
+
+		const amount = '(?<![\\d.])(\\d*\\.?\\d+)\\s*(g|grams?|mg|milligrams?|mcg|µg|ug|micrograms?)\\s+(?:of\\s+)?';
+		const salt = `${amount}\\b${substancePattern(ingredient.name)}\\b`;
+		const counterion = counterionOf(ingredient.name, moiety.name)?.split(/\s+/)[0];
+		const bare = `${amount}\\b${substancePattern(moiety.name)}\\b${counterion ? `(?![\\s,]+${escaped(counterion)})` : ''}`;
+		const equivalent = '[^\\d;]{0,20}?equivalent\\s+to\\s+';
+		const mgOf = (value: string, unit: string) =>
+			massMg(Number(value), /^g/i.test(unit) ? 'g' : /^m(?:g|illi)/i.test(unit) ? 'mg' : 'mcg');
+		const same = (mg: number | null) => mg !== null && Math.abs(mg - labelMg) <= SAME_MASS * labelMg;
+
+		let moietyMg: number | null = null;
+		for (const m of labelText.matchAll(new RegExp(`${bare}${equivalent}${salt}`, 'gi')))
+			if (same(mgOf(m[3], m[4]))) moietyMg ??= mgOf(m[1], m[2]);
+		for (const m of labelText.matchAll(new RegExp(`${salt}${equivalent}${bare}`, 'gi')))
+			if (same(mgOf(m[1], m[2]))) moietyMg ??= mgOf(m[3], m[4]);
+		if (moietyMg === null || moietyMg <= 0) return;
+		const ratio = labelMg / moietyMg;
+		if (ratio <= MIN_SALT_RATIO || ratio > MAX_SALT_RATIO) return;
+
+		const stated = strengthText({ ...row, per: null, perUnit: null })!;
+		const printed = row.strength;
+		const corrected = round(moietyMg / (mgPer(row.strengthUnit) ?? 1));
+		row.strength = corrected;
+		const salted = counterionOf(ingredient.name, moiety.name);
+		row.corrections.push({
+			kind: 'salt-equivalent',
+			stated: printed,
+			note:
+				`Strength corrected from stated value of ${stated}, equivalent to ` +
+				`${corrected} ${row.strengthUnit} ${moiety.name.toLowerCase()}` +
+				(salted ? ` as the ${salted} salt` : ' as its salt') +
+				', per the label'
+		});
+	});
 }
 
 /** Rule 3 — a heavy salt's mass stated as moiety strength, confirmed by the label. */

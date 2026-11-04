@@ -548,3 +548,207 @@ test('a pack name yields its components, not its braces', () => {
 	).map((entry) => entry.name);
 	assert.deepEqual(names, ['norgestimate', 'ethinyl estradiol', 'inert ingredients']);
 });
+
+// 0143-9164-01: the SCD is the reconstituted 100 MG/ML, so only the label's
+// formula line can say 10.25 g is the hydrochloride's mass.
+test('a per-vial salt mass is corrected from the label when the SCD is per mL', () => {
+	const [product] = parseSplIngredients(
+		VANCOMYCIN.replaceAll('513', '10250').replaceAll('125"', '2500"')
+	);
+	const labelText =
+		'Each 10 g vial contains 10 g vancomycin (equivalent to 10.25 g vancomycin hydrochloride), 2.5 g trehalose';
+	const rxNormName = 'vancomycin 100 MG/ML Injectable Solution';
+	const [row] = checkProductStrengths(product, { rxNormName, labelText });
+	assert.equal(strengthText(row), '10000 mg/1 VIAL');
+	assert.equal(row.corrections.at(-1)?.kind, 'salt-equivalent');
+	assert.equal(row.corrections.at(-1)?.stated, 10250);
+
+	// "equivalent to 10 g" alone gives the number as the moiety's: no change.
+	const [plain] = checkProductStrengths(product, {
+		rxNormName,
+		labelText: 'vancomycin hydrochloride equivalent to 10 g vancomycin base'
+	});
+	assert.equal(strengthText(plain), '10250 mg/1 VIAL');
+});
+
+// ── Label-text salt arbitration ─────────────────────────────────────────────
+// A salt's mass coded as moiety strength (ACTIM), where the only proof is the
+// label's formula line. Each case is a real labeling pattern; the SCD is one
+// RxNorm can't compare with (a reconstituted per-mL), so only the text decides.
+
+interface LabelCase {
+	title: string;
+	salt: [name: string, unii: string];
+	moiety: [name: string, unii: string];
+	coded: [value: string, unit: string];
+	rxNormName?: string;
+	labelText: string;
+	expected: string;
+	classCode?: string;
+}
+
+const labelProduct = (c: LabelCase) =>
+	parseSplIngredients(
+		single(c.salt[0], c.salt[1], c.moiety[0], c.moiety[1], c.coded[0], c.coded[1]).replace(
+			'classCode="ACTIM"',
+			`classCode="${c.classCode ?? 'ACTIM'}"`
+		)
+	)[0];
+
+const corrected: LabelCase[] = [
+	{
+		title: 'cefazolin sodium bulk vial, moiety first with parenthetical salt',
+		salt: ['CEFAZOLIN SODIUM', 'P380M0454Z'],
+		moiety: ['CEFAZOLIN', 'IHS69L0Y4T'],
+		coded: ['10.48', 'g'],
+		rxNormName: 'cefazolin 330 MG/ML Injectable Solution',
+		labelText: 'Each pharmacy bulk vial contains 10 g cefazolin (equivalent to 10.48 g cefazolin sodium).',
+		expected: '10 g'
+	},
+	{
+		title: 'ceftriaxone sodium, salt first: "X of salt equivalent to Y of moiety"',
+		salt: ['CEFTRIAXONE SODIUM', '023Z5BR09K'],
+		moiety: ['CEFTRIAXONE', '75J73V1629'],
+		coded: ['1.193', 'g'],
+		rxNormName: 'ceftriaxone 100 MG/ML Injectable Solution',
+		labelText: 'Each vial contains 1.193 g of ceftriaxone sodium equivalent to 1 g of ceftriaxone.',
+		expected: '1 g'
+	},
+	{
+		title: 'doxycycline hyclate capsule, units in words, no RxNorm name at all',
+		salt: ['DOXYCYCLINE HYCLATE', '19XTS3T51U'],
+		moiety: ['DOXYCYCLINE', 'N12000U13O'],
+		coded: ['115.4', 'mg'],
+		labelText:
+			'Each capsule contains 115.4 milligrams of doxycycline hyclate, equivalent to 100 milligrams of doxycycline.',
+		expected: '100 mg'
+	},
+	{
+		title: 'label in grams, coded in milligrams',
+		salt: ['ONDANSETRON HYDROCHLORIDE', 'NMH84OZK2B'],
+		moiety: ['ONDANSETRON', '4AF302ESOS'],
+		coded: ['4990', 'mg'],
+		rxNormName: 'ondansetron 2 MG/ML Injectable Solution',
+		labelText: 'Each bulk vial contains 4.5 g ondansetron (equivalent to 4.99 g ondansetron hydrochloride).',
+		expected: '4500 mg'
+	},
+	{
+		title: 'moiety sentence written with "base" after the moiety',
+		salt: ['VANCOMYCIN HYDROCHLORIDE', '71WO621TJD'],
+		moiety: ['VANCOMYCIN', '6Q205EH1VU'],
+		coded: ['1.025', 'g'],
+		rxNormName: 'vancomycin 50 MG/ML Oral Solution',
+		labelText: 'Each bottle contains 1.025 g vancomycin hydrochloride equivalent to 1 g vancomycin base.',
+		expected: '1 g'
+	},
+	{
+		title: 'mixed case and a line break in the formula line',
+		salt: ['GEMCITABINE HYDROCHLORIDE', 'U347PV74IL'],
+		moiety: ['GEMCITABINE', 'B76N6SBZ8R'],
+		coded: ['1.139', 'g'],
+		rxNormName: 'gemcitabine 38 MG/ML Injectable Solution',
+		labelText: 'Each vial contains 1 g Gemcitabine (equivalent to\n1.139 g Gemcitabine Hydrochloride), mannitol and sodium acetate.',
+		expected: '1 g'
+	}
+];
+
+for (const c of corrected)
+	test(`label-text salt correction: ${c.title}`, () => {
+		const [row] = checkProductStrengths(labelProduct(c), {
+			rxNormName: c.rxNormName,
+			labelText: c.labelText
+		});
+		assert.equal(strengthText(row), c.expected);
+		const correction = row.corrections.at(-1);
+		assert.equal(correction?.kind, 'salt-equivalent');
+		assert.equal(correction?.stated, Number(c.coded[0]));
+		assert.match(correction!.note, /per the label$/);
+	});
+
+const untouched: LabelCase[] = [
+	{
+		title: '"equivalent to" gives the coded number as the moiety\'s (ordinary labeling)',
+		salt: ['AMLODIPINE BESYLATE', '864V2Q084H'],
+		moiety: ['AMLODIPINE', '1J444QC288'],
+		coded: ['5', 'mg'],
+		labelText: 'Each tablet contains amlodipine besylate equivalent to 5 mg of amlodipine.',
+		expected: '5 mg'
+	},
+	{
+		title: 'formula line agrees with the coded number as the moiety\'s',
+		salt: ['CEFAZOLIN SODIUM', 'P380M0454Z'],
+		moiety: ['CEFAZOLIN', 'IHS69L0Y4T'],
+		coded: ['10', 'g'],
+		labelText: 'Each vial contains 10 g cefazolin (equivalent to 10.48 g cefazolin sodium).',
+		expected: '10 g'
+	},
+	{
+		title: 'the salt amount in the text is not the coded number',
+		salt: ['CEFTRIAXONE SODIUM', '023Z5BR09K'],
+		moiety: ['CEFTRIAXONE', '75J73V1629'],
+		coded: ['2.386', 'g'],
+		labelText: 'Each vial contains 1.193 g of ceftriaxone sodium equivalent to 1 g of ceftriaxone.',
+		expected: '2.386 g'
+	},
+	{
+		title: 'heavy salt beyond the light-salt window is not this rule\'s',
+		salt: ['LYSINE ACETATE', 'TTL6G7LIWZ'],
+		moiety: ['LYSINE', 'K3Z4F929H6'],
+		coded: ['1.2', 'g'],
+		labelText: '0.85 g lysine (equivalent to 1.2 g lysine acetate)',
+		expected: '1.2 g'
+	},
+	{
+		title: 'basis coded ACTIB: the number is the salt\'s, as named',
+		salt: ['DOXYCYCLINE HYCLATE', '19XTS3T51U'],
+		moiety: ['DOXYCYCLINE', 'N12000U13O'],
+		coded: ['115.4', 'mg'],
+		classCode: 'ACTIB',
+		labelText: '115.4 mg of doxycycline hyclate, equivalent to 100 mg of doxycycline',
+		expected: '115.4 mg'
+	},
+	{
+		title: 'a different drug\'s formula line in a combination label',
+		salt: ['TAZOBACTAM SODIUM', 'UXA545ABTT'],
+		moiety: ['TAZOBACTAM', 'SE10G96M8W'],
+		coded: ['0.25', 'g'],
+		labelText: '2 g piperacillin (equivalent to 2.085 g piperacillin sodium) and 0.25 g tazobactam.',
+		expected: '0.25 g'
+	},
+	{
+		title: 'a hydrate names no counterion, so it is not a salt of its moiety',
+		salt: ['MEROPENEM TRIHYDRATE', 'FV9J3JU8B1'],
+		moiety: ['MEROPENEM', 'YOP6PU5P9B'],
+		coded: ['1.14', 'g'],
+		labelText: '1 g meropenem (equivalent to 1.14 g meropenem trihydrate)',
+		expected: '1.14 g'
+	},
+	{
+		title: 'semicolon separates the moiety from an unrelated salt statement',
+		salt: ['VANCOMYCIN HYDROCHLORIDE', '71WO621TJD'],
+		moiety: ['VANCOMYCIN', '6Q205EH1VU'],
+		coded: ['10.25', 'g'],
+		labelText: 'Store 10 g vancomycin vials refrigerated; 10.25 g vancomycin hydrochloride per carton.',
+		expected: '10.25 g'
+	}
+];
+
+for (const c of untouched)
+	test(`label-text salt rule leaves alone: ${c.title}`, () => {
+		const [row] = checkProductStrengths(labelProduct(c), {
+			rxNormName: c.rxNormName,
+			labelText: c.labelText
+		});
+		assert.equal(strengthText(row), c.expected);
+		assert.ok(!row.corrections.some((x) => x.kind === 'salt-equivalent'));
+	});
+
+test('label text never double-corrects what RxNorm already corrected', () => {
+	const [row] = checkProductStrengths(labelProduct({ ...corrected[4], coded: ['513', 'mg'] }), {
+		rxNormName: 'vancomycin 500 MG Oral Capsule',
+		labelText: '500 mg vancomycin (equivalent to 513 mg vancomycin hydrochloride)'
+	});
+	assert.equal(strengthText(row), '500 mg');
+	assert.equal(row.corrections.filter((x) => x.kind === 'salt-equivalent').length, 1);
+	assert.doesNotMatch(row.corrections[0].note, /per the label/);
+});
