@@ -5,11 +5,11 @@ score, imprint laid out as ILN), front and back side by side, or the label's pho
 when there is one; clicking switches between them. `compact` drops the caption.
 -->
 <script lang="ts">
-import type {PillAppearance} from "$lib/labels/spl-characteristics";
-import {appearanceText, swatchOf} from "$lib/labels/spl-characteristics";
-import {SECTION_TITLES} from "$lib/labels/spl-appearance-text";
-import {drawPill, type ShellLook, holeBevel, markTransform, symbolPath} from '$lib/imprints/iln-render';
-import type {PillImageLayout} from "$lib/imprints/pill-image-layout";
+import type {PillAppearance} from "#lib/labels/spl-characteristics.ts";
+import {appearanceText, swatchOf} from "#lib/labels/spl-characteristics.ts";
+import {SECTION_TITLES} from "#lib/labels/spl-appearance-text.ts";
+import {drawPill, type ShellLook, holeBevel, markTransform, symbolPath} from '#lib/imprints/iln-render.ts';
+import type {PillImageLayout} from "#lib/imprints/pill-image-layout.ts";
 import {page} from '$app/state';
 
 type SymbolMark = Extract<ReturnType<typeof drawPill>['views'][number]['marks'][number], {kind: 'symbol'}>;

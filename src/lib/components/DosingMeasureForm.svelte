@@ -8,7 +8,7 @@ actions.
 <script lang="ts">
       import {enhance} from '$app/forms';
       import type { StagedPackage } from '../catalog/types';
-      import {type DosingMeasure, dosingMeasureText, ingredientGroups, isCombo} from "$lib/medication/dosing-measure";
+      import {type DosingMeasure, dosingMeasureText, ingredientGroups, isCombo} from "#lib/medication/dosing-measure.ts";
 
       let {
             item,

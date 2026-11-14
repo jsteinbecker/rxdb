@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
-	import { ruleKeyText } from "$lib/formulary/pharm-class-rule-label";
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import PharmClassRuleDialog from '#lib/components/PharmClassRuleDialog.svelte';
+	import { ruleKeyText } from "#lib/formulary/pharm-class-rule-label.ts";
 
 	let { data, form } = $props();
 

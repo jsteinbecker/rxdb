@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { naturalCompare } from '$lib/shared/natural-sort';
+import { naturalCompare } from '#lib/shared/natural-sort.ts';
 import type { Prisma } from '../../../generated/client';
 import {
 	addBrand,
@@ -11,7 +11,7 @@ import {
 	mergeBrands,
 	removeBrand,
 	type BrandRow
-} from '$lib/medication/brand-tags';
+} from '#lib/medication/brand-tags.ts';
 
 type Db = Prisma.TransactionClient;
 export type BrandTag = { name: string; nameKey: string; source: 'rxnorm' | 'manual' };

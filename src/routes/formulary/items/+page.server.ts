@@ -1,16 +1,16 @@
 import { fail } from '@sveltejs/kit';
-import { prisma } from '$lib/server/infrastructure/database';
+import { prisma } from '#lib/server/infrastructure/database.ts';
 import {
 	defaultScope,
 	loadedItems,
 	removeFromFormulary,
 	targetValue
-} from '$lib/server/formulary/membership';
-import { PRODUCT_SETS, productSet } from '$lib/server/catalog/product-sets';
-import { loadStagedNode } from '$lib/server/catalog/sync';
-import { parseSettings } from '$lib/formulary/settings';
-import { jobFailure, jobItem, trackJob } from '$lib/server/infrastructure/jobs';
-import type { LoadedItem } from '$lib/server/formulary/membership';
+} from '#lib/server/formulary/membership.ts';
+import { PRODUCT_SETS, productSet } from '#lib/server/catalog/product-sets.ts';
+import { loadStagedNode } from '#lib/server/catalog/sync.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
+import { jobFailure, jobItem, trackJob } from '#lib/server/infrastructure/jobs.ts';
+import type { LoadedItem } from '#lib/server/formulary/membership.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 function reloadItems(scopeId: string, items: LoadedItem[]) {

@@ -1,24 +1,24 @@
 <script lang="ts">
       import ItemVialPrep from "./ItemVialPrep.svelte";
-      import RxCui from '$lib/components/RxCui.svelte';
-      import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from "$lib/catalog/ndc";
-      import PageHeader from '$lib/components/PageHeader.svelte';
+      import RxCui from '#lib/components/RxCui.svelte';
+      import BrandedName from '#lib/components/BrandedName.svelte';
+      import {formatNdc} from "#lib/catalog/ndc.ts";
+      import PageHeader from '#lib/components/PageHeader.svelte';
       import {enhance} from '$app/forms';
-      import {packageLayout, type PackageLine, runSpans} from "$lib/formulary/item";
-      import {NOT_SPECIFIED} from "$lib/formulary/hierarchy";
-      import ItemSummary from '$lib/components/ItemSummary.svelte';
-      import IngredientScenarios from '$lib/components/IngredientScenarios.svelte';
-      import PillMockup from '$lib/components/PillMockup.svelte';
-      import RouteBadges from "$lib/components/RouteBadges.svelte";
-      import {pillImageKey, pillPhotoUrl} from "$lib/imprints/pill-image-layout";
-      import {abbreviatedRelease} from "$lib/medication/time-release";
-      import {itemName} from "$lib/formulary/item-name";
-      import {ingredientOrderKey, nameIngredients, orderIngredients} from "$lib/medication/ingredient-order";
-      import {ITEM_STRENGTH_STYLES} from "$lib/medication/strength-style";
-      import {strengthRules} from "$lib/client/strength-display.svelte";
-      import {badgeText} from "$lib/curation/local-concept-list";
-      import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
+      import {packageLayout, type PackageLine, runSpans} from "#lib/formulary/item.ts";
+      import {NOT_SPECIFIED} from "#lib/formulary/hierarchy.ts";
+      import ItemSummary from '#lib/components/ItemSummary.svelte';
+      import IngredientScenarios from '#lib/components/IngredientScenarios.svelte';
+      import PillMockup from '#lib/components/PillMockup.svelte';
+      import RouteBadges from "#lib/components/RouteBadges.svelte";
+      import {pillImageKey, pillPhotoUrl} from "#lib/imprints/pill-image-layout.ts";
+      import {abbreviatedRelease} from "#lib/medication/time-release.ts";
+      import {itemName} from "#lib/formulary/item-name.ts";
+      import {ingredientOrderKey, nameIngredients, orderIngredients} from "#lib/medication/ingredient-order.ts";
+      import {ITEM_STRENGTH_STYLES} from "#lib/medication/strength-style.ts";
+      import {strengthRules} from "#lib/client/strength-display.svelte.ts";
+      import {badgeText} from "#lib/curation/local-concept-list.ts";
+      import MgPerMl from '#lib/components/helpers/MgPerMl.svelte';
 
       let {data, form} = $props();
 

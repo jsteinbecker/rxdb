@@ -1,18 +1,18 @@
 import { fail } from '@sveltejs/kit';
-import { editTargetError } from '$lib/curation/local-concept-input';
-import { prisma } from '$lib/server/infrastructure/database';
-import { defaultScope } from '$lib/server/formulary/membership';
-import { syncExternalPackages } from '$lib/server/catalog/sync';
-import { supersedeTarget } from '$lib/server/curation/local-concept-target';
-import { editNdc } from '$lib/curation/local-concept-list';
-import { parseSettings } from '$lib/formulary/settings';
+import { editTargetError } from '#lib/curation/local-concept-input.ts';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { defaultScope } from '#lib/server/formulary/membership.ts';
+import { syncExternalPackages } from '#lib/server/catalog/sync.ts';
+import { supersedeTarget } from '#lib/server/curation/local-concept-target.ts';
+import { editNdc } from '#lib/curation/local-concept-list.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
 import {
 	listLocalConcepts,
 	LocalConceptInputError,
 	retireLocalConcept,
 	stopSuperseding,
 	supersede
-} from '$lib/server/curation/local-concept-store';
+} from '#lib/server/curation/local-concept-store.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

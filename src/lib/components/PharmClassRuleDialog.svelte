@@ -6,7 +6,7 @@ Posts to the page's `pharmClassRule` and `pharmClassRuleDelete` actions.
 -->
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { ScopeOption } from "$lib/formulary/pharm-class-scope-options";
+	import type { ScopeOption } from "#lib/formulary/pharm-class-scope-options.ts";
 
 	type Scope = ScopeOption & {
 		count: number;

@@ -4,44 +4,44 @@
  * @module
  */
 import { error } from '@sveltejs/kit';
-import { toNdc11 } from '$lib/catalog/ndc';
-import { prisma } from '$lib/server/infrastructure/database';
-import { itemName } from '$lib/formulary/item-name';
-import { stagedTree, syncExternalPackages } from '$lib/server/catalog/sync';
-import { defaultScope, loadedItems, localNamesOf } from '$lib/server/formulary/membership';
-import { withPharmClassRules } from '$lib/server/curation/pharm-class-view';
-import { withLocalConcepts } from '$lib/server/curation/local-concept-view';
-import { supersedeTarget, type SupersedeTarget } from '$lib/server/curation/local-concept-target';
+import { toNdc11 } from '#lib/catalog/ndc.ts';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { itemName } from '#lib/formulary/item-name.ts';
+import { stagedTree, syncExternalPackages } from '#lib/server/catalog/sync.ts';
+import { defaultScope, loadedItems, localNamesOf } from '#lib/server/formulary/membership.ts';
+import { withPharmClassRules } from '#lib/server/curation/pharm-class-view.ts';
+import { withLocalConcepts } from '#lib/server/curation/local-concept-view.ts';
+import { supersedeTarget, type SupersedeTarget } from '#lib/server/curation/local-concept-target.ts';
 
-import { localConceptDraft, type DraftSource } from '$lib/curation/local-concept-draft';
-import { type IonicRow, type LocalConceptInput } from '$lib/curation/local-concept-input';
-import type { LocalConceptView } from '$lib/curation/local-concept-view';
-import { packageClassKey } from '$lib/formulary/pharm-class-key';
-import { scopeOptions } from '$lib/formulary/pharm-class-scope-options';
-import { parseSettings } from '$lib/formulary/settings';
-import { packagingFacts } from '$lib/formulary/hierarchy';
-import { loadPackageSnapshots } from '$lib/server/catalog/snapshot-store';
+import { localConceptDraft, type DraftSource } from '#lib/curation/local-concept-draft.ts';
+import { type IonicRow, type LocalConceptInput } from '#lib/curation/local-concept-input.ts';
+import type { LocalConceptView } from '#lib/curation/local-concept-view.ts';
+import { packageClassKey } from '#lib/formulary/pharm-class-key.ts';
+import { scopeOptions } from '#lib/formulary/pharm-class-scope-options.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
+import { packagingFacts } from '#lib/formulary/hierarchy.ts';
+import { loadPackageSnapshots } from '#lib/server/catalog/snapshot-store.ts';
 import {
 	countMatches,
 	knownClasses,
 	rulesForKeys
-} from '$lib/server/curation/pharm-class-rule-store';
+} from '#lib/server/curation/pharm-class-rule-store.ts';
 
-import { findEquivalentPackages } from '$lib/server/curation/property-override';
-import { loadDosingMeasure } from '$lib/server/curation/dosing-measure-store';
+import { findEquivalentPackages } from '#lib/server/curation/property-override.ts';
+import { loadDosingMeasure } from '#lib/server/curation/dosing-measure-store.ts';
 
 import {
 	loadPillImageLayouts,
 	pillImageTarget,
 	queuePillImages,
 	unmeasured
-} from '$lib/server/media/pill-image-store';
-import { resolvePillPhotos } from '$lib/server/media/pill-photo';
+} from '#lib/server/media/pill-image-store.ts';
+import { resolvePillPhotos } from '#lib/server/media/pill-photo.ts';
 import { dev } from '$app/environment';
-import { pillImageKey, type PillMedia } from '$lib/imprints/pill-image-layout';
-import { measuredToIln } from '$lib/imprints/measured-to-iln';
-import { guessIln } from '$lib/imprints/spl-to-iln';
-import { toSplAppearance } from '$lib/imprints/iln-render';
+import { pillImageKey, type PillMedia } from '#lib/imprints/pill-image-layout.ts';
+import { measuredToIln } from '#lib/imprints/measured-to-iln.ts';
+import { guessIln } from '#lib/imprints/spl-to-iln.ts';
+import { toSplAppearance } from '#lib/imprints/iln-render.ts';
 
 /**
  * The packaging facts of the product's other packages (the same labeler and

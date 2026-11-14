@@ -33,7 +33,7 @@ Usage:
             type Quantity,
             quantityDecimal,
             type QuantityKind
-      } from "$lib/medication/quantity";
+      } from "#lib/medication/quantity.ts";
 
       let {
             value = $bindable(''),

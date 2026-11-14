@@ -5,7 +5,7 @@ up lazily (and shared across instances) unless the caller already knows it. Rend
 an em dash when there is no RxCUI.
 -->
 <script lang="ts">
-	import { rxcuiNames } from "$lib/client/rxcui-names";
+	import { rxcuiNames } from "#lib/client/rxcui-names.ts";
 
 	let {
 		rxcui,

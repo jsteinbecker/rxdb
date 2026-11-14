@@ -7,41 +7,41 @@ provider it came from; corrections and manual overrides are footnoted with their
 marks, and `editing` offers a pencil beside each overridable property.
 -->
 <script lang="ts">
-	import { racemicDisplayName } from "$lib/medication/ingredient-group";
-	import {formatNdc} from "$lib/catalog/ndc";
-	import RxCui from '$lib/components/RxCui.svelte';
+	import { racemicDisplayName } from "#lib/medication/ingredient-group.ts";
+	import {formatNdc} from "#lib/catalog/ndc.ts";
+	import RxCui from '#lib/components/RxCui.svelte';
       import type { StagedPackage } from '../catalog/types';
       import type { LabelIngredient } from '../catalog/types';
-      import {appearanceText, isSolidDoseForm, SHAPE_CODES} from "$lib/labels/spl-characteristics";
-      import {refineAppearances} from "$lib/labels/spl-appearance-text";
+      import {appearanceText, isSolidDoseForm, SHAPE_CODES} from "#lib/labels/spl-characteristics.ts";
+      import {refineAppearances} from "#lib/labels/spl-appearance-text.ts";
       import PillMockup from './PillMockup.svelte';
       import RouteBadges from './RouteBadges.svelte';
-      import {drugsComImprint, drugsComImprintUrl, drugsComNdcUrl} from "$lib/catalog/drugs-com";
-      import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from "$lib/imprints/pill-image-layout";
+      import {drugsComImprint, drugsComImprintUrl, drugsComNdcUrl} from "#lib/catalog/drugs-com.ts";
+      import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from "#lib/imprints/pill-image-layout.ts";
       import {resolve} from '$app/paths';
-      import {constituentName, ionDisplayName} from "$lib/medication/ions";
-      import {nestIngredients, type Constituent, type IngredientGroup} from "$lib/medication/ingredient-constituents";
+      import {constituentName, ionDisplayName} from "#lib/medication/ions.ts";
+      import {nestIngredients, type Constituent, type IngredientGroup} from "#lib/medication/ingredient-constituents.ts";
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import SplLabelSections from './SplLabelSections.svelte';
       import OverrideCitation from './OverrideCitation.svelte';
-      import {nextAddedRowId, overrideTargets, pillIlnKey} from "$lib/curation/property-override-fields";
-      import {AMBIGUITY_KINDS} from "$lib/catalog/labeler-ambiguity";
-      import {pseudoScdFor} from "$lib/medication/pseudo-scd";
-      import {editActionLabel} from "$lib/curation/local-concept-view";
-      import {withBiosimilarSuffix} from "$lib/medication/biosimilar";
-      import {liquidConcentration, rxNormPackageTitle, scdShownStrength, timeReleaseAfterRelease} from "$lib/catalog/package-title";
-      import {formContext} from "$lib/medication/strength-style";
-      import {styledStrength} from "$lib/client/strength-display.svelte";
-      import {unitOfSaleLabel, unitOfUseLabel} from "$lib/catalog/package-unit-label";
-      import {toNdc11} from "$lib/catalog/ndc";
+      import {nextAddedRowId, overrideTargets, pillIlnKey} from "#lib/curation/property-override-fields.ts";
+      import {AMBIGUITY_KINDS} from "#lib/catalog/labeler-ambiguity.ts";
+      import {pseudoScdFor} from "#lib/medication/pseudo-scd.ts";
+      import {editActionLabel} from "#lib/curation/local-concept-view.ts";
+      import {withBiosimilarSuffix} from "#lib/medication/biosimilar.ts";
+      import {liquidConcentration, rxNormPackageTitle, scdShownStrength, timeReleaseAfterRelease} from "#lib/catalog/package-title.ts";
+      import {formContext} from "#lib/medication/strength-style.ts";
+      import {styledStrength} from "#lib/client/strength-display.svelte.ts";
+      import {unitOfSaleLabel, unitOfUseLabel} from "#lib/catalog/package-unit-label.ts";
+      import {toNdc11} from "#lib/catalog/ndc.ts";
       import MixedFraction from './MixedFraction.svelte';
       import ReconstitutionDiagram from './ReconstitutionDiagram.svelte';
       import DualChamberDiagram from './DualChamberDiagram.svelte';
-      import {dualChamber} from "$lib/labels/dual-chamber";
-      import {mgPer, mlPer} from "$lib/medication/units";
-      import {isOralDryFillForm} from "$lib/medication/ingredient-content";
-      import {fromNumber, toNumber} from "$lib/medication/rational";
+      import {dualChamber} from "#lib/labels/dual-chamber.ts";
+      import {mgPer, mlPer} from "#lib/medication/units.ts";
+      import {isOralDryFillForm} from "#lib/medication/ingredient-content.ts";
+      import {fromNumber, toNumber} from "#lib/medication/rational.ts";
       import {
             ingredientCorrectionKey,
             INGREDIENT_CORRECTION_KEY,
@@ -49,11 +49,11 @@ marks, and `editing` offers a pencil beside each overridable property.
             describeCorrection,
             formatStrength,
             parseStrengthText
-      } from "$lib/medication/ingredient-correction";
-      import {packageClassKey} from "$lib/formulary/pharm-class-key";
-      import {DOSE_TYPE_NAMES, NOT_SPECIFIED, packagingFacts, projectDoseForm, resolveDoseTypes, type PackagingFacts} from "$lib/formulary/hierarchy";
-      import type {EquivalenceGroup} from "$lib/formulary/equivalence";
-      import {scopeOptions} from "$lib/formulary/pharm-class-scope-options";
+      } from "#lib/medication/ingredient-correction.ts";
+      import {packageClassKey} from "#lib/formulary/pharm-class-key.ts";
+      import {DOSE_TYPE_NAMES, NOT_SPECIFIED, packagingFacts, projectDoseForm, resolveDoseTypes, type PackagingFacts} from "#lib/formulary/hierarchy.ts";
+      import type {EquivalenceGroup} from "#lib/formulary/equivalence.ts";
+      import {scopeOptions} from "#lib/formulary/pharm-class-scope-options.ts";
       import LocalConceptBlock from './LocalConceptBlock.svelte';
 
       let {

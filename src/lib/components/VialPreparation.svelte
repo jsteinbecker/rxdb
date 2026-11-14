@@ -5,7 +5,7 @@
     type AdoptedVialPrep,
     type ConsensusStep,
     type VialPrepConsensus
-  } from '$lib/compounds/vial-prep-consensus';
+  } from '#lib/compounds/vial-prep-consensus.ts';
 
   let {
     items,

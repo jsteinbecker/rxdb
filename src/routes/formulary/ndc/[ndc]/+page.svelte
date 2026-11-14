@@ -3,19 +3,19 @@
       import {tick} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {page} from '$app/state';
-      import {formatNdc} from "$lib/catalog/ndc";
-      import PageHeader from '$lib/components/PageHeader.svelte';
-      import MgPerMl from '$lib/components/helpers/MgPerMl.svelte';
+      import {formatNdc} from "#lib/catalog/ndc.ts";
+      import PageHeader from '#lib/components/PageHeader.svelte';
+      import MgPerMl from '#lib/components/helpers/MgPerMl.svelte';
       import {enhance} from '$app/forms';
-      import PackageDetail from '$lib/components/PackageDetail.svelte';
-      import ReinterpretDialog from '$lib/components/ReinterpretDialog.svelte';
-      import IngredientCorrectionDialog from '$lib/components/IngredientCorrectionDialog.svelte';
-      import DosingMeasureForm from '$lib/components/DosingMeasureForm.svelte';
-      import PharmClassRuleDialog from '$lib/components/PharmClassRuleDialog.svelte';
-      import LocalConceptDialog from '$lib/components/LocalConceptDialog.svelte';
-      import PropertyOverridePanel from '$lib/components/PropertyOverridePanel.svelte';
-      import {labelProductName, packageTitle, rxNormPackageTitle} from "$lib/catalog/package-title";
-      import {styledName} from "$lib/client/strength-display.svelte";
+      import PackageDetail from '#lib/components/PackageDetail.svelte';
+      import ReinterpretDialog from '#lib/components/ReinterpretDialog.svelte';
+      import IngredientCorrectionDialog from '#lib/components/IngredientCorrectionDialog.svelte';
+      import DosingMeasureForm from '#lib/components/DosingMeasureForm.svelte';
+      import PharmClassRuleDialog from '#lib/components/PharmClassRuleDialog.svelte';
+      import LocalConceptDialog from '#lib/components/LocalConceptDialog.svelte';
+      import PropertyOverridePanel from '#lib/components/PropertyOverridePanel.svelte';
+      import {labelProductName, packageTitle, rxNormPackageTitle} from "#lib/catalog/package-title.ts";
+      import {styledName} from "#lib/client/strength-display.svelte.ts";
 
       let {data, form} = $props();
 

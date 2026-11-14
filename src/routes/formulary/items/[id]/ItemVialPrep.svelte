@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { formatNdc } from '$lib/catalog/ndc';
-  import type { ConsensusStep, VialPrepVariants } from '$lib/compounds/vial-prep-consensus';
+  import { formatNdc } from '#lib/catalog/ndc.ts';
+  import type { ConsensusStep, VialPrepVariants } from '#lib/compounds/vial-prep-consensus.ts';
 
   /** Every vial preparation the item's packages' labels state, by route, with where they differ. */
   let { prep, total }: { prep: VialPrepVariants; total: number } = $props();

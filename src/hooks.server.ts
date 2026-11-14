@@ -1,6 +1,6 @@
-import { logger } from "$lib/server/infrastructure/log";
-import { prisma } from "$lib/server/infrastructure/database";
-import { reconcileFormularyEligibility } from "$lib/server/catalog/entity-store";
+import { logger } from "#lib/server/infrastructure/log.ts";
+import { prisma } from "#lib/server/infrastructure/database.ts";
+import { reconcileFormularyEligibility } from "#lib/server/catalog/entity-store.ts";
 import { fdaApiKeysFrom, setFdaApiKeys } from './lib/server/providers/transport';
 import { env } from '$env/dynamic/private';
 

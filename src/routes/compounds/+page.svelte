@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { resolve } from '$app/paths';
 
 	let { data, form } = $props();

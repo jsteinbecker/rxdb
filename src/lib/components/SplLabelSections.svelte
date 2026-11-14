@@ -9,7 +9,7 @@ left out.
       import {cubicInOut, cubicOut} from 'svelte/easing';
       import type { PackageDetails } from '../catalog/types';
       import LabelBlocks from './LabelBlocks.svelte';
-      import {filterLabelSection, type LabelScope, omissionNote} from "$lib/labels/label-relevance";
+      import {filterLabelSection, type LabelScope, omissionNote} from "#lib/labels/label-relevance.ts";
 
       type Label = NonNullable<PackageDetails['label']>;
       let {sections, scope = null}: {

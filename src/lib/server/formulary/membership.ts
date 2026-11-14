@@ -4,11 +4,11 @@
  *
  * @module
  */
-import { quantifiedScdName } from '$lib/medication/quantified-scd';
-import { itemName, itemStrengthStyle } from '$lib/formulary/item-name';
-import type { ItemStrengthStyle } from '$lib/medication/strength-style';
+import { quantifiedScdName } from '#lib/medication/quantified-scd.ts';
+import { itemName, itemStrengthStyle } from '#lib/formulary/item-name.ts';
+import type { ItemStrengthStyle } from '#lib/medication/strength-style.ts';
 import { scopeStrengthStyles } from './strength-styles';
-import { releasePeriod } from '$lib/medication/time-release';
+import { releasePeriod } from '#lib/medication/time-release.ts';
 import type { PrismaClient } from '../../../generated/client';
 import type { LocalConceptView } from '../../curation/local-concept-view';
 import type { ExternalPackage, RxConcept } from '../../catalog/types';
@@ -20,7 +20,7 @@ import { localConceptsByRxcui } from '../curation/local-concept-view';
 export const DEFAULT_FORMULARY = 'Default formulary';
 const ORIGIN = 'formulary_origin';
 
-import { targetValue, type LoadTarget } from '$lib/catalog/load-target';
+import { targetValue, type LoadTarget } from '#lib/catalog/load-target.ts';
 export { targetValue, type LoadTarget };
 export type LoadResult = {
 	formularyItemId: string;

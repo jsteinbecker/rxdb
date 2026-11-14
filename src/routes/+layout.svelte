@@ -1,12 +1,12 @@
 <script lang="ts">
-      import favicon from '$lib/assets/favicon.svg';
+      import favicon from '#lib/assets/favicon.svg';
       import {navigating, page} from '$app/state';
-      import NavProgress from '$lib/components/loading/NavProgress.svelte';
-      import JobProgress from '$lib/components/loading/JobProgress.svelte';
-      import PageSkeleton from '$lib/components/loading/PageSkeleton.svelte';
-      import {skeletonFor} from '$lib/components/loading/skeleton-route';
-      import AppNav from '$lib/components/AppNav.svelte';
-      import AppToolbar from '$lib/components/AppToolbar.svelte';
+      import NavProgress from '#lib/components/loading/NavProgress.svelte';
+      import JobProgress from '#lib/components/loading/JobProgress.svelte';
+      import PageSkeleton from '#lib/components/loading/PageSkeleton.svelte';
+      import {skeletonFor} from '#lib/components/loading/skeleton-route.ts';
+      import AppNav from '#lib/components/AppNav.svelte';
+      import AppToolbar from '#lib/components/AppToolbar.svelte';
       import {afterNavigate} from '$app/navigation';
 
       let { children } = $props();

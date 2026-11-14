@@ -5,7 +5,7 @@ strength and the local one, tagged removed, changed or added, and a caption coun
 each kind of change.
 -->
 <script lang="ts">
-	import type { ConceptIngredient, IngredientDiff } from "$lib/curation/local-concept";
+	import type { ConceptIngredient, IngredientDiff } from "#lib/curation/local-concept.ts";
 
 	let {
 		diff

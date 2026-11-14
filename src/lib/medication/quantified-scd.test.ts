@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { quantifiedScdName } from '$lib/medication/quantified-scd';
+import { quantifiedScdName } from '#lib/medication/quantified-scd.ts';
 
 describe('quantifiedScdName', () => {
 	it('restates volume and concentration as content over volume', () => {

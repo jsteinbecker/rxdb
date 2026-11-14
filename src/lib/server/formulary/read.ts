@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { itemName } from '$lib/formulary/item-name';
+import { itemName } from '#lib/formulary/item-name.ts';
 import type { PrismaClient } from '../../../generated/client';
 import { resolveRacemates, type FormularyRow } from '../../formulary/hierarchy';
 import { loadPackageSnapshots } from '../catalog/snapshot-store';

@@ -6,9 +6,9 @@ matches, or no source. Binds the choice as a `CitationDraft`.
 -->
 <script lang="ts">
       import SplPassagePicker from './SplPassagePicker.svelte';
-      import { formatNdc } from "$lib/catalog/ndc";
-      import type {CitationDraft} from "$lib/curation/citation-form";
-      import type {EquivalentPackage} from "$lib/curation/property-override-fields";
+      import { formatNdc } from "#lib/catalog/ndc.ts";
+      import type {CitationDraft} from "#lib/curation/citation-form.ts";
+      import type {EquivalentPackage} from "#lib/curation/property-override-fields.ts";
       import type { StagedPackage } from '../catalog/types';
 
       let {

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import PillMockup from '$lib/components/PillMockup.svelte';
-	import { ILN_DOC_EXAMPLES } from '$lib/imprints/iln-doc-examples';
-	import { SHAPES } from '$lib/imprints/shapes';
-	import type { PillAppearance } from "$lib/labels/spl-characteristics";
+	import PillMockup from '#lib/components/PillMockup.svelte';
+	import { ILN_DOC_EXAMPLES } from '#lib/imprints/iln-doc-examples.ts';
+	import { SHAPES } from '#lib/imprints/shapes.ts';
+	import type { PillAppearance } from "#lib/labels/spl-characteristics.ts";
 
 	const appearance = (shape: string, colors: string[], iln: string | null): PillAppearance => ({
 		productCode: null,

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { toNdc11 } from '$lib/catalog/ndc';
+import { toNdc11 } from '#lib/catalog/ndc.ts';
 import type { FdaProduct } from '../providers/openfda';
 
 /**

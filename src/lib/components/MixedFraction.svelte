@@ -10,8 +10,8 @@ Usage:
 ```
 -->
 <script lang="ts">
-      import {mixedParts} from "$lib/medication/quantity";
-      import type {Rational} from "$lib/medication/rational";
+      import {mixedParts} from "#lib/medication/quantity.ts";
+      import type {Rational} from "#lib/medication/rational.ts";
 
       let {value, unit = null}: { value: Rational; unit?: string | null } = $props();
 

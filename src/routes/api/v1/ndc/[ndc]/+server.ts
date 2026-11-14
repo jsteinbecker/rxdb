@@ -1,10 +1,10 @@
 import { json } from '@sveltejs/kit';
-import { toNdc11 } from '$lib/catalog/ndc';
-import { prisma } from '$lib/server/infrastructure/database';
-import { stagedTree, syncExternalPackages } from '$lib/server/catalog/sync';
-import { defaultScope } from '$lib/server/formulary/membership';
-import { withPharmClassRules } from '$lib/server/curation/pharm-class-view';
-import { withLocalConcepts } from '$lib/server/curation/local-concept-view';
+import { toNdc11 } from '#lib/catalog/ndc.ts';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { stagedTree, syncExternalPackages } from '#lib/server/catalog/sync.ts';
+import { defaultScope } from '#lib/server/formulary/membership.ts';
+import { withPharmClassRules } from '#lib/server/curation/pharm-class-view.ts';
+import { withLocalConcepts } from '#lib/server/curation/local-concept-view.ts';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params, url }) => {

@@ -11,9 +11,9 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages,
 -->
 <script lang="ts">
       import {enhance} from '$app/forms';
-      import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from "$lib/catalog/ndc";
-      import type {Role} from '$lib/compounds/compound-builder';
+      import BrandedName from '#lib/components/BrandedName.svelte';
+      import {formatNdc} from "#lib/catalog/ndc.ts";
+      import type {Role} from '#lib/compounds/compound-builder.ts';
 
       /** A formulary package that can be added to the compound. */
       type Candidate = {

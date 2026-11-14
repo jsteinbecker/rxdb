@@ -1,8 +1,8 @@
-import { loggedFetch } from '$lib/server/infrastructure/log';
-import { prisma } from '$lib/server/infrastructure/database';
+import { loggedFetch } from '#lib/server/infrastructure/log.ts';
+import { prisma } from '#lib/server/infrastructure/database.ts';
 import { loadConceptSnapshots } from '../../../../../lib/server/catalog/snapshot-store';
-import { defaultScope } from '$lib/server/formulary/membership';
-import { localConceptsByRxcui } from '$lib/server/curation/local-concept-view';
+import { defaultScope } from '#lib/server/formulary/membership.ts';
+import { localConceptsByRxcui } from '#lib/server/curation/local-concept-view.ts';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 

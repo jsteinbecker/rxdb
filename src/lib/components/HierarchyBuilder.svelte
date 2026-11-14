@@ -12,7 +12,7 @@ separated ↔ combined ingredients), or set to absorb an only child.
 		levelDimension,
 		mergesChildren,
 		withMerge
-	} from '$lib/formulary/hierarchy';
+	} from '#lib/formulary/hierarchy.ts';
 
 	let {
 		levels = $bindable()

@@ -1,12 +1,12 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHeader from '#lib/components/PageHeader.svelte';
   import { invalidateAll } from '$app/navigation';
-  import AddComponentPanel from '$lib/components/AddComponentPanel.svelte';
-  import CompoundLineRow from '$lib/components/CompoundLineRow.svelte';
-  import FinalConcentrations from '$lib/components/FinalConcentrations.svelte';
-  import QuantityField from '$lib/components/QuantityField.svelte';
-  import VialPreparation from '$lib/components/VialPreparation.svelte';
+  import AddComponentPanel from '#lib/components/AddComponentPanel.svelte';
+  import CompoundLineRow from '#lib/components/CompoundLineRow.svelte';
+  import FinalConcentrations from '#lib/components/FinalConcentrations.svelte';
+  import QuantityField from '#lib/components/QuantityField.svelte';
+  import VialPreparation from '#lib/components/VialPreparation.svelte';
   import {
     applyEdit,
     effectiveTotalVolume,
@@ -15,9 +15,9 @@
     VOLUME_UNIT,
     type Field,
     type Line
-  } from "$lib/compounds/compound-builder";
-  import { formatRational, serializeRational, type Rational } from "$lib/medication/rational";
-  import { RECONSTITUTION_ROUTES } from '$lib/labels/reconstitution-terms';
+  } from "#lib/compounds/compound-builder.ts";
+  import { formatRational, serializeRational, type Rational } from "#lib/medication/rational.ts";
+  import { RECONSTITUTION_ROUTES } from '#lib/labels/reconstitution-terms.ts';
 
   let { data, form } = $props();
 

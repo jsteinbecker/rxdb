@@ -6,28 +6,28 @@ see which override it supersedes.
 -->
 <script lang="ts">
       import {untrack} from 'svelte';
-      import {formatNdc} from "$lib/catalog/ndc";
+      import {formatNdc} from "#lib/catalog/ndc.ts";
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import type { StagedPackage } from '../catalog/types';
       import SplPassagePicker from './SplPassagePicker.svelte';
-      import {appendPassages, type SplPassageDraft} from "$lib/curation/citation-form";
+      import {appendPassages, type SplPassageDraft} from "#lib/curation/citation-form.ts";
       import OverrideCitation from './OverrideCitation.svelte';
       import QuantityField from './QuantityField.svelte';
       import PillMockup from './PillMockup.svelte';
-      import {explainIln, validateIln} from '$lib/imprints/iln-parse';
-      import {guessIln} from '$lib/imprints/spl-to-iln';
-      import {toSplAppearance} from '$lib/imprints/iln-render';
-      import {findShape, formatShapeProportion, MAX_PROPORTION, PROPORTIONS, splitShapeProportion} from '$lib/imprints/shapes';
-      import type {PillMedia} from "$lib/imprints/pill-image-layout";
-      import {type Quantity, quantityDecimal} from "$lib/medication/quantity";
+      import {explainIln, validateIln} from '#lib/imprints/iln-parse.ts';
+      import {guessIln} from '#lib/imprints/spl-to-iln.ts';
+      import {toSplAppearance} from '#lib/imprints/iln-render.ts';
+      import {findShape, formatShapeProportion, MAX_PROPORTION, PROPORTIONS, splitShapeProportion} from '#lib/imprints/shapes.ts';
+      import type {PillMedia} from "#lib/imprints/pill-image-layout.ts";
+      import {type Quantity, quantityDecimal} from "#lib/medication/quantity.ts";
       import {
             describeCorrection,
             INGREDIENT_CORRECTION_KEY,
             ingredientCorrectionKey,
             parseIngredientCorrection
-      } from "$lib/medication/ingredient-correction";
-      import {AMBIGUITY_KINDS, type AmbiguityKind, ambiguityKindsFor} from "$lib/catalog/labeler-ambiguity";
+      } from "#lib/medication/ingredient-correction.ts";
+      import {AMBIGUITY_KINDS, type AmbiguityKind, ambiguityKindsFor} from "#lib/catalog/labeler-ambiguity.ts";
       import {
             type EquivalentPackage,
             overrideChoices,
@@ -39,7 +39,7 @@ see which override it supersedes.
             PILL_ILN_KEY,
             PILL_SHAPE_KEY,
             splitMulti
-      } from "$lib/curation/property-override-fields";
+      } from "#lib/curation/property-override-fields.ts";
 
       let {
             item,

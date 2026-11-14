@@ -4,7 +4,7 @@ import {
 	LOCAL_PHOTO_TYPES,
 	localPhotoFile,
 	readLocalPhoto
-} from '$lib/server/media/local-pill-photos';
+} from '#lib/server/media/local-pill-photos.ts';
 import type { RequestHandler } from './$types';
 
 /** Hand-saved pill photos from `dev-pill-photos/`, under `vite dev` only. */

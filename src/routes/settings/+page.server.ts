@@ -1,13 +1,13 @@
 import { fail } from '@sveltejs/kit';
-import { prisma } from '$lib/server/infrastructure/database';
-import { clearFormulary, defaultScope, loadedItems } from '$lib/server/formulary/membership';
-import { parseSettings, type FormularySettings } from '$lib/formulary/settings';
-import { formularyRows } from '$lib/server/formulary/read';
-import { DIMENSIONS, dimensionValues } from '$lib/formulary/hierarchy';
-import { parseEquivalenceGroups } from '$lib/formulary/equivalence';
-import { formContext, parseStrengthStyleRule, ruleKey } from '$lib/medication/strength-style';
-import { DEFAULT_NAMING, parseNaming } from '$lib/compounds/compound-naming';
-import { refreshDraftNames } from '$lib/server/compounds/naming';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { clearFormulary, defaultScope, loadedItems } from '#lib/server/formulary/membership.ts';
+import { parseSettings, type FormularySettings } from '#lib/formulary/settings.ts';
+import { formularyRows } from '#lib/server/formulary/read.ts';
+import { DIMENSIONS, dimensionValues } from '#lib/formulary/hierarchy.ts';
+import { parseEquivalenceGroups } from '#lib/formulary/equivalence.ts';
+import { formContext, parseStrengthStyleRule, ruleKey } from '#lib/medication/strength-style.ts';
+import { DEFAULT_NAMING, parseNaming } from '#lib/compounds/compound-naming.ts';
+import { refreshDraftNames } from '#lib/server/compounds/naming.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

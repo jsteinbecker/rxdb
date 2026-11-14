@@ -12,8 +12,8 @@ import {
 	prismaSubstanceTable
 } from '../medication/substance-store';
 import * as env from '$app/env/private';
-import { prisma } from '$lib/server/infrastructure/database';
-import { REVIEW_FIELDS, type ReviewRequest } from '$lib/curation/reinterpret';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { REVIEW_FIELDS, type ReviewRequest } from '#lib/curation/reinterpret.ts';
 import { reviewPackage } from '../../catalog/review-package';
 import {
 	applyPackageReview,

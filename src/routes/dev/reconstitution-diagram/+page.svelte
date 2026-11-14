@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ReconstitutionDiagram, { SHAPES } from '$lib/components/ReconstitutionDiagram.svelte';
+	import ReconstitutionDiagram, { SHAPES } from '#lib/components/ReconstitutionDiagram.svelte';
 	const cases = [
 		{ title: 'Alteplase 2 mg', props: { contentMg: 2, diluentMl: 2.2, diluentName: 'SWFI', finalVolumeMl: 2, inaccessibleMl: 0.2, concentrationMgPerMl: 1, capacityMl: 3 } },
 		{ title: 'Ceftriaxone 1 g IM (no capacity)', props: { contentMg: 1000, diluentMl: 2.1, diluentName: 'lidocaine 1%', finalVolumeMl: 2.86, concentrationMgPerMl: 350 } },

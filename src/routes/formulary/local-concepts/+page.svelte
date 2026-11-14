@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { editState, evidenceText, supersedeItem, supersedesText } from "$lib/curation/local-concept-list";
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import { editState, evidenceText, supersedeItem, supersedesText } from "#lib/curation/local-concept-list.ts";
 
 	let { data, form } = $props();
 

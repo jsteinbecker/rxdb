@@ -25,7 +25,7 @@ test('shared catalog models, resolution and parsing have no transitive dependenc
 		assert.equal(path.relative(lib, file).split(path.sep).includes('server'), false, file);
 		const source = ts.preProcessFile(readFileSync(file, 'utf8'), true);
 		for (const { fileName } of source.importedFiles) {
-			const target = fileName.startsWith('$lib/')
+			const target = fileName.startsWith('#lib//index.ts')
 				? path.join(lib, fileName.slice(5))
 				: fileName.startsWith('.')
 					? path.resolve(path.dirname(file), fileName)

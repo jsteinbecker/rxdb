@@ -4,27 +4,27 @@
  *
  * @module
  */
-import { toNdc11 } from '$lib/catalog/ndc';
-import { naturalCompare } from '$lib/shared/natural-sort';
-import { labelerLabel, projectDoseForm } from '$lib/formulary/hierarchy';
-import { equivalence } from '$lib/formulary/equivalence';
-import { parseSettings } from '$lib/formulary/settings';
-import { ttyLabel } from '$lib/rxnorm-tty';
+import { toNdc11 } from '#lib/catalog/ndc.ts';
+import { naturalCompare } from '#lib/shared/natural-sort.ts';
+import { labelerLabel, projectDoseForm } from '#lib/formulary/hierarchy.ts';
+import { equivalence } from '#lib/formulary/equivalence.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
+import { ttyLabel } from '#lib/rxnorm-tty.ts';
 import { json } from '@sveltejs/kit';
-import { prisma } from '$lib/server/infrastructure/database';
-import { stagedTree, syncExternalSearch } from '$lib/server/catalog/sync';
-import { defaultScope, loadedOrigins, originKey } from '$lib/server/formulary/membership';
-import { setsMatching } from '$lib/server/catalog/product-sets';
-import { withPharmClassRulesInTree } from '$lib/server/curation/pharm-class-view';
-import { withLocalConceptsInTree } from '$lib/server/curation/local-concept-view';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { stagedTree, syncExternalSearch } from '#lib/server/catalog/sync.ts';
+import { defaultScope, loadedOrigins, originKey } from '#lib/server/formulary/membership.ts';
+import { setsMatching } from '#lib/server/catalog/product-sets.ts';
+import { withPharmClassRulesInTree } from '#lib/server/curation/pharm-class-view.ts';
+import { withLocalConceptsInTree } from '#lib/server/curation/local-concept-view.ts';
 import {
 	filtersFrom,
 	knownWords,
 	parseQuery,
 	relevance,
 	type ParsedQuery
-} from '$lib/catalog/search-relevance';
-import type { SearchResult, SetResult } from '$lib/catalog/search-types';
+} from '#lib/catalog/search-relevance.ts';
+import type { SearchResult, SetResult } from '#lib/catalog/search-types.ts';
 
 const DEFAULT_LIMIT = 24;
 const MAX_LIMIT = 50;

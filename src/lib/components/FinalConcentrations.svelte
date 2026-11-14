@@ -6,7 +6,7 @@ enough information to work it out.
 -->
 <script lang="ts">
       import MixedFraction from './MixedFraction.svelte';
-      import type {FinalRow} from "$lib/compounds/compound-builder";
+      import type {FinalRow} from "#lib/compounds/compound-builder.ts";
 
       let {rows}: {
             /** One row per ingredient slot, from the compound builder. */

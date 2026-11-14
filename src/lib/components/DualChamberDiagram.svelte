@@ -10,7 +10,7 @@
 	ReconstitutionDiagram it is not drawn to scale; the chambers are the point.
 -->
 <script lang="ts">
-	import type { DualChamberContainer } from '$lib/labels/dual-chamber';
+	import type { DualChamberContainer } from '#lib/labels/dual-chamber.ts';
 
 	interface Props {
 		/** The labeler's name for the system ("DUPLEX"). */

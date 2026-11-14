@@ -6,9 +6,9 @@ parsed by `labels/spl-sections.ts`. While a citation is being captured, each tab
 gets a checkbox so it can be cited as its cells' text.
 -->
 <script lang="ts">
-      import type {LabelBlock, LabelCell, LabelRun} from "$lib/labels/spl-sections";
+      import type {LabelBlock, LabelCell, LabelRun} from "#lib/labels/spl-sections.ts";
       import LabelBlocks from './LabelBlocks.svelte';
-      import {citationCapture} from "$lib/client/citation-capture.svelte";
+      import {citationCapture} from "#lib/client/citation-capture.svelte.ts";
 
       let {blocks}: {
             /** Parsed label blocks, in document order. */

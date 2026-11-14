@@ -1,10 +1,10 @@
 <script lang="ts">
       import {page} from '$app/state';
-      import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from "$lib/catalog/ndc";
-      import {packageTitle} from "$lib/catalog/package-title";
-      import {orderNameIngredients} from "$lib/medication/ingredient-order";
-      import PageHeader from '$lib/components/PageHeader.svelte';
+      import BrandedName from '#lib/components/BrandedName.svelte';
+      import {formatNdc} from "#lib/catalog/ndc.ts";
+      import {packageTitle} from "#lib/catalog/package-title.ts";
+      import {orderNameIngredients} from "#lib/medication/ingredient-order.ts";
+      import PageHeader from '#lib/components/PageHeader.svelte';
       import {onMount, untrack} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {resolve} from '$app/paths';
@@ -12,9 +12,9 @@
       import {
             buildTree, type ComboDoseDisplay, comboKey, DIMENSION_BY_KEY, type FormularyRow, levelLabel, MERGE_SEPARATOR,
             orderedComboLabel, packageSize, sharedIngredientOrder, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
-      } from "$lib/formulary/hierarchy";
-      import RouteBadge from '$lib/components/RouteBadge.svelte';
-      import {strengthRules, styledName} from "$lib/client/strength-display.svelte";
+      } from "#lib/formulary/hierarchy.ts";
+      import RouteBadge from '#lib/components/RouteBadge.svelte';
+      import {strengthRules, styledName} from "#lib/client/strength-display.svelte.ts";
 
       let { data } = $props();
 

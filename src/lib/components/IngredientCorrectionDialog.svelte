@@ -11,8 +11,8 @@ The correction is footnoted beside the value, keeping the original.
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import type { StagedPackage } from '../catalog/types';
-      import type {EquivalentPackage} from "$lib/curation/property-override-fields";
-      import type {StrengthBasis} from "$lib/labels/spl-ingredients";
+      import type {EquivalentPackage} from "#lib/curation/property-override-fields.ts";
+      import type {StrengthBasis} from "#lib/labels/spl-ingredients.ts";
       import {
             describeCorrection,
             formatStrength,
@@ -23,9 +23,9 @@ The correction is footnoted beside the value, keeping the original.
             parseStrengthText,
             sameIngredientRow,
             serializeIngredientCorrection
-      } from "$lib/medication/ingredient-correction";
-      import {conversionFactor, convertStrength, roundSignificant} from "$lib/medication/strength-conversion";
-      import {appendCitation, type CitationDraft, citationReady, emptyCitation} from "$lib/curation/citation-form";
+      } from "#lib/medication/ingredient-correction.ts";
+      import {conversionFactor, convertStrength, roundSignificant} from "#lib/medication/strength-conversion.ts";
+      import {appendCitation, type CitationDraft, citationReady, emptyCitation} from "#lib/curation/citation-form.ts";
       import CitationPicker from './CitationPicker.svelte';
 
       type Answer =

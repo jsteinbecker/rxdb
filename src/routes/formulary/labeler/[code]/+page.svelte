@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { formatNdc } from "$lib/catalog/ndc";
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import FormularyIcon from '$lib/components/FormularyIcon.svelte';
-	import { doseFormAbbreviation, packageDescriptionCase, productNameCase } from "$lib/catalog/package-text";
-	import { applyStrengthStyles } from "$lib/medication/strength-style";
-	import { strengthRules, styledName } from "$lib/client/strength-display.svelte";
+	import { formatNdc } from "#lib/catalog/ndc.ts";
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import FormularyIcon from '#lib/components/FormularyIcon.svelte';
+	import { doseFormAbbreviation, packageDescriptionCase, productNameCase } from "#lib/catalog/package-text.ts";
+	import { applyStrengthStyles } from "#lib/medication/strength-style.ts";
+	import { strengthRules, styledName } from "#lib/client/strength-display.svelte.ts";
 
 	let { data } = $props();
 

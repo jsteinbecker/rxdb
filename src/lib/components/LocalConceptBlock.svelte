@@ -5,9 +5,9 @@ name and code, what RxNorm says instead, an ingredient diff against RxNorm when 
 differ, and any ionic content the label states.
 -->
 <script lang="ts">
-	import type { LocalConceptView } from "$lib/curation/local-concept-view";
-	import type { IonicRow } from "$lib/curation/local-concept-input";
-	import { asConceptIngredient, diffIngredients, parseScdName } from "$lib/curation/local-concept";
+	import type { LocalConceptView } from "#lib/curation/local-concept-view.ts";
+	import type { IonicRow } from "#lib/curation/local-concept-input.ts";
+	import { asConceptIngredient, diffIngredients, parseScdName } from "#lib/curation/local-concept.ts";
 	import RxCui from './RxCui.svelte';
 	import LocalConceptDiff from './LocalConceptDiff.svelte';
 

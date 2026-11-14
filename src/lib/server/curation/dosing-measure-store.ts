@@ -10,7 +10,7 @@ import {
 	parseDosingMeasure,
 	type DosingMeasure,
 	type DosingMeasureSource
-} from '$lib/medication/dosing-measure';
+} from '#lib/medication/dosing-measure.ts';
 
 /** The selection made for this package's SCD concept, if any. */
 export async function loadDosingMeasure(item: DosingMeasureSource): Promise<DosingMeasure | null> {

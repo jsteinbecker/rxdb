@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { watchJobs } from "$lib/client/jobs-watch";
-	import RxCui from '$lib/components/RxCui.svelte';
-	import BrandedName from '$lib/components/BrandedName.svelte';
+	import { watchJobs } from "#lib/client/jobs-watch.ts";
+	import RxCui from '#lib/components/RxCui.svelte';
+	import BrandedName from '#lib/components/BrandedName.svelte';
       import {resolve} from '$app/paths';
       import {onDestroy, onMount} from 'svelte';
       import {replaceState} from '$app/navigation';
       import {page} from '$app/state';
-      import {ttyLabel, ttyTitle} from '$lib/rxnorm-tty';
+      import {ttyLabel, ttyTitle} from '#lib/rxnorm-tty.ts';
       import {SvelteMap, SvelteSet} from 'svelte/reactivity';
-      import PackageDetail from '$lib/components/PackageDetail.svelte';
-      import {packagingFacts} from '$lib/formulary/hierarchy';
-      import type {EquivalenceGroup} from '$lib/formulary/equivalence';
-      import PageHeader from '$lib/components/PageHeader.svelte';
-      import {packageTitle} from "$lib/catalog/package-title";
-      import {styledName} from "$lib/client/strength-display.svelte";
+      import PackageDetail from '#lib/components/PackageDetail.svelte';
+      import {packagingFacts} from '#lib/formulary/hierarchy.ts';
+      import type {EquivalenceGroup} from '#lib/formulary/equivalence.ts';
+      import PageHeader from '#lib/components/PageHeader.svelte';
+      import {packageTitle} from "#lib/catalog/package-title.ts";
+      import {styledName} from "#lib/client/strength-display.svelte.ts";
       import type { StagedConcept, StagedPackage } from '../lib/catalog/types';
-      import {filtersQuery, type MatchReason, type SearchFacets, type SearchFilters} from "$lib/catalog/search-relevance";
+      import {filtersQuery, type MatchReason, type SearchFacets, type SearchFilters} from "#lib/catalog/search-relevance.ts";
 
       type Result = {
 		id: string;

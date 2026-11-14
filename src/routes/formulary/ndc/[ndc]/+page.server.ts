@@ -1,13 +1,13 @@
-import { loadPackageDetail } from '$lib/server/catalog/package-detail';
-import { expectedPackageRevision, PackageConflict } from '$lib/server/catalog/package-state-store';
+import { loadPackageDetail } from '#lib/server/catalog/package-detail.ts';
+import { expectedPackageRevision, PackageConflict } from '#lib/server/catalog/package-state-store.ts';
 import { fail, isHttpError } from '@sveltejs/kit';
-import { toNdc11 } from '$lib/catalog/ndc';
-import { prisma } from '$lib/server/infrastructure/database';
+import { toNdc11 } from '#lib/catalog/ndc.ts';
+import { prisma } from '#lib/server/infrastructure/database.ts';
 
-import { syncExternalPackages } from '$lib/server/catalog/sync';
-import { defaultScope, unlinkPackage } from '$lib/server/formulary/membership';
+import { syncExternalPackages } from '#lib/server/catalog/sync.ts';
+import { defaultScope, unlinkPackage } from '#lib/server/formulary/membership.ts';
 
-import { supersedeTarget } from '$lib/server/curation/local-concept-target';
+import { supersedeTarget } from '#lib/server/curation/local-concept-target.ts';
 import {
 	createLocalConcept,
 	listLocalConcepts,
@@ -15,27 +15,27 @@ import {
 	stopSuperseding,
 	supersede,
 	updateLocalConcept
-} from '$lib/server/curation/local-concept-store';
-import { localConceptDraft } from '$lib/curation/local-concept-draft';
-import { editTargetError, parseLocalConceptInput } from '$lib/curation/local-concept-input';
+} from '#lib/server/curation/local-concept-store.ts';
+import { localConceptDraft } from '#lib/curation/local-concept-draft.ts';
+import { editTargetError, parseLocalConceptInput } from '#lib/curation/local-concept-input.ts';
 
-import { packageClassKey } from '$lib/formulary/pharm-class-key';
-import { scopeOptions } from '$lib/formulary/pharm-class-scope-options';
+import { packageClassKey } from '#lib/formulary/pharm-class-key.ts';
+import { scopeOptions } from '#lib/formulary/pharm-class-scope-options.ts';
 
 import {
 	deleteRule,
 	RuleInputError,
 	upsertRule
-} from '$lib/server/curation/pharm-class-rule-store';
-import { applyReinterpret, previewReinterpret } from '$lib/server/curation/reinterpret';
+} from '#lib/server/curation/pharm-class-rule-store.ts';
+import { applyReinterpret, previewReinterpret } from '#lib/server/curation/reinterpret.ts';
 import {
 	removePropertyOverrides,
 	savePropertyOverride
-} from '$lib/server/curation/property-override';
-import { clearDosingMeasure, saveDosingMeasure } from '$lib/server/curation/dosing-measure-store';
-import { isAmbiguityKind } from '$lib/catalog/labeler-ambiguity';
-import { readCitationInput } from '$lib/server/curation/override-citation';
-import type { ReviewRequest } from '$lib/curation/reinterpret';
+} from '#lib/server/curation/property-override.ts';
+import { clearDosingMeasure, saveDosingMeasure } from '#lib/server/curation/dosing-measure-store.ts';
+import { isAmbiguityKind } from '#lib/catalog/labeler-ambiguity.ts';
+import { readCitationInput } from '#lib/server/curation/override-citation.ts';
+import type { ReviewRequest } from '#lib/curation/reinterpret.ts';
 
 import type { Actions, PageServerLoad } from './$types';
 

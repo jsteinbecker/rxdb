@@ -5,9 +5,9 @@ sections (or ticking table rows). Picked passages stay highlighted, survive a se
 being collapsed and expanded, and are bound back as `passages`.
 -->
 <script lang="ts">
-      import {MAX_SPL_PASSAGES, type SplPassageDraft} from "$lib/curation/citation-form";
+      import {MAX_SPL_PASSAGES, type SplPassageDraft} from "#lib/curation/citation-form.ts";
       import type { PackageDetails } from '../catalog/types';
-      import {citationCapture} from "$lib/client/citation-capture.svelte";
+      import {citationCapture} from "#lib/client/citation-capture.svelte.ts";
 
       let {
             passages = $bindable(),

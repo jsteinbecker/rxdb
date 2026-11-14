@@ -4,7 +4,7 @@ A route of administration as its short code (e.g. "IV" for "INTRAVENOUS"), with 
 full route as the tooltip.
 -->
 <script lang="ts">
-      import {routeCode} from "$lib/labels/route-code";
+      import {routeCode} from "#lib/labels/route-code.ts";
 
       let {route}: {
             /** The route as a source names it, e.g. "INTRAVENOUS". */

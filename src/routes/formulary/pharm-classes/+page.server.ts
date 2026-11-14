@@ -1,8 +1,8 @@
 import { fail, isHttpError } from '@sveltejs/kit';
-import { isUuid } from '$lib/formulary/pharm-class-rule-input';
-import { prisma } from '$lib/server/infrastructure/database';
-import { defaultScope } from '$lib/server/formulary/membership';
-import { parseSettings } from '$lib/formulary/settings';
+import { isUuid } from '#lib/formulary/pharm-class-rule-input.ts';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { defaultScope } from '#lib/server/formulary/membership.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
 import {
 	countMatchesForRules,
 	deleteRule,
@@ -10,7 +10,7 @@ import {
 	listRules,
 	RuleInputError,
 	upsertRule
-} from '$lib/server/curation/pharm-class-rule-store';
+} from '#lib/server/curation/pharm-class-rule-store.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

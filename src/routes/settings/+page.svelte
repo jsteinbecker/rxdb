@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { untrack } from 'svelte';
-	import { DEFAULT_LEVELS, levelLabel } from "$lib/formulary/hierarchy";
-	import HierarchyBuilder from '$lib/components/HierarchyBuilder.svelte';
-	import EquivalenceGroups from '$lib/components/EquivalenceGroups.svelte';
-	import type { ExpandDepth } from "$lib/formulary/settings";
-	import StrengthStyleRules from '$lib/components/StrengthStyleRules.svelte';
-	import { buildCompoundName, NAME_CASES, type CompoundNaming } from '$lib/compounds/compound-naming';
+	import { DEFAULT_LEVELS, levelLabel } from "#lib/formulary/hierarchy.ts";
+	import HierarchyBuilder from '#lib/components/HierarchyBuilder.svelte';
+	import EquivalenceGroups from '#lib/components/EquivalenceGroups.svelte';
+	import type { ExpandDepth } from "#lib/formulary/settings.ts";
+	import StrengthStyleRules from '#lib/components/StrengthStyleRules.svelte';
+	import { buildCompoundName, NAME_CASES, type CompoundNaming } from '#lib/compounds/compound-naming.ts';
 
 	let { data, form } = $props();
 

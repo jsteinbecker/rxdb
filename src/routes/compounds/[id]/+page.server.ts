@@ -1,10 +1,10 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { prisma } from '$lib/server/infrastructure/database';
-import { defaultScope, loadedItems, localNamesOf } from '$lib/server/formulary/membership';
-import { formularyRows } from '$lib/server/formulary/read';
-import { packageTitle } from '$lib/catalog/package-title';
-import { applyStrengthStyles } from '$lib/medication/strength-style';
-import { parseSettings } from '$lib/formulary/settings';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { defaultScope, loadedItems, localNamesOf } from '#lib/server/formulary/membership.ts';
+import { formularyRows } from '#lib/server/formulary/read.ts';
+import { packageTitle } from '#lib/catalog/package-title.ts';
+import { applyStrengthStyles } from '#lib/medication/strength-style.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
 import {
 	addComponent,
 	CompoundError,
@@ -15,16 +15,16 @@ import {
 	setRoute,
 	setSaved,
 	setVialPrep
-} from '$lib/server/compounds/store';
-import { refreshCompoundName } from '$lib/server/compounds/naming';
+} from '#lib/server/compounds/store.ts';
+import { refreshCompoundName } from '#lib/server/compounds/naming.ts';
 import {
 	packageConcentration,
 	parseLinesPayload,
 	type Role
-} from '$lib/compounds/compound-builder';
-import { parseRational, serializeRational } from '$lib/medication/rational';
-import { loadPackageSnapshots } from '$lib/server/catalog/snapshot-store';
-import { sameConsensusStep, vialPrepConsensus } from '$lib/compounds/vial-prep-consensus';
+} from '#lib/compounds/compound-builder.ts';
+import { parseRational, serializeRational } from '#lib/medication/rational.ts';
+import { loadPackageSnapshots } from '#lib/server/catalog/snapshot-store.ts';
+import { sameConsensusStep, vialPrepConsensus } from '#lib/compounds/vial-prep-consensus.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Run a store call; a CompoundError becomes a notice, anything else is a real failure. */

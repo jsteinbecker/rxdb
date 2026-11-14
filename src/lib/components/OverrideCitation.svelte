@@ -6,8 +6,8 @@ that no source was cited.
 -->
 <script lang="ts">
       import {resolve} from '$app/paths';
-      import {formatNdc} from "$lib/catalog/ndc";
-      import type {PropertyOverride} from "$lib/curation/property-override-fields";
+      import {formatNdc} from "#lib/catalog/ndc.ts";
+      import type {PropertyOverride} from "#lib/curation/property-override-fields.ts";
 
       let {override}: {
             /** The override whose citation to show. */

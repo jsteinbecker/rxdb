@@ -21,7 +21,7 @@ import {
 } from '../medication/substance-store';
 import { jobNote, jobStage } from '../infrastructure/jobs';
 import { cmsBilling, ensureCrosswalk } from '../providers/cms-billing';
-import { prisma } from '$lib/server/infrastructure/database';
+import { prisma } from '#lib/server/infrastructure/database.ts';
 import { toNdc11 } from '../../catalog/ndc';
 import { discoverRxNav, discoverRxNavPage } from '../providers/rxnav';
 import { enrichPackages } from './enrich-packages';

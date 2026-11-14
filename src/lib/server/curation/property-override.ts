@@ -14,7 +14,7 @@ import { refreshPackageEligibility } from '../catalog/entity-store';
 import { prisma } from '../infrastructure/database';
 import type { CacheRecord } from '../catalog/snapshot-store';
 import { latestCacheRecords, loadPackageSnapshots } from '../catalog/snapshot-store';
-import { type EquivalentPackage, equivalentValues } from '$lib/curation/property-override-fields';
+import { type EquivalentPackage, equivalentValues } from '#lib/curation/property-override-fields.ts';
 import { readSnapshot } from '../catalog/cache';
 import type { ExternalPackage } from '../../catalog/types';
 import { productSiblings, stageWithSiblings } from './override-propagation';

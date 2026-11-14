@@ -13,9 +13,9 @@ asks to stop superseding. Posts to the page's `localConceptSave` and
 		localConceptName,
 		parseScdName,
 		type LocalIngredient
-	} from "$lib/curation/local-concept";
-	import type { IonicRow, LocalConceptInput } from "$lib/curation/local-concept-input";
-	import type { LocalConceptView } from "$lib/curation/local-concept-view";
+	} from "#lib/curation/local-concept.ts";
+	import type { IonicRow, LocalConceptInput } from "#lib/curation/local-concept-input.ts";
+	import type { LocalConceptView } from "#lib/curation/local-concept-view.ts";
 	import LocalConceptDiff from './LocalConceptDiff.svelte';
 
 	/** What the page loads for the editor. */

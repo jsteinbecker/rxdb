@@ -6,10 +6,10 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
 -->
 <script lang="ts">
       import QuantityField from './QuantityField.svelte';
-      import BrandedName from '$lib/components/BrandedName.svelte';
+      import BrandedName from '#lib/components/BrandedName.svelte';
       import MixedFraction from './MixedFraction.svelte';
-      import {formatRational, type Rational} from "$lib/medication/rational";
-      import {type Field, type Line, VOLUME_UNIT} from "$lib/compounds/compound-builder";
+      import {formatRational, type Rational} from "#lib/medication/rational.ts";
+      import {type Field, type Line, VOLUME_UNIT} from "#lib/compounds/compound-builder.ts";
 
       let {
             line,

@@ -6,9 +6,9 @@ ingredients. Ticking ingredients to avoid shows which NDCs remain. Columns merge
 into their moiety unless listed separately.
 -->
 <script lang="ts">
-  import type { ItemSummary } from "$lib/formulary/item-summary";
-  import { formatNdc } from "$lib/catalog/ndc";
-  import { ingredientScenarios, profileNames, remainingNdcs } from "$lib/medication/ingredient-scenarios";
+  import type { ItemSummary } from "#lib/formulary/item-summary.ts";
+  import { formatNdc } from "#lib/catalog/ndc.ts";
+  import { ingredientScenarios, profileNames, remainingNdcs } from "#lib/medication/ingredient-scenarios.ts";
 
   let {
     summary

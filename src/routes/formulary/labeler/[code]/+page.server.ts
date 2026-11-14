@@ -1,14 +1,14 @@
 import { error } from '@sveltejs/kit';
-import { findDefaultScope } from '$lib/server/formulary/membership';
-import { formularyNdcStatuses } from '$lib/server/formulary/read';
+import { findDefaultScope } from '#lib/server/formulary/membership.ts';
+import { formularyNdcStatuses } from '#lib/server/formulary/read.ts';
 import {
 	labeledFormat,
 	labelerPackages,
 	normalizeLabelerCode,
 	ZERO_SEGMENT,
 	zeroSegment
-} from '$lib/server/catalog/labeler-packages';
-import { prisma } from '$lib/server/infrastructure/database';
+} from '#lib/server/catalog/labeler-packages.ts';
+import { prisma } from '#lib/server/infrastructure/database.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

@@ -1,37 +1,37 @@
 import { error, fail } from '@sveltejs/kit';
-import { prisma } from '$lib/server/infrastructure/database';
-import { trackJob } from '$lib/server/infrastructure/jobs';
-import { defaultScope, loadedItems, localNamesOf } from '$lib/server/formulary/membership';
-import { formularyRows } from '$lib/server/formulary/read';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { trackJob } from '#lib/server/infrastructure/jobs.ts';
+import { defaultScope, loadedItems, localNamesOf } from '#lib/server/formulary/membership.ts';
+import { formularyRows } from '#lib/server/formulary/read.ts';
 import {
 	addBrandTag,
 	itemBrands,
 	removeBrandTag,
 	restoreBrandTag
-} from '$lib/server/formulary/brand-tag-store';
-import { itemPackages, relatedItems } from '$lib/formulary/item';
-import { parseBrandName } from '$lib/medication/brand-tags';
-import { parseReleaseAbbreviation } from '$lib/medication/time-release';
-import { parseNameOverride } from '$lib/formulary/item-name';
-import { nameIngredients, ingredientOrderKey, parseIngredientOrder } from '$lib/medication/ingredient-order';
-import { parseItemStrengthStyle } from '$lib/medication/strength-style';
-import { parseSettings } from '$lib/formulary/settings';
-import { projectRows } from '$lib/formulary/hierarchy';
-import { summarizeItem } from '$lib/formulary/item-summary';
+} from '#lib/server/formulary/brand-tag-store.ts';
+import { itemPackages, relatedItems } from '#lib/formulary/item.ts';
+import { parseBrandName } from '#lib/medication/brand-tags.ts';
+import { parseReleaseAbbreviation } from '#lib/medication/time-release.ts';
+import { parseNameOverride } from '#lib/formulary/item-name.ts';
+import { nameIngredients, ingredientOrderKey, parseIngredientOrder } from '#lib/medication/ingredient-order.ts';
+import { parseItemStrengthStyle } from '#lib/medication/strength-style.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
+import { projectRows } from '#lib/formulary/hierarchy.ts';
+import { summarizeItem } from '#lib/formulary/item-summary.ts';
 import { loadPackageSnapshots } from '../../../../lib/server/catalog/snapshot-store';
-import { loadStagedNode } from '$lib/server/catalog/sync';
-import { cmsBilling } from '$lib/server/providers/cms-billing';
-import { withPharmClassRules } from '$lib/server/curation/pharm-class-view';
-import { withLocalConcepts } from '$lib/server/curation/local-concept-view';
+import { loadStagedNode } from '#lib/server/catalog/sync.ts';
+import { cmsBilling } from '#lib/server/providers/cms-billing.ts';
+import { withPharmClassRules } from '#lib/server/curation/pharm-class-view.ts';
+import { withLocalConcepts } from '#lib/server/curation/local-concept-view.ts';
 import {
 	hasAppearance,
 	isSolidDoseForm,
 	type PillAppearance
-} from '$lib/labels/spl-characteristics';
-import { refineAppearances } from '$lib/labels/spl-appearance-text';
-import type { PillImageLayout, PillPhotoRef } from '$lib/imprints/pill-image-layout';
-import { storedPillPhotos } from '$lib/server/media/pill-photo';
-import { localPillPhotos } from '$lib/server/media/local-pill-photos';
+} from '#lib/labels/spl-characteristics.ts';
+import { refineAppearances } from '#lib/labels/spl-appearance-text.ts';
+import type { PillImageLayout, PillPhotoRef } from '#lib/imprints/pill-image-layout.ts';
+import { storedPillPhotos } from '#lib/server/media/pill-photo.ts';
+import { localPillPhotos } from '#lib/server/media/local-pill-photos.ts';
 import { dev } from '$app/environment';
 import {
 	labelPhoto,
@@ -40,8 +40,8 @@ import {
 	queuePillImages,
 	unmeasured,
 	type PillImageTarget
-} from '$lib/server/media/pill-image-store';
-import { vialPrepVariants } from '$lib/compounds/vial-prep-consensus';
+} from '#lib/server/media/pill-image-store.ts';
+import { vialPrepVariants } from '#lib/compounds/vial-prep-consensus.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 async function itemInScope(id: string) {

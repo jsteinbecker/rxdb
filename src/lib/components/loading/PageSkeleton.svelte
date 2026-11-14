@@ -20,7 +20,7 @@ with everything below the header.
 
 <script lang="ts">
 	import Bone from './Bone.svelte';
-	import { formatNdc } from "$lib/catalog/ndc";
+	import { formatNdc } from "#lib/catalog/ndc.ts";
 	import PageHeader from '../PageHeader.svelte';
 
 	let {

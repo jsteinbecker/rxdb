@@ -13,7 +13,8 @@ only where the draft is the rule that wins.
 		styleStrength,
 		type StrengthStyle,
 		type StrengthStyleRule
-	} from '$lib/medication/strength-style';
+	} from '#lib/medication/strength-style.ts';
+	import type { EquivalenceGroup } from '#lib/formulary/equivalence.ts';
 
 	/** A product the formulary holds: its stored strengths and the dose form text rules match. */
 	export type StrengthSample = { ingredients: { name: string; strength: string | null }[]; form: string };

@@ -11,7 +11,7 @@ import {
 	styledIngredientStrength,
 	stylesForItem,
 	type StrengthStyleRule
-} from '$lib/medication/strength-style';
+} from '#lib/medication/strength-style.ts';
 
 /** The formulary's strength display rules, loaded once by the root layout. */
 export function strengthRules(

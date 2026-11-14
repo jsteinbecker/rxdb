@@ -11,7 +11,7 @@ Usage:
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { splitBrand } from "$lib/medication/brand-name";
+	import { splitBrand } from "#lib/medication/brand-name.ts";
 
 	let {
 		text,

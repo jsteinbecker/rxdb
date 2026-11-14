@@ -5,16 +5,16 @@ excipients), packaging, regulatory facts and sources, each value counted over th
 packages that carry it. Strengths follow the item's display style.
 -->
 <script lang="ts">
-	import { racemicDisplayName } from "$lib/medication/ingredient-group";
-	import {formatNdc} from "$lib/catalog/ndc";
-	import { constituentName } from "$lib/medication/ions";
-	import RxCui from '$lib/components/RxCui.svelte';
-      import {nestTallies, type ItemSummary, type Tally, type TallyNode} from "$lib/formulary/item-summary";
+	import { racemicDisplayName } from "#lib/medication/ingredient-group.ts";
+	import {formatNdc} from "#lib/catalog/ndc.ts";
+	import { constituentName } from "#lib/medication/ions.ts";
+	import RxCui from '#lib/components/RxCui.svelte';
+      import {nestTallies, type ItemSummary, type Tally, type TallyNode} from "#lib/formulary/item-summary.ts";
       import RouteBadge from './RouteBadge.svelte';
-      import {DOSE_TYPE_NAMES} from "$lib/formulary/hierarchy";
+      import {DOSE_TYPE_NAMES} from "#lib/formulary/hierarchy.ts";
 
-      import {formContext} from "$lib/medication/strength-style";
-      import {styledStrength} from "$lib/client/strength-display.svelte";
+      import {formContext} from "#lib/medication/strength-style.ts";
+      import {styledStrength} from "#lib/client/strength-display.svelte.ts";
 
       let {summary, title = null, itemStyle = null}: {
             /** Facts aggregated over the item's packages. */

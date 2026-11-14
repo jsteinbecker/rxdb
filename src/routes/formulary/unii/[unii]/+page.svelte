@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { isIonName } from "$lib/medication/ions";
-	import {formatNdc, productCode} from "$lib/catalog/ndc";
-	import {productTitle} from "$lib/catalog/package-title";
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { isIonName } from "#lib/medication/ions.ts";
+	import {formatNdc, productCode} from "#lib/catalog/ndc.ts";
+	import {productTitle} from "#lib/catalog/package-title.ts";
+	import PageHeader from '#lib/components/PageHeader.svelte';
 import {resolve} from '$app/paths';
-	import {styledName, styledStrength} from "$lib/client/strength-display.svelte";
+	import {styledName, styledStrength} from "#lib/client/strength-display.svelte.ts";
 
 let { data } = $props();
 	type Usage = (typeof data.usages)[number];

@@ -1,9 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { prisma } from '$lib/server/infrastructure/database';
-import { defaultScope } from '$lib/server/formulary/membership';
-import { CompoundError, createCompound, listCompounds } from '$lib/server/compounds/store';
-import { parseSettings } from '$lib/formulary/settings';
-import { uniqueName } from '$lib/compounds/compound-naming';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { defaultScope } from '#lib/server/formulary/membership.ts';
+import { CompoundError, createCompound, listCompounds } from '#lib/server/compounds/store.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
+import { uniqueName } from '#lib/compounds/compound-naming.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

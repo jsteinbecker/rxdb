@@ -1,6 +1,6 @@
-import { prisma } from '$lib/server/infrastructure/database';
-import { defaultScope } from '$lib/server/formulary/membership';
-import { parseSettings } from '$lib/formulary/settings';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { defaultScope } from '#lib/server/formulary/membership.ts';
+import { parseSettings } from '#lib/formulary/settings.ts';
 import type { LayoutServerLoad } from './$types';
 
 /** Display preferences every page reads: pill drawings, and how strengths are shown. */

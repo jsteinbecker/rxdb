@@ -7,7 +7,7 @@ formulary's values, and edits, saves and deletes groups.
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { DIMENSIONS } from "$lib/formulary/hierarchy";
+	import { DIMENSIONS } from "#lib/formulary/hierarchy.ts";
 	import {
 		equivalenceKey,
 		equivalenceWords,
@@ -20,7 +20,7 @@ formulary's values, and edits, saves and deletes groups.
 		type EquivalenceGroup,
 		type Suggestion,
 		type ValueCount
-	} from "$lib/formulary/equivalence";
+	} from "#lib/formulary/equivalence.ts";
 
 	/** Settings editor for equivalence groups: sibling values the hierarchy shows as one node. */
 	let {

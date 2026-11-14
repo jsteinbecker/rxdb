@@ -20,7 +20,7 @@ sources are fetched again and read anew.
             REVIEW_FIELDS,
             type ReviewField,
             summarize
-      } from "$lib/curation/reinterpret";
+      } from "#lib/curation/reinterpret.ts";
 
       let {item}: {
             /** The package to reload. */

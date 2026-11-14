@@ -1,13 +1,13 @@
 <script lang="ts">
-	import RxCui from '$lib/components/RxCui.svelte';
-	import BrandedName from '$lib/components/BrandedName.svelte';
-	import {formatNdc} from "$lib/catalog/ndc";
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import RxCui from '#lib/components/RxCui.svelte';
+	import BrandedName from '#lib/components/BrandedName.svelte';
+	import {formatNdc} from "#lib/catalog/ndc.ts";
+	import PageHeader from '#lib/components/PageHeader.svelte';
       import {enhance} from '$app/forms';
       import {SvelteMap} from 'svelte/reactivity';
-      import {naturalCompare} from "$lib/shared/natural-sort";
-      import type {LoadedItem} from "$lib/server/formulary/membership";
-      import {targetValue} from "$lib/catalog/load-target";
+      import {naturalCompare} from "#lib/shared/natural-sort.ts";
+      import type {LoadedItem} from "#lib/server/formulary/membership.ts";
+      import {targetValue} from "#lib/catalog/load-target.ts";
 
       let { data, form } = $props();
 

@@ -7,7 +7,7 @@ hidden and nothing is running. Finished jobs can be dismissed.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { JobSnapshot } from "$lib/server/infrastructure/jobs";
+	import type { JobSnapshot } from "#lib/server/infrastructure/jobs.ts";
 
 	/** Poll fast while something runs (or was just started), slowly otherwise. */
 	const FAST_MS = 600;
