@@ -33,6 +33,7 @@ enum EntityType {
       labeler
       spl
       formulary_item
+      product_form
 
       @@map("entity_type")
 }
@@ -219,6 +220,7 @@ model Entity {
       derivationDirties      DerivationDirty[]
       propertyGroupIndexes   PropertyGroupIndex[]
       compoundingTerms       CompoundingTerm[]
+      productForm            ProductForm?
 
       @@unique([id, type])
       @@map("entity")
@@ -248,6 +250,9 @@ model Ingredient {
       salts                  Ingredient[]        @relation("IngredientMoiety")
       productIngredients     ProductIngredient[] @relation("ProductIngredientPrecise")
       productIngredientBases ProductIngredient[] @relation("ProductIngredientBasis")
+      productForms           ProductFormIngredient[]
+      productFormStrengths   ProductFormStrength[] @relation("ProductFormStrengthBase")
+      productFormBases       ProductFormStrength[] @relation("ProductFormStrengthBasis")
 
       @@unique([id, type])
       @@map("ingredient")
@@ -278,6 +283,7 @@ model ClinicalDrug {
 
       entity       Entity        @relation(fields: [id, type], references: [id, type])
       localConcept LocalConcept?
+      productFormStrengths ProductFormStrength[]
 
       @@unique([id, type])
       @@map("clinical_drug")
@@ -345,6 +351,8 @@ model Package {
       componentAvailabilities   ComponentAvailability[]
       buildPlanLines            BuildPlanLine[]
       openComponents            OpenComponent[]
+      productForm               ProductFormPackage?
+      productFormRoutePreps     ProductFormRoutePrep[]
 
       @@unique([id, type])
       @@map("package")
@@ -1659,4 +1667,140 @@ model PackageReviewPreview {
 
       @@index([expiresAt])
       @@map("package_review_preview")
+}
+
+// ---------------------------------------------------------------------
+// Product forms: base ingredient(s) + label dose form, built from the
+// formulary's packages. The dose umbrella (ingredient + route) is a query
+// over product_form_route, not a table.
+// ---------------------------------------------------------------------
+
+/// One base-ingredient set in one label dose form ("cefepime | injection, powder, for solution").
+/// Keyed on the label's dose form, not RxNorm's: RxNorm files powder vials and ready solutions
+/// alike under "Injection". Derived from formulary packages; retired, never deleted.
+model ProductForm {
+      id            String     @id @db.Uuid
+      type          EntityType @default(product_form)
+      /// Sorted base-ingredient ids joined with ","; the identity of the ingredient set.
+      ingredientKey String     @map("ingredient_key")
+      /// Label (SPL) dose form, lower-cased.
+      doseForm      String     @map("dose_form")
+      /// RxNorm SCDF this form reconciles against, when known; never part of the key.
+      scdfRxcui     String?    @map("scdf_rxcui")
+      refreshedAt   DateTime   @default(now()) @map("refreshed_at") @db.Timestamptz(6)
+
+      entity      Entity                  @relation(fields: [id, type], references: [id, type])
+      ingredients ProductFormIngredient[]
+      strengths   ProductFormStrength[]
+      packages    ProductFormPackage[]
+      routes      ProductFormRoute[]
+
+      @@unique([id, type])
+      @@unique([ingredientKey, doseForm])
+      @@map("product_form")
+}
+
+/// A base ingredient (active moiety) of a product form.
+model ProductFormIngredient {
+      productFormId String @map("product_form_id") @db.Uuid
+      ingredientId  String @map("ingredient_id") @db.Uuid
+      ordinal       Int    @default(1)
+
+      productForm ProductForm @relation(fields: [productFormId], references: [id], onDelete: Cascade)
+      ingredient  Ingredient  @relation(fields: [ingredientId], references: [id])
+
+      @@id([productFormId, ingredientId])
+      @@map("product_form_ingredient")
+}
+
+/// A strength the form comes in: the SCD's total for one base ingredient, basis named.
+model ProductFormStrength {
+      id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      productFormId     String        @map("product_form_id") @db.Uuid
+      clinicalDrugId    String        @map("clinical_drug_id") @db.Uuid
+      ingredientId      String        @map("ingredient_id") @db.Uuid
+      /// Ingredient the amount is expressed as (the salt, when the SCD names it).
+      basisIngredientId String?       @map("basis_ingredient_id") @db.Uuid
+      basis             StrengthBasis @default(as_labeled)
+      strengthNumMag    Decimal       @map("strength_num_mag") @db.Decimal
+      strengthNumUom    String        @map("strength_num_uom")
+      strengthDenMag    Decimal       @default(1) @map("strength_den_mag") @db.Decimal
+      strengthDenUom    String        @map("strength_den_uom")
+
+      productForm     ProductForm  @relation(fields: [productFormId], references: [id], onDelete: Cascade)
+      clinicalDrug    ClinicalDrug @relation(fields: [clinicalDrugId], references: [id])
+      ingredient      Ingredient   @relation("ProductFormStrengthBase", fields: [ingredientId], references: [id])
+      basisIngredient Ingredient?  @relation("ProductFormStrengthBasis", fields: [basisIngredientId], references: [id])
+
+      @@unique([productFormId, clinicalDrugId, ingredientId])
+      @@map("product_form_strength")
+}
+
+/// A formulary package's place in a product form; a package belongs to one form.
+model ProductFormPackage {
+      productFormId String @map("product_form_id") @db.Uuid
+      packageId     String @unique @map("package_id") @db.Uuid
+
+      productForm ProductForm @relation(fields: [productFormId], references: [id], onDelete: Cascade)
+      package     Package     @relation(fields: [packageId], references: [id])
+
+      @@id([productFormId, packageId])
+      @@map("product_form_package")
+}
+
+/// A route a product form is labeled for (IM, IV, SC, PO): the members of a dose umbrella.
+model ProductFormRoute {
+      id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      productFormId String    @map("product_form_id") @db.Uuid
+      route         String
+      /// derived (rebuilt from labels) | manual (added by hand; rebuilds leave it alone)
+      source        String    @default("derived")
+      status        String    @default("active")
+      retiredAt     DateTime? @map("retired_at") @db.Timestamptz(6)
+
+      productForm ProductForm                @relation(fields: [productFormId], references: [id], onDelete: Cascade)
+      preps       ProductFormRoutePrep[]
+      overrides   ProductFormRouteOverride[]
+
+      @@unique([productFormId, route])
+      @@map("product_form_route")
+}
+
+/// A vial preparation step for one form and route, one row per vial size. package_id null =
+/// the consensus across the form's packages; set = that package departs from it.
+model ProductFormRoutePrep {
+      id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      productFormRouteId   String   @map("product_form_route_id") @db.Uuid
+      packageId            String?  @map("package_id") @db.Uuid
+      vialMassMg           Decimal? @map("vial_mass_mg") @db.Decimal
+      diluents             String[] @default([])
+      diluentMl            Decimal  @map("diluent_ml") @db.Decimal
+      finalVolumeMl        Decimal? @map("final_volume_ml") @db.Decimal
+      concentrationMgPerMl Decimal? @map("concentration_mg_per_ml") @db.Decimal
+      /// Labels stating this step, of those stating any step for the route.
+      agreeing             Int      @default(1)
+      stating              Int      @default(1)
+      refreshedAt          DateTime @default(now()) @map("refreshed_at") @db.Timestamptz(6)
+
+      productFormRoute ProductFormRoute @relation(fields: [productFormRouteId], references: [id], onDelete: Cascade)
+      package          Package?         @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+      @@index([productFormRouteId])
+      @@map("product_form_route_prep")
+}
+
+/// A hand edit to a form and route; rebuilds never touch these, they apply on read.
+model ProductFormRouteOverride {
+      id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      productFormRouteId String   @map("product_form_route_id") @db.Uuid
+      field              String
+      value              Json
+      note               String?
+      editedBy           String?  @map("edited_by") @db.Uuid
+      editedAt           DateTime @default(now()) @map("edited_at") @db.Timestamptz(6)
+
+      productFormRoute ProductFormRoute @relation(fields: [productFormRouteId], references: [id], onDelete: Cascade)
+
+      @@unique([productFormRouteId, field])
+      @@map("product_form_route_override")
 }

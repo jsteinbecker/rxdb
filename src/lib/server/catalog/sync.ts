@@ -19,7 +19,8 @@ import {
 	gsrsSalt,
 	prismaSubstanceTable
 } from '../medication/substance-store';
-import { jobNote, jobStage } from '../infrastructure/jobs';
+import { jobFailure, jobNote, jobStage } from '../infrastructure/jobs';
+import { refreshProductForms } from './product-form-store';
 import { cmsBilling, ensureCrosswalk } from '../providers/cms-billing';
 import { prisma } from '#lib/server/infrastructure/database.ts';
 import { toNdc11 } from '../../catalog/ndc';
@@ -252,7 +253,7 @@ export function syncExternalSearch(
 export async function loadStagedNode(
 	target: LoadTarget,
 	scopeId?: string,
-	{ force = false }: { force?: boolean } = {}
+	{ force = false, productForms = true }: { force?: boolean; productForms?: boolean } = {}
 ) {
 	const scope = scopeId
 		? await prisma.scope.findUniqueOrThrow({ where: { id: scopeId } })
@@ -303,7 +304,27 @@ export async function loadStagedNode(
 	await ensureCrosswalk(prisma, { force });
 	const billed = await cmsBilling(prisma, packages);
 	jobNote(`${billed.size} of ${packages.length} packages in the CMS NDC–HCPCS crosswalk`);
+	if (productForms) await rebuildProductForms();
 	return { ...result, cmsBilled: billed.size, scope: { id: scope.id, name: scope.name } };
+}
+
+/**
+ * Rebuild product forms after the formulary's packages changed. A failure here
+ * is reported on the job, never thrown: the load itself has already landed.
+ * A batch passes `productForms: false` to each load and calls this once.
+ */
+export async function rebuildProductForms() {
+	jobStage('Rebuilding product forms');
+	try {
+		const result = await refreshProductForms(prisma);
+		jobNote(`${result.forms} product forms (${result.created} new, ${result.retired} retired)`);
+		if (result.skipped.length)
+			jobNote(`${result.skipped.length} packages left out of product forms: ${[...new Set(result.skipped.map((s) => s.reason))].join(', ')}`);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		logger('product-forms').warn('Product form rebuild failed', { message });
+		jobFailure(`Product forms were not rebuilt: ${message}`);
+	}
 }
 
 /** Mark which staged nodes are already on the formulary. */

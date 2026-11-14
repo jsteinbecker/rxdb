@@ -51,7 +51,7 @@ async function attachIdentifier(
 	});
 }
 
-async function namedEntity(db: Db, type: 'ingredient' | 'labeler', rawName: string) {
+export async function namedEntity(db: Db, type: 'ingredient' | 'labeler', rawName: string) {
 	const name = type === 'ingredient' ? withoutUnspecified(rawName) : rawName;
 	const existing =
 		type === 'ingredient'

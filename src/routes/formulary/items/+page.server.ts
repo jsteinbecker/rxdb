@@ -7,7 +7,7 @@ import {
 	targetValue
 } from '#lib/server/formulary/membership.ts';
 import { PRODUCT_SETS, productSet } from '#lib/server/catalog/product-sets.ts';
-import { loadStagedNode } from '#lib/server/catalog/sync.ts';
+import { loadStagedNode, rebuildProductForms } from '#lib/server/catalog/sync.ts';
 import { parseSettings } from '#lib/formulary/settings.ts';
 import { jobFailure, jobItem, trackJob } from '#lib/server/infrastructure/jobs.ts';
 import type { LoadedItem } from '#lib/server/formulary/membership.ts';
@@ -27,7 +27,7 @@ async function reloadEach(scopeId: string, items: LoadedItem[]) {
 	for (const [index, item] of items.entries()) {
 		jobItem(item.displayName, index);
 		try {
-			await loadStagedNode(item.target, scopeId, { force: true });
+			await loadStagedNode(item.target, scopeId, { force: true, productForms: false });
 			reloaded++;
 		} catch (error) {
 			failures.push(
@@ -36,6 +36,7 @@ async function reloadEach(scopeId: string, items: LoadedItem[]) {
 			jobFailure(failures.at(-1)!);
 		}
 	}
+	await rebuildProductForms();
 	return { reloaded, total: items.length, failures };
 }
 
@@ -91,7 +92,9 @@ export const actions: Actions = {
 		if (typeof id !== 'string' || !id) return fail(400, { message: 'Choose an item to remove.' });
 		const scope = await defaultScope(prisma);
 		try {
-			return { removed: await removeFromFormulary(prisma, scope.id, id) };
+			const removed = await removeFromFormulary(prisma, scope.id, id);
+			await rebuildProductForms();
+			return { removed };
 		} catch (error) {
 			return fail(422, {
 				message: error instanceof Error ? error.message : 'The item could not be removed.'
