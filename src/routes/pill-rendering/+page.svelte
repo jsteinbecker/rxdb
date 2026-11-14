@@ -1,9 +1,9 @@
 <script lang="ts">
-	import PillMockup from '$lib/components/PillMockup.svelte';
-	import { ILN_DOC_EXAMPLES, type IlnDocExample } from '$lib/imprints/iln-doc-examples';
-	import { explainIln, formatIln, validateIln } from '$lib/imprints/iln-parse';
-	import { formatShapeProportion, MAX_PROPORTION, PROPORTIONS, SHAPES, splitShapeProportion } from '$lib/imprints/shapes';
-	import { NAMED_SWATCHES, type PillAppearance } from '$lib/spl-characteristics';
+	import PillMockup from '#lib/components/PillMockup.svelte';
+	import { ILN_DOC_EXAMPLES, type IlnDocExample } from '#lib/imprints/iln-doc-examples.ts';
+	import { explainIln, formatIln, validateIln } from '#lib/imprints/iln-parse.ts';
+	import { formatShapeProportion, MAX_PROPORTION, PROPORTIONS, SHAPES, splitShapeProportion } from '#lib/imprints/shapes.ts';
+	import { NAMED_SWATCHES, type PillAppearance } from "#lib/labels/spl-characteristics.ts";
 
 	// The help documentation (docs/iln.md) as a walkthrough: each section
 	// explains one idea and offers examples that load into the editor.
@@ -264,7 +264,8 @@
 	.playground {
 		display: grid;
 		grid-template-columns: minmax(300px, 420px) 1fr;
-		height: calc(100vh - 60px);
+		/* A full-bleed tool: fills the view under the toolbar; each pane scrolls on its own. */
+		height: calc(100vh - var(--toolbar-height, 3.25rem));
 		gap: 0;
 	}
 	.library {

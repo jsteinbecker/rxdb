@@ -1,13 +1,13 @@
 import { fail } from '@sveltejs/kit';
-import { prisma } from '$lib/server/prisma';
-import { clearFormulary, defaultScope, loadedItems } from '$lib/server/catalog-formulary';
-import { parseSettings, type FormularySettings } from '$lib/settings';
-import { formularyRows } from '$lib/server/formulary-view';
-import { DIMENSIONS, dimensionValues } from '$lib/formulary-hierarchy';
-import { parseEquivalenceGroups } from '$lib/equivalence';
-import { parseStrengthStyleRule, ruleKey } from '$lib/strength-style';
-import { DEFAULT_NAMING, parseNaming } from '$lib/compound-naming';
-import { refreshDraftNames } from '$lib/server/compound-naming';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { clearFormulary, defaultScope, loadedItems } from '#lib/server/formulary/membership.ts';
+import { parseSettings, type FormularySettings } from '#lib/formulary/settings.ts';
+import { formularyRows } from '#lib/server/formulary/read.ts';
+import { DIMENSIONS, dimensionValues } from '#lib/formulary/hierarchy.ts';
+import { parseEquivalenceGroups } from '#lib/formulary/equivalence.ts';
+import { formContext, parseStrengthStyleRule, ruleKey } from '#lib/medication/strength-style.ts';
+import { DEFAULT_NAMING, parseNaming } from '#lib/compounds/compound-naming.ts';
+import { refreshDraftNames } from '#lib/server/compounds/naming.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -20,8 +20,24 @@ export const load: PageServerLoad = async () => {
 		/** Each dimension's current values, for building equivalence groups. */
 		dimensionValues: Object.fromEntries(
 			DIMENSIONS.map((dimension) => [dimension.key, dimensionValues(rows, dimension.key)])
-		)
+		),
+		/** Each distinct product's stored strengths, so a strength rule previews what it changes. */
+		strengthSamples: strengthSamples(rows)
 	};
+};
+
+function strengthSamples(rows: Awaited<ReturnType<typeof formularyRows>>) {
+	const byKey = new Map<string, { ingredients: { name: string; strength: string | null }[]; form: string }>();
+	for (const row of rows) {
+		const ingredients = row.ingredients.filter((item) => item.strength);
+		if (!ingredients.length) continue;
+		const sample = {
+			ingredients: ingredients.map(({ name, strength }) => ({ name, strength })),
+			form: formContext(row.displayTitle, row.doseForm, row.routes)
+		};
+		byKey.set(JSON.stringify(sample), sample);
+	}
+	return [...byKey.values()];
 };
 
 export const actions: Actions = {
@@ -43,6 +59,7 @@ export const actions: Actions = {
 			defaultView: current.defaultView,
 			defaultLevels: current.defaultLevels,
 			expandDepth: form.get('expandDepth'),
+			singleExpand: form.get('singleExpand') === 'on',
 			confirmRemove: form.get('confirmRemove') === 'on',
 			uniformImprintSize: form.get('uniformImprintSize') === 'on'
 		});
@@ -60,17 +77,33 @@ export const actions: Actions = {
 		const levels = String(form.get('levels') ?? '')
 			.split(',')
 			.filter(Boolean);
-		return updateViews((settings) => {
-			const index = settings.views.findIndex((view) => view.name === name);
-			const views = [...settings.views];
-			if (index === -1) views.push({ name, levels });
-			else views[index] = { name, levels };
-			return { ...settings, views, defaultView: settings.defaultView ?? name };
-		}, name);
+		// The view being edited, if any; saving under a new name renames it.
+		const original = String(form.get('originalName') ?? '');
+		const { views: existing } = parseSettings((await defaultScope(prisma)).settings);
+		if (name !== original && existing.some((view) => view.name === name))
+			return fail(400, {
+				section: 'views',
+				message: `A view named “${name}” already exists — pick another name.`
+			});
+		return updateViews(
+			(settings) => {
+				const index = settings.views.findIndex((view) => view.name === original);
+				const views = [...settings.views];
+				if (index === -1) views.push({ name, levels });
+				else views[index] = { name, levels };
+				const defaultView =
+					settings.defaultView === original && index !== -1
+						? name
+						: (settings.defaultView ?? name);
+				return { ...settings, views, defaultView };
+			},
+			name
+		);
 	},
 
 	deleteView: async ({ request }) => {
-		const name = String((await request.formData()).get('viewName') ?? '');
+		const form = await request.formData();
+		const name = String(form.get('originalName') || form.get('viewName') || '');
 		return updateViews((settings) => {
 			const views = settings.views.filter((view) => view.name !== name);
 			const defaultView =
@@ -80,7 +113,8 @@ export const actions: Actions = {
 	},
 
 	defaultView: async ({ request }) => {
-		const name = String((await request.formData()).get('viewName') ?? '');
+		const form = await request.formData();
+		const name = String(form.get('originalName') || form.get('viewName') || '');
 		return updateViews((settings) => ({ ...settings, defaultView: name }));
 	},
 
@@ -94,19 +128,37 @@ export const actions: Actions = {
 			return fail(400, { section: 'groups', message: 'The group could not be read.' });
 		}
 		const [group] = parseEquivalenceGroups([parsed]);
-		if (!group)
-			return fail(400, { section: 'groups', message: 'A group needs a display name.' });
+		if (!group) return fail(400, { section: 'groups', message: 'A group needs a display name.' });
 		if (!group.members.length)
 			return fail(400, { section: 'groups', message: 'Add at least one value to merge.' });
 		const rawIndex = form.get('index');
 		// A new group sends no index; Number(null) would be 0 and overwrite the first group.
 		const index = rawIndex === null || rawIndex === '' ? NaN : Number(rawIndex);
-		return updateSettings((settings) => {
-			const groups = [...settings.equivalenceGroups];
-			if (Number.isInteger(index) && index >= 0 && index < groups.length) groups[index] = group;
-			else groups.push(group);
-			return { ...settings, equivalenceGroups: groups };
-		}, { section: 'groups', savedGroup: group.display });
+		return updateSettings(
+			(settings) => {
+				const groups = [...settings.equivalenceGroups];
+				if (Number.isInteger(index) && index >= 0 && index < groups.length) groups[index] = group;
+				else groups.push(group);
+				return { ...settings, equivalenceGroups: groups };
+			},
+			{ section: 'groups', savedGroup: group.display }
+		);
+	},
+
+	/** Add several new groups at once, e.g. every suggestion accepted in one go. */
+	saveGroups: async ({ request }) => {
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(String((await request.formData()).get('groups') ?? ''));
+		} catch {
+			return fail(400, { section: 'groups', message: 'The groups could not be read.' });
+		}
+		const added = parseEquivalenceGroups(parsed).filter((group) => group.members.length);
+		if (!added.length) return fail(400, { section: 'groups', message: 'No groups to add.' });
+		return updateSettings(
+			(settings) => ({ ...settings, equivalenceGroups: [...settings.equivalenceGroups, ...added] }),
+			{ section: 'groups', savedGroup: `${added.length} groups` }
+		);
 	},
 
 	deleteGroup: async ({ request }) => {
@@ -120,34 +172,41 @@ export const actions: Actions = {
 		);
 	},
 
-	/** Add a strength display rule, replacing one for the same ingredient and dose form. */
+	/**
+	 * Add a strength display rule, or save an edited one in its place. A rule with
+	 * the same ingredient, companions and dose form is replaced.
+	 */
 	saveStrengthStyle: async ({ request }) => {
 		const form = await request.formData();
 		const rule = parseStrengthStyleRule({
 			ingredient: form.get('ingredient'),
+			withIngredients: form.getAll('withIngredients'),
 			doseForm: form.get('doseForm'),
 			style: form.get('style')
 		});
 		if (!rule)
 			return fail(400, { section: 'strengthStyles', message: 'Name an ingredient and a style.' });
+		const original = String(form.get('originalKey') ?? '');
 		return updateSettings(
-			(settings) => ({
-				...settings,
-				strengthStyles: [
-					...settings.strengthStyles.filter((other) => ruleKey(other) !== ruleKey(rule)),
-					rule
-				]
-			}),
+			(settings) => {
+				const kept = settings.strengthStyles.filter((other) => ruleKey(other) !== ruleKey(rule));
+				const at = kept.findIndex((other) => ruleKey(other) === original);
+				return {
+					...settings,
+					strengthStyles:
+						at >= 0 ? kept.map((other, index) => (index === at ? rule : other)) : [...kept, rule]
+				};
+			},
 			{ section: 'strengthStyles' }
 		);
 	},
 
 	deleteStrengthStyle: async ({ request }) => {
-		const index = Number((await request.formData()).get('index'));
+		const key = String((await request.formData()).get('key') ?? '');
 		return updateSettings(
 			(settings) => ({
 				...settings,
-				strengthStyles: settings.strengthStyles.filter((_, at) => at !== index)
+				strengthStyles: settings.strengthStyles.filter((rule) => ruleKey(rule) !== key)
 			}),
 			{ section: 'strengthStyles' }
 		);

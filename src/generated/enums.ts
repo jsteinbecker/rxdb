@@ -26,7 +26,8 @@ export const EntityType = {
   ingredient: 'ingredient',
   labeler: 'labeler',
   spl: 'spl',
-  formulary_item: 'formulary_item'
+  formulary_item: 'formulary_item',
+  product_form: 'product_form'
 } as const
 
 export type EntityType = (typeof EntityType)[keyof typeof EntityType]

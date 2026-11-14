@@ -114,7 +114,16 @@ export const ModelName = {
   PillPhoto: 'PillPhoto',
   UniiSubstance: 'UniiSubstance',
   PharmClassRule: 'PharmClassRule',
-  CmsCrosswalkRow: 'CmsCrosswalkRow'
+  CmsCrosswalkRow: 'CmsCrosswalkRow',
+  PackageCuration: 'PackageCuration',
+  PackageReviewPreview: 'PackageReviewPreview',
+  ProductForm: 'ProductForm',
+  ProductFormIngredient: 'ProductFormIngredient',
+  ProductFormStrength: 'ProductFormStrength',
+  ProductFormPackage: 'ProductFormPackage',
+  ProductFormRoute: 'ProductFormRoute',
+  ProductFormRoutePrep: 'ProductFormRoutePrep',
+  ProductFormRouteOverride: 'ProductFormRouteOverride'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -253,7 +262,8 @@ export const FormularyItemScalarFieldEnum = {
   displayName: 'displayName',
   releaseAbbreviation: 'releaseAbbreviation',
   nameOverride: 'nameOverride',
-  strengthAsPercent: 'strengthAsPercent'
+  strengthStyle: 'strengthStyle',
+  ingredientOrder: 'ingredientOrder'
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
@@ -366,6 +376,8 @@ export const ProductIngredientScalarFieldEnum = {
   strengthDenMag: 'strengthDenMag',
   strengthDenUom: 'strengthDenUom',
   basis: 'basis',
+  deliveredNumMag: 'deliveredNumMag',
+  deliveredNumUom: 'deliveredNumUom',
   ordinal: 'ordinal',
   validFrom: 'validFrom',
   validTo: 'validTo'
@@ -878,7 +890,8 @@ export const CompoundFormulaScalarFieldEnum = {
   totalVolumeWhole: 'totalVolumeWhole',
   totalVolumeNum: 'totalVolumeNum',
   totalVolumeDen: 'totalVolumeDen',
-  totalVolumeUom: 'totalVolumeUom'
+  totalVolumeUom: 'totalVolumeUom',
+  route: 'route'
 } as const
 
 export type CompoundFormulaScalarFieldEnum = (typeof CompoundFormulaScalarFieldEnum)[keyof typeof CompoundFormulaScalarFieldEnum]
@@ -901,7 +914,8 @@ export const FormulaSlotScalarFieldEnum = {
   volumeUom: 'volumeUom',
   tolerancePct: 'tolerancePct',
   allowMultiComponent: 'allowMultiComponent',
-  ordinal: 'ordinal'
+  ordinal: 'ordinal',
+  vialPrep: 'vialPrep'
 } as const
 
 export type FormulaSlotScalarFieldEnum = (typeof FormulaSlotScalarFieldEnum)[keyof typeof FormulaSlotScalarFieldEnum]
@@ -1135,6 +1149,125 @@ export const CmsCrosswalkRowScalarFieldEnum = {
 } as const
 
 export type CmsCrosswalkRowScalarFieldEnum = (typeof CmsCrosswalkRowScalarFieldEnum)[keyof typeof CmsCrosswalkRowScalarFieldEnum]
+
+
+export const PackageCurationScalarFieldEnum = {
+  ndc: 'ndc',
+  baseline: 'baseline',
+  baselineVersion: 'baselineVersion',
+  refreshAt: 'refreshAt',
+  overrides: 'overrides',
+  review: 'review',
+  revision: 'revision',
+  initialized: 'initialized',
+  unknownKeys: 'unknownKeys',
+  legacySnapshot: 'legacySnapshot',
+  legacyBaseline: 'legacyBaseline',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PackageCurationScalarFieldEnum = (typeof PackageCurationScalarFieldEnum)[keyof typeof PackageCurationScalarFieldEnum]
+
+
+export const PackageReviewPreviewScalarFieldEnum = {
+  token: 'token',
+  ndc: 'ndc',
+  sourceRevision: 'sourceRevision',
+  baseline: 'baseline',
+  overrides: 'overrides',
+  review: 'review',
+  evidence: 'evidence',
+  expiresAt: 'expiresAt'
+} as const
+
+export type PackageReviewPreviewScalarFieldEnum = (typeof PackageReviewPreviewScalarFieldEnum)[keyof typeof PackageReviewPreviewScalarFieldEnum]
+
+
+export const ProductFormScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  ingredientKey: 'ingredientKey',
+  doseForm: 'doseForm',
+  scdfRxcui: 'scdfRxcui',
+  refreshedAt: 'refreshedAt'
+} as const
+
+export type ProductFormScalarFieldEnum = (typeof ProductFormScalarFieldEnum)[keyof typeof ProductFormScalarFieldEnum]
+
+
+export const ProductFormIngredientScalarFieldEnum = {
+  productFormId: 'productFormId',
+  ingredientId: 'ingredientId',
+  ordinal: 'ordinal'
+} as const
+
+export type ProductFormIngredientScalarFieldEnum = (typeof ProductFormIngredientScalarFieldEnum)[keyof typeof ProductFormIngredientScalarFieldEnum]
+
+
+export const ProductFormStrengthScalarFieldEnum = {
+  id: 'id',
+  productFormId: 'productFormId',
+  clinicalDrugId: 'clinicalDrugId',
+  ingredientId: 'ingredientId',
+  basisIngredientId: 'basisIngredientId',
+  basis: 'basis',
+  strengthNumMag: 'strengthNumMag',
+  strengthNumUom: 'strengthNumUom',
+  strengthDenMag: 'strengthDenMag',
+  strengthDenUom: 'strengthDenUom'
+} as const
+
+export type ProductFormStrengthScalarFieldEnum = (typeof ProductFormStrengthScalarFieldEnum)[keyof typeof ProductFormStrengthScalarFieldEnum]
+
+
+export const ProductFormPackageScalarFieldEnum = {
+  productFormId: 'productFormId',
+  packageId: 'packageId'
+} as const
+
+export type ProductFormPackageScalarFieldEnum = (typeof ProductFormPackageScalarFieldEnum)[keyof typeof ProductFormPackageScalarFieldEnum]
+
+
+export const ProductFormRouteScalarFieldEnum = {
+  id: 'id',
+  productFormId: 'productFormId',
+  route: 'route',
+  source: 'source',
+  status: 'status',
+  retiredAt: 'retiredAt'
+} as const
+
+export type ProductFormRouteScalarFieldEnum = (typeof ProductFormRouteScalarFieldEnum)[keyof typeof ProductFormRouteScalarFieldEnum]
+
+
+export const ProductFormRoutePrepScalarFieldEnum = {
+  id: 'id',
+  productFormRouteId: 'productFormRouteId',
+  packageId: 'packageId',
+  vialMassMg: 'vialMassMg',
+  diluents: 'diluents',
+  diluentMl: 'diluentMl',
+  finalVolumeMl: 'finalVolumeMl',
+  concentrationMgPerMl: 'concentrationMgPerMl',
+  agreeing: 'agreeing',
+  stating: 'stating',
+  refreshedAt: 'refreshedAt'
+} as const
+
+export type ProductFormRoutePrepScalarFieldEnum = (typeof ProductFormRoutePrepScalarFieldEnum)[keyof typeof ProductFormRoutePrepScalarFieldEnum]
+
+
+export const ProductFormRouteOverrideScalarFieldEnum = {
+  id: 'id',
+  productFormRouteId: 'productFormRouteId',
+  field: 'field',
+  value: 'value',
+  note: 'note',
+  editedBy: 'editedBy',
+  editedAt: 'editedAt'
+} as const
+
+export type ProductFormRouteOverrideScalarFieldEnum = (typeof ProductFormRouteOverrideScalarFieldEnum)[keyof typeof ProductFormRouteOverrideScalarFieldEnum]
 
 
 export const SortOrder = {

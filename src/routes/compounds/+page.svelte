@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { resolve } from '$app/paths';
 
 	let { data, form } = $props();
@@ -13,9 +13,6 @@
 
 <main>
 	<PageHeader title="Compounds">
-		{#snippet eyebrow()}
-			<a href={resolve('/')}>RxDB</a> / <a href={resolve('/formulary')}>Formulary</a> / Compounds
-		{/snippet}
 		<p>{data.scope.name}</p>
 	</PageHeader>
 
@@ -47,9 +44,7 @@
 
 <style>
 	main {
-		max-width: 760px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
+		--page-width: 760px;
 	}
 	.new {
 		display: flex;

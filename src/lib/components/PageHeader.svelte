@@ -1,13 +1,24 @@
+<!--
+@component
+Every page's header: an optional eyebrow (a record's kind and code), the title,
+and the description lines under it, muted and stacked. A title ending in `[Brand]`
+(RxNorm's form) shows the brand as a superheading over the rest. `compact` sizes the
+title for a record page (a package, an ingredient, a compound); `actions` sit to the
+right, wrapping below on narrow screens.
+
+Usage:
+```svelte
+<PageHeader title={item.name} compact>
+	{#snippet eyebrow()}Package · {formatNdc(item.ndc)}{/snippet}
+	{#snippet actions()}<button>Edit</button>{/snippet}
+	<p>{item.labeler}</p>
+</PageHeader>
+```
+-->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { splitBrand } from '$lib/brand-name';
+	import { splitBrand } from "#lib/medication/brand-name.ts";
 
-	/**
-	 * Every page's header: an eyebrow (breadcrumbs, or a record's kind and code), the title, and the
-	 * description lines under it, muted and stacked. A title ending in `[Brand]` (RxNorm's form)
-	 * shows the brand as a superheading over the rest. `compact` sizes the title for a record page (a
-	 * package, an ingredient, a compound); `actions` sit to the right, wrapping below on narrow screens.
-	 */
 	let {
 		eyebrow,
 		title,
@@ -16,20 +27,24 @@
 		name: renderName,
 		children
 	}: {
-		eyebrow: Snippet;
+		/** The line above the title: a record's kind and code. The toolbar carries the breadcrumbs. */
+		eyebrow?: Snippet;
 		/** A string becomes the `<h1>`; a snippet renders its own (an editable name, a placeholder). */
 		title: string | Snippet;
+		/** Sizes the title for a record page rather than a list page. */
 		compact?: boolean;
+		/** Buttons or links to the right of the title; they wrap below on narrow screens. */
 		actions?: Snippet;
 		/** Renders a string title's name (after its brand is split off) when a page restyles it. */
 		name?: Snippet<[string]>;
+		/** Description lines under the title, muted and stacked. */
 		children?: Snippet;
 	} = $props();
 </script>
 
 <header class:compact>
 	<div class="text">
-		<p class="eyebrow">{@render eyebrow()}</p>
+		{#if eyebrow}<p class="eyebrow">{@render eyebrow()}</p>{/if}
 		{#if typeof title === 'string'}
 			{@const { name, brand } = splitBrand(title)}
 			{#if brand}<p class="brand">{brand}</p>{/if}

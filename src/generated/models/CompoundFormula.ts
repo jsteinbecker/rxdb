@@ -56,6 +56,7 @@ export type CompoundFormulaMinAggregateOutputType = {
   totalVolumeNum: bigint | null
   totalVolumeDen: bigint | null
   totalVolumeUom: string | null
+  route: string | null
 }
 
 export type CompoundFormulaMaxAggregateOutputType = {
@@ -74,6 +75,7 @@ export type CompoundFormulaMaxAggregateOutputType = {
   totalVolumeNum: bigint | null
   totalVolumeDen: bigint | null
   totalVolumeUom: string | null
+  route: string | null
 }
 
 export type CompoundFormulaCountAggregateOutputType = {
@@ -92,6 +94,7 @@ export type CompoundFormulaCountAggregateOutputType = {
   totalVolumeNum: number
   totalVolumeDen: number
   totalVolumeUom: number
+  route: number
   _all: number
 }
 
@@ -126,6 +129,7 @@ export type CompoundFormulaMinAggregateInputType = {
   totalVolumeNum?: true
   totalVolumeDen?: true
   totalVolumeUom?: true
+  route?: true
 }
 
 export type CompoundFormulaMaxAggregateInputType = {
@@ -144,6 +148,7 @@ export type CompoundFormulaMaxAggregateInputType = {
   totalVolumeNum?: true
   totalVolumeDen?: true
   totalVolumeUom?: true
+  route?: true
 }
 
 export type CompoundFormulaCountAggregateInputType = {
@@ -162,6 +167,7 @@ export type CompoundFormulaCountAggregateInputType = {
   totalVolumeNum?: true
   totalVolumeDen?: true
   totalVolumeUom?: true
+  route?: true
   _all?: true
 }
 
@@ -267,6 +273,7 @@ export type CompoundFormulaGroupByOutputType = {
   totalVolumeNum: bigint | null
   totalVolumeDen: bigint | null
   totalVolumeUom: string | null
+  route: string | null
   _count: CompoundFormulaCountAggregateOutputType | null
   _avg: CompoundFormulaAvgAggregateOutputType | null
   _sum: CompoundFormulaSumAggregateOutputType | null
@@ -308,6 +315,7 @@ export type CompoundFormulaWhereInput = {
   totalVolumeNum?: Prisma.BigIntNullableFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeDen?: Prisma.BigIntNullableFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeUom?: Prisma.StringNullableFilter<"CompoundFormula"> | string | null
+  route?: Prisma.StringNullableFilter<"CompoundFormula"> | string | null
   scope?: Prisma.XOR<Prisma.ScopeScalarRelationFilter, Prisma.ScopeWhereInput>
   formularyItem?: Prisma.XOR<Prisma.FormularyItemNullableScalarRelationFilter, Prisma.FormularyItemWhereInput> | null
   formulaSlots?: Prisma.FormulaSlotListRelationFilter
@@ -330,6 +338,7 @@ export type CompoundFormulaOrderByWithRelationInput = {
   totalVolumeNum?: Prisma.SortOrderInput | Prisma.SortOrder
   totalVolumeDen?: Prisma.SortOrderInput | Prisma.SortOrder
   totalVolumeUom?: Prisma.SortOrderInput | Prisma.SortOrder
+  route?: Prisma.SortOrderInput | Prisma.SortOrder
   scope?: Prisma.ScopeOrderByWithRelationInput
   formularyItem?: Prisma.FormularyItemOrderByWithRelationInput
   formulaSlots?: Prisma.FormulaSlotOrderByRelationAggregateInput
@@ -356,6 +365,7 @@ export type CompoundFormulaWhereUniqueInput = Prisma.AtLeast<{
   totalVolumeNum?: Prisma.BigIntNullableFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeDen?: Prisma.BigIntNullableFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeUom?: Prisma.StringNullableFilter<"CompoundFormula"> | string | null
+  route?: Prisma.StringNullableFilter<"CompoundFormula"> | string | null
   scope?: Prisma.XOR<Prisma.ScopeScalarRelationFilter, Prisma.ScopeWhereInput>
   formularyItem?: Prisma.XOR<Prisma.FormularyItemNullableScalarRelationFilter, Prisma.FormularyItemWhereInput> | null
   formulaSlots?: Prisma.FormulaSlotListRelationFilter
@@ -378,6 +388,7 @@ export type CompoundFormulaOrderByWithAggregationInput = {
   totalVolumeNum?: Prisma.SortOrderInput | Prisma.SortOrder
   totalVolumeDen?: Prisma.SortOrderInput | Prisma.SortOrder
   totalVolumeUom?: Prisma.SortOrderInput | Prisma.SortOrder
+  route?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.CompoundFormulaCountOrderByAggregateInput
   _avg?: Prisma.CompoundFormulaAvgOrderByAggregateInput
   _max?: Prisma.CompoundFormulaMaxOrderByAggregateInput
@@ -404,6 +415,7 @@ export type CompoundFormulaScalarWhereWithAggregatesInput = {
   totalVolumeNum?: Prisma.BigIntNullableWithAggregatesFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeDen?: Prisma.BigIntNullableWithAggregatesFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeUom?: Prisma.StringNullableWithAggregatesFilter<"CompoundFormula"> | string | null
+  route?: Prisma.StringNullableWithAggregatesFilter<"CompoundFormula"> | string | null
 }
 
 export type CompoundFormulaCreateInput = {
@@ -420,6 +432,7 @@ export type CompoundFormulaCreateInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   scope: Prisma.ScopeCreateNestedOneWithoutCompoundFormulasInput
   formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutCompoundFormulasInput
   formulaSlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormulaInput
@@ -442,6 +455,7 @@ export type CompoundFormulaUncheckedCreateInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormulaInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutFormulaInput
 }
@@ -460,6 +474,7 @@ export type CompoundFormulaUpdateInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scope?: Prisma.ScopeUpdateOneRequiredWithoutCompoundFormulasNestedInput
   formularyItem?: Prisma.FormularyItemUpdateOneWithoutCompoundFormulasNestedInput
   formulaSlots?: Prisma.FormulaSlotUpdateManyWithoutFormulaNestedInput
@@ -482,6 +497,7 @@ export type CompoundFormulaUncheckedUpdateInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormulaNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutFormulaNestedInput
 }
@@ -502,6 +518,7 @@ export type CompoundFormulaCreateManyInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
 }
 
 export type CompoundFormulaUpdateManyMutationInput = {
@@ -518,6 +535,7 @@ export type CompoundFormulaUpdateManyMutationInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CompoundFormulaUncheckedUpdateManyInput = {
@@ -536,6 +554,7 @@ export type CompoundFormulaUncheckedUpdateManyInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CompoundFormulaListRelationFilter = {
@@ -570,6 +589,7 @@ export type CompoundFormulaCountOrderByAggregateInput = {
   totalVolumeNum?: Prisma.SortOrder
   totalVolumeDen?: Prisma.SortOrder
   totalVolumeUom?: Prisma.SortOrder
+  route?: Prisma.SortOrder
 }
 
 export type CompoundFormulaAvgOrderByAggregateInput = {
@@ -595,6 +615,7 @@ export type CompoundFormulaMaxOrderByAggregateInput = {
   totalVolumeNum?: Prisma.SortOrder
   totalVolumeDen?: Prisma.SortOrder
   totalVolumeUom?: Prisma.SortOrder
+  route?: Prisma.SortOrder
 }
 
 export type CompoundFormulaMinOrderByAggregateInput = {
@@ -613,6 +634,7 @@ export type CompoundFormulaMinOrderByAggregateInput = {
   totalVolumeNum?: Prisma.SortOrder
   totalVolumeDen?: Prisma.SortOrder
   totalVolumeUom?: Prisma.SortOrder
+  route?: Prisma.SortOrder
 }
 
 export type CompoundFormulaSumOrderByAggregateInput = {
@@ -753,6 +775,7 @@ export type CompoundFormulaCreateWithoutScopeInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutCompoundFormulasInput
   formulaSlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormulaInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutFormulaInput
@@ -773,6 +796,7 @@ export type CompoundFormulaUncheckedCreateWithoutScopeInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormulaInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutFormulaInput
 }
@@ -822,6 +846,7 @@ export type CompoundFormulaScalarWhereInput = {
   totalVolumeNum?: Prisma.BigIntNullableFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeDen?: Prisma.BigIntNullableFilter<"CompoundFormula"> | bigint | number | null
   totalVolumeUom?: Prisma.StringNullableFilter<"CompoundFormula"> | string | null
+  route?: Prisma.StringNullableFilter<"CompoundFormula"> | string | null
 }
 
 export type CompoundFormulaCreateWithoutFormularyItemInput = {
@@ -838,6 +863,7 @@ export type CompoundFormulaCreateWithoutFormularyItemInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   scope: Prisma.ScopeCreateNestedOneWithoutCompoundFormulasInput
   formulaSlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormulaInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutFormulaInput
@@ -858,6 +884,7 @@ export type CompoundFormulaUncheckedCreateWithoutFormularyItemInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormulaInput
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutFormulaInput
 }
@@ -902,6 +929,7 @@ export type CompoundFormulaCreateWithoutFormulaSlotsInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   scope: Prisma.ScopeCreateNestedOneWithoutCompoundFormulasInput
   formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutCompoundFormulasInput
   buildPlans?: Prisma.BuildPlanCreateNestedManyWithoutFormulaInput
@@ -923,6 +951,7 @@ export type CompoundFormulaUncheckedCreateWithoutFormulaSlotsInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   buildPlans?: Prisma.BuildPlanUncheckedCreateNestedManyWithoutFormulaInput
 }
 
@@ -956,6 +985,7 @@ export type CompoundFormulaUpdateWithoutFormulaSlotsInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scope?: Prisma.ScopeUpdateOneRequiredWithoutCompoundFormulasNestedInput
   formularyItem?: Prisma.FormularyItemUpdateOneWithoutCompoundFormulasNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutFormulaNestedInput
@@ -977,6 +1007,7 @@ export type CompoundFormulaUncheckedUpdateWithoutFormulaSlotsInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutFormulaNestedInput
 }
 
@@ -994,6 +1025,7 @@ export type CompoundFormulaCreateWithoutBuildPlansInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   scope: Prisma.ScopeCreateNestedOneWithoutCompoundFormulasInput
   formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutCompoundFormulasInput
   formulaSlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormulaInput
@@ -1015,6 +1047,7 @@ export type CompoundFormulaUncheckedCreateWithoutBuildPlansInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormulaInput
 }
 
@@ -1048,6 +1081,7 @@ export type CompoundFormulaUpdateWithoutBuildPlansInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scope?: Prisma.ScopeUpdateOneRequiredWithoutCompoundFormulasNestedInput
   formularyItem?: Prisma.FormularyItemUpdateOneWithoutCompoundFormulasNestedInput
   formulaSlots?: Prisma.FormulaSlotUpdateManyWithoutFormulaNestedInput
@@ -1069,6 +1103,7 @@ export type CompoundFormulaUncheckedUpdateWithoutBuildPlansInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormulaNestedInput
 }
 
@@ -1087,6 +1122,7 @@ export type CompoundFormulaCreateManyScopeInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
 }
 
 export type CompoundFormulaUpdateWithoutScopeInput = {
@@ -1103,6 +1139,7 @@ export type CompoundFormulaUpdateWithoutScopeInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formularyItem?: Prisma.FormularyItemUpdateOneWithoutCompoundFormulasNestedInput
   formulaSlots?: Prisma.FormulaSlotUpdateManyWithoutFormulaNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutFormulaNestedInput
@@ -1123,6 +1160,7 @@ export type CompoundFormulaUncheckedUpdateWithoutScopeInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormulaNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutFormulaNestedInput
 }
@@ -1142,6 +1180,7 @@ export type CompoundFormulaUncheckedUpdateManyWithoutScopeInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CompoundFormulaCreateManyFormularyItemInput = {
@@ -1159,6 +1198,7 @@ export type CompoundFormulaCreateManyFormularyItemInput = {
   totalVolumeNum?: bigint | number | null
   totalVolumeDen?: bigint | number | null
   totalVolumeUom?: string | null
+  route?: string | null
 }
 
 export type CompoundFormulaUpdateWithoutFormularyItemInput = {
@@ -1175,6 +1215,7 @@ export type CompoundFormulaUpdateWithoutFormularyItemInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scope?: Prisma.ScopeUpdateOneRequiredWithoutCompoundFormulasNestedInput
   formulaSlots?: Prisma.FormulaSlotUpdateManyWithoutFormulaNestedInput
   buildPlans?: Prisma.BuildPlanUpdateManyWithoutFormulaNestedInput
@@ -1195,6 +1236,7 @@ export type CompoundFormulaUncheckedUpdateWithoutFormularyItemInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formulaSlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormulaNestedInput
   buildPlans?: Prisma.BuildPlanUncheckedUpdateManyWithoutFormulaNestedInput
 }
@@ -1214,6 +1256,7 @@ export type CompoundFormulaUncheckedUpdateManyWithoutFormularyItemInput = {
   totalVolumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   totalVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -1272,6 +1315,7 @@ export type CompoundFormulaSelect<ExtArgs extends runtime.Types.Extensions.Inter
   totalVolumeNum?: boolean
   totalVolumeDen?: boolean
   totalVolumeUom?: boolean
+  route?: boolean
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
   formularyItem?: boolean | Prisma.CompoundFormula$formularyItemArgs<ExtArgs>
   formulaSlots?: boolean | Prisma.CompoundFormula$formulaSlotsArgs<ExtArgs>
@@ -1295,6 +1339,7 @@ export type CompoundFormulaSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   totalVolumeNum?: boolean
   totalVolumeDen?: boolean
   totalVolumeUom?: boolean
+  route?: boolean
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
   formularyItem?: boolean | Prisma.CompoundFormula$formularyItemArgs<ExtArgs>
 }, ExtArgs["result"]["compoundFormula"]>
@@ -1315,6 +1360,7 @@ export type CompoundFormulaSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   totalVolumeNum?: boolean
   totalVolumeDen?: boolean
   totalVolumeUom?: boolean
+  route?: boolean
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
   formularyItem?: boolean | Prisma.CompoundFormula$formularyItemArgs<ExtArgs>
 }, ExtArgs["result"]["compoundFormula"]>
@@ -1335,9 +1381,10 @@ export type CompoundFormulaSelectScalar = {
   totalVolumeNum?: boolean
   totalVolumeDen?: boolean
   totalVolumeUom?: boolean
+  route?: boolean
 }
 
-export type CompoundFormulaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scopeId" | "formularyItemId" | "kind" | "name" | "budCategory" | "defaultStorage" | "version" | "status" | "approvedBy" | "approvedAt" | "totalVolumeWhole" | "totalVolumeNum" | "totalVolumeDen" | "totalVolumeUom", ExtArgs["result"]["compoundFormula"]>
+export type CompoundFormulaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scopeId" | "formularyItemId" | "kind" | "name" | "budCategory" | "defaultStorage" | "version" | "status" | "approvedBy" | "approvedAt" | "totalVolumeWhole" | "totalVolumeNum" | "totalVolumeDen" | "totalVolumeUom" | "route", ExtArgs["result"]["compoundFormula"]>
 export type CompoundFormulaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   scope?: boolean | Prisma.ScopeDefaultArgs<ExtArgs>
   formularyItem?: boolean | Prisma.CompoundFormula$formularyItemArgs<ExtArgs>
@@ -1381,6 +1428,11 @@ export type $CompoundFormulaPayload<ExtArgs extends runtime.Types.Extensions.Int
     totalVolumeNum: bigint | null
     totalVolumeDen: bigint | null
     totalVolumeUom: string | null
+    /**
+     * route of administration (IV, IM, SC), entered by hand; picks the label's vial
+     * preparation when it differs by route. Null until chosen; required to save.
+     */
+    route: string | null
   }, ExtArgs["result"]["compoundFormula"]>
   composites: {}
 }
@@ -1823,6 +1875,7 @@ export interface CompoundFormulaFieldRefs {
   readonly totalVolumeNum: Prisma.FieldRef<"CompoundFormula", 'BigInt'>
   readonly totalVolumeDen: Prisma.FieldRef<"CompoundFormula", 'BigInt'>
   readonly totalVolumeUom: Prisma.FieldRef<"CompoundFormula", 'String'>
+  readonly route: Prisma.FieldRef<"CompoundFormula", 'String'>
 }
     
 

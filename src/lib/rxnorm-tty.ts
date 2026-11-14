@@ -1,6 +1,10 @@
-// RxNorm names every concept by a term type (TTY): SCD, SBD, BN, DF… They are
-// precise but opaque, so the search shows a plain name and keeps the code and
-// its meaning in a tooltip.
+/**
+ * RxNorm names every concept by a term type (TTY): SCD, SBD, BN, DF… They are
+ * precise but opaque, so the search shows a plain name and keeps the code and
+ * its meaning in a tooltip.
+ *
+ * @module
+ */
 
 const TERM_TYPES: Record<string, { label: string; meaning: string }> = {
 	SCD: { label: 'Generic drug', meaning: 'Semantic clinical drug: ingredient, strength and dose form' },

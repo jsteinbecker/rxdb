@@ -202,6 +202,8 @@ export type PackageWhereInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityListRelationFilter
   buildPlanLines?: Prisma.BuildPlanLineListRelationFilter
   openComponents?: Prisma.OpenComponentListRelationFilter
+  productForm?: Prisma.XOR<Prisma.ProductFormPackageNullableScalarRelationFilter, Prisma.ProductFormPackageWhereInput> | null
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepListRelationFilter
 }
 
 export type PackageOrderByWithRelationInput = {
@@ -223,6 +225,8 @@ export type PackageOrderByWithRelationInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityOrderByRelationAggregateInput
   buildPlanLines?: Prisma.BuildPlanLineOrderByRelationAggregateInput
   openComponents?: Prisma.OpenComponentOrderByRelationAggregateInput
+  productForm?: Prisma.ProductFormPackageOrderByWithRelationInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepOrderByRelationAggregateInput
 }
 
 export type PackageWhereUniqueInput = Prisma.AtLeast<{
@@ -248,6 +252,8 @@ export type PackageWhereUniqueInput = Prisma.AtLeast<{
   componentAvailabilities?: Prisma.ComponentAvailabilityListRelationFilter
   buildPlanLines?: Prisma.BuildPlanLineListRelationFilter
   openComponents?: Prisma.OpenComponentListRelationFilter
+  productForm?: Prisma.XOR<Prisma.ProductFormPackageNullableScalarRelationFilter, Prisma.ProductFormPackageWhereInput> | null
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepListRelationFilter
 }, "id" | "id_type">
 
 export type PackageOrderByWithAggregationInput = {
@@ -291,6 +297,8 @@ export type PackageCreateInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateInput = {
@@ -311,6 +319,8 @@ export type PackageUncheckedCreateInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUpdateInput = {
@@ -330,6 +340,8 @@ export type PackageUpdateInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateInput = {
@@ -350,6 +362,8 @@ export type PackageUncheckedUpdateInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateManyInput = {
@@ -613,6 +627,36 @@ export type PackageUpdateOneRequiredWithoutOpenComponentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PackageUpdateToOneWithWhereWithoutOpenComponentsInput, Prisma.PackageUpdateWithoutOpenComponentsInput>, Prisma.PackageUncheckedUpdateWithoutOpenComponentsInput>
 }
 
+export type PackageCreateNestedOneWithoutProductFormInput = {
+  create?: Prisma.XOR<Prisma.PackageCreateWithoutProductFormInput, Prisma.PackageUncheckedCreateWithoutProductFormInput>
+  connectOrCreate?: Prisma.PackageCreateOrConnectWithoutProductFormInput
+  connect?: Prisma.PackageWhereUniqueInput
+}
+
+export type PackageUpdateOneRequiredWithoutProductFormNestedInput = {
+  create?: Prisma.XOR<Prisma.PackageCreateWithoutProductFormInput, Prisma.PackageUncheckedCreateWithoutProductFormInput>
+  connectOrCreate?: Prisma.PackageCreateOrConnectWithoutProductFormInput
+  upsert?: Prisma.PackageUpsertWithoutProductFormInput
+  connect?: Prisma.PackageWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PackageUpdateToOneWithWhereWithoutProductFormInput, Prisma.PackageUpdateWithoutProductFormInput>, Prisma.PackageUncheckedUpdateWithoutProductFormInput>
+}
+
+export type PackageCreateNestedOneWithoutProductFormRoutePrepsInput = {
+  create?: Prisma.XOR<Prisma.PackageCreateWithoutProductFormRoutePrepsInput, Prisma.PackageUncheckedCreateWithoutProductFormRoutePrepsInput>
+  connectOrCreate?: Prisma.PackageCreateOrConnectWithoutProductFormRoutePrepsInput
+  connect?: Prisma.PackageWhereUniqueInput
+}
+
+export type PackageUpdateOneWithoutProductFormRoutePrepsNestedInput = {
+  create?: Prisma.XOR<Prisma.PackageCreateWithoutProductFormRoutePrepsInput, Prisma.PackageUncheckedCreateWithoutProductFormRoutePrepsInput>
+  connectOrCreate?: Prisma.PackageCreateOrConnectWithoutProductFormRoutePrepsInput
+  upsert?: Prisma.PackageUpsertWithoutProductFormRoutePrepsInput
+  disconnect?: Prisma.PackageWhereInput | boolean
+  delete?: Prisma.PackageWhereInput | boolean
+  connect?: Prisma.PackageWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PackageUpdateToOneWithWhereWithoutProductFormRoutePrepsInput, Prisma.PackageUpdateWithoutProductFormRoutePrepsInput>, Prisma.PackageUncheckedUpdateWithoutProductFormRoutePrepsInput>
+}
+
 export type PackageCreateWithoutEntityInput = {
   description?: string | null
   containerType?: string | null
@@ -629,6 +673,8 @@ export type PackageCreateWithoutEntityInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutEntityInput = {
@@ -647,6 +693,8 @@ export type PackageUncheckedCreateWithoutEntityInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutEntityInput = {
@@ -681,6 +729,8 @@ export type PackageUpdateWithoutEntityInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutEntityInput = {
@@ -699,6 +749,8 @@ export type PackageUncheckedUpdateWithoutEntityInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutFormularyItemPackagesInput = {
@@ -717,6 +769,8 @@ export type PackageCreateWithoutFormularyItemPackagesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutFormularyItemPackagesInput = {
@@ -736,6 +790,8 @@ export type PackageUncheckedCreateWithoutFormularyItemPackagesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutFormularyItemPackagesInput = {
@@ -770,6 +826,8 @@ export type PackageUpdateWithoutFormularyItemPackagesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutFormularyItemPackagesInput = {
@@ -789,6 +847,8 @@ export type PackageUncheckedUpdateWithoutFormularyItemPackagesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutComponentsInput = {
@@ -807,6 +867,8 @@ export type PackageCreateWithoutComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutComponentsInput = {
@@ -826,6 +888,8 @@ export type PackageUncheckedCreateWithoutComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutComponentsInput = {
@@ -849,6 +913,8 @@ export type PackageCreateWithoutContainedInInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutContainedInInput = {
@@ -868,6 +934,8 @@ export type PackageUncheckedCreateWithoutContainedInInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutContainedInInput = {
@@ -902,6 +970,8 @@ export type PackageUpdateWithoutComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutComponentsInput = {
@@ -921,6 +991,8 @@ export type PackageUncheckedUpdateWithoutComponentsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUpsertWithoutContainedInInput = {
@@ -950,6 +1022,8 @@ export type PackageUpdateWithoutContainedInInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutContainedInInput = {
@@ -969,6 +1043,8 @@ export type PackageUncheckedUpdateWithoutContainedInInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutPackageCatalogProjectionsInput = {
@@ -987,6 +1063,8 @@ export type PackageCreateWithoutPackageCatalogProjectionsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutPackageCatalogProjectionsInput = {
@@ -1006,6 +1084,8 @@ export type PackageUncheckedCreateWithoutPackageCatalogProjectionsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutPackageCatalogProjectionsInput = {
@@ -1040,6 +1120,8 @@ export type PackageUpdateWithoutPackageCatalogProjectionsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutPackageCatalogProjectionsInput = {
@@ -1059,6 +1141,8 @@ export type PackageUncheckedUpdateWithoutPackageCatalogProjectionsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutContainerSpecsInput = {
@@ -1077,6 +1161,8 @@ export type PackageCreateWithoutContainerSpecsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutContainerSpecsInput = {
@@ -1096,6 +1182,8 @@ export type PackageUncheckedCreateWithoutContainerSpecsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutContainerSpecsInput = {
@@ -1130,6 +1218,8 @@ export type PackageUpdateWithoutContainerSpecsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutContainerSpecsInput = {
@@ -1149,6 +1239,8 @@ export type PackageUncheckedUpdateWithoutContainerSpecsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutComponentInUseLimitsInput = {
@@ -1167,6 +1259,8 @@ export type PackageCreateWithoutComponentInUseLimitsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutComponentInUseLimitsInput = {
@@ -1186,6 +1280,8 @@ export type PackageUncheckedCreateWithoutComponentInUseLimitsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutComponentInUseLimitsInput = {
@@ -1220,6 +1316,8 @@ export type PackageUpdateWithoutComponentInUseLimitsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutComponentInUseLimitsInput = {
@@ -1239,6 +1337,8 @@ export type PackageUncheckedUpdateWithoutComponentInUseLimitsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutSlotCandidatesInput = {
@@ -1257,6 +1357,8 @@ export type PackageCreateWithoutSlotCandidatesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutSlotCandidatesInput = {
@@ -1276,6 +1378,8 @@ export type PackageUncheckedCreateWithoutSlotCandidatesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutSlotCandidatesInput = {
@@ -1310,6 +1414,8 @@ export type PackageUpdateWithoutSlotCandidatesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutSlotCandidatesInput = {
@@ -1329,6 +1435,8 @@ export type PackageUncheckedUpdateWithoutSlotCandidatesInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutComponentCostsInput = {
@@ -1347,6 +1455,8 @@ export type PackageCreateWithoutComponentCostsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutComponentCostsInput = {
@@ -1366,6 +1476,8 @@ export type PackageUncheckedCreateWithoutComponentCostsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutComponentCostsInput = {
@@ -1400,6 +1512,8 @@ export type PackageUpdateWithoutComponentCostsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutComponentCostsInput = {
@@ -1419,6 +1533,8 @@ export type PackageUncheckedUpdateWithoutComponentCostsInput = {
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutComponentAvailabilitiesInput = {
@@ -1437,6 +1553,8 @@ export type PackageCreateWithoutComponentAvailabilitiesInput = {
   componentCosts?: Prisma.ComponentCostCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutComponentAvailabilitiesInput = {
@@ -1456,6 +1574,8 @@ export type PackageUncheckedCreateWithoutComponentAvailabilitiesInput = {
   componentCosts?: Prisma.ComponentCostUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutComponentAvailabilitiesInput = {
@@ -1490,6 +1610,8 @@ export type PackageUpdateWithoutComponentAvailabilitiesInput = {
   componentCosts?: Prisma.ComponentCostUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutComponentAvailabilitiesInput = {
@@ -1509,6 +1631,8 @@ export type PackageUncheckedUpdateWithoutComponentAvailabilitiesInput = {
   componentCosts?: Prisma.ComponentCostUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutBuildPlanLinesInput = {
@@ -1527,6 +1651,8 @@ export type PackageCreateWithoutBuildPlanLinesInput = {
   componentCosts?: Prisma.ComponentCostCreateNestedManyWithoutPackageInput
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutBuildPlanLinesInput = {
@@ -1546,6 +1672,8 @@ export type PackageUncheckedCreateWithoutBuildPlanLinesInput = {
   componentCosts?: Prisma.ComponentCostUncheckedCreateNestedManyWithoutPackageInput
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutBuildPlanLinesInput = {
@@ -1580,6 +1708,8 @@ export type PackageUpdateWithoutBuildPlanLinesInput = {
   componentCosts?: Prisma.ComponentCostUpdateManyWithoutPackageNestedInput
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutBuildPlanLinesInput = {
@@ -1599,6 +1729,8 @@ export type PackageUncheckedUpdateWithoutBuildPlanLinesInput = {
   componentCosts?: Prisma.ComponentCostUncheckedUpdateManyWithoutPackageNestedInput
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutOpenComponentsInput = {
@@ -1617,6 +1749,8 @@ export type PackageCreateWithoutOpenComponentsInput = {
   componentCosts?: Prisma.ComponentCostCreateNestedManyWithoutPackageInput
   componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutOpenComponentsInput = {
@@ -1636,6 +1770,8 @@ export type PackageUncheckedCreateWithoutOpenComponentsInput = {
   componentCosts?: Prisma.ComponentCostUncheckedCreateNestedManyWithoutPackageInput
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutOpenComponentsInput = {
@@ -1670,6 +1806,8 @@ export type PackageUpdateWithoutOpenComponentsInput = {
   componentCosts?: Prisma.ComponentCostUpdateManyWithoutPackageNestedInput
   componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutOpenComponentsInput = {
@@ -1689,6 +1827,204 @@ export type PackageUncheckedUpdateWithoutOpenComponentsInput = {
   componentCosts?: Prisma.ComponentCostUncheckedUpdateManyWithoutPackageNestedInput
   componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
+}
+
+export type PackageCreateWithoutProductFormInput = {
+  description?: string | null
+  containerType?: string | null
+  billingUnit?: string | null
+  isUnitOfUse?: boolean | null
+  entity: Prisma.EntityCreateNestedOneWithoutPackageInput
+  components?: Prisma.PackageComponentCreateNestedManyWithoutParentPackageInput
+  containedIn?: Prisma.PackageComponentCreateNestedManyWithoutChildPackageInput
+  formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutPackageInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionCreateNestedManyWithoutPackageInput
+  containerSpecs?: Prisma.ContainerSpecCreateNestedManyWithoutPackageInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitCreateNestedManyWithoutPackageInput
+  slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutPackageInput
+  componentCosts?: Prisma.ComponentCostCreateNestedManyWithoutPackageInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
+  buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
+  openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepCreateNestedManyWithoutPackageInput
+}
+
+export type PackageUncheckedCreateWithoutProductFormInput = {
+  id: string
+  type?: $Enums.EntityType
+  description?: string | null
+  containerType?: string | null
+  billingUnit?: string | null
+  isUnitOfUse?: boolean | null
+  components?: Prisma.PackageComponentUncheckedCreateNestedManyWithoutParentPackageInput
+  containedIn?: Prisma.PackageComponentUncheckedCreateNestedManyWithoutChildPackageInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutPackageInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUncheckedCreateNestedManyWithoutPackageInput
+  containerSpecs?: Prisma.ContainerSpecUncheckedCreateNestedManyWithoutPackageInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUncheckedCreateNestedManyWithoutPackageInput
+  slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutPackageInput
+  componentCosts?: Prisma.ComponentCostUncheckedCreateNestedManyWithoutPackageInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
+  openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedCreateNestedManyWithoutPackageInput
+}
+
+export type PackageCreateOrConnectWithoutProductFormInput = {
+  where: Prisma.PackageWhereUniqueInput
+  create: Prisma.XOR<Prisma.PackageCreateWithoutProductFormInput, Prisma.PackageUncheckedCreateWithoutProductFormInput>
+}
+
+export type PackageUpsertWithoutProductFormInput = {
+  update: Prisma.XOR<Prisma.PackageUpdateWithoutProductFormInput, Prisma.PackageUncheckedUpdateWithoutProductFormInput>
+  create: Prisma.XOR<Prisma.PackageCreateWithoutProductFormInput, Prisma.PackageUncheckedCreateWithoutProductFormInput>
+  where?: Prisma.PackageWhereInput
+}
+
+export type PackageUpdateToOneWithWhereWithoutProductFormInput = {
+  where?: Prisma.PackageWhereInput
+  data: Prisma.XOR<Prisma.PackageUpdateWithoutProductFormInput, Prisma.PackageUncheckedUpdateWithoutProductFormInput>
+}
+
+export type PackageUpdateWithoutProductFormInput = {
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containerType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isUnitOfUse?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  entity?: Prisma.EntityUpdateOneRequiredWithoutPackageNestedInput
+  components?: Prisma.PackageComponentUpdateManyWithoutParentPackageNestedInput
+  containedIn?: Prisma.PackageComponentUpdateManyWithoutChildPackageNestedInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutPackageNestedInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUpdateManyWithoutPackageNestedInput
+  containerSpecs?: Prisma.ContainerSpecUpdateManyWithoutPackageNestedInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUpdateManyWithoutPackageNestedInput
+  slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutPackageNestedInput
+  componentCosts?: Prisma.ComponentCostUpdateManyWithoutPackageNestedInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
+  openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUpdateManyWithoutPackageNestedInput
+}
+
+export type PackageUncheckedUpdateWithoutProductFormInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containerType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isUnitOfUse?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  components?: Prisma.PackageComponentUncheckedUpdateManyWithoutParentPackageNestedInput
+  containedIn?: Prisma.PackageComponentUncheckedUpdateManyWithoutChildPackageNestedInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutPackageNestedInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUncheckedUpdateManyWithoutPackageNestedInput
+  containerSpecs?: Prisma.ContainerSpecUncheckedUpdateManyWithoutPackageNestedInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUncheckedUpdateManyWithoutPackageNestedInput
+  slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutPackageNestedInput
+  componentCosts?: Prisma.ComponentCostUncheckedUpdateManyWithoutPackageNestedInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
+  openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productFormRoutePreps?: Prisma.ProductFormRoutePrepUncheckedUpdateManyWithoutPackageNestedInput
+}
+
+export type PackageCreateWithoutProductFormRoutePrepsInput = {
+  description?: string | null
+  containerType?: string | null
+  billingUnit?: string | null
+  isUnitOfUse?: boolean | null
+  entity: Prisma.EntityCreateNestedOneWithoutPackageInput
+  components?: Prisma.PackageComponentCreateNestedManyWithoutParentPackageInput
+  containedIn?: Prisma.PackageComponentCreateNestedManyWithoutChildPackageInput
+  formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutPackageInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionCreateNestedManyWithoutPackageInput
+  containerSpecs?: Prisma.ContainerSpecCreateNestedManyWithoutPackageInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitCreateNestedManyWithoutPackageInput
+  slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutPackageInput
+  componentCosts?: Prisma.ComponentCostCreateNestedManyWithoutPackageInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityCreateNestedManyWithoutPackageInput
+  buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutPackageInput
+  openComponents?: Prisma.OpenComponentCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageCreateNestedOneWithoutPackageInput
+}
+
+export type PackageUncheckedCreateWithoutProductFormRoutePrepsInput = {
+  id: string
+  type?: $Enums.EntityType
+  description?: string | null
+  containerType?: string | null
+  billingUnit?: string | null
+  isUnitOfUse?: boolean | null
+  components?: Prisma.PackageComponentUncheckedCreateNestedManyWithoutParentPackageInput
+  containedIn?: Prisma.PackageComponentUncheckedCreateNestedManyWithoutChildPackageInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutPackageInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUncheckedCreateNestedManyWithoutPackageInput
+  containerSpecs?: Prisma.ContainerSpecUncheckedCreateNestedManyWithoutPackageInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUncheckedCreateNestedManyWithoutPackageInput
+  slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutPackageInput
+  componentCosts?: Prisma.ComponentCostUncheckedCreateNestedManyWithoutPackageInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedCreateNestedManyWithoutPackageInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutPackageInput
+  openComponents?: Prisma.OpenComponentUncheckedCreateNestedManyWithoutPackageInput
+  productForm?: Prisma.ProductFormPackageUncheckedCreateNestedOneWithoutPackageInput
+}
+
+export type PackageCreateOrConnectWithoutProductFormRoutePrepsInput = {
+  where: Prisma.PackageWhereUniqueInput
+  create: Prisma.XOR<Prisma.PackageCreateWithoutProductFormRoutePrepsInput, Prisma.PackageUncheckedCreateWithoutProductFormRoutePrepsInput>
+}
+
+export type PackageUpsertWithoutProductFormRoutePrepsInput = {
+  update: Prisma.XOR<Prisma.PackageUpdateWithoutProductFormRoutePrepsInput, Prisma.PackageUncheckedUpdateWithoutProductFormRoutePrepsInput>
+  create: Prisma.XOR<Prisma.PackageCreateWithoutProductFormRoutePrepsInput, Prisma.PackageUncheckedCreateWithoutProductFormRoutePrepsInput>
+  where?: Prisma.PackageWhereInput
+}
+
+export type PackageUpdateToOneWithWhereWithoutProductFormRoutePrepsInput = {
+  where?: Prisma.PackageWhereInput
+  data: Prisma.XOR<Prisma.PackageUpdateWithoutProductFormRoutePrepsInput, Prisma.PackageUncheckedUpdateWithoutProductFormRoutePrepsInput>
+}
+
+export type PackageUpdateWithoutProductFormRoutePrepsInput = {
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containerType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isUnitOfUse?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  entity?: Prisma.EntityUpdateOneRequiredWithoutPackageNestedInput
+  components?: Prisma.PackageComponentUpdateManyWithoutParentPackageNestedInput
+  containedIn?: Prisma.PackageComponentUpdateManyWithoutChildPackageNestedInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutPackageNestedInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUpdateManyWithoutPackageNestedInput
+  containerSpecs?: Prisma.ContainerSpecUpdateManyWithoutPackageNestedInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUpdateManyWithoutPackageNestedInput
+  slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutPackageNestedInput
+  componentCosts?: Prisma.ComponentCostUpdateManyWithoutPackageNestedInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUpdateManyWithoutPackageNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutPackageNestedInput
+  openComponents?: Prisma.OpenComponentUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUpdateOneWithoutPackageNestedInput
+}
+
+export type PackageUncheckedUpdateWithoutProductFormRoutePrepsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containerType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isUnitOfUse?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  components?: Prisma.PackageComponentUncheckedUpdateManyWithoutParentPackageNestedInput
+  containedIn?: Prisma.PackageComponentUncheckedUpdateManyWithoutChildPackageNestedInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutPackageNestedInput
+  packageCatalogProjections?: Prisma.PackageCatalogProjectionUncheckedUpdateManyWithoutPackageNestedInput
+  containerSpecs?: Prisma.ContainerSpecUncheckedUpdateManyWithoutPackageNestedInput
+  componentInUseLimits?: Prisma.ComponentInUseLimitUncheckedUpdateManyWithoutPackageNestedInput
+  slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutPackageNestedInput
+  componentCosts?: Prisma.ComponentCostUncheckedUpdateManyWithoutPackageNestedInput
+  componentAvailabilities?: Prisma.ComponentAvailabilityUncheckedUpdateManyWithoutPackageNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutPackageNestedInput
+  openComponents?: Prisma.OpenComponentUncheckedUpdateManyWithoutPackageNestedInput
+  productForm?: Prisma.ProductFormPackageUncheckedUpdateOneWithoutPackageNestedInput
 }
 
 
@@ -1708,6 +2044,7 @@ export type PackageCountOutputType = {
   componentAvailabilities: number
   buildPlanLines: number
   openComponents: number
+  productFormRoutePreps: number
 }
 
 export type PackageCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1722,6 +2059,7 @@ export type PackageCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   componentAvailabilities?: boolean | PackageCountOutputTypeCountComponentAvailabilitiesArgs
   buildPlanLines?: boolean | PackageCountOutputTypeCountBuildPlanLinesArgs
   openComponents?: boolean | PackageCountOutputTypeCountOpenComponentsArgs
+  productFormRoutePreps?: boolean | PackageCountOutputTypeCountProductFormRoutePrepsArgs
 }
 
 /**
@@ -1811,6 +2149,13 @@ export type PackageCountOutputTypeCountOpenComponentsArgs<ExtArgs extends runtim
   where?: Prisma.OpenComponentWhereInput
 }
 
+/**
+ * PackageCountOutputType without action
+ */
+export type PackageCountOutputTypeCountProductFormRoutePrepsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProductFormRoutePrepWhereInput
+}
+
 
 export type PackageSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1831,6 +2176,8 @@ export type PackageSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   componentAvailabilities?: boolean | Prisma.Package$componentAvailabilitiesArgs<ExtArgs>
   buildPlanLines?: boolean | Prisma.Package$buildPlanLinesArgs<ExtArgs>
   openComponents?: boolean | Prisma.Package$openComponentsArgs<ExtArgs>
+  productForm?: boolean | Prisma.Package$productFormArgs<ExtArgs>
+  productFormRoutePreps?: boolean | Prisma.Package$productFormRoutePrepsArgs<ExtArgs>
   _count?: boolean | Prisma.PackageCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["package"]>
 
@@ -1877,6 +2224,8 @@ export type PackageInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   componentAvailabilities?: boolean | Prisma.Package$componentAvailabilitiesArgs<ExtArgs>
   buildPlanLines?: boolean | Prisma.Package$buildPlanLinesArgs<ExtArgs>
   openComponents?: boolean | Prisma.Package$openComponentsArgs<ExtArgs>
+  productForm?: boolean | Prisma.Package$productFormArgs<ExtArgs>
+  productFormRoutePreps?: boolean | Prisma.Package$productFormRoutePrepsArgs<ExtArgs>
   _count?: boolean | Prisma.PackageCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PackageIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1901,6 +2250,8 @@ export type $PackagePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     componentAvailabilities: Prisma.$ComponentAvailabilityPayload<ExtArgs>[]
     buildPlanLines: Prisma.$BuildPlanLinePayload<ExtArgs>[]
     openComponents: Prisma.$OpenComponentPayload<ExtArgs>[]
+    productForm: Prisma.$ProductFormPackagePayload<ExtArgs> | null
+    productFormRoutePreps: Prisma.$ProductFormRoutePrepPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2315,6 +2666,8 @@ export interface Prisma__PackageClient<T, Null = never, ExtArgs extends runtime.
   componentAvailabilities<T extends Prisma.Package$componentAvailabilitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$componentAvailabilitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ComponentAvailabilityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   buildPlanLines<T extends Prisma.Package$buildPlanLinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$buildPlanLinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BuildPlanLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   openComponents<T extends Prisma.Package$openComponentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$openComponentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OpenComponentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  productForm<T extends Prisma.Package$productFormArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$productFormArgs<ExtArgs>>): Prisma.Prisma__ProductFormPackageClient<runtime.Types.Result.GetResult<Prisma.$ProductFormPackagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  productFormRoutePreps<T extends Prisma.Package$productFormRoutePrepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$productFormRoutePrepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductFormRoutePrepPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3012,6 +3365,49 @@ export type Package$openComponentsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.OpenComponentScalarFieldEnum | Prisma.OpenComponentScalarFieldEnum[]
+}
+
+/**
+ * Package.productForm
+ */
+export type Package$productFormArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProductFormPackage
+   */
+  select?: Prisma.ProductFormPackageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProductFormPackage
+   */
+  omit?: Prisma.ProductFormPackageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProductFormPackageInclude<ExtArgs> | null
+  where?: Prisma.ProductFormPackageWhereInput
+}
+
+/**
+ * Package.productFormRoutePreps
+ */
+export type Package$productFormRoutePrepsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProductFormRoutePrep
+   */
+  select?: Prisma.ProductFormRoutePrepSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProductFormRoutePrep
+   */
+  omit?: Prisma.ProductFormRoutePrepOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProductFormRoutePrepInclude<ExtArgs> | null
+  where?: Prisma.ProductFormRoutePrepWhereInput
+  orderBy?: Prisma.ProductFormRoutePrepOrderByWithRelationInput | Prisma.ProductFormRoutePrepOrderByWithRelationInput[]
+  cursor?: Prisma.ProductFormRoutePrepWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProductFormRoutePrepScalarFieldEnum | Prisma.ProductFormRoutePrepScalarFieldEnum[]
 }
 
 /**

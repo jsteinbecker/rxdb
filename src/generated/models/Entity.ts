@@ -211,6 +211,7 @@ export type EntityWhereInput = {
   derivationDirties?: Prisma.DerivationDirtyListRelationFilter
   propertyGroupIndexes?: Prisma.PropertyGroupIndexListRelationFilter
   compoundingTerms?: Prisma.CompoundingTermListRelationFilter
+  productForm?: Prisma.XOR<Prisma.ProductFormNullableScalarRelationFilter, Prisma.ProductFormWhereInput> | null
 }
 
 export type EntityOrderByWithRelationInput = {
@@ -241,6 +242,7 @@ export type EntityOrderByWithRelationInput = {
   derivationDirties?: Prisma.DerivationDirtyOrderByRelationAggregateInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexOrderByRelationAggregateInput
   compoundingTerms?: Prisma.CompoundingTermOrderByRelationAggregateInput
+  productForm?: Prisma.ProductFormOrderByWithRelationInput
 }
 
 export type EntityWhereUniqueInput = Prisma.AtLeast<{
@@ -275,6 +277,7 @@ export type EntityWhereUniqueInput = Prisma.AtLeast<{
   derivationDirties?: Prisma.DerivationDirtyListRelationFilter
   propertyGroupIndexes?: Prisma.PropertyGroupIndexListRelationFilter
   compoundingTerms?: Prisma.CompoundingTermListRelationFilter
+  productForm?: Prisma.XOR<Prisma.ProductFormNullableScalarRelationFilter, Prisma.ProductFormWhereInput> | null
 }, "id" | "id_type">
 
 export type EntityOrderByWithAggregationInput = {
@@ -328,6 +331,7 @@ export type EntityCreateInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateInput = {
@@ -357,6 +361,7 @@ export type EntityUncheckedCreateInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUpdateInput = {
@@ -386,6 +391,7 @@ export type EntityUpdateInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateInput = {
@@ -415,6 +421,7 @@ export type EntityUncheckedUpdateInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateManyInput = {
@@ -839,6 +846,20 @@ export type EntityUpdateOneWithoutCompoundingTermsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EntityUpdateToOneWithWhereWithoutCompoundingTermsInput, Prisma.EntityUpdateWithoutCompoundingTermsInput>, Prisma.EntityUncheckedUpdateWithoutCompoundingTermsInput>
 }
 
+export type EntityCreateNestedOneWithoutProductFormInput = {
+  create?: Prisma.XOR<Prisma.EntityCreateWithoutProductFormInput, Prisma.EntityUncheckedCreateWithoutProductFormInput>
+  connectOrCreate?: Prisma.EntityCreateOrConnectWithoutProductFormInput
+  connect?: Prisma.EntityWhereUniqueInput
+}
+
+export type EntityUpdateOneRequiredWithoutProductFormNestedInput = {
+  create?: Prisma.XOR<Prisma.EntityCreateWithoutProductFormInput, Prisma.EntityUncheckedCreateWithoutProductFormInput>
+  connectOrCreate?: Prisma.EntityCreateOrConnectWithoutProductFormInput
+  upsert?: Prisma.EntityUpsertWithoutProductFormInput
+  connect?: Prisma.EntityWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EntityUpdateToOneWithWhereWithoutProductFormInput, Prisma.EntityUpdateWithoutProductFormInput>, Prisma.EntityUncheckedUpdateWithoutProductFormInput>
+}
+
 export type EntityCreateWithoutMergedFromInput = {
   id?: string
   type: $Enums.EntityType
@@ -865,6 +886,7 @@ export type EntityCreateWithoutMergedFromInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutMergedFromInput = {
@@ -893,6 +915,7 @@ export type EntityUncheckedCreateWithoutMergedFromInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutMergedFromInput = {
@@ -926,6 +949,7 @@ export type EntityCreateWithoutMergedIntoEntityInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutMergedIntoEntityInput = {
@@ -954,6 +978,7 @@ export type EntityUncheckedCreateWithoutMergedIntoEntityInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutMergedIntoEntityInput = {
@@ -1003,6 +1028,7 @@ export type EntityUpdateWithoutMergedFromInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutMergedFromInput = {
@@ -1031,6 +1057,7 @@ export type EntityUncheckedUpdateWithoutMergedFromInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUpsertWithWhereUniqueWithoutMergedIntoEntityInput = {
@@ -1087,6 +1114,7 @@ export type EntityCreateWithoutLabelerInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutLabelerInput = {
@@ -1115,6 +1143,7 @@ export type EntityUncheckedCreateWithoutLabelerInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutLabelerInput = {
@@ -1159,6 +1188,7 @@ export type EntityUpdateWithoutLabelerInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutLabelerInput = {
@@ -1187,6 +1217,7 @@ export type EntityUncheckedUpdateWithoutLabelerInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutIngredientInput = {
@@ -1215,6 +1246,7 @@ export type EntityCreateWithoutIngredientInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutIngredientInput = {
@@ -1243,6 +1275,7 @@ export type EntityUncheckedCreateWithoutIngredientInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutIngredientInput = {
@@ -1287,6 +1320,7 @@ export type EntityUpdateWithoutIngredientInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutIngredientInput = {
@@ -1315,6 +1349,7 @@ export type EntityUncheckedUpdateWithoutIngredientInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutProductInput = {
@@ -1343,6 +1378,7 @@ export type EntityCreateWithoutProductInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutProductInput = {
@@ -1371,6 +1407,7 @@ export type EntityUncheckedCreateWithoutProductInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutProductInput = {
@@ -1415,6 +1452,7 @@ export type EntityUpdateWithoutProductInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutProductInput = {
@@ -1443,6 +1481,7 @@ export type EntityUncheckedUpdateWithoutProductInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutClinicalDrugInput = {
@@ -1471,6 +1510,7 @@ export type EntityCreateWithoutClinicalDrugInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutClinicalDrugInput = {
@@ -1499,6 +1539,7 @@ export type EntityUncheckedCreateWithoutClinicalDrugInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutClinicalDrugInput = {
@@ -1543,6 +1584,7 @@ export type EntityUpdateWithoutClinicalDrugInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutClinicalDrugInput = {
@@ -1571,6 +1613,7 @@ export type EntityUncheckedUpdateWithoutClinicalDrugInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutPackageInput = {
@@ -1599,6 +1642,7 @@ export type EntityCreateWithoutPackageInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutPackageInput = {
@@ -1627,6 +1671,7 @@ export type EntityUncheckedCreateWithoutPackageInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutPackageInput = {
@@ -1671,6 +1716,7 @@ export type EntityUpdateWithoutPackageInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutPackageInput = {
@@ -1699,6 +1745,7 @@ export type EntityUncheckedUpdateWithoutPackageInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutFormularyItemInput = {
@@ -1727,6 +1774,7 @@ export type EntityCreateWithoutFormularyItemInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutFormularyItemInput = {
@@ -1755,6 +1803,7 @@ export type EntityUncheckedCreateWithoutFormularyItemInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutFormularyItemInput = {
@@ -1799,6 +1848,7 @@ export type EntityUpdateWithoutFormularyItemInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutFormularyItemInput = {
@@ -1827,6 +1877,7 @@ export type EntityUncheckedUpdateWithoutFormularyItemInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutExternalIdentifiersInput = {
@@ -1855,6 +1906,7 @@ export type EntityCreateWithoutExternalIdentifiersInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutExternalIdentifiersInput = {
@@ -1883,6 +1935,7 @@ export type EntityUncheckedCreateWithoutExternalIdentifiersInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutExternalIdentifiersInput = {
@@ -1927,6 +1980,7 @@ export type EntityUpdateWithoutExternalIdentifiersInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutExternalIdentifiersInput = {
@@ -1955,6 +2009,7 @@ export type EntityUncheckedUpdateWithoutExternalIdentifiersInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutRelationshipsFromInput = {
@@ -1983,6 +2038,7 @@ export type EntityCreateWithoutRelationshipsFromInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutRelationshipsFromInput = {
@@ -2011,6 +2067,7 @@ export type EntityUncheckedCreateWithoutRelationshipsFromInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutRelationshipsFromInput = {
@@ -2044,6 +2101,7 @@ export type EntityCreateWithoutRelationshipsToInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutRelationshipsToInput = {
@@ -2072,6 +2130,7 @@ export type EntityUncheckedCreateWithoutRelationshipsToInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutRelationshipsToInput = {
@@ -2116,6 +2175,7 @@ export type EntityUpdateWithoutRelationshipsFromInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutRelationshipsFromInput = {
@@ -2144,6 +2204,7 @@ export type EntityUncheckedUpdateWithoutRelationshipsFromInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUpsertWithoutRelationshipsToInput = {
@@ -2183,6 +2244,7 @@ export type EntityUpdateWithoutRelationshipsToInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutRelationshipsToInput = {
@@ -2211,6 +2273,7 @@ export type EntityUncheckedUpdateWithoutRelationshipsToInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutAssertionsInput = {
@@ -2239,6 +2302,7 @@ export type EntityCreateWithoutAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutAssertionsInput = {
@@ -2267,6 +2331,7 @@ export type EntityUncheckedCreateWithoutAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutAssertionsInput = {
@@ -2300,6 +2365,7 @@ export type EntityCreateWithoutReferencedByAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutReferencedByAssertionsInput = {
@@ -2328,6 +2394,7 @@ export type EntityUncheckedCreateWithoutReferencedByAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutReferencedByAssertionsInput = {
@@ -2372,6 +2439,7 @@ export type EntityUpdateWithoutAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutAssertionsInput = {
@@ -2400,6 +2468,7 @@ export type EntityUncheckedUpdateWithoutAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUpsertWithoutReferencedByAssertionsInput = {
@@ -2439,6 +2508,7 @@ export type EntityUpdateWithoutReferencedByAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutReferencedByAssertionsInput = {
@@ -2467,6 +2537,7 @@ export type EntityUncheckedUpdateWithoutReferencedByAssertionsInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutValuesInput = {
@@ -2495,6 +2566,7 @@ export type EntityCreateWithoutValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutValuesInput = {
@@ -2523,6 +2595,7 @@ export type EntityUncheckedCreateWithoutValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutValuesInput = {
@@ -2556,6 +2629,7 @@ export type EntityCreateWithoutReferencedByValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutReferencedByValuesInput = {
@@ -2584,6 +2658,7 @@ export type EntityUncheckedCreateWithoutReferencedByValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutReferencedByValuesInput = {
@@ -2628,6 +2703,7 @@ export type EntityUpdateWithoutValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutValuesInput = {
@@ -2656,6 +2732,7 @@ export type EntityUncheckedUpdateWithoutValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUpsertWithoutReferencedByValuesInput = {
@@ -2695,6 +2772,7 @@ export type EntityUpdateWithoutReferencedByValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutReferencedByValuesInput = {
@@ -2723,6 +2801,7 @@ export type EntityUncheckedUpdateWithoutReferencedByValuesInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutMappingsAsSubjectInput = {
@@ -2751,6 +2830,7 @@ export type EntityCreateWithoutMappingsAsSubjectInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutMappingsAsSubjectInput = {
@@ -2779,6 +2859,7 @@ export type EntityUncheckedCreateWithoutMappingsAsSubjectInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutMappingsAsSubjectInput = {
@@ -2812,6 +2893,7 @@ export type EntityCreateWithoutMappingsAsObjectInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutMappingsAsObjectInput = {
@@ -2840,6 +2922,7 @@ export type EntityUncheckedCreateWithoutMappingsAsObjectInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutMappingsAsObjectInput = {
@@ -2884,6 +2967,7 @@ export type EntityUpdateWithoutMappingsAsSubjectInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutMappingsAsSubjectInput = {
@@ -2912,6 +2996,7 @@ export type EntityUncheckedUpdateWithoutMappingsAsSubjectInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUpsertWithoutMappingsAsObjectInput = {
@@ -2951,6 +3036,7 @@ export type EntityUpdateWithoutMappingsAsObjectInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutMappingsAsObjectInput = {
@@ -2979,6 +3065,7 @@ export type EntityUncheckedUpdateWithoutMappingsAsObjectInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutReviewItemsInput = {
@@ -3007,6 +3094,7 @@ export type EntityCreateWithoutReviewItemsInput = {
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutReviewItemsInput = {
@@ -3035,6 +3123,7 @@ export type EntityUncheckedCreateWithoutReviewItemsInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutReviewItemsInput = {
@@ -3079,6 +3168,7 @@ export type EntityUpdateWithoutReviewItemsInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutReviewItemsInput = {
@@ -3107,6 +3197,7 @@ export type EntityUncheckedUpdateWithoutReviewItemsInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutDerivationDirtiesInput = {
@@ -3135,6 +3226,7 @@ export type EntityCreateWithoutDerivationDirtiesInput = {
   reviewItems?: Prisma.ReviewItemCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutDerivationDirtiesInput = {
@@ -3163,6 +3255,7 @@ export type EntityUncheckedCreateWithoutDerivationDirtiesInput = {
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutDerivationDirtiesInput = {
@@ -3207,6 +3300,7 @@ export type EntityUpdateWithoutDerivationDirtiesInput = {
   reviewItems?: Prisma.ReviewItemUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutDerivationDirtiesInput = {
@@ -3235,6 +3329,7 @@ export type EntityUncheckedUpdateWithoutDerivationDirtiesInput = {
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutPropertyGroupIndexesInput = {
@@ -3263,6 +3358,7 @@ export type EntityCreateWithoutPropertyGroupIndexesInput = {
   reviewItems?: Prisma.ReviewItemCreateNestedManyWithoutEntityInput
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutPropertyGroupIndexesInput = {
@@ -3291,6 +3387,7 @@ export type EntityUncheckedCreateWithoutPropertyGroupIndexesInput = {
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutEntityInput
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutPropertyGroupIndexesInput = {
@@ -3335,6 +3432,7 @@ export type EntityUpdateWithoutPropertyGroupIndexesInput = {
   reviewItems?: Prisma.ReviewItemUpdateManyWithoutEntityNestedInput
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutPropertyGroupIndexesInput = {
@@ -3363,6 +3461,7 @@ export type EntityUncheckedUpdateWithoutPropertyGroupIndexesInput = {
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutEntityNestedInput
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityCreateWithoutCompoundingTermsInput = {
@@ -3391,6 +3490,7 @@ export type EntityCreateWithoutCompoundingTermsInput = {
   reviewItems?: Prisma.ReviewItemCreateNestedManyWithoutEntityInput
   derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
+  productForm?: Prisma.ProductFormCreateNestedOneWithoutEntityInput
 }
 
 export type EntityUncheckedCreateWithoutCompoundingTermsInput = {
@@ -3419,6 +3519,7 @@ export type EntityUncheckedCreateWithoutCompoundingTermsInput = {
   reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutEntityInput
   derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
+  productForm?: Prisma.ProductFormUncheckedCreateNestedOneWithoutEntityInput
 }
 
 export type EntityCreateOrConnectWithoutCompoundingTermsInput = {
@@ -3463,6 +3564,7 @@ export type EntityUpdateWithoutCompoundingTermsInput = {
   reviewItems?: Prisma.ReviewItemUpdateManyWithoutEntityNestedInput
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutCompoundingTermsInput = {
@@ -3491,6 +3593,139 @@ export type EntityUncheckedUpdateWithoutCompoundingTermsInput = {
   reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutEntityNestedInput
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
+}
+
+export type EntityCreateWithoutProductFormInput = {
+  id?: string
+  type: $Enums.EntityType
+  status?: string
+  createdAt?: Date | string
+  retiredAt?: Date | string | null
+  mergedIntoEntity?: Prisma.EntityCreateNestedOneWithoutMergedFromInput
+  mergedFrom?: Prisma.EntityCreateNestedManyWithoutMergedIntoEntityInput
+  relationshipsFrom?: Prisma.EntityRelationshipCreateNestedManyWithoutFromEntityInput
+  relationshipsTo?: Prisma.EntityRelationshipCreateNestedManyWithoutToEntityInput
+  assertions?: Prisma.FactAssertionCreateNestedManyWithoutEntityInput
+  referencedByAssertions?: Prisma.FactAssertionCreateNestedManyWithoutRefEntityInput
+  values?: Prisma.PropertyValueCreateNestedManyWithoutEntityInput
+  referencedByValues?: Prisma.PropertyValueCreateNestedManyWithoutRefEntityInput
+  mappingsAsSubject?: Prisma.EntityMappingCreateNestedManyWithoutSubjectEntityInput
+  mappingsAsObject?: Prisma.EntityMappingCreateNestedManyWithoutObjectEntityInput
+  labeler?: Prisma.LabelerCreateNestedOneWithoutEntityInput
+  ingredient?: Prisma.IngredientCreateNestedOneWithoutEntityInput
+  product?: Prisma.ProductCreateNestedOneWithoutEntityInput
+  clinicalDrug?: Prisma.ClinicalDrugCreateNestedOneWithoutEntityInput
+  package?: Prisma.PackageCreateNestedOneWithoutEntityInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutEntityInput
+  externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutEntityInput
+  reviewItems?: Prisma.ReviewItemCreateNestedManyWithoutEntityInput
+  derivationDirties?: Prisma.DerivationDirtyCreateNestedManyWithoutEntityInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexCreateNestedManyWithoutEntityInput
+  compoundingTerms?: Prisma.CompoundingTermCreateNestedManyWithoutRefEntityInput
+}
+
+export type EntityUncheckedCreateWithoutProductFormInput = {
+  id?: string
+  type: $Enums.EntityType
+  status?: string
+  mergedInto?: string | null
+  createdAt?: Date | string
+  retiredAt?: Date | string | null
+  mergedFrom?: Prisma.EntityUncheckedCreateNestedManyWithoutMergedIntoEntityInput
+  relationshipsFrom?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutFromEntityInput
+  relationshipsTo?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutToEntityInput
+  assertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutEntityInput
+  referencedByAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutRefEntityInput
+  values?: Prisma.PropertyValueUncheckedCreateNestedManyWithoutEntityInput
+  referencedByValues?: Prisma.PropertyValueUncheckedCreateNestedManyWithoutRefEntityInput
+  mappingsAsSubject?: Prisma.EntityMappingUncheckedCreateNestedManyWithoutSubjectEntityInput
+  mappingsAsObject?: Prisma.EntityMappingUncheckedCreateNestedManyWithoutObjectEntityInput
+  labeler?: Prisma.LabelerUncheckedCreateNestedOneWithoutEntityInput
+  ingredient?: Prisma.IngredientUncheckedCreateNestedOneWithoutEntityInput
+  product?: Prisma.ProductUncheckedCreateNestedOneWithoutEntityInput
+  clinicalDrug?: Prisma.ClinicalDrugUncheckedCreateNestedOneWithoutEntityInput
+  package?: Prisma.PackageUncheckedCreateNestedOneWithoutEntityInput
+  formularyItem?: Prisma.FormularyItemUncheckedCreateNestedOneWithoutEntityInput
+  externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutEntityInput
+  reviewItems?: Prisma.ReviewItemUncheckedCreateNestedManyWithoutEntityInput
+  derivationDirties?: Prisma.DerivationDirtyUncheckedCreateNestedManyWithoutEntityInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedCreateNestedManyWithoutEntityInput
+  compoundingTerms?: Prisma.CompoundingTermUncheckedCreateNestedManyWithoutRefEntityInput
+}
+
+export type EntityCreateOrConnectWithoutProductFormInput = {
+  where: Prisma.EntityWhereUniqueInput
+  create: Prisma.XOR<Prisma.EntityCreateWithoutProductFormInput, Prisma.EntityUncheckedCreateWithoutProductFormInput>
+}
+
+export type EntityUpsertWithoutProductFormInput = {
+  update: Prisma.XOR<Prisma.EntityUpdateWithoutProductFormInput, Prisma.EntityUncheckedUpdateWithoutProductFormInput>
+  create: Prisma.XOR<Prisma.EntityCreateWithoutProductFormInput, Prisma.EntityUncheckedCreateWithoutProductFormInput>
+  where?: Prisma.EntityWhereInput
+}
+
+export type EntityUpdateToOneWithWhereWithoutProductFormInput = {
+  where?: Prisma.EntityWhereInput
+  data: Prisma.XOR<Prisma.EntityUpdateWithoutProductFormInput, Prisma.EntityUncheckedUpdateWithoutProductFormInput>
+}
+
+export type EntityUpdateWithoutProductFormInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  retiredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mergedIntoEntity?: Prisma.EntityUpdateOneWithoutMergedFromNestedInput
+  mergedFrom?: Prisma.EntityUpdateManyWithoutMergedIntoEntityNestedInput
+  relationshipsFrom?: Prisma.EntityRelationshipUpdateManyWithoutFromEntityNestedInput
+  relationshipsTo?: Prisma.EntityRelationshipUpdateManyWithoutToEntityNestedInput
+  assertions?: Prisma.FactAssertionUpdateManyWithoutEntityNestedInput
+  referencedByAssertions?: Prisma.FactAssertionUpdateManyWithoutRefEntityNestedInput
+  values?: Prisma.PropertyValueUpdateManyWithoutEntityNestedInput
+  referencedByValues?: Prisma.PropertyValueUpdateManyWithoutRefEntityNestedInput
+  mappingsAsSubject?: Prisma.EntityMappingUpdateManyWithoutSubjectEntityNestedInput
+  mappingsAsObject?: Prisma.EntityMappingUpdateManyWithoutObjectEntityNestedInput
+  labeler?: Prisma.LabelerUpdateOneWithoutEntityNestedInput
+  ingredient?: Prisma.IngredientUpdateOneWithoutEntityNestedInput
+  product?: Prisma.ProductUpdateOneWithoutEntityNestedInput
+  clinicalDrug?: Prisma.ClinicalDrugUpdateOneWithoutEntityNestedInput
+  package?: Prisma.PackageUpdateOneWithoutEntityNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutEntityNestedInput
+  externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutEntityNestedInput
+  reviewItems?: Prisma.ReviewItemUpdateManyWithoutEntityNestedInput
+  derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
+  compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+}
+
+export type EntityUncheckedUpdateWithoutProductFormInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  mergedInto?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  retiredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mergedFrom?: Prisma.EntityUncheckedUpdateManyWithoutMergedIntoEntityNestedInput
+  relationshipsFrom?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutFromEntityNestedInput
+  relationshipsTo?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutToEntityNestedInput
+  assertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutEntityNestedInput
+  referencedByAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutRefEntityNestedInput
+  values?: Prisma.PropertyValueUncheckedUpdateManyWithoutEntityNestedInput
+  referencedByValues?: Prisma.PropertyValueUncheckedUpdateManyWithoutRefEntityNestedInput
+  mappingsAsSubject?: Prisma.EntityMappingUncheckedUpdateManyWithoutSubjectEntityNestedInput
+  mappingsAsObject?: Prisma.EntityMappingUncheckedUpdateManyWithoutObjectEntityNestedInput
+  labeler?: Prisma.LabelerUncheckedUpdateOneWithoutEntityNestedInput
+  ingredient?: Prisma.IngredientUncheckedUpdateOneWithoutEntityNestedInput
+  product?: Prisma.ProductUncheckedUpdateOneWithoutEntityNestedInput
+  clinicalDrug?: Prisma.ClinicalDrugUncheckedUpdateOneWithoutEntityNestedInput
+  package?: Prisma.PackageUncheckedUpdateOneWithoutEntityNestedInput
+  formularyItem?: Prisma.FormularyItemUncheckedUpdateOneWithoutEntityNestedInput
+  externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutEntityNestedInput
+  reviewItems?: Prisma.ReviewItemUncheckedUpdateManyWithoutEntityNestedInput
+  derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
+  propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
+  compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
 }
 
 export type EntityCreateManyMergedIntoEntityInput = {
@@ -3527,6 +3762,7 @@ export type EntityUpdateWithoutMergedIntoEntityInput = {
   derivationDirties?: Prisma.DerivationDirtyUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateWithoutMergedIntoEntityInput = {
@@ -3555,6 +3791,7 @@ export type EntityUncheckedUpdateWithoutMergedIntoEntityInput = {
   derivationDirties?: Prisma.DerivationDirtyUncheckedUpdateManyWithoutEntityNestedInput
   propertyGroupIndexes?: Prisma.PropertyGroupIndexUncheckedUpdateManyWithoutEntityNestedInput
   compoundingTerms?: Prisma.CompoundingTermUncheckedUpdateManyWithoutRefEntityNestedInput
+  productForm?: Prisma.ProductFormUncheckedUpdateOneWithoutEntityNestedInput
 }
 
 export type EntityUncheckedUpdateManyWithoutMergedIntoEntityInput = {
@@ -3741,6 +3978,7 @@ export type EntitySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   derivationDirties?: boolean | Prisma.Entity$derivationDirtiesArgs<ExtArgs>
   propertyGroupIndexes?: boolean | Prisma.Entity$propertyGroupIndexesArgs<ExtArgs>
   compoundingTerms?: boolean | Prisma.Entity$compoundingTermsArgs<ExtArgs>
+  productForm?: boolean | Prisma.Entity$productFormArgs<ExtArgs>
   _count?: boolean | Prisma.EntityCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["entity"]>
 
@@ -3796,6 +4034,7 @@ export type EntityInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   derivationDirties?: boolean | Prisma.Entity$derivationDirtiesArgs<ExtArgs>
   propertyGroupIndexes?: boolean | Prisma.Entity$propertyGroupIndexesArgs<ExtArgs>
   compoundingTerms?: boolean | Prisma.Entity$compoundingTermsArgs<ExtArgs>
+  productForm?: boolean | Prisma.Entity$productFormArgs<ExtArgs>
   _count?: boolean | Prisma.EntityCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EntityIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3829,6 +4068,7 @@ export type $EntityPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     derivationDirties: Prisma.$DerivationDirtyPayload<ExtArgs>[]
     propertyGroupIndexes: Prisma.$PropertyGroupIndexPayload<ExtArgs>[]
     compoundingTerms: Prisma.$CompoundingTermPayload<ExtArgs>[]
+    productForm: Prisma.$ProductFormPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4252,6 +4492,7 @@ export interface Prisma__EntityClient<T, Null = never, ExtArgs extends runtime.T
   derivationDirties<T extends Prisma.Entity$derivationDirtiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Entity$derivationDirtiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DerivationDirtyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   propertyGroupIndexes<T extends Prisma.Entity$propertyGroupIndexesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Entity$propertyGroupIndexesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PropertyGroupIndexPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   compoundingTerms<T extends Prisma.Entity$compoundingTermsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Entity$compoundingTermsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompoundingTermPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  productForm<T extends Prisma.Entity$productFormArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Entity$productFormArgs<ExtArgs>>): Prisma.Prisma__ProductFormClient<runtime.Types.Result.GetResult<Prisma.$ProductFormPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5154,6 +5395,25 @@ export type Entity$compoundingTermsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.CompoundingTermScalarFieldEnum | Prisma.CompoundingTermScalarFieldEnum[]
+}
+
+/**
+ * Entity.productForm
+ */
+export type Entity$productFormArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProductForm
+   */
+  select?: Prisma.ProductFormSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProductForm
+   */
+  omit?: Prisma.ProductFormOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProductFormInclude<ExtArgs> | null
+  where?: Prisma.ProductFormWhereInput
 }
 
 /**

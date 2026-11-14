@@ -1,11 +1,10 @@
-import type { Handle, ServerInit } from '@sveltejs/kit';
-import { logger } from '$lib/server/log';
-import { prisma } from '$lib/server/prisma';
-import { reconcileFormularyEligibility } from '$lib/server/catalog-store';
-import { fdaApiKeysFrom, setFdaApiKeys } from '$lib/server/catalog-providers';
+import { logger } from "#lib/server/infrastructure/log.ts";
+import { prisma } from "#lib/server/infrastructure/database.ts";
+import { reconcileFormularyEligibility } from "#lib/server/catalog/entity-store.ts";
+import { fdaApiKeysFrom, setFdaApiKeys } from './lib/server/providers/transport';
 import { env } from '$env/dynamic/private';
 
-// openFDA requests rotate through every configured key when one is rate limited.
+// openFDA requests to rotate through every configured key when one is rate-limited.
 setFdaApiKeys(fdaApiKeysFrom(env));
 
 const log = logger('http');
@@ -14,7 +13,7 @@ const log = logger('http');
  * Exclusion rules live in code, so a restart is when they can change: recheck every
  * formulary package against its stored evidence in the background.
  */
-export const init: ServerInit = () => {
+export const init = () => {
 	const eligibility = logger('eligibility');
 	reconcileFormularyEligibility(prisma)
 		.then(({ checked, excluded }) =>
@@ -26,7 +25,13 @@ export const init: ServerInit = () => {
 };
 
 /** Logs every incoming request with its response status and duration. */
-export const handle: Handle = async ({ event, resolve }) => {
+export const handle = async ({
+	event,
+	resolve
+}: {
+	event: { request: Request; url: URL };
+	resolve: (event: { request: Request; url: URL }) => Promise<Response>;
+}) => {
 	const started = performance.now();
 	const { method } = event.request;
 	const path = event.url.pathname + event.url.search;

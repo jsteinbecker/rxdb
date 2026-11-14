@@ -1,6 +1,4 @@
 /**
- * shapes.ts
- *
  * Shape definitions used by ILN: the 19 FDA SPL shapes (NCI value set C48557)
  * plus ILN extension shapes, and the per-face direction tag that records which
  * way a directional outline points in the canonical view, e.g. F[TIP@E].
@@ -8,6 +6,8 @@
  * The canonical view is set by the face's text, so a tear-shaped tablet whose
  * text reads upright may have its tip at E or W; the tag records which. Faces
  * without straight text are oriented to the shape's default, which is omitted.
+ *
+ * @module
  */
 
 import { COMPASS_DEG, formatPoint } from './iln-location.ts';
@@ -18,14 +18,25 @@ export interface ShapeDef {
 	id: string;
 	label: string;
 	source: 'SPL' | 'ILN';
-	spl?: { term: string; code: string }; // official SPL term and NCI code
-	splFallback?: string[]; // for ILN extensions: SPL terms to use when only SPL is allowed
-	drugsCom?: string; // the Drugs.com pill-identifier shape term, when there is a clear match
-	elongated: boolean; // long axis horizontal in the canonical view
-	features: Feature[]; // direction features this outline has (empty = none)
-	defaultOrient?: { feature: Feature; deg: number }; // orientation used when no text decides
-	allowedDegs?: number[]; // where the feature may sit in the canonical view (default: anywhere)
-	hole?: string; // HOLES id, for composite shapes such as DONUT
+	/** The official SPL shape term and its NCI code; absent for ILN extensions. */
+	spl?: { term: string; code: string };
+	/** For ILN extensions: the SPL terms to fall back to where only SPL vocabulary is allowed. */
+	splFallback?: string[];
+	/** The Drugs.com pill-identifier shape term, when there is a clear match. */
+	drugsCom?: string;
+	/** Whether the outline is elongated; its long axis is horizontal in the canonical view. */
+	elongated: boolean;
+	/** Direction features this outline has; empty when it has none. */
+	features: Feature[];
+	/** Orientation to assume when no imprint text decides it. */
+	defaultOrient?: { feature: Feature; deg: number };
+	/**
+	 * Compass degrees where the feature may sit in the canonical view.
+	 * @defaultValue anywhere
+	 */
+	allowedDegs?: number[];
+	/** `HOLES` id, for composite shapes such as DONUT. */
+	hole?: string;
 	description: string;
 	aliases: string[];
 }
@@ -35,8 +46,10 @@ export const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const SYMMETRIC_LETTERS = 'AHIMOTUVWXY'.split('');
 
 const spl = (term: string, code: string) => ({ term, code });
-const EW = [90, 270]; // ends of an elongated outline
-const NS = [0, 180]; // long sides of an elongated outline
+/** Compass degrees of the ends of an elongated outline. */
+const EW = [90, 270];
+/** Compass degrees of the long sides of an elongated outline. */
+const NS = [0, 180];
 
 export const SHAPES: ShapeDef[] = [
 	{
@@ -429,10 +442,13 @@ export type HoleFeature = 'TIP' | 'UP';
 export interface HoleDef {
 	id: string;
 	label: string;
-	through: boolean; // passes all the way through the tablet
-	features: HoleFeature[]; // direction features (empty = none)
+	/** Whether the hole passes all the way through the tablet. */
+	through: boolean;
+	/** Direction features; empty when there are none. */
+	features: HoleFeature[];
 	defaultOrient?: { feature: HoleFeature; deg: number };
-	chiral: boolean; // looks different mirrored (reads backwards from one face)
+	/** Whether it looks different mirrored, so it reads backwards from one face. */
+	chiral: boolean;
 	description: string;
 	aliases: string[];
 }
@@ -598,7 +614,12 @@ export function splitShapeProportion(value: string): ShapeProportion {
 	const preset = findShapeProportion(base);
 	const label = findShape(base)?.id ?? base;
 	if (word && tail)
-		return { base, ratio, word, error: `Give ${label}'s proportion once: ${word} or ${tail[1]}:${tail[2]}, not both` };
+		return {
+			base,
+			ratio,
+			word,
+			error: `Give ${label}'s proportion once: ${word} or ${tail[1]}:${tail[2]}, not both`
+		};
 	if (!preset)
 		return {
 			base,
@@ -652,7 +673,8 @@ export function checkShapeProportion(value: string): string[] {
 
 export interface ShapeOrient {
 	feature: Feature;
-	deg: number; // compass degrees, clockwise from N
+	/** Compass degrees, clockwise from N. */
+	deg: number;
 }
 
 const FEATURES: Feature[] = ['TIP', 'FLAT', 'BASE', 'CORNER', 'LOBE', 'NOTCH'];

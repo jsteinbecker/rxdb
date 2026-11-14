@@ -1,3 +1,13 @@
+/**
+ * From a measured photo to ILN.
+ *
+ * `pill-image-analyze` finds each imprint section's box on the label photo.
+ * This hands those boxes to the ILN locator as straight baselines — the box's
+ * bottom edge, read left to right — so the photo's layout becomes notation
+ * that can be saved, reviewed and edited like any other ILN.
+ *
+ * @module
+ */
 import {
 	buildFace,
 	type FaceGeometry,
@@ -5,15 +15,9 @@ import {
 	type PlacedElement
 } from './iln-location.ts';
 import { type Node, type PillForm, serializeSurfaces, type Surface } from './spl-to-iln.ts';
-import type { MeasuredElement, MeasuredFace, PillImageLayout } from '../pill-image-layout'; // ── From a measured photo to ILN ─────────────────────────────────────────────
+import type { MeasuredElement, MeasuredFace, PillImageLayout } from './pill-image-layout'; // ── From a measured photo to ILN ─────────────────────────────────────────────
 
-// ── From a measured photo to ILN ─────────────────────────────────────────────
-// `pill-image-analyze` finds each imprint section's box on the label photo.
-// This hands those boxes to the ILN locator as straight baselines — the box's
-// bottom edge, read left to right — so the photo's layout becomes notation
-// that can be saved, reviewed and edited like any other ILN.
-
-// Measured boxes are fractions of the face's bounding box, y down.
+/** Measured boxes are fractions of the face's bounding box, y down. */
 const UNIT_FACE: FaceGeometry = { cx: 0.5, cy: 0.5, rx: 0.5, ry: 0.5 };
 
 const placed = (element: MeasuredElement): PlacedElement => {

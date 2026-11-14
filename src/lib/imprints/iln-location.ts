@@ -1,17 +1,18 @@
 /**
- * iln-location.ts
- *
  * ILN location codes: PATH:ROUTE@PLACE.
  *
- *   parseLocation / formatLocation   string ⇄ structured code (canonical form)
- *   describeLocation                 start/end/span/center/direction/feet of curved codes
- *   parseModifiers                   an ILN modifier list, translating legacy forms
- *                                    ([arc, top], r90, vert, ring, top-left ...)
- *   locateBaseline                   OCR baseline points + face geometry → code
- *   buildFace                        located elements → ILN face layout
+ * | Function | Does |
+ * | --- | --- |
+ * | {@link parseLocation} / {@link formatLocation} | string ⇄ structured code (canonical form) |
+ * | {@link describeLocation} | start, end, span, center, direction and feet of curved codes |
+ * | {@link parseModifiers} | an ILN modifier list, translating legacy forms (`[arc, top]`, `r90`, `vert`, `ring`, `top-left`, …) |
+ * | {@link locateBaseline} | OCR baseline points + face geometry → code |
+ * | {@link buildFace} | located elements → ILN face layout |
  *
  * Conventions (canonical view): compass degrees run clockwise from N.
  * Image coordinates are y-down pixels; the canonical frame is y-up.
+ *
+ * @module
  */
 
 import type { Node } from './spl-to-iln.ts';
@@ -51,7 +52,8 @@ export type LocationCode =
 export interface CurveInfo {
 	startDeg: number;
 	endDeg: number;
-	spanDeg: number | null; // null = centered form, extent unknown
+	/** Angular extent in degrees, or null for a centered form whose extent is unknown. */
+	spanDeg: number | null;
 	centerDeg: number;
 	dir: Dir;
 	feet: 'in' | 'out' | 'toward F' | 'toward B';
@@ -342,7 +344,8 @@ function splitTopLevel(s: string): string[] {
 
 export interface ModifierList {
 	location?: LocationCode;
-	mods: string[]; // everything that isn't a location (small, large, x2, back, ...)
+	/** Every modifier that isn't a location (small, large, x2, back, …). */
+	mods: string[];
 	warnings: string[];
 }
 
@@ -418,19 +421,40 @@ export interface Pt {
 }
 
 export interface FaceGeometry {
-	cx: number; // face center, image px
+	/** Face center x, in image pixels. */
+	cx: number;
+	/** Face center y, in image pixels. */
 	cy: number;
-	rx: number; // half-width along the canonical horizontal axis
-	ry: number; // half-height along the canonical vertical axis
-	upDeg?: number; // where canonical N points in the image, degrees clockwise from image-up
+	/** Half-width along the canonical horizontal axis, in image pixels. */
+	rx: number;
+	/** Half-height along the canonical vertical axis, in image pixels. */
+	ry: number;
+	/** Where canonical N points in the image, in degrees clockwise from image-up. */
+	upDeg?: number;
 	hole?: { cx: number; cy: number; r: number };
 }
 
 export interface LocateOptions {
-	snapToleranceDeg?: number; // snap to a compass point when within this many degrees (default 10)
-	degreeStep?: number; // otherwise round to this step (default 5)
-	straightness?: number; // max deviation / chord length to count as straight (default 0.04)
-	orbitOf?: string; // element name for off-center arcs (default "<symbol>")
+	/**
+	 * Snap to a compass point when within this many degrees of it.
+	 * @defaultValue 10
+	 */
+	snapToleranceDeg?: number;
+	/**
+	 * When not snapped, round the angle to this step in degrees.
+	 * @defaultValue 5
+	 */
+	degreeStep?: number;
+	/**
+	 * Largest deviation ÷ chord length that still counts as a straight run.
+	 * @defaultValue 0.04
+	 */
+	straightness?: number;
+	/**
+	 * Element name to report for off-center arcs.
+	 * @defaultValue "<symbol>"
+	 */
+	orbitOf?: string;
 }
 
 export interface LocateResult {
@@ -439,9 +463,12 @@ export interface LocateResult {
 	notes: string[];
 	metrics: {
 		kind: 'straight' | 'curved';
-		deviation: number; // max distance from chord / chord length
-		radius?: number; // fitted radius, face-radius units
-		centerOffset?: number; // fitted center distance from face center, face-radius units
+		/** Largest distance from the chord ÷ chord length. */
+		deviation: number;
+		/** Fitted arc radius, in face-radius units. */
+		radius?: number;
+		/** Distance of the fitted arc center from the face center, in face-radius units. */
+		centerOffset?: number;
 		spanDeg?: number;
 	};
 }
@@ -665,8 +692,10 @@ export function locateBaseline(
 // ───────────────────────── Building an ILN face ─────────────────────────
 
 export interface PlacedElement {
-	node: Node; // text or symbol node
-	loc?: LocationCode; // undefined = centered horizontal flow
+	/** The text or symbol node being located. */
+	node: Node;
+	/** Where the node sits; undefined means centered horizontal flow. */
+	loc?: LocationCode;
 }
 
 const ROW: Record<Zone, number> = { NW: 0, N: 0, NE: 0, W: 1, C: 1, E: 1, SW: 2, S: 2, SE: 2 };

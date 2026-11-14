@@ -460,7 +460,16 @@ export const ModelName = {
   PillPhoto: 'PillPhoto',
   UniiSubstance: 'UniiSubstance',
   PharmClassRule: 'PharmClassRule',
-  CmsCrosswalkRow: 'CmsCrosswalkRow'
+  CmsCrosswalkRow: 'CmsCrosswalkRow',
+  PackageCuration: 'PackageCuration',
+  PackageReviewPreview: 'PackageReviewPreview',
+  ProductForm: 'ProductForm',
+  ProductFormIngredient: 'ProductFormIngredient',
+  ProductFormStrength: 'ProductFormStrength',
+  ProductFormPackage: 'ProductFormPackage',
+  ProductFormRoute: 'ProductFormRoute',
+  ProductFormRoutePrep: 'ProductFormRoutePrep',
+  ProductFormRouteOverride: 'ProductFormRouteOverride'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -476,7 +485,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow" | "packageCuration" | "packageReviewPreview" | "productForm" | "productFormIngredient" | "productFormStrength" | "productFormPackage" | "productFormRoute" | "productFormRoutePrep" | "productFormRouteOverride"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -5216,6 +5225,672 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PackageCuration: {
+      payload: Prisma.$PackageCurationPayload<ExtArgs>
+      fields: Prisma.PackageCurationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PackageCurationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PackageCurationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        findFirst: {
+          args: Prisma.PackageCurationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PackageCurationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        findMany: {
+          args: Prisma.PackageCurationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>[]
+        }
+        create: {
+          args: Prisma.PackageCurationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        createMany: {
+          args: Prisma.PackageCurationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PackageCurationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>[]
+        }
+        delete: {
+          args: Prisma.PackageCurationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        update: {
+          args: Prisma.PackageCurationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        deleteMany: {
+          args: Prisma.PackageCurationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PackageCurationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PackageCurationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>[]
+        }
+        upsert: {
+          args: Prisma.PackageCurationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageCurationPayload>
+        }
+        aggregate: {
+          args: Prisma.PackageCurationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePackageCuration>
+        }
+        groupBy: {
+          args: Prisma.PackageCurationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageCurationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PackageCurationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageCurationCountAggregateOutputType> | number
+        }
+      }
+    }
+    PackageReviewPreview: {
+      payload: Prisma.$PackageReviewPreviewPayload<ExtArgs>
+      fields: Prisma.PackageReviewPreviewFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PackageReviewPreviewFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PackageReviewPreviewFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        findFirst: {
+          args: Prisma.PackageReviewPreviewFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PackageReviewPreviewFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        findMany: {
+          args: Prisma.PackageReviewPreviewFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>[]
+        }
+        create: {
+          args: Prisma.PackageReviewPreviewCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        createMany: {
+          args: Prisma.PackageReviewPreviewCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PackageReviewPreviewCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>[]
+        }
+        delete: {
+          args: Prisma.PackageReviewPreviewDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        update: {
+          args: Prisma.PackageReviewPreviewUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        deleteMany: {
+          args: Prisma.PackageReviewPreviewDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PackageReviewPreviewUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PackageReviewPreviewUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>[]
+        }
+        upsert: {
+          args: Prisma.PackageReviewPreviewUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PackageReviewPreviewPayload>
+        }
+        aggregate: {
+          args: Prisma.PackageReviewPreviewAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePackageReviewPreview>
+        }
+        groupBy: {
+          args: Prisma.PackageReviewPreviewGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageReviewPreviewGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PackageReviewPreviewCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PackageReviewPreviewCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProductForm: {
+      payload: Prisma.$ProductFormPayload<ExtArgs>
+      fields: Prisma.ProductFormFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductFormFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductFormFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>
+        }
+        findFirst: {
+          args: Prisma.ProductFormFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductFormFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>
+        }
+        findMany: {
+          args: Prisma.ProductFormFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>[]
+        }
+        create: {
+          args: Prisma.ProductFormCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>
+        }
+        createMany: {
+          args: Prisma.ProductFormCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductFormCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>[]
+        }
+        delete: {
+          args: Prisma.ProductFormDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>
+        }
+        update: {
+          args: Prisma.ProductFormUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductFormDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductFormUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductFormUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductFormUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPayload>
+        }
+        aggregate: {
+          args: Prisma.ProductFormAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductForm>
+        }
+        groupBy: {
+          args: Prisma.ProductFormGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductFormCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProductFormIngredient: {
+      payload: Prisma.$ProductFormIngredientPayload<ExtArgs>
+      fields: Prisma.ProductFormIngredientFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductFormIngredientFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductFormIngredientFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>
+        }
+        findFirst: {
+          args: Prisma.ProductFormIngredientFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductFormIngredientFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>
+        }
+        findMany: {
+          args: Prisma.ProductFormIngredientFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>[]
+        }
+        create: {
+          args: Prisma.ProductFormIngredientCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>
+        }
+        createMany: {
+          args: Prisma.ProductFormIngredientCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductFormIngredientCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>[]
+        }
+        delete: {
+          args: Prisma.ProductFormIngredientDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>
+        }
+        update: {
+          args: Prisma.ProductFormIngredientUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductFormIngredientDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductFormIngredientUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductFormIngredientUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductFormIngredientUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormIngredientPayload>
+        }
+        aggregate: {
+          args: Prisma.ProductFormIngredientAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductFormIngredient>
+        }
+        groupBy: {
+          args: Prisma.ProductFormIngredientGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormIngredientGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductFormIngredientCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormIngredientCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProductFormStrength: {
+      payload: Prisma.$ProductFormStrengthPayload<ExtArgs>
+      fields: Prisma.ProductFormStrengthFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductFormStrengthFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductFormStrengthFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>
+        }
+        findFirst: {
+          args: Prisma.ProductFormStrengthFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductFormStrengthFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>
+        }
+        findMany: {
+          args: Prisma.ProductFormStrengthFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>[]
+        }
+        create: {
+          args: Prisma.ProductFormStrengthCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>
+        }
+        createMany: {
+          args: Prisma.ProductFormStrengthCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductFormStrengthCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>[]
+        }
+        delete: {
+          args: Prisma.ProductFormStrengthDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>
+        }
+        update: {
+          args: Prisma.ProductFormStrengthUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductFormStrengthDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductFormStrengthUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductFormStrengthUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductFormStrengthUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormStrengthPayload>
+        }
+        aggregate: {
+          args: Prisma.ProductFormStrengthAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductFormStrength>
+        }
+        groupBy: {
+          args: Prisma.ProductFormStrengthGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormStrengthGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductFormStrengthCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormStrengthCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProductFormPackage: {
+      payload: Prisma.$ProductFormPackagePayload<ExtArgs>
+      fields: Prisma.ProductFormPackageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductFormPackageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductFormPackageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>
+        }
+        findFirst: {
+          args: Prisma.ProductFormPackageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductFormPackageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>
+        }
+        findMany: {
+          args: Prisma.ProductFormPackageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>[]
+        }
+        create: {
+          args: Prisma.ProductFormPackageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>
+        }
+        createMany: {
+          args: Prisma.ProductFormPackageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductFormPackageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>[]
+        }
+        delete: {
+          args: Prisma.ProductFormPackageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>
+        }
+        update: {
+          args: Prisma.ProductFormPackageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductFormPackageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductFormPackageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductFormPackageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductFormPackageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormPackagePayload>
+        }
+        aggregate: {
+          args: Prisma.ProductFormPackageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductFormPackage>
+        }
+        groupBy: {
+          args: Prisma.ProductFormPackageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormPackageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductFormPackageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormPackageCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProductFormRoute: {
+      payload: Prisma.$ProductFormRoutePayload<ExtArgs>
+      fields: Prisma.ProductFormRouteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductFormRouteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductFormRouteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>
+        }
+        findFirst: {
+          args: Prisma.ProductFormRouteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductFormRouteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>
+        }
+        findMany: {
+          args: Prisma.ProductFormRouteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>[]
+        }
+        create: {
+          args: Prisma.ProductFormRouteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>
+        }
+        createMany: {
+          args: Prisma.ProductFormRouteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductFormRouteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>[]
+        }
+        delete: {
+          args: Prisma.ProductFormRouteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>
+        }
+        update: {
+          args: Prisma.ProductFormRouteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductFormRouteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductFormRouteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductFormRouteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductFormRouteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePayload>
+        }
+        aggregate: {
+          args: Prisma.ProductFormRouteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductFormRoute>
+        }
+        groupBy: {
+          args: Prisma.ProductFormRouteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormRouteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductFormRouteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormRouteCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProductFormRoutePrep: {
+      payload: Prisma.$ProductFormRoutePrepPayload<ExtArgs>
+      fields: Prisma.ProductFormRoutePrepFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductFormRoutePrepFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductFormRoutePrepFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>
+        }
+        findFirst: {
+          args: Prisma.ProductFormRoutePrepFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductFormRoutePrepFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>
+        }
+        findMany: {
+          args: Prisma.ProductFormRoutePrepFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>[]
+        }
+        create: {
+          args: Prisma.ProductFormRoutePrepCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>
+        }
+        createMany: {
+          args: Prisma.ProductFormRoutePrepCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductFormRoutePrepCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>[]
+        }
+        delete: {
+          args: Prisma.ProductFormRoutePrepDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>
+        }
+        update: {
+          args: Prisma.ProductFormRoutePrepUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductFormRoutePrepDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductFormRoutePrepUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductFormRoutePrepUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductFormRoutePrepUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRoutePrepPayload>
+        }
+        aggregate: {
+          args: Prisma.ProductFormRoutePrepAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductFormRoutePrep>
+        }
+        groupBy: {
+          args: Prisma.ProductFormRoutePrepGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormRoutePrepGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductFormRoutePrepCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormRoutePrepCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProductFormRouteOverride: {
+      payload: Prisma.$ProductFormRouteOverridePayload<ExtArgs>
+      fields: Prisma.ProductFormRouteOverrideFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProductFormRouteOverrideFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProductFormRouteOverrideFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>
+        }
+        findFirst: {
+          args: Prisma.ProductFormRouteOverrideFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProductFormRouteOverrideFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>
+        }
+        findMany: {
+          args: Prisma.ProductFormRouteOverrideFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>[]
+        }
+        create: {
+          args: Prisma.ProductFormRouteOverrideCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>
+        }
+        createMany: {
+          args: Prisma.ProductFormRouteOverrideCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProductFormRouteOverrideCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>[]
+        }
+        delete: {
+          args: Prisma.ProductFormRouteOverrideDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>
+        }
+        update: {
+          args: Prisma.ProductFormRouteOverrideUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>
+        }
+        deleteMany: {
+          args: Prisma.ProductFormRouteOverrideDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProductFormRouteOverrideUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProductFormRouteOverrideUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>[]
+        }
+        upsert: {
+          args: Prisma.ProductFormRouteOverrideUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProductFormRouteOverridePayload>
+        }
+        aggregate: {
+          args: Prisma.ProductFormRouteOverrideAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProductFormRouteOverride>
+        }
+        groupBy: {
+          args: Prisma.ProductFormRouteOverrideGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormRouteOverrideGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProductFormRouteOverrideCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProductFormRouteOverrideCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -5379,7 +6054,8 @@ export const FormularyItemScalarFieldEnum = {
   displayName: 'displayName',
   releaseAbbreviation: 'releaseAbbreviation',
   nameOverride: 'nameOverride',
-  strengthAsPercent: 'strengthAsPercent'
+  strengthStyle: 'strengthStyle',
+  ingredientOrder: 'ingredientOrder'
 } as const
 
 export type FormularyItemScalarFieldEnum = (typeof FormularyItemScalarFieldEnum)[keyof typeof FormularyItemScalarFieldEnum]
@@ -5492,6 +6168,8 @@ export const ProductIngredientScalarFieldEnum = {
   strengthDenMag: 'strengthDenMag',
   strengthDenUom: 'strengthDenUom',
   basis: 'basis',
+  deliveredNumMag: 'deliveredNumMag',
+  deliveredNumUom: 'deliveredNumUom',
   ordinal: 'ordinal',
   validFrom: 'validFrom',
   validTo: 'validTo'
@@ -6004,7 +6682,8 @@ export const CompoundFormulaScalarFieldEnum = {
   totalVolumeWhole: 'totalVolumeWhole',
   totalVolumeNum: 'totalVolumeNum',
   totalVolumeDen: 'totalVolumeDen',
-  totalVolumeUom: 'totalVolumeUom'
+  totalVolumeUom: 'totalVolumeUom',
+  route: 'route'
 } as const
 
 export type CompoundFormulaScalarFieldEnum = (typeof CompoundFormulaScalarFieldEnum)[keyof typeof CompoundFormulaScalarFieldEnum]
@@ -6027,7 +6706,8 @@ export const FormulaSlotScalarFieldEnum = {
   volumeUom: 'volumeUom',
   tolerancePct: 'tolerancePct',
   allowMultiComponent: 'allowMultiComponent',
-  ordinal: 'ordinal'
+  ordinal: 'ordinal',
+  vialPrep: 'vialPrep'
 } as const
 
 export type FormulaSlotScalarFieldEnum = (typeof FormulaSlotScalarFieldEnum)[keyof typeof FormulaSlotScalarFieldEnum]
@@ -6261,6 +6941,125 @@ export const CmsCrosswalkRowScalarFieldEnum = {
 } as const
 
 export type CmsCrosswalkRowScalarFieldEnum = (typeof CmsCrosswalkRowScalarFieldEnum)[keyof typeof CmsCrosswalkRowScalarFieldEnum]
+
+
+export const PackageCurationScalarFieldEnum = {
+  ndc: 'ndc',
+  baseline: 'baseline',
+  baselineVersion: 'baselineVersion',
+  refreshAt: 'refreshAt',
+  overrides: 'overrides',
+  review: 'review',
+  revision: 'revision',
+  initialized: 'initialized',
+  unknownKeys: 'unknownKeys',
+  legacySnapshot: 'legacySnapshot',
+  legacyBaseline: 'legacyBaseline',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PackageCurationScalarFieldEnum = (typeof PackageCurationScalarFieldEnum)[keyof typeof PackageCurationScalarFieldEnum]
+
+
+export const PackageReviewPreviewScalarFieldEnum = {
+  token: 'token',
+  ndc: 'ndc',
+  sourceRevision: 'sourceRevision',
+  baseline: 'baseline',
+  overrides: 'overrides',
+  review: 'review',
+  evidence: 'evidence',
+  expiresAt: 'expiresAt'
+} as const
+
+export type PackageReviewPreviewScalarFieldEnum = (typeof PackageReviewPreviewScalarFieldEnum)[keyof typeof PackageReviewPreviewScalarFieldEnum]
+
+
+export const ProductFormScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  ingredientKey: 'ingredientKey',
+  doseForm: 'doseForm',
+  scdfRxcui: 'scdfRxcui',
+  refreshedAt: 'refreshedAt'
+} as const
+
+export type ProductFormScalarFieldEnum = (typeof ProductFormScalarFieldEnum)[keyof typeof ProductFormScalarFieldEnum]
+
+
+export const ProductFormIngredientScalarFieldEnum = {
+  productFormId: 'productFormId',
+  ingredientId: 'ingredientId',
+  ordinal: 'ordinal'
+} as const
+
+export type ProductFormIngredientScalarFieldEnum = (typeof ProductFormIngredientScalarFieldEnum)[keyof typeof ProductFormIngredientScalarFieldEnum]
+
+
+export const ProductFormStrengthScalarFieldEnum = {
+  id: 'id',
+  productFormId: 'productFormId',
+  clinicalDrugId: 'clinicalDrugId',
+  ingredientId: 'ingredientId',
+  basisIngredientId: 'basisIngredientId',
+  basis: 'basis',
+  strengthNumMag: 'strengthNumMag',
+  strengthNumUom: 'strengthNumUom',
+  strengthDenMag: 'strengthDenMag',
+  strengthDenUom: 'strengthDenUom'
+} as const
+
+export type ProductFormStrengthScalarFieldEnum = (typeof ProductFormStrengthScalarFieldEnum)[keyof typeof ProductFormStrengthScalarFieldEnum]
+
+
+export const ProductFormPackageScalarFieldEnum = {
+  productFormId: 'productFormId',
+  packageId: 'packageId'
+} as const
+
+export type ProductFormPackageScalarFieldEnum = (typeof ProductFormPackageScalarFieldEnum)[keyof typeof ProductFormPackageScalarFieldEnum]
+
+
+export const ProductFormRouteScalarFieldEnum = {
+  id: 'id',
+  productFormId: 'productFormId',
+  route: 'route',
+  source: 'source',
+  status: 'status',
+  retiredAt: 'retiredAt'
+} as const
+
+export type ProductFormRouteScalarFieldEnum = (typeof ProductFormRouteScalarFieldEnum)[keyof typeof ProductFormRouteScalarFieldEnum]
+
+
+export const ProductFormRoutePrepScalarFieldEnum = {
+  id: 'id',
+  productFormRouteId: 'productFormRouteId',
+  packageId: 'packageId',
+  vialMassMg: 'vialMassMg',
+  diluents: 'diluents',
+  diluentMl: 'diluentMl',
+  finalVolumeMl: 'finalVolumeMl',
+  concentrationMgPerMl: 'concentrationMgPerMl',
+  agreeing: 'agreeing',
+  stating: 'stating',
+  refreshedAt: 'refreshedAt'
+} as const
+
+export type ProductFormRoutePrepScalarFieldEnum = (typeof ProductFormRoutePrepScalarFieldEnum)[keyof typeof ProductFormRoutePrepScalarFieldEnum]
+
+
+export const ProductFormRouteOverrideScalarFieldEnum = {
+  id: 'id',
+  productFormRouteId: 'productFormRouteId',
+  field: 'field',
+  value: 'value',
+  note: 'note',
+  editedBy: 'editedBy',
+  editedAt: 'editedAt'
+} as const
+
+export type ProductFormRouteOverrideScalarFieldEnum = (typeof ProductFormRouteOverrideScalarFieldEnum)[keyof typeof ProductFormRouteOverrideScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -6832,6 +7631,15 @@ export type GlobalOmitConfig = {
   uniiSubstance?: Prisma.UniiSubstanceOmit
   pharmClassRule?: Prisma.PharmClassRuleOmit
   cmsCrosswalkRow?: Prisma.CmsCrosswalkRowOmit
+  packageCuration?: Prisma.PackageCurationOmit
+  packageReviewPreview?: Prisma.PackageReviewPreviewOmit
+  productForm?: Prisma.ProductFormOmit
+  productFormIngredient?: Prisma.ProductFormIngredientOmit
+  productFormStrength?: Prisma.ProductFormStrengthOmit
+  productFormPackage?: Prisma.ProductFormPackageOmit
+  productFormRoute?: Prisma.ProductFormRouteOmit
+  productFormRoutePrep?: Prisma.ProductFormRoutePrepOmit
+  productFormRouteOverride?: Prisma.ProductFormRouteOverrideOmit
 }
 
 /* Types for Logging */

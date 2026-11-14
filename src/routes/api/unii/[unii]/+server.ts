@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
-import { prisma } from '$lib/server/prisma';
-import { normalizeUnii } from '$lib/server/unii-usage';
-import { prismaSubstanceTable, substanceFor } from '$lib/server/unii-substance-store';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { normalizeUnii } from '#lib/server/catalog/unii-usage.ts';
+import { prismaSubstanceTable, substanceFor } from '#lib/server/medication/substance-store.ts';
 import type { RequestHandler } from './$types';
 
 /** What GSRS says about a UNII (molecular weight, active moiety), cached. */

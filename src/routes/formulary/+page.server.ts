@@ -1,10 +1,10 @@
-import { prisma } from '$lib/server/prisma';
-import { defaultScope, loadedItems, localNamesOf } from '$lib/server/catalog-formulary';
-import { formularyRows } from '$lib/server/formulary-view';
-import { syncExternalPackages } from '$lib/server/catalog-sync';
-import { toNdc11 } from '$lib/ndc';
+import { prisma } from '#lib/server/infrastructure/database.ts';
+import { defaultScope, loadedItems, localNamesOf } from '#lib/server/formulary/membership.ts';
+import { formularyRows } from '#lib/server/formulary/read.ts';
+import { syncExternalPackages } from '#lib/server/catalog/sync.ts';
+import { toNdc11 } from '#lib/catalog/ndc.ts';
 import { fail } from '@sveltejs/kit';
-import { parseComboDoseDisplay, parseSettings } from '$lib/settings';
+import { parseComboDoseDisplay, parseSettings } from '#lib/formulary/settings.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

@@ -243,7 +243,11 @@ test('a capsule outline states its proportion as a word or length:width', () => 
 	assert.equal(shapeRatio('stout caplet'), PROPORTIONS.CAPSULE.STOUT);
 	assert.equal(shapeRatio('CAPSULE 2.6:1'), 2.6);
 	assert.equal(shapeRatio('Oblong 19:8'), 19 / 8);
-	assert.deepEqual(splitShapeProportion('LONG CAPSULE'), { base: 'CAPSULE', ratio: 3.4, word: 'LONG' });
+	assert.deepEqual(splitShapeProportion('LONG CAPSULE'), {
+		base: 'CAPSULE',
+		ratio: 3.4,
+		word: 'LONG'
+	});
 });
 
 test('a proportioned shape is still found as its outline', () => {

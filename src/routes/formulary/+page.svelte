@@ -1,18 +1,20 @@
 <script lang="ts">
       import {page} from '$app/state';
-      import BrandedName from '$lib/components/BrandedName.svelte';
-      import {formatNdc} from '$lib/ndc';
-      import {packageTitle} from '$lib/package-title';
-      import PageHeader from '$lib/components/PageHeader.svelte';
+      import BrandedName from '#lib/components/BrandedName.svelte';
+      import {formatNdc} from "#lib/catalog/ndc.ts";
+      import {packageTitle} from "#lib/catalog/package-title.ts";
+      import {orderNameIngredients} from "#lib/medication/ingredient-order.ts";
+      import PageHeader from '#lib/components/PageHeader.svelte';
       import {onMount, untrack} from 'svelte';
       import {afterNavigate, replaceState} from '$app/navigation';
       import {resolve} from '$app/paths';
       import {SvelteSet} from 'svelte/reactivity';
       import {
             buildTree, type ComboDoseDisplay, comboKey, DIMENSION_BY_KEY, type FormularyRow, levelLabel, MERGE_SEPARATOR,
-            packageSize, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
-      } from '$lib/formulary-hierarchy';
-      import RouteBadge from '$lib/components/RouteBadge.svelte';
+            orderedComboLabel, packageSize, sharedIngredientOrder, parseLevels, routeOfLabel, strengthOf, summedDescription, type TreeNode
+      } from "#lib/formulary/hierarchy.ts";
+      import RouteBadge from '#lib/components/RouteBadge.svelte';
+      import {strengthRules, styledName} from "#lib/client/strength-display.svelte.ts";
 
       let { data } = $props();
 
@@ -68,6 +70,18 @@
 
 	const firstRow = (node: TreeNode): FormularyRow | undefined =>
 		node.rows[0] ?? (node.children[0] && firstRow(node.children[0]));
+	/** The ingredient order every item under a node chose alike; none when they differ. */
+	const nodeOrder = (node: TreeNode): string[] => sharedIngredientOrder(nodeRows(node));
+	/** A row's package title with its ingredients in the item's chosen order. */
+	const rowTitle = (row: FormularyRow) =>
+		styledName(orderNameIngredients(packageTitle(row), row.ingredientOrder), row.strengthStyle);
+	/** A strength node as the display rules show it; one an equivalence group renamed keeps its name. */
+	const strengthLabel = (node: TreeNode, label: string) => {
+		const row = firstRow(node);
+		return row && strengthOf(row) === label
+			? strengthOf(row, strengthRules(row.strengthStyle), nodeOrder(node))
+			: label;
+	};
 
 	const doseChoice = (combo: string) => {
 		const display = comboDoseDisplay[combo];
@@ -164,14 +178,41 @@
 
 	// Open the tree to the depth chosen in Settings. Done once at setup, so the
 	// server renders it open too; later hierarchy changes start collapsed.
+	// With one open node per level, "all" opens the first branch down to its packages.
 	untrack(() => {
-		if (data.settings.expandDepth === 'all') expandAll();
+		if (data.settings.singleExpand) {
+			if (data.settings.expandDepth === 'none') return;
+			for (let node = tree[0]; node; node = node.children[0]) {
+				expanded.add(node.id);
+				if (data.settings.expandDepth === 'first') break;
+			}
+		} else if (data.settings.expandDepth === 'all') expandAll();
 		else if (data.settings.expandDepth === 'first') for (const node of tree) expanded.add(node.id);
+	});
+
+	/** Each node's siblings, itself included, for keeping one open per level. */
+	const siblingsOf = $derived.by(() => {
+		const siblings = new Map<string, TreeNode[]>();
+		const visit = (nodes: TreeNode[]) => {
+			for (const node of nodes) {
+				siblings.set(node.id, nodes);
+				visit(node.children);
+			}
+		};
+		visit(tree);
+		return siblings;
 	});
 
 	function toggle(id: string) {
 		if (expanded.has(id)) expanded.delete(id);
-		else expanded.add(id);
+		else {
+			// Close the open sibling and everything under it, so reopening it starts fresh.
+			if (data.settings.singleExpand)
+				for (const sibling of siblingsOf.get(id) ?? [])
+					if (sibling.id !== id && expanded.has(sibling.id))
+						walk([sibling], (node) => expanded.delete(node.id));
+			expanded.add(id);
+		}
 	}
 
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -200,6 +241,11 @@
 {/snippet}
 
 {#snippet packageList(items: FormularyRow[])}
+	{@const active = items.filter((row) => row.status === 'active').length}
+	<div class="pkg-meta">
+		<span class="meta-pill">{active} active NDCs</span>
+		{#if items.length > active}<span class="meta-pill dashed">{items.length - active} inactive</span>{/if}
+	</div>
 	<ul class="packages">
 		{#each items as row (`${row.formularyItemId}:${row.packageId}`)}
 			<li class:excluded={row.status !== 'active'}>
@@ -207,21 +253,20 @@
 					class="package"
                               onmousedown={() => snapshot.capture()}
 					href={resolve('/formulary/ndc/[ndc]', { ndc: row.ndc })}
-					data-nav-title={packageTitle(row)}
+					data-nav-title={rowTitle(row)}
 				>
 					<span class="mono ndc">{formatNdc(row.ndc)}</span>
-					<span class="desc">
-						<BrandedName text={packageTitle(row)}>
+					<span class="desc visually-hidden">
+						<BrandedName text={rowTitle(row)}>
 							{#snippet name(text)}{@render summedText(text, row.doseDisplay)}{/snippet}
 						</BrandedName>
 						<span class="small">
-							{[strengthOf(row), packageSize(row), row.labeler]
+							{[strengthOf(row, strengthRules(row.strengthStyle), row.ingredientOrder), packageSize(row), row.labeler]
 								.filter(Boolean)
 								.join(' · ')}
 						</span>
 					</span>
-					{#if row.status !== 'active'}<span class="flag">{row.status}</span>{/if}
-					<span class="chevron" aria-hidden="true">›</span>
+					{#if row.status !== 'active'}<span class="flag" title={row.status}>!</span>{/if}
 				</a>
 			</li>
 		{/each}
@@ -236,13 +281,16 @@
 			: null}
 	{#if segment.dimension === 'formularyItem'}<BrandedName text={segment.label}
 			>{#snippet name(text)}{@render summedText(text, firstRow(node)?.doseDisplay)}{/snippet}</BrandedName
-		>{:else if route}<RouteBadge {route} />{:else}{segment.label}{/if}
+		>{:else if route}<RouteBadge {route} />{:else if segment.dimension === 'strength'}{strengthLabel(node, segment.label)}{:else if segment.dimension === 'ingredientCombo'}{orderedComboLabel(segment.label, nodeOrder(node))}{:else}{segment.label}{/if}
 {/snippet}
 
 {#snippet branch(nodes: TreeNode[], depth: number)}
 	<ul class="tree" role={depth ? 'group' : 'tree'}>
 		{#each nodes as node (node.id)}
 			{@const isOpen = expanded.has(node.id)}
+			<!-- In one-open-per-level mode, siblings of the open node step back. -->
+			{@const faded =
+				data.settings.singleExpand && !isOpen && nodes.some((other) => expanded.has(other.id))}
 			<!-- A merged node reads as its absorbed ancestors' labels, then its own. -->
 			{@const segments = [...(node.merged ?? []), { dimension: node.dimension, label: node.label }]}
 			{@const combo = segments.find(
@@ -250,7 +298,7 @@
 			)?.label}
 			{@const item = segments.find((segment) => segment.dimension === 'formularyItem')?.label}
 			<li role="treeitem" aria-expanded={isOpen} aria-selected="false">
-				<div class="node-row" style:--recede={recede.get(node.id) ?? 0}>
+				<div class="node-row" class:open={isOpen} class:faded style:--recede={recede.get(node.id) ?? 0}>
 					<button class="node" onclick={() => toggle(node.id)} style:--depth={depth}>
 						<span class="twisty" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
 						<span class="node-label"
@@ -270,7 +318,9 @@
 								.map((segment) => DIMENSION_BY_KEY.get(segment.dimension)?.label)
 								.join(MERGE_SEPARATOR)}</span
 						>
-						<span class="count">{plural(node.count, 'NDC')}</span>
+						<span class="count" title={plural(node.count, 'NDC')}
+								><span class="count-n">{node.count}</span><span class="barcode" aria-hidden="true"></span></span
+							>
 					</button>
 					{#if item && nodeItemId(node)}
 						<a
@@ -293,7 +343,7 @@
 							{#if menuFor === node.id}
 								<div class="menu" role="menu">
 									<p class="menu-heading">Show dose as</p>
-									{#each [['each', 'Each ingredient'], ['sum', 'Sum (same unit)'], ...combo
+									{#each [['each', 'Each ingredient'], ['sum', 'Sum (same unit)'], ...orderedComboLabel(combo, nodeOrder(node))
 											.split(' / ')
 											.map((name) => [`single:${name}`, `Only ${name}`])] as [value, text] (value)}
 										<button
@@ -335,13 +385,6 @@
 		</div>
 	{/if}
 	<PageHeader title={data.scope.name}>
-		{#snippet eyebrow()}
-			<a href={resolve('/')}>RxDB</a> / Formulary · <a href={resolve('/formulary/items')}>Manage loaded items →</a> ·
-			<a href={resolve('/formulary/pharm-classes')}>Class rules</a> ·
-			<a href={resolve('/formulary/local-concepts')}>Local concepts</a> ·
-			<a href={resolve('/compounds')}>Compounds</a> ·
-			<a href={resolve('/settings')}>Settings</a>
-		{/snippet}
 		<p>
 			{plural(data.rows.length, 'package')} across {plural(
 				new Set(data.rows.map((row: FormularyRow) => row.formularyItemId)).size,
@@ -381,7 +424,13 @@
 				bind:value={filter}
 				placeholder="Filter by name, ingredient, NDC, labeler"
 			/>
-			<button class="ghost" onclick={expandAll} disabled={!levels.length}>Expand all</button>
+			<button
+				class="ghost"
+				onclick={expandAll}
+				disabled={!levels.length || data.settings.singleExpand}
+				title={data.settings.singleExpand ? 'Off while only one node per level can be open' : undefined}
+				>Expand all</button
+			>
 			<button class="ghost" onclick={() => expanded.clear()} disabled={!levels.length}
 				>Collapse all</button
 			>
@@ -402,12 +451,6 @@
 </main>
 
 <style>
-	main {
-		max-width: 1040px;
-		margin: 0 auto;
-		padding: 4rem 1.5rem;
-	}
-
 	h2 {
 		margin: 0;
 		font-size: 1rem;
@@ -500,10 +543,35 @@
 		list-style: none;
 	}
 
+	.results > .tree {
+		border: 1px solid #e6e9f0;
+		border-radius: 0.6rem;
+		overflow: hidden;
+		background: #fbfbfd;
+	}
+
 	.children {
-		margin-left: 0.9rem;
-		padding-left: 0.6rem;
-		border-left: 2px solid #e3e8ee;
+		background: color-mix(in srgb, #6366f1 3%, white);
+	}
+
+	.node-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		position: relative;
+		padding-right: 0.5rem;
+		border-left: 3px solid transparent;
+		border-bottom: 1px solid #f0f1f5;
+	}
+
+	.node-row.open {
+		border-left-color: #c7c9f5;
+		background: #f6f6fb;
+	}
+
+	.node-row .node {
+		flex: 1;
+		min-width: 0;
 	}
 
 	.node {
@@ -514,20 +582,19 @@
 		background: none;
 		color: inherit;
 		text-align: left;
-		padding: 0.45rem 0.5rem;
-		border-radius: 0.45rem;
+		padding: 0.3rem 0.4rem 0.3rem calc(0.6rem + var(--depth, 0) * 1.1rem);
+		border-radius: 0;
 		font-weight: 500;
 	}
 
-	.node-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+	.node-row.faded {
+		opacity: 0.6;
+		transition: opacity 0.15s;
 	}
 
-	.node-row .node {
-		flex: 1;
-		min-width: 0;
+	.node-row.faded:hover,
+	.node-row.faded:focus-within {
+		opacity: 1;
 	}
 
 	.toast {
@@ -554,7 +621,10 @@
 	}
 
 	.item-link {
-		flex: none;
+		position: absolute;
+		right: 4.6rem;
+		top: 50%;
+		transform: translateY(-50%);
 		color: #3464a5;
 		font-size: 0.8rem;
 		font-weight: 650;
@@ -571,9 +641,12 @@
 		text-decoration: underline;
 	}
 
+	/* Hover extras overlay the row so every count badge lines up on the right. */
 	.row-menu {
-		position: relative;
-		flex: none;
+		position: absolute;
+		right: 7.6rem;
+		top: 50%;
+		transform: translateY(-50%);
 	}
 
 	.menu-trigger {
@@ -637,27 +710,29 @@
 		color: #3464a5;
 	}
 
-	.node:hover {
-		background: #eef2f7;
+	.node-row:hover {
+		background: #f1f2f8;
 	}
 
 	.twisty {
 		width: 0.8rem;
-		color: #3464a5;
+		color: #b4b8c6;
+		font-size: 0.75rem;
 	}
 
 	.node-dim {
+		order: 3;
 		flex: none;
-		color: #7a8594;
-		font-size: 0.7rem;
-		font-weight: 700;
+		color: #b4b8c6;
+		font-size: 0.65rem;
+		font-weight: 600;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.08em;
+		opacity: 0;
 	}
 
-	.node-dim::after {
-		content: ':';
-		margin-right: 0.35rem;
+	.node-row:hover .node-dim {
+		opacity: 1;
 	}
 
 	.paren {
@@ -679,51 +754,101 @@
 	.node-label {
 		flex: 1;
 		min-width: 0;
-		font-weight: 650;
+		font-weight: 450;
+		font-size: 0.875rem;
+		color: #3b3f4c;
 		overflow-wrap: anywhere;
 	}
 
+	.tree .tree .node-label {
+		color: #2e5aa8;
+	}
+
 	.count {
+		order: 4;
 		flex: none;
-		color: #5c6777;
-		font-size: 0.8rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.05rem 0.3rem 0.05rem 0.15rem;
+		border: 1px solid #c9ccdb;
+		border-radius: 0.4rem;
+		background: white;
+		color: #5c6070;
+		font-size: 0.72rem;
+		font-variant-numeric: tabular-nums;
+		align-self: center;
+	}
+
+	.count-n {
+		min-width: 2.4rem;
+		padding: 0 0.3rem;
+		border: 1px solid #e3e5ee;
+		border-radius: 0.25rem;
+		text-align: center;
+	}
+
+	.barcode {
+		width: 0.85rem;
+		height: 0.65rem;
+		background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 3px, currentColor 3px 4px, transparent 4px 6px);
+		color: #4f46b8;
+	}
+
+
+	.pkg-meta {
+		display: flex;
+		gap: 0.5rem;
+		padding: 0.35rem 0.6rem 0.15rem 1.8rem;
+	}
+
+	.meta-pill {
+		border: 1px solid #d9dbe5;
+		border-radius: 999px;
+		padding: 0 0.45rem;
+		color: #5c6070;
+		font-size: 0.7rem;
+	}
+
+	.meta-pill.dashed {
+		border-style: dashed;
+		color: #9a9eae;
 	}
 
 	.packages {
-		display: grid;
-		gap: 0.35rem;
-		padding: 0.35rem 0 0.6rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.2rem;
+		padding: 0.25rem 0.6rem 0.5rem 1.8rem;
 	}
 
 	.packages li {
-		border: 1px solid #e3e8ee;
-		border-radius: 0.55rem;
+		border: 1px solid #d9dbe5;
+		border-radius: 0.25rem;
 		background: white;
-		padding: 0.5rem 0.75rem;
-		font-size: 0.875rem;
+		font-size: 0.72rem;
+	}
+
+	.packages li:hover {
+		border-color: #4338ca;
 	}
 
 	.package {
 		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
-		width: 100%;
-		background: none;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.05rem 0.35rem;
 		color: inherit;
 		text-decoration: none;
 	}
 
-	.package .desc {
-		flex: 1;
-	}
-
-	.package:hover .chevron {
-		color: #3464a5;
-	}
-
-	.chevron {
-		flex: none;
-		color: #9aa4b2;
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.packages li.excluded {
@@ -732,8 +857,8 @@
 
 	.ndc {
 		flex: none;
-		color: #204f91;
-		font-weight: 650;
+		color: #2a2d38;
+		letter-spacing: 0.02em;
 	}
 
 	.desc {
@@ -751,7 +876,7 @@
 		border-radius: 999px;
 		background: #fdecec;
 		color: #9a2a2a;
-		padding: 0.15rem 0.5rem;
+		padding: 0 0.35rem;
 		font-size: 0.7rem;
 		font-weight: 700;
 	}
@@ -770,10 +895,6 @@
 	}
 
 	@media (max-width: 640px) {
-		main {
-			padding: 2.5rem 1rem;
-		}
-
 		.toolbar {
 			flex-wrap: wrap;
 		}
@@ -787,10 +908,8 @@
 		}
 
 		/* Stack levels flush-left instead of indenting; ancestors recede instead. */
-		.children {
-			margin-left: 0;
-			padding-left: 0;
-			border-left: none;
+		.node {
+			padding-left: 0.75rem;
 		}
 
 		.node-dim {

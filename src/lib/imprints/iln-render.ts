@@ -1,3 +1,23 @@
+/**
+ * From ILN to a drawing.
+ *
+ * `spl-to-iln` turns SPL's flat imprint string into Imprint Layout Notation: a
+ * guess, with confidence, at which face each segment sits on, where the score
+ * falls and what it divides. This reads that notation back into a tree and
+ * lays it out as marks on a 100×100 box per face — the same box
+ * `shapeGeometry` draws its outlines in — so `PillMockup.svelte` only has to
+ * paint what this places.
+ *
+ * Layout follows the notation's own structure: "/" stacks lines top to
+ * bottom, juxtaposition runs left to right, "|" and "-" divide the region
+ * they sit in with a score line, and anything carrying a location code is
+ * placed by that code: arcs and rings along the rim, a mid-radius track, the
+ * hole or another symbol; straight text in a zone at any heading; stacked
+ * letters; score- and section-relative spots; capsule zones and print turned
+ * around the long axis; and the edge band, drawn as its own unrolled view.
+ *
+ * @module
+ */
 import { guessIln, type IlnGuess, type Node, type SplAppearance, type Surface } from './spl-to-iln';
 import { markingStyle, parseIln, validateIln } from './iln-parse';
 import {
@@ -16,25 +36,9 @@ import {
 	parseHoleOrient,
 	parseShapeOrient
 } from './shapes';
-import { type PillAppearance, shapeGeometry, swatchOf } from '../spl-characteristics';
+import { type PillAppearance, shapeGeometry, swatchOf } from '../labels/spl-characteristics';
 import { type FillForm, parseShell, ShellError } from './capsule-shell';
-import type { MeasuredFace, PillImageLayout } from '../pill-image-layout'; // ── From ILN to a drawing ────────────────────────────────────────────────────
-
-// ── From ILN to a drawing ────────────────────────────────────────────────────
-// `spl-to-iln` turns SPL's flat imprint string into Imprint Layout Notation: a
-// guess, with confidence, at which face each segment sits on, where the score
-// falls and what it divides. This reads that notation back into a tree and
-// lays it out as marks on a 100×100 box per face — the same box
-// `shapeGeometry` draws its outlines in — so `PillMockup.svelte` only has to
-// paint what this places.
-//
-// Layout follows the notation's own structure: "/" stacks lines top to
-// bottom, juxtaposition runs left to right, "|" and "-" divide the region
-// they sit in with a score line, and anything carrying a location code is
-// placed by that code: arcs and rings along the rim, a mid-radius track, the
-// hole or another symbol; straight text in a zone at any heading; stacked
-// letters; score- and section-relative spots; capsule zones and print turned
-// around the long axis; and the edge band, drawn as its own unrolled view.
+import type { MeasuredFace, PillImageLayout } from './pill-image-layout'; // ── From ILN to a drawing ────────────────────────────────────────────────────
 
 // ── Parsing ──────────────────────────────────────────────────────────────────
 // The full parser lives in `iln-parse`: it reads modifiers and location codes
@@ -228,7 +232,7 @@ const textOf = (n: Node): string => {
 	}
 };
 
-// 0.62 em is a fair average advance for the caps and digits imprints use.
+/** 0.62 em is a fair average advance for the caps and digits imprints use. */
 const ADVANCE = 0.62;
 
 function textSize(text: string, box: Box, ctx: Ctx, mods: Mods): number {
@@ -385,7 +389,8 @@ function layoutAroundHole(node: Node, box: Box, ctx: Ctx): void {
 	layout(node, box, ctx);
 	const reach = hole.r * HOLE_REACH;
 	const added = ctx.marks.splice(from);
-	for (const mark of added) ctx.marks.push(...(mark.kind === 'score' ? breakAt(mark, hole.x, hole.y, reach) : [mark]));
+	for (const mark of added)
+		ctx.marks.push(...(mark.kind === 'score' ? breakAt(mark, hole.x, hole.y, reach) : [mark]));
 }
 
 /** A score segment with the part inside the circle (cx, cy, r) cut out. */
@@ -450,7 +455,8 @@ function keepOffHoles(marks: Mark[]): Mark[] {
 			mark.kind === 'text'
 				? [mark.size * 0.62 * Math.max(1, mark.text.length), mark.size * 0.8]
 				: [mark.r * 2, mark.r * 2];
-		const sideways = mark.rotate && Math.abs(mark.rotate % 180) > 45 && Math.abs(mark.rotate % 180) < 135;
+		const sideways =
+			mark.rotate && Math.abs(mark.rotate % 180) > 45 && Math.abs(mark.rotate % 180) < 135;
 		const [hw, hh] = sideways ? [h / 2, w / 2] : [w / 2, h / 2];
 		for (const hole of holes) {
 			const reach = hole.r * HOLE_REACH;
@@ -1062,7 +1068,10 @@ export interface ShellLook {
 }
 
 /** A capsule half's look from its color slot: the fill to paint, plus the shell when it is see-through. */
-function shellOf(s: Surface | undefined, fallback: string): { fill: string; look: ShellLook | null } {
+function shellOf(
+	s: Surface | undefined,
+	fallback: string
+): { fill: string; look: ShellLook | null } {
 	if (!s?.color || s.color === 'unknown') return { fill: fallback, look: null };
 	try {
 		const shell = parseShell(s.color);
@@ -1200,7 +1209,9 @@ function finish(ctx: Ctx): Mark[] {
  * strings to equalize (empty when the preference is off); `all` is stripped of the flag.
  */
 function uniformSizes(pool: Mark[], all: Mark[]): void {
-	const auto = pool.filter((m): m is Extract<Mark, { kind: 'text' }> => m.kind === 'text' && !!m.auto);
+	const auto = pool.filter(
+		(m): m is Extract<Mark, { kind: 'text' }> => m.kind === 'text' && !!m.auto
+	);
 	const size = Math.min(...auto.map((m) => m.size));
 	for (const mark of auto) mark.size = size;
 	for (const mark of all) if (mark.kind === 'text') delete mark.auto;
@@ -1297,7 +1308,7 @@ export function drawPill(
 								height: geometry.height,
 								rotate: 0,
 								fills,
-					...shells,
+								...shells,
 								finish: 'ink' as const,
 								marks: back
 							}
@@ -1320,7 +1331,11 @@ export function drawPill(
 		// A through-hole the shape itself carries is cut whether or not the notation places it.
 		const placesHole = /"name":"hole[:"]/i.test(JSON.stringify(s.body ?? ''));
 		if (geometry.hole && !placesHole)
-			layout({ k: 'sym', name: 'hole' }, faceBox(width, height, /^[A-Z]$/.test(geometry.hole) ? 0.8 : 0.5), ctx);
+			layout(
+				{ k: 'sym', name: 'hole' },
+				faceBox(width, height, /^[A-Z]$/.test(geometry.hole) ? 0.8 : 0.5),
+				ctx
+			);
 		// Text keeps to an inset box clear of the curved edge; score lines are drawn edge to edge.
 		const face = faceBox(width, height, 0.8);
 		if (s.body && s.body.k !== 'plus') layoutAroundHole(s.body, face, ctx);

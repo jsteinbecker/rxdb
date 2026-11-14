@@ -348,3 +348,51 @@ export type PharmClassRule = Prisma.PharmClassRuleModel
  * Replaced whole when a newer quarter is published; see `cms-billing.ts`.
  */
 export type CmsCrosswalkRow = Prisma.CmsCrosswalkRowModel
+/**
+ * Model PackageCuration
+ * Durable provider baseline and user decisions, independent of enrichment cache versions.
+ */
+export type PackageCuration = Prisma.PackageCurationModel
+/**
+ * Model PackageReviewPreview
+ * Review previews survive process changes and apply only to the revision they reviewed.
+ */
+export type PackageReviewPreview = Prisma.PackageReviewPreviewModel
+/**
+ * Model ProductForm
+ * One base-ingredient set in one label dose form ("cefepime | injection, powder, for solution").
+ * Keyed on the label's dose form, not RxNorm's: RxNorm files powder vials and ready solutions
+ * alike under "Injection". Derived from formulary packages; retired, never deleted.
+ */
+export type ProductForm = Prisma.ProductFormModel
+/**
+ * Model ProductFormIngredient
+ * A base ingredient (active moiety) of a product form.
+ */
+export type ProductFormIngredient = Prisma.ProductFormIngredientModel
+/**
+ * Model ProductFormStrength
+ * A strength the form comes in: the SCD's total for one base ingredient, basis named.
+ */
+export type ProductFormStrength = Prisma.ProductFormStrengthModel
+/**
+ * Model ProductFormPackage
+ * A formulary package's place in a product form; a package belongs to one form.
+ */
+export type ProductFormPackage = Prisma.ProductFormPackageModel
+/**
+ * Model ProductFormRoute
+ * A route a product form is labeled for (IM, IV, SC, PO): the members of a dose umbrella.
+ */
+export type ProductFormRoute = Prisma.ProductFormRouteModel
+/**
+ * Model ProductFormRoutePrep
+ * A vial preparation step for one form and route, one row per vial size. package_id null =
+ * the consensus across the form's packages; set = that package departs from it.
+ */
+export type ProductFormRoutePrep = Prisma.ProductFormRoutePrepModel
+/**
+ * Model ProductFormRouteOverride
+ * A hand edit to a form and route; rebuilds never touch these, they apply on read.
+ */
+export type ProductFormRouteOverride = Prisma.ProductFormRouteOverrideModel

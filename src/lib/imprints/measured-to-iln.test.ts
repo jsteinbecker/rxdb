@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { measuredToIln } from './measured-to-iln.ts';
 import { validateIln } from './iln-parse.ts';
-import type { MeasuredElement, MeasuredFace, PillImageLayout } from '../pill-image-layout.ts';
+import type { MeasuredElement, MeasuredFace, PillImageLayout } from './pill-image-layout.ts';
 
 const el = (text: string, x: number, y: number, w = 0.3, h = 0.15): MeasuredElement => ({
 	segment: 0,

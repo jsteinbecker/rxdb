@@ -1,6 +1,13 @@
-<!-- MgPerMl.svelte -->
+<!--
+@component
+A concentration in mg/mL, with the unit typeset as a stacked fraction and read aloud
+as "milligrams per milliliter".
+-->
 <script lang="ts">
-      let { value }: { value: string | number } = $props();
+      let { value }: {
+            /** The number of milligrams per milliliter, already formatted or raw. */
+            value: string | number
+      } = $props();
 </script>
 
 <span class="concentration">
