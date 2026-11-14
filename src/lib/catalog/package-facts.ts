@@ -145,11 +145,14 @@ export function parsePackageFacts(
 		row.concentrations.some((c) =>
 			packageMgPerMl.some((mgPerMl) => nearVolume(c.mgPerMl, mgPerMl))
 		);
-	const allRows = ownBottle
-		? parsedRows.filter(
-				(row) => !row.bottle || (nearVolume(row.finalVolumeMl ?? 0, labeledMl!) && ownStrength(row))
-			)
-		: parsedRows;
+	// The strength test holds even when no row is this bottle's size: a
+	// repackager's 150 mL of 250 mg/5 mL (50090-2251) sits on a label that
+	// tabulates only the 200 and 400 mg/5 mL bottles, none of them its own.
+	const allRows = parsedRows.filter(
+		(row) =>
+			!row.bottle ||
+			(ownStrength(row) && (!ownBottle || nearVolume(row.finalVolumeMl ?? 0, labeledMl!)))
+	);
 	// Shared labels tabulate every vial size; keep this package's. Without a
 	// complete ingredient mass there is no vial size to match, so keep all.
 	//
