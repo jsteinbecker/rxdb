@@ -31,6 +31,7 @@ import {
 	diluentList,
 	diluentsIn,
 	type ReconstitutionRoute,
+	ROUTE_HEADING,
 	routeList,
 	routesIn
 } from './reconstitution-terms.js';
@@ -410,15 +411,6 @@ export const TABLE_SECTIONS = [
 	'spl_unclassified_section_table'
 ] as const;
 
-/**
- * An administration heading — "Intramuscular Administration:", "For IV Use" —
- * the way labels introduce each route's instructions. Deliberately narrower
- * than `routesIn`: "As with all intramuscular preparations" mentions a route
- * without introducing one.
- */
-const ROUTE_HEADING =
-	/\b(?:intramuscular|intravenous|subcutaneous)(?:ly)?\s+(?:administration|injection|use|reconstitution)\b|\bfor\s+(?:IM|IV|SC)\s+(?:use|administration|injection)\b/gi;
-
 /** How far above a table to look for the heading that introduces it. */
 const HEADING_WINDOW = 2500;
 
@@ -509,6 +501,8 @@ export interface BottleReconstitution {
 	waterMl: number;
 	/** Combined strength the row is for, in mg/mL, when the table says. */
 	concentrationMgPerMl: number | null;
+	/** Diluents the water column's header names ("Amount of Purified Water"). */
+	diluents?: string[];
 }
 
 /**
@@ -559,6 +553,7 @@ export function parseBottleTable(tableMarkup: string): BottleReconstitution[] {
 		(cell, c) => c !== bottleColumn && /water|diluent/i.test(cell)
 	);
 	const strengthColumn = header.findIndex((cell) => /strength/i.test(cell));
+	const diluents = diluentList(diluentsIn(header[waterColumn] ?? ''));
 
 	const rows: BottleReconstitution[] = [];
 	let strength: number | null = null;
@@ -571,7 +566,12 @@ export function parseBottleTable(tableMarkup: string): BottleReconstitution[] {
 		bottles.forEach((bottleMl, i) => {
 			// Water beyond the finished volume is not constitution; it is a misread.
 			if (waters[i] > bottleMl * 1.02) return;
-			rows.push({ bottleMl, waterMl: waters[i], concentrationMgPerMl: strength });
+			rows.push({
+				bottleMl,
+				waterMl: waters[i],
+				concentrationMgPerMl: strength,
+				...(diluents ? { diluents } : {})
+			});
 		});
 	}
 	return rows;
@@ -595,7 +595,7 @@ export function bottleReconstitutionFromLabel(
 			];
 			for (const markup of found) {
 				for (const row of parseBottleTable(markup)) {
-					rows.set(`${row.bottleMl}|${row.waterMl}|${row.concentrationMgPerMl}`, row);
+					rows.set(`${row.bottleMl}|${row.waterMl}|${row.concentrationMgPerMl}|${row.diluents}`, row);
 				}
 			}
 		}

@@ -19,7 +19,7 @@
 
 <section class="panel vial-prep" aria-labelledby="vial-prep-heading">
   <div class="section-head">
-    <h2 id="vial-prep-heading">Vial preparation</h2>
+    <h2 id="vial-prep-heading">Reconstitution</h2>
     {#if prep.status === 'stated'}<span class="count">from {dryFills} dry-fill label{dryFills === 1 ? '' : 's'}</span>{/if}
   </div>
 
@@ -40,14 +40,18 @@
               <span class="step">
                 Add <span class:diff={d.diluentMl}>{fmt(step.diluentMl)} mL</span>
                 <span class:diff={d.diluents}>{diluents(step)}</span>
-                {step.vialMassMg !== null ? `to the ${mass(step.vialMassMg)} vial` : 'to the vial'}
+                {step.bottleMl != null
+                  ? `to the ${fmt(step.bottleMl)} mL bottle`
+                  : step.vialMassMg !== null
+                    ? `to the ${mass(step.vialMassMg)} vial`
+                    : 'to the vial'}
                 {#if step.concentrationMgPerMl !== null}
                   → <span class:diff={d.concentration}>{fmt(step.concentrationMgPerMl)} mg/mL</span>
                 {/if}
               </span>
               <details class="ndcs">
-                <summary class="chip" class:all={variant.ndcs.length === dryFills}>
-                  {variant.ndcs.length} of {dryFills} NDCs
+                <summary class="chip" class:all={!d.diluentMl && !d.concentration && !d.diluents}>
+                  {variant.ndcs.length} of {variant.of} NDCs
                 </summary>
                 <span class="list">
                   {#each variant.ndcs as ndc}<a href="/formulary/ndc/{ndc}">{formatNdc(ndc)}</a>{/each}

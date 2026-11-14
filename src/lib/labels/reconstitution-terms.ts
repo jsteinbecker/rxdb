@@ -15,7 +15,9 @@
  * @module
  */
 
-export const RECONSTITUTION_ROUTES = ['IM', 'IV', 'SC'] as const;
+export const RECONSTITUTION_ROUTES = ['IM', 'IV', 'SC', 'PO'] as const;
+/** Routes a compound (a parenteral preparation) can be made for. */
+export const INJECTION_ROUTES = ['IM', 'IV', 'SC'] as const;
 export type ReconstitutionRoute = (typeof RECONSTITUTION_ROUTES)[number];
 
 /**
@@ -27,6 +29,27 @@ const ROUTE_PATTERNS: [ReconstitutionRoute, RegExp, RegExp][] = [
 	['IV', /\bintravenous(?:ly)?\b/i, /\bI\.V\.|\bIV\b/],
 	['SC', /\bsubcutaneous(?:ly)?\b/i, /\bS\.C\.|\bSC\b|\bSQ\b/]
 ];
+
+/**
+ * An administration phrase — "Intramuscular Administration:", "For IM
+ * administration", "For IV Use" — the way labels introduce each route's
+ * instructions. Narrower than `routesIn`: "As with all intramuscular
+ * preparations" mentions a route without introducing one.
+ */
+export const ROUTE_HEADING =
+	/\b(?:intramuscular|intravenous|subcutaneous)(?:ly)?\s+(?:administration|injection|use|reconstitution)\b|\bfor\s+(?:IM|IV|SC|I\.M\.|I\.V\.)\s+(?:use|administration|injection)\b/gi;
+
+/**
+ * Routes of the last administration phrase in a stretch of text, or null
+ * when it has none. A carton reads "FOR IV OR IM USE ... For IM
+ * administration: Reconstitute with 4.2 mL 1% Lidocaine": the product's
+ * routes come first, and the phrase nearest the instruction is its own.
+ */
+export function administrationRoutesIn(text: string): ReconstitutionRoute[] | null {
+	const phrases = [...text.matchAll(ROUTE_HEADING)];
+	const routes = phrases.length ? routesIn(phrases[phrases.length - 1][0]) : [];
+	return routes.length ? routes : null;
+}
 
 /** Routes a stretch of label text names, in canonical order. */
 export function routesIn(text: string): ReconstitutionRoute[] {
@@ -46,10 +69,10 @@ export function routesIn(text: string): ReconstitutionRoute[] {
 const DILUENT_PATTERNS: [string | ((match: RegExpExecArray) => string), RegExp][] = [
 	['BWFI', /bacteriostatic\s+water(?:\s+for\s+injection)?/gi],
 	['BNS', /bacteriostatic\s+(?:0\.9\s*%\s*)?sodium\s+chloride(?:\s+injection)?/gi],
-	['SWFI', /(?:sterile\s+)?water\s+for\s+injection|\bS?WFI\b/gi],
+	['SWFI', /(?:sterile\s+)?water\s+for\s+injection|sterile\s+water\b|\bS?WFI\b/gi],
 	['½NS', /0\.45\s*%\s*sodium\s+chloride(?:\s+injection)?/gi],
 	['NS', /(?:0\.9\s*%\s*)?sodium\s+chloride(?:\s+injection)?|normal\s+saline|\bNS\b/gi],
-	['D5W', /5\s*%\s*dextrose(?:\s+injection)?|dextrose\s+5\s*%|\bD5W\b/gi],
+	['D5W', /5\s*%\s*dextrose(?:\s+in\s+water)?(?:\s+injection)?|dextrose\s+5\s*%(?:\s+in\s+water)?|\bD5W\b/gi],
 	['LR', /lactated\s+ringer'?s?(?:\s+injection)?|\bLR\b/gi],
 	[
 		(match) => {
@@ -57,7 +80,11 @@ const DILUENT_PATTERNS: [string | ((match: RegExpExecArray) => string), RegExp][
 			return percent ? `lidocaine ${percent}%` : 'lidocaine';
 		},
 		/(?:(\d+(?:\.\d+)?)\s*%\s*)?lidocaine(?:\s+(?:hydrochloride|hcl))?(?:\s+injection)?(?:,?\s*(\d+(?:\.\d+)?)\s*%)?/gi
-	]
+	],
+	// Last, so every sterile and bacteriostatic water is already blanked out:
+	// what is left is the oral powders' "add 69 mL of water", distilled or
+	// purified or plain, one general code.
+	['distilled water', /(?:(?:distilled|purified|tap)\s+)?water\b/gi]
 ];
 
 /** Diluents a stretch of label text names, in the order it names them. */

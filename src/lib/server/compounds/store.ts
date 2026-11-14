@@ -19,7 +19,7 @@ import {
 import { uniqueName } from '../../compounds/compound-naming';
 import { divide, fromNumber, type Rational } from '../../medication/rational';
 import {
-	RECONSTITUTION_ROUTES,
+	INJECTION_ROUTES,
 	type ReconstitutionRoute
 } from '../../labels/reconstitution-terms';
 
@@ -50,7 +50,7 @@ export interface StoredCompound {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const isRoute = (value: unknown): value is ReconstitutionRoute =>
-	RECONSTITUTION_ROUTES.includes(value as ReconstitutionRoute);
+	(INJECTION_ROUTES as readonly string[]).includes(value as string);
 const code = (error: unknown) => (error as { code?: string } | null)?.code;
 
 const DEFAULTS = {
@@ -367,7 +367,7 @@ export async function setSaved(db: PrismaClient, scopeId: string, id: string, sa
  * page flags any the labels no longer agree on for the new route.
  */
 export async function setRoute(db: PrismaClient, scopeId: string, id: string, route: unknown) {
-	if (!isRoute(route)) throw new CompoundError(`Choose a route: ${RECONSTITUTION_ROUTES.join(', ')}.`);
+	if (!isRoute(route)) throw new CompoundError(`Choose a route: ${INJECTION_ROUTES.join(', ')}.`);
 	await draftIn(db, scopeId, id);
 	await db.compoundFormula.update({ where: { id }, data: { route } });
 }

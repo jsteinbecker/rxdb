@@ -11,6 +11,7 @@ import {
 } from './reconstitution';
 import {
 	dedupeProseReconstitutions,
+	fromBottleRows,
 	fromReconstitutionRows,
 	parseBottleProse,
 	parseReconstitutionProse,
@@ -75,6 +76,14 @@ test('prose recognizes vial mass before the noun and adding phrasing', () => {
 		parseReconstitutionProse('Dilute the reconstituted solution with 50 mL to yield 5 mg/mL.'),
 		[]
 	);
+});
+
+test('prose reads "results in" as the yield (Trodelvy)', () => {
+	const rows = parseReconstitutionProse(
+		'Reconstitution with 20 mL of 0.9% Sodium Chloride Injection, USP, results in a concentration of 10 mg/mL with a pH of 6.5.'
+	);
+	assert.equal(rows[0]?.diluentMl, 20);
+	assert.equal(rows[0]?.concentrations[0]?.mgPerMl, 10);
 });
 
 test('incompatible yields are preserved as alternatives rather than merged', () => {
@@ -389,15 +398,15 @@ test('bottle tables pair each bottle with its water at the strength above it', (
 	assert.equal(parseCombinedConcentration('250 mg/62.5 mg per 5 mL'), 62.5);
 	assert.equal(parseCombinedConcentration('Oral Suspension 200 mg/5 mL'), 40);
 	assert.deepEqual(parseBottleTable(amoxicillinTable), [
-		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 40 },
-		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 40 },
-		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 80 },
-		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 80 }
+		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 40, diluents: ["distilled water"] },
+		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 40, diluents: ["distilled water"] },
+		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 80, diluents: ["distilled water"] },
+		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 80, diluents: ["distilled water"] }
 	]);
 	assert.deepEqual(parseBottleTable(amoxClavTable), [
-		{ bottleMl: 75, waterMl: 68, concentrationMgPerMl: 62.5 },
-		{ bottleMl: 100, waterMl: 86, concentrationMgPerMl: 62.5 },
-		{ bottleMl: 150, waterMl: 128, concentrationMgPerMl: 62.5 }
+		{ bottleMl: 75, waterMl: 68, concentrationMgPerMl: 62.5, diluents: ["distilled water"] },
+		{ bottleMl: 100, waterMl: 86, concentrationMgPerMl: 62.5, diluents: ["distilled water"] },
+		{ bottleMl: 150, waterMl: 128, concentrationMgPerMl: 62.5, diluents: ["distilled water"] }
 	]);
 	// A reconstitution table is not a bottle table.
 	assert.deepEqual(parseBottleTable(cefepimeTable), []);
@@ -409,8 +418,8 @@ test('bottle instructions in prose need the water they add', () => {
 			'Directions for mixing: 80 mL – Slowly add 80 mL water and shake vigorously. 150 mL – Slowly add 150 mL water and shake vigorously. The dose may be diluted in 1 oz of water.'
 		),
 		[
-			{ bottleMl: 80, waterMl: 80, concentrationMgPerMl: null },
-			{ bottleMl: 150, waterMl: 150, concentrationMgPerMl: null }
+			{ bottleMl: 80, waterMl: 80, concentrationMgPerMl: null, diluents: ["distilled water"] },
+			{ bottleMl: 150, waterMl: 150, concentrationMgPerMl: null, diluents: ["distilled water"] }
 		]
 	);
 });
@@ -513,4 +522,34 @@ test("a table's title names the diluent its columns leave unsaid", () => {
 		''
 	);
 	assert.equal(reconstitutionFromLabel({ spl_tables_table: [prose] })[0].diluents, undefined);
+});
+
+import { diluentsIn } from './reconstitution-terms';
+
+test("a carton's product routes do not override the instruction's own administration phrase", () => {
+	// Hikma 0143-9857's carton panel, as openFDA flattens it.
+	const rows = parseReconstitutionProse(
+		'CEFTRIAXONE FOR INJECTION, USP 2 grams/Vial EQUIVALENT TO 2 GRAMS CEFTRIAXONE FOR IV OR IM USE Single Dose Vial PROTECT FROM LIGHT For IM administration: Reconstitute with 4.2 mL 1% Lidocaine Hydrochloride Injection, USP or Sterile Water for Injection, USP. Each 1 mL of solution contains approximately 350 mg equivalent of ceftriaxone. For IV administration: Reconstitute with 19.2 mL of an IV diluent.'
+	);
+	assert.deepEqual(
+		rows.map((row) => [row.diluentMl, row.routes]),
+		[
+			[4.2, ['IM']],
+			[19.2, ['IV']]
+		]
+	);
+});
+
+test('plain, distilled and purified water are one oral diluent; sterile water stays SWFI', () => {
+	assert.deepEqual(diluentsIn('add 69 mL of water'), ['distilled water']);
+	assert.deepEqual(diluentsIn('Amount of Purified Water Required'), ['distilled water']);
+	assert.deepEqual(diluentsIn('distilled water'), ['distilled water']);
+	assert.deepEqual(diluentsIn('Sterile Water'), ['SWFI']);
+	assert.deepEqual(diluentsIn('Bacteriostatic Water for Injection'), ['BWFI']);
+	assert.deepEqual(diluentsIn('5% Dextrose in Water'), ['D5W']);
+});
+
+test('oral bottle rows are PO with their water', () => {
+	const [row] = fromBottleRows(parseBottleProse('100 mL bottle: add 69 mL of purified water and shake'));
+	assert.deepEqual([row.routes, row.diluents, row.finalVolumeMl], [['PO'], ['distilled water'], 100]);
 });

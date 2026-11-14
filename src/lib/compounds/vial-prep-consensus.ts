@@ -43,6 +43,8 @@ export interface ConsensusStep {
 	diluents: string[];
 	/** Routes every label that names a route assigns; empty when none says. */
 	routes: ReconstitutionRoute[];
+	/** An oral bottle's constituted volume; absent for a vial. */
+	bottleMl?: number;
 }
 
 export type VialPrepConsensus =
@@ -96,9 +98,15 @@ function mergeStep(rows: ProseReconstitution[]): ConsensusStep {
 				return !own.length || own.some((x) => near(x, value));
 			})) ?? null,
 		diluents: intersect(rows.map((row) => row.diluents)),
-		routes: intersect(rows.map((row) => row.routes))
+		routes: intersect(rows.map((row) => row.routes)),
+		...(rows[0].bottle && rows[0].finalVolumeMl != null ? { bottleMl: rows[0].finalVolumeMl } : {})
 	};
 }
+
+/** Both vial rows, or bottle rows of the same constituted volume. */
+const sameContainer = (a: ProseReconstitution, b: ProseReconstitution) =>
+	!!a.bottle === !!b.bottle &&
+	(!a.bottle || (a.finalVolumeMl != null && b.finalVolumeMl != null && near(a.finalVolumeMl, b.finalVolumeMl)));
 
 /** Whether a label instruction applies to `route`; one naming no route applies to all. */
 const forRoute = (row: ProseReconstitution, route: ReconstitutionRoute | null) =>
@@ -176,6 +184,8 @@ export function parseAdoptedVialPrep(value: unknown): AdoptedVialPrep | null {
 export interface VialPrepVariant {
 	step: ConsensusStep;
 	ndcs: string[];
+	/** Labels stating any step for this route and container (vial, or this bottle size). */
+	of: number;
 }
 
 /** Every step stated for one route (null: the labels name no route at all). */
@@ -222,14 +232,15 @@ export type VialPrepVariants =
  * route-less step is not counted missing from a route group.
  */
 export function vialPrepVariants(packages: readonly VialPrepPackage[]): VialPrepVariants {
-	const vialRows = (pkg: VialPrepPackage) => pkg.reconstitution.filter((row) => !row.bottle);
+	// Oral bottles are constituted too, and belong on the item's card (as PO).
+	const vialRows = (pkg: VialPrepPackage) => pkg.reconstitution;
 	const readyToUse = packages.filter((pkg) => pkg.isDryFill === false).map((pkg) => pkg.ndc);
 	const relevant = packages.filter((pkg) => pkg.isDryFill !== false);
 	if (!relevant.length || relevant.every((pkg) => pkg.isDryFill === null && !vialRows(pkg).length))
 		return { status: 'not-needed', readyToUse };
 
 	const named = [...new Set(relevant.flatMap((pkg) => vialRows(pkg).flatMap((row) => row.routes ?? [])))];
-	const order = (r: ReconstitutionRoute) => ['IV', 'IM', 'SC'].indexOf(r);
+	const order = (r: ReconstitutionRoute) => ['IV', 'IM', 'SC', 'PO'].indexOf(r);
 	const routes: (ReconstitutionRoute | null)[] = [...named.sort((a, b) => order(a) - order(b)), null];
 	const routeless = (pkg: VialPrepPackage) => vialRows(pkg).some((row) => !row.routes?.length);
 
@@ -243,7 +254,9 @@ export function vialPrepVariants(packages: readonly VialPrepPackage[]): VialPrep
 			);
 			if (!rows.length && (route ? !routeless(pkg) : !named.length)) missing.push(pkg.ndc);
 			for (const row of rows) {
-				const cluster = clusters.find((c) => c.rows.every((other) => sameStep(row, other)));
+				const cluster = clusters.find((c) =>
+					c.rows.every((other) => sameStep(row, other) && sameContainer(row, other))
+				);
 				if (!cluster) clusters.push({ rows: [row], ndcs: [pkg.ndc] });
 				else {
 					cluster.rows.push(row);
@@ -256,12 +269,29 @@ export function vialPrepVariants(packages: readonly VialPrepPackage[]): VialPrep
 			.map((c) => {
 				const step = mergeStep(c.rows);
 				// Within a route group the route is implied; keep only the group's.
-				return { step: { ...step, routes: route ? [route] : step.routes }, ndcs: c.ndcs };
+				return { step: { ...step, routes: route ? [route] : step.routes }, ndcs: c.ndcs, of: 0 };
 			})
-			.sort((a, b) => b.ndcs.length - a.ndcs.length || a.step.diluentMl - b.step.diluentMl);
-		const [top] = variants.map((v) => v.step);
+			.sort(
+				(a, b) =>
+					(a.step.bottleMl ?? 0) - (b.step.bottleMl ?? 0) ||
+					b.ndcs.length - a.ndcs.length ||
+					a.step.diluentMl - b.step.diluentMl
+			);
+		const topFor = (step: ConsensusStep) =>
+			variants.find((v) => size(v.step) === size(step))!.step;
 		const voters = new Set(clusters.flatMap((c) => c.ndcs)).size;
-		const agreed = (v: VialPrepVariant) => v.ndcs.length === voters;
+		// Agreement is judged among the labels stating a step for the same
+		// container: an 80 mL and a 150 mL bottle take different water and do
+		// not disagree, as two labels for one vial size would.
+		const size = (step: ConsensusStep) => step.bottleMl ?? 'vial';
+		const votersFor = (step: ConsensusStep) =>
+			new Set(
+				clusters
+					.filter((c) => size(mergeStep(c.rows)) === size(step))
+					.flatMap((c) => c.ndcs)
+			).size;
+		for (const variant of variants) variant.of = votersFor(variant.step);
+		const agreed = (v: VialPrepVariant) => v.ndcs.length === v.of;
 		groups.push({
 			route,
 			variants,
@@ -276,11 +306,16 @@ export function vialPrepVariants(packages: readonly VialPrepPackage[]): VialPrep
 			voters,
 			missing,
 			// An alternative every voter states is not a difference to flag.
-			differs: variants.map((variant) => ({ step: variant.step, agreed: agreed(variant) })).map(({ step, agreed }) => ({
-				diluentMl: !agreed && !near(step.diluentMl, top.diluentMl),
-				concentration: !agreed && step.concentrationMgPerMl !== top.concentrationMgPerMl,
-				diluents: !agreed && step.diluents.join() !== top.diluents.join()
-			}))
+			differs: variants.map((variant) => {
+				const { step } = variant;
+				const top = topFor(step);
+				const flag = !agreed(variant);
+				return {
+					diluentMl: flag && !near(step.diluentMl, top.diluentMl),
+					concentration: flag && step.concentrationMgPerMl !== top.concentrationMgPerMl,
+					diluents: flag && step.diluents.join() !== top.diluents.join()
+				};
+			})
 		});
 	}
 	const missing = relevant.filter((pkg) => !vialRows(pkg).length).map((pkg) => pkg.ndc);

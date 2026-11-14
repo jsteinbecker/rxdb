@@ -17,7 +17,7 @@
     type Line
   } from "#lib/compounds/compound-builder.ts";
   import { formatRational, serializeRational, type Rational } from "#lib/medication/rational.ts";
-  import { RECONSTITUTION_ROUTES } from '#lib/labels/reconstitution-terms.ts';
+  import { INJECTION_ROUTES } from '#lib/labels/reconstitution-terms.ts';
 
   let { data, form } = $props();
 
@@ -135,7 +135,7 @@
                 onchange={(event) => event.currentTarget.form?.requestSubmit()}
               >
                 <option value="" disabled>Choose…</option>
-                {#each RECONSTITUTION_ROUTES as route}<option value={route}>{route}</option>{/each}
+                {#each INJECTION_ROUTES as route}<option value={route}>{route}</option>{/each}
               </select>
             </label>
           </form>

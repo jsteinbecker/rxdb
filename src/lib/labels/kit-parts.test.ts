@@ -264,7 +264,9 @@ test("an oral bottle's per-5 mL strength is its concentration, and only its own 
 				diluentMl: 80,
 				concentrations: [{ name: null, mgPerMl: 50 }],
 				finalVolumeMl: 80,
-				bottle: true
+				bottle: true,
+				routes: ["PO"],
+				diluents: ["distilled water"]
 			}
 		]
 	);
@@ -321,4 +323,25 @@ test('titles read an oral powder by its concentration and a kit by its drug bott
 		}),
 		'Vancomycin hydrochloride 7.5 g kit'
 	);
+});
+
+test("a repackaged bottle whose size and strength the label never tabulates takes none of its rows", () => {
+	// 50090-2251: 150 mL of amoxicillin 250 mg/5 mL, on a label listing only
+	// the 200 and 400 mg/5 mL bottles.
+	const cell = (text: string) => `<td><paragraph>${text}</paragraph></td>`;
+	const label = {
+		dosage_and_administration_table: [
+			`<table><tbody><tr>${['Strength', 'Bottle Size', 'Amount of Water Required for Reconstitution'].map(cell).join('')}</tr>` +
+				`<tr>${['200 mg/5 mL', '50 mL', '39 mL'].map(cell).join('')}</tr>` +
+				`<tr>${['400 mg/5 mL', '100 mL', '68 mL'].map(cell).join('')}</tr></tbody></table>`
+		]
+	};
+	const facts = parsePackageFacts(
+		'50090225100',
+		'150 mL in 1 BOTTLE (50090-2251-0)',
+		'POWDER, FOR SUSPENSION',
+		[{ name: 'AMOXICILLIN', strength: '250 mg/5mL' }],
+		label
+	);
+	assert.deepEqual(facts.reconstitution, []);
 });

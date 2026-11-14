@@ -53,6 +53,7 @@ import {
 	diluentList,
 	diluentsIn,
 	type ReconstitutionRoute,
+	administrationRoutesIn,
 	routeList,
 	routesIn
 } from './reconstitution-terms.js';
@@ -171,15 +172,17 @@ const GOVERNING_VERB =
 	/\b(?<!(?:the|this|of|with)\s)(reconstitut\w*|dilut\w*|mix\w*|combin\w*|sweeten\w*|blend\w*)/gi;
 
 /** Where the resulting concentration is announced. */
-const YIELD = /\b(?:to|yield(?:s|ing)?|resulting in|providing|giving)\b[^]*$/i;
+const YIELD = /\b(?:to|yield(?:s|ing)?|result(?:s|ing)? in|providing|giving)\b[^]*$/i;
 
 /**
  * "200 mg/mL of piperacillin", "25 mg per mL of tazobactam", "100 mg/mL".
  * The ingredient tail is optional: a single-ingredient label states the
  * concentration bare, and attributing it to nothing is the honest reading.
+ * A trailing `with` starts a property of that solution, not more of its name:
+ * Trodelvy's "a concentration of 10 mg/mL with a pH of 6.5".
  */
 const CONCENTRATION =
-	/([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s*(?:\/|\s+per\s+)\s*mL\b(?:\s+of\s+([A-Za-z][A-Za-z' -]*?))?(?=\s*(?:and\b|[,.;:(]|$))/gi;
+	/([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s*(?:\/|\s+per\s+)\s*mL\b(?:\s+of\s+([A-Za-z][A-Za-z' -]*?))?(?=\s*(?:and\b|with\b|[,.;:(]|$))/gi;
 
 /**
  * Where a diluent clause ends and the sentence moves on — to the yield ("to
@@ -313,7 +316,10 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
 			// pair's; failing that, the last pair of a sentence may state it after
 			// ("with 10 mL ... for intravenous use"). Anything still unset inherits
 			// from its sibling or the heading, below.
-			const routes = routesIn(before);
+			// The nearest administration phrase wins over routes named earlier:
+			// a carton's "FOR IV OR IM USE" is the product's, and the "For IM
+			// administration:" just before the volume is the instruction's.
+			const routes = administrationRoutesIn(before) ?? routesIn(before);
 			if (!routes.length && !next) routes.push(...routesIn(own));
 
 			// The mass belonging to this pair is the last one stated before its
@@ -617,13 +623,23 @@ const BOTTLE_PROSE =
 
 export function parseBottleProse(
 	text: string
-): { bottleMl: number; waterMl: number; concentrationMgPerMl: null }[] {
-	const rows = new Map<string, { bottleMl: number; waterMl: number; concentrationMgPerMl: null }>();
+): { bottleMl: number; waterMl: number; concentrationMgPerMl: null; diluents: string[] }[] {
+	const rows = new Map<
+		string,
+		{ bottleMl: number; waterMl: number; concentrationMgPerMl: null; diluents: string[] }
+	>();
 	for (const match of text.matchAll(BOTTLE_PROSE)) {
 		const bottleMl = finite(Number(match[1]));
 		const waterMl = finite(Number(match[2]));
 		if (bottleMl === null || waterMl === null || waterMl > bottleMl * (1 + TOLERANCE)) continue;
-		rows.set(`${bottleMl}|${waterMl}`, { bottleMl, waterMl, concentrationMgPerMl: null });
+		// The pattern requires water; distilled, purified or plain is one code.
+		const diluents = diluentsIn(match[0]);
+		rows.set(`${bottleMl}|${waterMl}`, {
+			bottleMl,
+			waterMl,
+			concentrationMgPerMl: null,
+			diluents: diluents.length ? diluents : ['distilled water']
+		});
 	}
 	return [...rows.values()];
 }
@@ -632,9 +648,15 @@ export function parseBottleProse(
  * Bottle rows in the shape this module resolves. A bottle names no mass — its
  * content is whatever its strength times its volume comes to — so the row is
  * about any bottle of that finished volume, which is what `finalVolumeMl` says.
+ * A bottle is constituted to be swallowed: its route is oral.
  */
 export const fromBottleRows = (
-	rows: readonly { bottleMl: number; waterMl: number; concentrationMgPerMl: number | null }[]
+	rows: readonly {
+		bottleMl: number;
+		waterMl: number;
+		concentrationMgPerMl: number | null;
+		diluents?: string[];
+	}[]
 ): ProseReconstitution[] =>
 	rows.map((row) => ({
 		vialMassMg: null,
@@ -642,7 +664,8 @@ export const fromBottleRows = (
 		concentrations:
 			row.concentrationMgPerMl === null ? [] : [{ name: null, mgPerMl: row.concentrationMgPerMl }],
 		finalVolumeMl: row.bottleMl,
-		bottle: true
+		bottle: true,
+		...optionFields(['PO'], row.diluents)
 	}));
 
 /**

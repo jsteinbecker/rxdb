@@ -174,3 +174,31 @@ test('variants: a route-less step beside routed ones is unassigned', () => {
 	const result = stated([pkg('a', [row(9.6, 100, { routes: ['IV'] })]), pkg('b', [row(50, 20)])]);
 	assert.equal(result.groups.find((g) => g.route === null)!.status, 'unassigned');
 });
+
+test('variants: oral bottles of different sizes are PO steps that do not disagree', () => {
+	const bottle = (waterMl: number, bottleMl: number) => ({
+		vialMassMg: null,
+		diluentMl: waterMl,
+		concentrations: [],
+		finalVolumeMl: bottleMl,
+		bottle: true as const,
+		routes: ['PO' as const],
+		diluents: ['distilled water']
+	});
+	const result = stated([pkg('a', [bottle(47, 80)]), pkg('b', [bottle(90, 150)]), pkg('c', [bottle(47, 80)])]);
+	assert.equal(result.groups.length, 1);
+	const [po] = result.groups;
+	assert.equal(po.route, 'PO');
+	assert.equal(po.status, 'unanimous');
+	assert.deepEqual(po.variants.map((v) => [v.step.bottleMl, v.ndcs.length, v.of]), [[80, 2, 2], [150, 1, 1]]);
+	assert.deepEqual(po.variants[0].step.diluents, ['distilled water']);
+});
+
+test('variants: two labels disagreeing on one bottle size are a split', () => {
+	const bottle = (waterMl: number) => ({
+		vialMassMg: null, diluentMl: waterMl, concentrations: [], finalVolumeMl: 100, bottle: true as const, routes: ['PO' as const]
+	});
+	const [po] = stated([pkg('a', [bottle(60)]), pkg('b', [bottle(75)])]).groups;
+	assert.equal(po.status, 'split');
+	assert.deepEqual(po.differs[1].diluentMl, true);
+});
