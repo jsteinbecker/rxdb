@@ -53,7 +53,13 @@ import {
 import { appearancesByPackage } from '../../labels/spl-characteristics';
 import { correctDoseForm } from '../../labels/dose-form-correction';
 import { reconstitutionFromLabel } from '../../labels/reconstitution';
-import { labelSectionBlocks, sectionPlainText } from '../../labels/spl-sections';
+import {
+	type LabelBlock,
+	labelSectionBlocks,
+	sectionPlainText,
+	type UnclassifiedSection,
+	unclassifiedSections
+} from '../../labels/spl-sections';
 import { labelScope } from '../../labels/label-relevance';
 import { deliveredAmount } from '../../labels/overfill';
 import {
@@ -86,6 +92,27 @@ const LABEL_SECTIONS: [string, string][] = [
 	['instructions_for_use', 'Instructions for use'],
 	['package_label_principal_display_panel', 'Principal display panel']
 ];
+
+/** Known label sections with the SPL's unclassified ones ("DIRECTIONS FOR USE")
+ * slotted in where the document has them: after the known section they follow,
+ * or at the end if that one isn't shown. */
+function withUnclassified<T extends { key: string; title: string; text: string }>(
+	known: T[],
+	extra: UnclassifiedSection[]
+): (T | { key: string; title: string; text: string; blocks: LabelBlock[] })[] {
+	const shown = new Set(known.map((s) => s.key));
+	const asSection = (x: UnclassifiedSection) => ({
+		key: x.key,
+		title: x.title,
+		text: sectionPlainText(x.blocks) ?? '',
+		blocks: x.blocks
+	});
+	return [
+		...extra.filter((x) => x.after === null).map(asSection),
+		...known.flatMap((s) => [s, ...extra.filter((x) => x.after === s.key).map(asSection)]),
+		...extra.filter((x) => x.after !== null && !shown.has(x.after)).map(asSection)
+	];
+}
 
 const strings = (value: unknown): string[] =>
 	Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
@@ -624,6 +651,8 @@ export async function enrichPackages(
 		// The label's words, the evidence for whose mass a salt's number is.
 		const splText = xml ? splPlainText(xml) : null;
 		const sectionBlocks = xml ? labelSectionBlocks(xml) : {};
+		// Manufacturer sections with no standard code ("DIRECTIONS FOR USE"), shown by their own title.
+		const extraSections = xml ? unclassifiedSections(xml) : [];
 		// Who else this label speaks to — the suspension beside these tablets,
 		// the other vial sizes — so the page can set their passages aside.
 		// Stored with the label rather than applied here, so a snapshot keeps
@@ -895,11 +924,14 @@ export async function enrichPackages(
 						setId: labelRow.set_id ?? null,
 						siblingNdc: labelSiblingNdc ?? splSiblingNdc,
 						scope,
-						sections: LABEL_SECTIONS.flatMap(([key, title]) => {
-							const text = strings(labelRow[key]).join('\n\n').trim();
-							const blocks = sectionBlocks[key];
-							return text || blocks ? [{ key, title, text, ...(blocks ? { blocks } : {}) }] : [];
-						})
+						sections: withUnclassified(
+							LABEL_SECTIONS.flatMap(([key, title]) => {
+								const text = strings(labelRow[key]).join('\n\n').trim();
+								const blocks = sectionBlocks[key];
+								return text || blocks ? [{ key, title, text, ...(blocks ? { blocks } : {}) }] : [];
+							}),
+							extraSections
+						)
 					}
 				: null,
 			spl: splHit

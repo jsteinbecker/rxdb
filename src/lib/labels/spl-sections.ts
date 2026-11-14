@@ -344,6 +344,56 @@ export function labelSectionBlocks(xml: string): Record<string, LabelBlock[]> {
 	return out;
 }
 
+/** LOINC "SPL unclassified section": a manufacturer section with no standard code. */
+const UNCLASSIFIED = '42229-5';
+
+export interface UnclassifiedSection {
+	key: string;
+	title: string;
+	blocks: LabelBlock[];
+	/** The `SECTION_CODES` key of the nearest known top-level section before it, or null if none. */
+	after: string | null;
+}
+
+function findTag(node: Node, tag: string): Node | null {
+	for (const child of elements(node)) {
+		if (child.tag === tag) return child;
+		const found = findTag(child, tag);
+		if (found) return found;
+	}
+	return null;
+}
+
+/**
+ * Top-level unclassified sections that carry a title ("DIRECTIONS FOR USE"),
+ * in document order, each noting which known section it follows so the page
+ * can show it where the label has it. Subsections are already part of their
+ * parent's blocks.
+ */
+export function unclassifiedSections(xml: string): UnclassifiedSection[] {
+	const body = findTag(parse(xml), 'structuredBody');
+	if (!body) return [];
+	const keyOf = new Map(Object.entries(SECTION_CODES).flatMap(([key, codes]) => codes.map((c) => [c, key] as const)));
+	const out: UnclassifiedSection[] = [];
+	let after: string | null = null;
+	for (const component of elements(body, 'component')) {
+		for (const section of elements(component, 'section')) {
+			const code = sectionCode(section);
+			if (code && keyOf.has(code)) {
+				after = keyOf.get(code)!;
+				continue;
+			}
+			if (code !== UNCLASSIFIED) continue;
+			const titleNode = elements(section, 'title')[0];
+			const title = titleNode ? textOf(titleNode) : '';
+			if (!title) continue;
+			const blocks = blocksOf(section, 1);
+			if (blocks.length) out.push({ key: `unclassified_${out.length + 1}`, title, blocks, after });
+		}
+	}
+	return out;
+}
+
 /**
  * A section's blocks as plain text, one line per paragraph, list item and
  * table row, so a row's NDC stays on the line with the rest of that row.
