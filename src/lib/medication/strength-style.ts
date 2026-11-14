@@ -12,6 +12,7 @@
 
 import { mgPer, mlPer } from './units';
 import { parseStrengthParts } from './strength';
+import { memberMatches, type EquivalenceGroup } from '../formulary/equivalence';
 
 export type StrengthStyle = 'percent' | 'ratio';
 
@@ -23,8 +24,10 @@ export type StrengthStyleRule = {
 	ingredient: string;
 	/** Other ingredients the product must also contain ("lidocaine"); empty for any product. */
 	withIngredients: string[];
-	/** Dose form text the name must contain ("Injection"); null for any form. */
+	/** Dose form text the name must contain, so also its downstream forms ("Injection" covers "Injection, Solution"); null for any form. */
 	doseForm: string | null;
+	/** Derived, never saved: forms equivalent to `doseForm` or a form downstream of it. */
+	equivalentForms?: string[];
 	style: StrengthStyle;
 };
 
@@ -146,6 +149,46 @@ function namesIngredient(rule: string, ingredient: string): boolean {
 /** Lowercase with `-ion`/`-able` endings dropped, so "Injection" matches "Injectable Solution". */
 const formStem = (form: string) => form.toLowerCase().replace(/(?:ion|able)\b/g, '');
 
+/** Whether a form is the rule's form or downstream of it: "Injection" → "Injection, Solution". */
+const formCovers = (ruleForm: string, form: string) => formStem(form).includes(formStem(ruleForm));
+
+/** Separates the parts of a {@link formContext}, each a whole form or route. */
+const FORM_SEPARATOR = ' · ';
+
+/**
+ * Each rule with the forms it reaches through equivalence groups: a group with
+ * a member at or downstream of the rule's form brings in all of its members.
+ * With "Injection, Solution" and "Solution" grouped, an "Injection" rule also
+ * covers "Solution".
+ */
+export function withEquivalentForms(
+	rules: StrengthStyleRule[],
+	groups: EquivalenceGroup[]
+): StrengthStyleRule[] {
+	const forms = groups
+		.filter((group) => group.dimension === 'doseForm')
+		.map((group) => [group.display, ...group.members]);
+	return rules.map((rule) => {
+		const { equivalentForms: _, ...plain } = rule;
+		const ruleForm = rule.doseForm;
+		if (!ruleForm) return plain;
+		const reached = forms
+			.filter((members) => members.some((member) => formCovers(ruleForm, member.replace(/\*/g, ' '))))
+			.flat();
+		return reached.length ? { ...plain, equivalentForms: [...new Set(reached)] } : plain;
+	});
+}
+
+/** Whether a rule's form covers a product's form text, directly or through an equivalence group. */
+function ruleCoversForm(rule: StrengthStyleRule, doseForm: string): boolean {
+	if (!rule.doseForm || formCovers(rule.doseForm, doseForm)) return true;
+	// Whole forms only: a grouped "Solution" must not reach "Oral Solution".
+	const parts = doseForm.replace(/\[[^\]]*\]/g, '').split(FORM_SEPARATOR);
+	return !!rule.equivalentForms?.some((member) =>
+		parts.some((part) => part.trim() && memberMatches(member, part))
+	);
+}
+
 /**
  * The rule for an ingredient in a dose form, beside the product's other
  * ingredients. The most specific wins: more companions named, then a dose form.
@@ -156,11 +199,10 @@ export function ruleFor(
 	doseForm: string,
 	others: string[] = []
 ): StrengthStyleRule | null {
-	const form = formStem(doseForm);
 	const matching = rules.filter(
 		(rule) =>
 			namesIngredient(rule.ingredient, ingredient) &&
-			(!rule.doseForm || form.includes(formStem(rule.doseForm))) &&
+			ruleCoversForm(rule, doseForm) &&
 			rule.withIngredients.every((companion) =>
 				others.some((other) => namesIngredient(companion, other))
 			)
@@ -250,5 +292,5 @@ export function formContext(
 	return [tail.replace(/\[[^\]]*\]/g, ''), doseForm ?? '', ...routes]
 		.map((part) => part.trim())
 		.filter(Boolean)
-		.join(' ');
+		.join(FORM_SEPARATOR);
 }

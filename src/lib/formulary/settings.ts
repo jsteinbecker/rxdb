@@ -18,7 +18,7 @@ import {
 } from './hierarchy';
 import { type EquivalenceGroup, parseEquivalenceGroups } from './equivalence';
 import { DEFAULT_NAMING, parseNaming, type CompoundNaming } from '../compounds/compound-naming';
-import { parseStrengthStyles, type StrengthStyleRule } from '../medication/strength-style';
+import { parseStrengthStyles, withEquivalentForms, type StrengthStyleRule } from '../medication/strength-style';
 
 export type ExpandDepth = 'none' | 'first' | 'all';
 
@@ -128,6 +128,10 @@ export function parseSettings(value: unknown): FormularySettings {
 		views.find((view) => view.name === defaultView)?.levels ??
 		validLevels(raw.defaultLevels) ??
 		DEFAULT_SETTINGS.defaultLevels;
+	const equivalenceGroups = parseEquivalenceGroups(
+		raw.equivalenceGroups,
+		new Set(DIMENSION_BY_KEY.keys())
+	);
 	return {
 		defaultLevels: levels,
 		views,
@@ -143,11 +147,8 @@ export function parseSettings(value: unknown): FormularySettings {
 			typeof raw.uniformImprintSize === 'boolean'
 				? raw.uniformImprintSize
 				: DEFAULT_SETTINGS.uniformImprintSize,
-		equivalenceGroups: parseEquivalenceGroups(
-			raw.equivalenceGroups,
-			new Set(DIMENSION_BY_KEY.keys())
-		),
-		strengthStyles: parseStrengthStyles(raw.strengthStyles),
+		equivalenceGroups,
+		strengthStyles: withEquivalentForms(parseStrengthStyles(raw.strengthStyles), equivalenceGroups),
 		compoundNaming: parseNaming(raw.compoundNaming),
 		comboDoseDisplay: Object.fromEntries(
 			Object.entries(

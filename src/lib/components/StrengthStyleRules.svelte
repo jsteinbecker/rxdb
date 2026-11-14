@@ -11,6 +11,7 @@ only where the draft is the rule that wins.
 		STRENGTH_STYLES,
 		ruleFor,
 		styleStrength,
+		withEquivalentForms,
 		type StrengthStyle,
 		type StrengthStyleRule
 	} from '#lib/medication/strength-style.ts';
@@ -24,6 +25,7 @@ only where the draft is the rule that wins.
 		ingredients,
 		doseForms,
 		samples,
+		equivalenceGroups,
 		message = null
 	}: {
 		/** The saved rules. */
@@ -34,6 +36,8 @@ only where the draft is the rule that wins.
 		doseForms: string[];
 		/** The formulary's products, for previewing a draft rule. */
 		samples: StrengthSample[];
+		/** The formulary's equivalence groups, which widen a draft rule's dose form. */
+		equivalenceGroups: EquivalenceGroup[];
 		/** An error from the last save or delete. */
 		message?: string | null;
 	} = $props();
@@ -77,12 +81,17 @@ only where the draft is the rule that wins.
 
 	const draft = $derived<StrengthStyleRule | null>(
 		ingredient.trim()
-			? {
-					ingredient: ingredient.trim(),
-					withIngredients: companions,
-					doseForm: doseForm.trim() || null,
-					style
-				}
+			? withEquivalentForms(
+					[
+						{
+							ingredient: ingredient.trim(),
+							withIngredients: companions,
+							doseForm: doseForm.trim() || null,
+							style
+						}
+					],
+					equivalenceGroups
+				)[0]
 			: null
 	);
 

@@ -25,7 +25,7 @@ packages that carry it. Strengths follow the item's display style.
             itemStyle?: string | null;
       } = $props();
 
-      const strengthForm = $derived(formContext(title, summary.doseForms.map((entry) => entry.value).join(' '), summary.routes.map((entry) => entry.value)));
+      const strengthForm = $derived(formContext(title, summary.doseForms.map((entry) => entry.value).join(' · '), summary.routes.map((entry) => entry.value)));
       /** An active ingredient's strengths as the display rules show them; the stored value is the hover. */
       const shownStrengths = (name: string, list: Tally[]): Tally[] =>
             list.map((entry) => {

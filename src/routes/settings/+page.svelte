@@ -401,6 +401,7 @@
 			ingredients={data.dimensionValues.ingredient?.map((value) => value.label) ?? []}
 			doseForms={data.dimensionValues.doseForm?.map((value) => value.label) ?? []}
 			samples={data.strengthSamples}
+			equivalenceGroups={data.settings.equivalenceGroups}
 			message={form?.section === 'strengthStyles' && 'message' in form ? form.message : null}
 		/>
 	</section>

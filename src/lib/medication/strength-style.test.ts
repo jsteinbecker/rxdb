@@ -7,7 +7,8 @@ import {
 	ruleFor,
 	ruleKey,
 	styleStrength,
-	stylesForItem
+	stylesForItem,
+	withEquivalentForms
 } from './strength-style';
 
 const RULES = parseStrengthStyles([
@@ -237,7 +238,7 @@ test('an item style replaces the formulary rules for that item', () => {
 test('formContext gathers the form a title ends in, the label form and routes', () => {
 	assert.equal(
 		formContext('Hydrocortisone 10 MG/G Topical Cream [Cortaid]', 'CREAM', ['TOPICAL']),
-		'Topical Cream CREAM TOPICAL'
+		'Topical Cream · CREAM · TOPICAL'
 	);
 	assert.equal(formContext(null, 'INJECTION, SOLUTION'), 'INJECTION, SOLUTION');
 	// The label's form alone still matches a rule for "Injection".
@@ -251,4 +252,35 @@ test('a strength list without a dose form takes the form from context', () => {
 		applyStrengthStyles(strengths, RULES, 'INJECTION, SOLUTION'),
 		'EPINEPHrine 1:100,000 / lidocaine hydrochloride 20 MG/ML'
 	);
+});
+
+test('a dose form rule covers its downstream forms and their equivalence groups', () => {
+	const groups = [
+		{ dimension: 'doseForm', display: 'Solution', members: ['Injection, Solution', 'Solution'] },
+		{ dimension: 'doseForm', display: 'Tablet', members: ['Tablet', 'Tablet, Coated'] },
+		{ dimension: 'route', display: 'Solution', members: ['Injection', 'Cream'] }
+	];
+	const rules = withEquivalentForms(
+		parseStrengthStyles([{ ingredient: 'sodium chloride', style: 'percent', doseForm: 'Injection' }]),
+		groups
+	);
+	const covers = (form: string) => ruleFor(rules, 'sodium chloride', form)?.style ?? null;
+	assert.equal(covers('Injection'), 'percent');
+	assert.equal(covers('Injection, Solution'), 'percent');
+	assert.equal(covers('Injection, Solution, Concentrate'), 'percent');
+	assert.equal(covers('Solution'), 'percent');
+	assert.equal(covers(formContext(null, 'SOLUTION', ['ORAL'])), 'percent');
+	assert.equal(covers('Oral Solution'), null);
+	assert.equal(covers('Tablet'), null);
+	assert.equal(covers('Cream'), null);
+});
+
+test('a dose form rule is unwidened when no group reaches it', () => {
+	const groups = [{ dimension: 'doseForm', display: 'Solution', members: ['Injection, Solution', 'Solution'] }];
+	const [rule] = withEquivalentForms(
+		parseStrengthStyles([{ ingredient: 'sodium chloride', style: 'percent', doseForm: 'Cream' }]),
+		groups
+	);
+	assert.equal(rule.equivalentForms, undefined);
+	assert.equal(ruleFor([rule], 'sodium chloride', 'Solution'), null);
 });
