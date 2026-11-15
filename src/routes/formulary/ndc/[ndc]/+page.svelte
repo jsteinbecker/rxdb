@@ -172,7 +172,7 @@
                   <p>It leaves the quarantine list and stays on the formulary without reconstitution instructions.</p>
                   <label>
                         Reason
-                        <textarea name="reason" maxlength="500" required rows="3"></textarea>
+                        <textarea name="reason" maxlength="500" required rows="3" value={quarantine ? QUARANTINE_LABELS[quarantine] : ''}></textarea>
                   </label>
                   {#if form?.message}<p class="error">{form.message}</p>{/if}
                   <div class="dialog-actions">
@@ -196,7 +196,7 @@
                   <p>It is unlinked from any formulary item and skipped by future loads.</p>
                   <label>
                         Reason
-                        <textarea name="reason" maxlength="500" required rows="3"></textarea>
+                        <textarea name="reason" maxlength="500" required rows="3" value={quarantine ? QUARANTINE_LABELS[quarantine] : ''}></textarea>
                   </label>
                   {#if form?.message}<p class="error">{form.message}</p>{/if}
                   <div class="dialog-actions">

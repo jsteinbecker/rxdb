@@ -35,7 +35,6 @@ packages that carry it. Strengths follow the item's display style.
 
       let labelsOpen = $state(false);
       const total = $derived(summary.packageCount);
-      const today = new Date().toISOString().slice(0, 10);
       const ndcList = (ndcs: string[]) => ndcs.map(formatNdc).join(', ');
       const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
       const range = (span: { earliest: string; latest: string }) =>
@@ -48,10 +47,6 @@ packages that carry it. Strengths follow the item's display style.
                   {label: 'Not in the NDC directory', ndcs: summary.unlisted},
                   {label: 'Inactivated on DailyMed', ndcs: summary.inactivated},
                   {label: 'Veterinary', ndcs: summary.veterinary},
-                  ...summary.ended.map((entry) => ({
-                        label: `Marketing ${entry.value > today ? 'ends' : 'ended'} ${entry.value}`,
-                        ndcs: entry.ndcs
-                  })),
                   ...summary.statuses
                         .filter((entry) => entry.value !== 'active')
                         .map((entry) => ({label: `Catalog status: ${entry.value}`, ndcs: entry.ndcs}))

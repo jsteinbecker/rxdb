@@ -23,6 +23,25 @@
       let {data, form} = $props();
 
       let draft = $state('');
+      /** Once the page title scrolls out of view, the identity panel takes it over. */
+      let titleEl = $state<HTMLElement>();
+      let titleDocked = $state(false);
+      $effect(() => {
+            const el = titleEl;
+            if (!el) return;
+            // --sticky-top is the height of the fixed top bar, usually in rem.
+            const raw = getComputedStyle(el).getPropertyValue('--sticky-top').trim();
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const top = (parseFloat(raw) || 0) * (raw.endsWith('rem') ? rem : 1);
+            const update = () => (titleDocked = el.getBoundingClientRect().bottom <= top);
+            update();
+            window.addEventListener('scroll', update, {passive: true});
+            window.addEventListener('resize', update, {passive: true});
+            return () => {
+                  window.removeEventListener('scroll', update);
+                  window.removeEventListener('resize', update);
+            };
+      });
       let editingBrands = $state(false);
       let editingRelease = $state(false);
       let editingName = $state(false);
@@ -124,7 +143,7 @@
                   {level}
             {/snippet}
             {#snippet title()}
-                  <h1 class="title-row">{@render displayName(item)}
+                  <h1 class="title-row" bind:this={titleEl}>{@render displayName(item)}
                         {@render editToggle(editingName, 'display name', () => {
                               editingName = !editingName;
                               nameDraft = item.nameOverride ?? item.sourceName;
@@ -244,6 +263,12 @@
       <div class="layout">
       <aside class="identity">
       <section aria-labelledby="brands-heading" class="field brands">
+            <div class="docked-title" class:shown={titleDocked} aria-hidden={!titleDocked}>
+                  <div>
+                        <span class="docked-level">{level}</span>
+                        <p class="docked-name">{@render displayName(item)}</p>
+                  </div>
+            </div>
             <div class="field-head">
                   <h2 id="brands-heading">Brand names</h2>
                   {@render editToggle(editingBrands, 'brand names', () => {
@@ -1111,6 +1136,52 @@
                   linear-gradient(160deg, #142033, #0b111b);
             color: #f4f7fb;
             padding: 1.1rem 1rem 1.25rem;
+      }
+
+      /* The page title, folded into the band once it scrolls away. */
+      .docked-title {
+            display: grid;
+            grid-template-rows: 0fr;
+            opacity: 0;
+            transform: translateY(-0.4rem);
+            transition: grid-template-rows 280ms ease, opacity 220ms ease, transform 280ms ease, margin 280ms ease;
+      }
+
+      .docked-title > div {
+            overflow: hidden;
+            min-height: 0;
+      }
+
+      .docked-title.shown {
+            grid-template-rows: 1fr;
+            opacity: 1;
+            transform: none;
+            margin-bottom: 0.9rem;
+      }
+
+      .docked-level {
+            display: block;
+            color: #8ea3c0;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+      }
+
+      .docked-name {
+            margin: 0.2rem 0 0;
+            padding-bottom: 0.9rem;
+            border-bottom: 1px solid rgb(255 255 255 / 12%);
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.3;
+            color: white;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+            .docked-title {
+                  transition: none;
+            }
       }
 
       .brands h2 {
