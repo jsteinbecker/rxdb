@@ -32,7 +32,7 @@ import { refineAppearances } from '#lib/labels/spl-appearance-text.ts';
 import type { PillImageLayout, PillPhotoRef } from '#lib/imprints/pill-image-layout.ts';
 import { storedPillPhotos } from '#lib/server/media/pill-photo.ts';
 import { localPillPhotos } from '#lib/server/media/local-pill-photos.ts';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import {
 	labelPhoto,
 	loadPillImageLayouts,
