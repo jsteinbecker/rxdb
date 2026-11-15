@@ -469,7 +469,10 @@ export const ModelName = {
   ProductFormPackage: 'ProductFormPackage',
   ProductFormRoute: 'ProductFormRoute',
   ProductFormRoutePrep: 'ProductFormRoutePrep',
-  ProductFormRouteOverride: 'ProductFormRouteOverride'
+  ProductFormRouteOverride: 'ProductFormRouteOverride',
+  SourcePayload: 'SourcePayload',
+  SplLabel: 'SplLabel',
+  SplLabelSection: 'SplLabelSection'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -485,7 +488,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow" | "packageCuration" | "packageReviewPreview" | "productForm" | "productFormIngredient" | "productFormStrength" | "productFormPackage" | "productFormRoute" | "productFormRoutePrep" | "productFormRouteOverride"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow" | "packageCuration" | "packageReviewPreview" | "productForm" | "productFormIngredient" | "productFormStrength" | "productFormPackage" | "productFormRoute" | "productFormRoutePrep" | "productFormRouteOverride" | "sourcePayload" | "splLabel" | "splLabelSection"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -5891,6 +5894,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SourcePayload: {
+      payload: Prisma.$SourcePayloadPayload<ExtArgs>
+      fields: Prisma.SourcePayloadFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SourcePayloadFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SourcePayloadFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>
+        }
+        findFirst: {
+          args: Prisma.SourcePayloadFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SourcePayloadFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>
+        }
+        findMany: {
+          args: Prisma.SourcePayloadFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>[]
+        }
+        create: {
+          args: Prisma.SourcePayloadCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>
+        }
+        createMany: {
+          args: Prisma.SourcePayloadCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SourcePayloadCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>[]
+        }
+        delete: {
+          args: Prisma.SourcePayloadDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>
+        }
+        update: {
+          args: Prisma.SourcePayloadUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>
+        }
+        deleteMany: {
+          args: Prisma.SourcePayloadDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SourcePayloadUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SourcePayloadUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>[]
+        }
+        upsert: {
+          args: Prisma.SourcePayloadUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SourcePayloadPayload>
+        }
+        aggregate: {
+          args: Prisma.SourcePayloadAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSourcePayload>
+        }
+        groupBy: {
+          args: Prisma.SourcePayloadGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SourcePayloadGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SourcePayloadCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SourcePayloadCountAggregateOutputType> | number
+        }
+      }
+    }
+    SplLabel: {
+      payload: Prisma.$SplLabelPayload<ExtArgs>
+      fields: Prisma.SplLabelFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SplLabelFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SplLabelFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>
+        }
+        findFirst: {
+          args: Prisma.SplLabelFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SplLabelFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>
+        }
+        findMany: {
+          args: Prisma.SplLabelFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>[]
+        }
+        create: {
+          args: Prisma.SplLabelCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>
+        }
+        createMany: {
+          args: Prisma.SplLabelCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SplLabelCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>[]
+        }
+        delete: {
+          args: Prisma.SplLabelDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>
+        }
+        update: {
+          args: Prisma.SplLabelUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>
+        }
+        deleteMany: {
+          args: Prisma.SplLabelDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SplLabelUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SplLabelUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>[]
+        }
+        upsert: {
+          args: Prisma.SplLabelUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelPayload>
+        }
+        aggregate: {
+          args: Prisma.SplLabelAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSplLabel>
+        }
+        groupBy: {
+          args: Prisma.SplLabelGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SplLabelGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SplLabelCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SplLabelCountAggregateOutputType> | number
+        }
+      }
+    }
+    SplLabelSection: {
+      payload: Prisma.$SplLabelSectionPayload<ExtArgs>
+      fields: Prisma.SplLabelSectionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SplLabelSectionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SplLabelSectionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>
+        }
+        findFirst: {
+          args: Prisma.SplLabelSectionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SplLabelSectionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>
+        }
+        findMany: {
+          args: Prisma.SplLabelSectionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>[]
+        }
+        create: {
+          args: Prisma.SplLabelSectionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>
+        }
+        createMany: {
+          args: Prisma.SplLabelSectionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SplLabelSectionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>[]
+        }
+        delete: {
+          args: Prisma.SplLabelSectionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>
+        }
+        update: {
+          args: Prisma.SplLabelSectionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>
+        }
+        deleteMany: {
+          args: Prisma.SplLabelSectionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SplLabelSectionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SplLabelSectionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>[]
+        }
+        upsert: {
+          args: Prisma.SplLabelSectionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SplLabelSectionPayload>
+        }
+        aggregate: {
+          args: Prisma.SplLabelSectionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSplLabelSection>
+        }
+        groupBy: {
+          args: Prisma.SplLabelSectionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SplLabelSectionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SplLabelSectionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SplLabelSectionCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -6230,7 +6455,8 @@ export const SourceRecordScalarFieldEnum = {
   sourceUrl: 'sourceUrl',
   observedAt: 'observedAt',
   payload: 'payload',
-  payloadHash: 'payloadHash'
+  payloadHash: 'payloadHash',
+  payloadRef: 'payloadRef'
 } as const
 
 export type SourceRecordScalarFieldEnum = (typeof SourceRecordScalarFieldEnum)[keyof typeof SourceRecordScalarFieldEnum]
@@ -7062,6 +7288,37 @@ export const ProductFormRouteOverrideScalarFieldEnum = {
 export type ProductFormRouteOverrideScalarFieldEnum = (typeof ProductFormRouteOverrideScalarFieldEnum)[keyof typeof ProductFormRouteOverrideScalarFieldEnum]
 
 
+export const SourcePayloadScalarFieldEnum = {
+  hash: 'hash',
+  payload: 'payload'
+} as const
+
+export type SourcePayloadScalarFieldEnum = (typeof SourcePayloadScalarFieldEnum)[keyof typeof SourcePayloadScalarFieldEnum]
+
+
+export const SplLabelScalarFieldEnum = {
+  hash: 'hash',
+  setId: 'setId',
+  version: 'version',
+  effectiveTime: 'effectiveTime',
+  createdAt: 'createdAt'
+} as const
+
+export type SplLabelScalarFieldEnum = (typeof SplLabelScalarFieldEnum)[keyof typeof SplLabelScalarFieldEnum]
+
+
+export const SplLabelSectionScalarFieldEnum = {
+  labelHash: 'labelHash',
+  position: 'position',
+  key: 'key',
+  title: 'title',
+  text: 'text',
+  blocks: 'blocks'
+} as const
+
+export type SplLabelSectionScalarFieldEnum = (typeof SplLabelSectionScalarFieldEnum)[keyof typeof SplLabelSectionScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -7640,6 +7897,9 @@ export type GlobalOmitConfig = {
   productFormRoute?: Prisma.ProductFormRouteOmit
   productFormRoutePrep?: Prisma.ProductFormRoutePrepOmit
   productFormRouteOverride?: Prisma.ProductFormRouteOverrideOmit
+  sourcePayload?: Prisma.SourcePayloadOmit
+  splLabel?: Prisma.SplLabelOmit
+  splLabelSection?: Prisma.SplLabelSectionOmit
 }
 
 /* Types for Logging */

@@ -59,7 +59,12 @@ import type { LabelScope } from './label-relevance';
 import { toMg } from '../medication/units';
 
 export type DoseFormEvidenceKind =
-	'declaration' | 'description' | 'preparation' | 'reconstitution-table';
+	| 'declaration'
+	| 'description'
+	| 'preparation'
+	| 'reconstitution-table'
+	| 'rxnorm'
+	| 'route';
 
 export interface DoseFormEvidence {
 	kind: DoseFormEvidenceKind;
@@ -94,6 +99,10 @@ export interface DoseFormInput {
 	siblingCodes?: string[];
 	/** The strengths this NDC and its label siblings come in (`labelScope`). */
 	scope?: LabelScope | null;
+	/** RxNorm's dose form for this NDC's concept ("Injection", "Injectable Suspension"). */
+	rxNormDoseForm?: string | null;
+	/** Routes from the directory, RxNorm and the label, in any spelling. */
+	routes?: string[];
 }
 
 interface Rule {
@@ -308,7 +317,7 @@ function describe(input: DoseFormInput, from: string): Described {
  * it — or null when the imported form is not a known miscoding target, the
  * evidence is incomplete, or anything argues against it.
  */
-export function correctDoseForm(input: DoseFormInput): DoseFormCorrection | null {
+function correctLiquidCoding(input: DoseFormInput): DoseFormCorrection | null {
 	if (!input.doseForm) return null;
 	const from = normalize(input.doseForm);
 	const rule = RULES[from];
@@ -355,4 +364,79 @@ export function correctDoseForm(input: DoseFormInput): DoseFormCorrection | null
 	const suspension = described?.suspension || SUSPENSION_ARTICLE.test(identityText);
 	const to = (lyophilized && rule.lyophilized) || (suspension && rule.suspension) || rule.to;
 	return { from: input.doseForm, to, evidence };
+}
+
+/**
+ * An injectable powder coded "for suspension" that makes a solution.
+ *
+ * Mylan's leucovorin calcium vials (67457-528/-529/-530) are coded
+ * `INJECTION, POWDER, LYOPHILIZED, FOR SUSPENSION`, yet the label gives a
+ * reconstituted concentration in mg/mL, directs slow intravenous injection,
+ * never says "suspension", and RxNorm maps the NDCs to a plain `Injection`
+ * SCD. Every other labeler codes the same article `… FOR SOLUTION`.
+ *
+ * All of the following are required, since a real injectable suspension
+ * (paclitaxel protein-bound, IV) is not rare:
+ *
+ * - RxNorm has a dose form for the NDC and it is not a suspension. This is
+ *   the arbiter; without it nothing changes.
+ * - No label text — identity, instructions or description — uses the word
+ *   "suspension" (or "suspend", "shake well") outside a diluent's name, nor
+ *   names a dispersed article: liposomes, particles, microspheres, emulsions.
+ * - The product is routed intravenously. Label prose calling something a
+ *   "solution" is not enough: it is as often a diluent or co-medication
+ *   ("sodium bicarbonate solution") as the product.
+ */
+const SUSPENSION_POWDER = /^INJECTION, POWDER(, LYOPHILIZED)?, FOR SUSPENSION$/;
+// A suspension by any other name: liposomes (Vyxeos, which RxNorm files as
+// plain "Injection"), protein-bound particles, microspheres, emulsions.
+const SUSPENSION_WORD =
+	/\bsuspen(?:sion|sions|ded|d)\b|\bresuspend|\bshake\s+well\b|\bmilky\b|\bliposom|\bdispersion\b|\bopaque\b|\bparticles?\b|\bmicrospheres?\b|\bemulsion\b|\bcolloid/i;
+const INTRAVENOUS = /\bintravenous(?:ly)?\b|^IV$/i;
+
+function correctSuspensionCoding(
+	form: string,
+	input: DoseFormInput
+): DoseFormCorrection | null {
+	const from = normalize(form);
+	const match = SUSPENSION_POWDER.exec(from);
+	if (!match) return null;
+	const rx = input.rxNormDoseForm?.trim();
+	if (!rx || /suspension/i.test(rx)) return null;
+	const sources = { ...input.identity, ...input.instructions, ...(input.supplied ?? {}) };
+	// Titles generated from the coding ("… injection, powder, lyophilized, for
+	// suspension [Mylan]") repeat the error rather than evidence it.
+	const echo = new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/, /g, ',\\s*'), 'gi');
+	const cleaned = (text: string) => text.replace(echo, ' ').replace(DILUENT, ' ');
+	if (findFirst(sources, SUSPENSION_WORD, cleaned)) return null;
+	const evidence: DoseFormEvidence[] = [
+		{ kind: 'rxnorm', source: 'rxnorm', excerpt: `RxNorm dose form: ${rx}` }
+	];
+	const iv = (input.routes ?? []).find((route) => INTRAVENOUS.test(route.trim()));
+	if (!iv) return null;
+	evidence.push({ kind: 'route', source: 'routes', excerpt: `Route: ${iv}` });
+	return {
+		from: form,
+		to: `INJECTION, POWDER${match[1] ?? ''}, FOR SOLUTION`,
+		evidence
+	};
+}
+
+/**
+ * The form a miscoded product should carry, with the evidence for it — or
+ * null when nothing is confidently wrong. A liquid coded for its powder is
+ * promoted first; an injectable powder coded "for suspension" that RxNorm and
+ * the label both treat as a solution is then recoded.
+ */
+export function correctDoseForm(input: DoseFormInput): DoseFormCorrection | null {
+	const liquid = correctLiquidCoding(input);
+	const form = liquid?.to ?? input.doseForm;
+	const suspension = form ? correctSuspensionCoding(form, input) : null;
+	if (!suspension) return liquid;
+	if (!liquid) return suspension;
+	return {
+		from: liquid.from,
+		to: suspension.to,
+		evidence: [...liquid.evidence, ...suspension.evidence]
+	};
 }

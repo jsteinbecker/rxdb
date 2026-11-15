@@ -17,8 +17,11 @@ import {
 } from '../../catalog/package-state';
 import { mergePackage } from '../../catalog/effective-package';
 import { CATALOG_VERSION, snapshotPackage, type PackageSnapshot } from './cache';
+import { attachLabels, detachLabel, type LabelDb } from './label-store';
 
 type Db = Pick<Prisma.TransactionClient, '$queryRaw' | 'packageCuration'>;
+/** Writers also store label sections, so they need the label tables. */
+type WriteDb = Db & LabelDb;
 export type PackageState = Omit<PackageCuration, 'baseline' | 'overrides' | 'review'> & {
 	baseline: ExternalPackage;
 	overrides: PackageOverrides;
@@ -82,7 +85,14 @@ export async function loadPackageStates(
       legacy_baseline #- '{details,label}' AS "legacyBaseline", updated_at AS "updatedAt"
     FROM package_curation WHERE ndc = ANY(${ndcs}::text[])`
 		: await db.packageCuration.findMany({ where: { ndc: { in: ndcs } } });
-	return new Map(rows.map((row) => [row.ndc, decode(row)]));
+	const states = rows.map(decode);
+	// Baselines store label sections by hash (label-store.ts); put the text back.
+	if (!withoutLabel)
+		await attachLabels(
+			db,
+			states.map((state) => state.baseline)
+		);
+	return new Map(states.map((state) => [state.ndc, state]));
 }
 
 export function stateSnapshot(state: PackageState): PackageSnapshot {
@@ -107,7 +117,10 @@ export function projectionPayload(state: PackageState): PackageSnapshot {
 }
 
 /** Caller holds the package lock. Refresh never overwrites user decisions. */
-export async function writeProviderBaseline(db: Db, item: ExternalPackage): Promise<PackageState> {
+export async function writeProviderBaseline(
+	db: WriteDb,
+	item: ExternalPackage
+): Promise<PackageState> {
 	const previous = (await loadPackageStates(db, [item.ndc])).get(item.ndc);
 	if (item.editRevision !== undefined && previous) return previous; // Promotion of an already resolved package.
 	const fresh = providerBaseline(item);
@@ -116,17 +129,18 @@ export async function writeProviderBaseline(db: Db, item: ExternalPackage): Prom
 		previous &&
 		(previous.baselineVersion !== CATALOG_VERSION ||
 			!samePackageValue(previous.baseline, baseline));
+	const stored = json(await detachLabel(db, baseline));
 	const row = await db.packageCuration.upsert({
 		where: { ndc: item.ndc },
 		create: {
 			ndc: item.ndc,
-			baseline: json(baseline),
+			baseline: stored,
 			baselineVersion: CATALOG_VERSION,
 			refreshAt: new Date(snapshotPackage(fresh).refreshAt),
 			overrides: json(item.propertyOverrides ?? {})
 		},
 		update: {
-			baseline: json(baseline),
+			baseline: stored,
 			baselineVersion: CATALOG_VERSION,
 			refreshAt: new Date(snapshotPackage(fresh).refreshAt),
 			initialized: true,
@@ -134,12 +148,13 @@ export async function writeProviderBaseline(db: Db, item: ExternalPackage): Prom
 			...(changed ? { revision: { increment: 1 } } : {})
 		}
 	});
-	return decode(row);
+	// The row holds the sections by hash; hand back the full baseline.
+	return { ...decode(row), baseline };
 }
 
 /** Caller holds the package lock; CAS also protects callers that misuse the lock. */
 export async function writePackageDecisions(
-	db: Db,
+	db: WriteDb,
 	state: PackageState,
 	changes: {
 		overrides: PackageOverrides;
@@ -153,7 +168,7 @@ export async function writePackageDecisions(
 		data: {
 			overrides: json(changes.overrides),
 			review: json(changes.review ?? state.review),
-			baseline: json(changes.baseline ?? state.baseline),
+			baseline: json(await detachLabel(db, changes.baseline ?? state.baseline)),
 			initialized: true,
 			unknownKeys: changes.baseline ? [] : state.unknownKeys,
 			...(changes.baseline

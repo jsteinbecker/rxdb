@@ -313,3 +313,76 @@ test('"until ready to use" is not ready-to-use wording', () => {
 		})
 	);
 });
+
+// Excerpts from Mylan's leucovorin calcium label, NDCs 67457-528/-529/-530.
+const leucovorin: DoseFormInput = {
+	doseForm: 'INJECTION, POWDER, LYOPHILIZED, FOR SUSPENSION',
+	identity: {
+		generic_name: 'Leucovorin Calcium',
+		spl_title: 'LEUCOVORIN CALCIUM injection, powder, lyophilized, for suspension'
+	},
+	instructions: {
+		dosage_and_administration:
+			'Leucovorin is administered at 200 mg/m2 by slow intravenous injection over a minimum of 3 minutes.',
+		how_supplied: 'Leucovorin Calcium for Injection, USP, is supplied in sterile, single dose vials.'
+	},
+	supplied: {
+		description:
+			'Each 100 mg vial, when reconstituted with 10 mL of sterile diluent, contains leucovorin 10 mg/mL. Reconstitute with Bacteriostatic Water for Injection, USP.'
+	},
+	rxNormDoseForm: 'Injection',
+	routes: ['INTRAMUSCULAR', 'INTRAVENOUS']
+};
+
+test('67457-528: lyophilized "for suspension" that RxNorm and the label treat as a solution is recoded', () => {
+	const result = correctDoseForm(leucovorin);
+	assert.equal(result?.to, 'INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION');
+	assert.deepEqual(
+		result?.evidence.map((item) => item.kind),
+		['rxnorm', 'route']
+	);
+});
+
+test('the SPL title alone saying "for suspension" (the coding itself) does not block, but label prose does', () => {
+	assert.equal(
+		correctDoseForm({
+			...leucovorin,
+			instructions: { ...leucovorin.instructions, how_supplied: 'Shake well before use.' }
+		}),
+		null
+	);
+});
+
+test('a genuine IV suspension (RxNorm says Injectable Suspension) is left alone', () => {
+	assert.equal(correctDoseForm({ ...leucovorin, rxNormDoseForm: 'Injectable Suspension' }), null);
+});
+
+test('without RxNorm there is no recoding', () => {
+	assert.equal(correctDoseForm({ ...leucovorin, rxNormDoseForm: null }), null);
+});
+
+test('without an IV route there is no recoding', () => {
+	assert.equal(correctDoseForm({ ...leucovorin, routes: ['INTRAMUSCULAR'] }), null);
+});
+
+test('label prose naming a suspension blocks the recoding', () => {
+	assert.equal(
+		correctDoseForm({
+			...leucovorin,
+			supplied: { description: 'Reconstitution yields a white suspension.' }
+		}),
+		null
+	);
+});
+
+test('a liposomal dispersion RxNorm files as plain Injection is left alone (Vyxeos 68727-745)', () => {
+	assert.equal(
+		correctDoseForm({
+			...leucovorin,
+			supplied: {
+				description: 'VYXEOS (daunorubicin and cytarabine) liposome for injection is a purple, lyophilized cake.'
+			}
+		}),
+		null
+	);
+});

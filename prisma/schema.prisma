@@ -616,10 +616,13 @@ model SourceRecord {
       sourceNativeId String   @map("source_native_id")
       sourceUrl      String?  @map("source_url")
       observedAt     DateTime @default(now()) @map("observed_at") @db.Timestamptz(6)
-      payload        Json
+      payload        Json?
       payloadHash    Bytes    @map("payload_hash")
+      /// Set instead of `payload` when the body lives in source_payload, shared by every record with the same content.
+      payloadRef     Bytes?   @map("payload_ref")
 
       ingestionRun        IngestionRun         @relation(fields: [ingestionRunId], references: [id])
+      sharedPayload       SourcePayload?       @relation(fields: [payloadRef], references: [hash], onDelete: Restrict)
       externalIdentifiers ExternalIdentifier[]
       entityRelationships EntityRelationship[]
       factAssertions      FactAssertion[]
@@ -1803,4 +1806,40 @@ model ProductFormRouteOverride {
 
       @@unique([productFormRouteId, field])
       @@map("product_form_route_override")
+}
+
+/// Raw provider payloads stored once by content hash; many NDCs fetch the same label or SPL.
+model SourcePayload {
+      hash    Bytes          @id
+      payload Json
+      records SourceRecord[]
+
+      @@map("source_payload")
+}
+
+/// One label's section text, stored once by content hash and referenced from package JSON as `details.label.sectionsHash`.
+model SplLabel {
+      hash          Bytes             @id
+      setId         String?           @map("set_id")
+      version       String?
+      effectiveTime String?           @map("effective_time")
+      createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+      sections      SplLabelSection[]
+
+      @@index([setId])
+      @@map("spl_label")
+}
+
+model SplLabelSection {
+      labelHash Bytes    @map("label_hash")
+      position  Int
+      key       String
+      title     String
+      text      String
+      /// The SPL's own block tree for the section, when parsed.
+      blocks    Json?
+      label     SplLabel @relation(fields: [labelHash], references: [hash], onDelete: Cascade)
+
+      @@id([labelHash, position])
+      @@map("spl_label_section")
 }

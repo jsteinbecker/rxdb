@@ -31,6 +31,7 @@ export type SourceRecordMinAggregateOutputType = {
   sourceUrl: string | null
   observedAt: Date | null
   payloadHash: runtime.Bytes | null
+  payloadRef: runtime.Bytes | null
 }
 
 export type SourceRecordMaxAggregateOutputType = {
@@ -40,6 +41,7 @@ export type SourceRecordMaxAggregateOutputType = {
   sourceUrl: string | null
   observedAt: Date | null
   payloadHash: runtime.Bytes | null
+  payloadRef: runtime.Bytes | null
 }
 
 export type SourceRecordCountAggregateOutputType = {
@@ -50,6 +52,7 @@ export type SourceRecordCountAggregateOutputType = {
   observedAt: number
   payload: number
   payloadHash: number
+  payloadRef: number
   _all: number
 }
 
@@ -61,6 +64,7 @@ export type SourceRecordMinAggregateInputType = {
   sourceUrl?: true
   observedAt?: true
   payloadHash?: true
+  payloadRef?: true
 }
 
 export type SourceRecordMaxAggregateInputType = {
@@ -70,6 +74,7 @@ export type SourceRecordMaxAggregateInputType = {
   sourceUrl?: true
   observedAt?: true
   payloadHash?: true
+  payloadRef?: true
 }
 
 export type SourceRecordCountAggregateInputType = {
@@ -80,6 +85,7 @@ export type SourceRecordCountAggregateInputType = {
   observedAt?: true
   payload?: true
   payloadHash?: true
+  payloadRef?: true
   _all?: true
 }
 
@@ -161,8 +167,9 @@ export type SourceRecordGroupByOutputType = {
   sourceNativeId: string
   sourceUrl: string | null
   observedAt: Date
-  payload: runtime.JsonValue
+  payload: runtime.JsonValue | null
   payloadHash: runtime.Bytes
+  payloadRef: runtime.Bytes | null
   _count: SourceRecordCountAggregateOutputType | null
   _min: SourceRecordMinAggregateOutputType | null
   _max: SourceRecordMaxAggregateOutputType | null
@@ -192,9 +199,11 @@ export type SourceRecordWhereInput = {
   sourceNativeId?: Prisma.StringFilter<"SourceRecord"> | string
   sourceUrl?: Prisma.StringNullableFilter<"SourceRecord"> | string | null
   observedAt?: Prisma.DateTimeFilter<"SourceRecord"> | Date | string
-  payload?: Prisma.JsonFilter<"SourceRecord">
+  payload?: Prisma.JsonNullableFilter<"SourceRecord">
   payloadHash?: Prisma.BytesFilter<"SourceRecord"> | runtime.Bytes
+  payloadRef?: Prisma.BytesNullableFilter<"SourceRecord"> | runtime.Bytes | null
   ingestionRun?: Prisma.XOR<Prisma.IngestionRunScalarRelationFilter, Prisma.IngestionRunWhereInput>
+  sharedPayload?: Prisma.XOR<Prisma.SourcePayloadNullableScalarRelationFilter, Prisma.SourcePayloadWhereInput> | null
   externalIdentifiers?: Prisma.ExternalIdentifierListRelationFilter
   entityRelationships?: Prisma.EntityRelationshipListRelationFilter
   factAssertions?: Prisma.FactAssertionListRelationFilter
@@ -210,9 +219,11 @@ export type SourceRecordOrderByWithRelationInput = {
   sourceNativeId?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   observedAt?: Prisma.SortOrder
-  payload?: Prisma.SortOrder
+  payload?: Prisma.SortOrderInput | Prisma.SortOrder
   payloadHash?: Prisma.SortOrder
+  payloadRef?: Prisma.SortOrderInput | Prisma.SortOrder
   ingestionRun?: Prisma.IngestionRunOrderByWithRelationInput
+  sharedPayload?: Prisma.SourcePayloadOrderByWithRelationInput
   externalIdentifiers?: Prisma.ExternalIdentifierOrderByRelationAggregateInput
   entityRelationships?: Prisma.EntityRelationshipOrderByRelationAggregateInput
   factAssertions?: Prisma.FactAssertionOrderByRelationAggregateInput
@@ -232,9 +243,11 @@ export type SourceRecordWhereUniqueInput = Prisma.AtLeast<{
   sourceNativeId?: Prisma.StringFilter<"SourceRecord"> | string
   sourceUrl?: Prisma.StringNullableFilter<"SourceRecord"> | string | null
   observedAt?: Prisma.DateTimeFilter<"SourceRecord"> | Date | string
-  payload?: Prisma.JsonFilter<"SourceRecord">
+  payload?: Prisma.JsonNullableFilter<"SourceRecord">
   payloadHash?: Prisma.BytesFilter<"SourceRecord"> | runtime.Bytes
+  payloadRef?: Prisma.BytesNullableFilter<"SourceRecord"> | runtime.Bytes | null
   ingestionRun?: Prisma.XOR<Prisma.IngestionRunScalarRelationFilter, Prisma.IngestionRunWhereInput>
+  sharedPayload?: Prisma.XOR<Prisma.SourcePayloadNullableScalarRelationFilter, Prisma.SourcePayloadWhereInput> | null
   externalIdentifiers?: Prisma.ExternalIdentifierListRelationFilter
   entityRelationships?: Prisma.EntityRelationshipListRelationFilter
   factAssertions?: Prisma.FactAssertionListRelationFilter
@@ -250,8 +263,9 @@ export type SourceRecordOrderByWithAggregationInput = {
   sourceNativeId?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   observedAt?: Prisma.SortOrder
-  payload?: Prisma.SortOrder
+  payload?: Prisma.SortOrderInput | Prisma.SortOrder
   payloadHash?: Prisma.SortOrder
+  payloadRef?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.SourceRecordCountOrderByAggregateInput
   _max?: Prisma.SourceRecordMaxOrderByAggregateInput
   _min?: Prisma.SourceRecordMinOrderByAggregateInput
@@ -266,8 +280,9 @@ export type SourceRecordScalarWhereWithAggregatesInput = {
   sourceNativeId?: Prisma.StringWithAggregatesFilter<"SourceRecord"> | string
   sourceUrl?: Prisma.StringNullableWithAggregatesFilter<"SourceRecord"> | string | null
   observedAt?: Prisma.DateTimeWithAggregatesFilter<"SourceRecord"> | Date | string
-  payload?: Prisma.JsonWithAggregatesFilter<"SourceRecord">
+  payload?: Prisma.JsonNullableWithAggregatesFilter<"SourceRecord">
   payloadHash?: Prisma.BytesWithAggregatesFilter<"SourceRecord"> | runtime.Bytes
+  payloadRef?: Prisma.BytesNullableWithAggregatesFilter<"SourceRecord"> | runtime.Bytes | null
 }
 
 export type SourceRecordCreateInput = {
@@ -275,9 +290,10 @@ export type SourceRecordCreateInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
@@ -293,8 +309,9 @@ export type SourceRecordUncheckedCreateInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -309,9 +326,10 @@ export type SourceRecordUpdateInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
@@ -327,8 +345,9 @@ export type SourceRecordUncheckedUpdateInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -344,8 +363,9 @@ export type SourceRecordCreateManyInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
 }
 
 export type SourceRecordUpdateManyMutationInput = {
@@ -353,7 +373,7 @@ export type SourceRecordUpdateManyMutationInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
 }
 
@@ -363,8 +383,9 @@ export type SourceRecordUncheckedUpdateManyInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
 }
 
 export type SourceRecordNullableScalarRelationFilter = {
@@ -395,6 +416,7 @@ export type SourceRecordCountOrderByAggregateInput = {
   observedAt?: Prisma.SortOrder
   payload?: Prisma.SortOrder
   payloadHash?: Prisma.SortOrder
+  payloadRef?: Prisma.SortOrder
 }
 
 export type SourceRecordMaxOrderByAggregateInput = {
@@ -404,6 +426,7 @@ export type SourceRecordMaxOrderByAggregateInput = {
   sourceUrl?: Prisma.SortOrder
   observedAt?: Prisma.SortOrder
   payloadHash?: Prisma.SortOrder
+  payloadRef?: Prisma.SortOrder
 }
 
 export type SourceRecordMinOrderByAggregateInput = {
@@ -413,6 +436,7 @@ export type SourceRecordMinOrderByAggregateInput = {
   sourceUrl?: Prisma.SortOrder
   observedAt?: Prisma.SortOrder
   payloadHash?: Prisma.SortOrder
+  payloadRef?: Prisma.SortOrder
 }
 
 export type SourceRecordCreateNestedOneWithoutExternalIdentifiersInput = {
@@ -491,6 +515,10 @@ export type SourceRecordUncheckedUpdateManyWithoutIngestionRunNestedInput = {
 
 export type BytesFieldUpdateOperationsInput = {
   set?: runtime.Bytes
+}
+
+export type NullableBytesFieldUpdateOperationsInput = {
+  set?: runtime.Bytes | null
 }
 
 export type SourceRecordCreateNestedOneWithoutFactAssertionsInput = {
@@ -573,14 +601,57 @@ export type SourceRecordUpdateOneWithoutStabilityStudiesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.SourceRecordUpdateToOneWithWhereWithoutStabilityStudiesInput, Prisma.SourceRecordUpdateWithoutStabilityStudiesInput>, Prisma.SourceRecordUncheckedUpdateWithoutStabilityStudiesInput>
 }
 
+export type SourceRecordCreateNestedManyWithoutSharedPayloadInput = {
+  create?: Prisma.XOR<Prisma.SourceRecordCreateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput> | Prisma.SourceRecordCreateWithoutSharedPayloadInput[] | Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput[]
+  connectOrCreate?: Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput | Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput[]
+  createMany?: Prisma.SourceRecordCreateManySharedPayloadInputEnvelope
+  connect?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+}
+
+export type SourceRecordUncheckedCreateNestedManyWithoutSharedPayloadInput = {
+  create?: Prisma.XOR<Prisma.SourceRecordCreateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput> | Prisma.SourceRecordCreateWithoutSharedPayloadInput[] | Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput[]
+  connectOrCreate?: Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput | Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput[]
+  createMany?: Prisma.SourceRecordCreateManySharedPayloadInputEnvelope
+  connect?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+}
+
+export type SourceRecordUpdateManyWithoutSharedPayloadNestedInput = {
+  create?: Prisma.XOR<Prisma.SourceRecordCreateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput> | Prisma.SourceRecordCreateWithoutSharedPayloadInput[] | Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput[]
+  connectOrCreate?: Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput | Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput[]
+  upsert?: Prisma.SourceRecordUpsertWithWhereUniqueWithoutSharedPayloadInput | Prisma.SourceRecordUpsertWithWhereUniqueWithoutSharedPayloadInput[]
+  createMany?: Prisma.SourceRecordCreateManySharedPayloadInputEnvelope
+  set?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  disconnect?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  delete?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  connect?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  update?: Prisma.SourceRecordUpdateWithWhereUniqueWithoutSharedPayloadInput | Prisma.SourceRecordUpdateWithWhereUniqueWithoutSharedPayloadInput[]
+  updateMany?: Prisma.SourceRecordUpdateManyWithWhereWithoutSharedPayloadInput | Prisma.SourceRecordUpdateManyWithWhereWithoutSharedPayloadInput[]
+  deleteMany?: Prisma.SourceRecordScalarWhereInput | Prisma.SourceRecordScalarWhereInput[]
+}
+
+export type SourceRecordUncheckedUpdateManyWithoutSharedPayloadNestedInput = {
+  create?: Prisma.XOR<Prisma.SourceRecordCreateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput> | Prisma.SourceRecordCreateWithoutSharedPayloadInput[] | Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput[]
+  connectOrCreate?: Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput | Prisma.SourceRecordCreateOrConnectWithoutSharedPayloadInput[]
+  upsert?: Prisma.SourceRecordUpsertWithWhereUniqueWithoutSharedPayloadInput | Prisma.SourceRecordUpsertWithWhereUniqueWithoutSharedPayloadInput[]
+  createMany?: Prisma.SourceRecordCreateManySharedPayloadInputEnvelope
+  set?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  disconnect?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  delete?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  connect?: Prisma.SourceRecordWhereUniqueInput | Prisma.SourceRecordWhereUniqueInput[]
+  update?: Prisma.SourceRecordUpdateWithWhereUniqueWithoutSharedPayloadInput | Prisma.SourceRecordUpdateWithWhereUniqueWithoutSharedPayloadInput[]
+  updateMany?: Prisma.SourceRecordUpdateManyWithWhereWithoutSharedPayloadInput | Prisma.SourceRecordUpdateManyWithWhereWithoutSharedPayloadInput[]
+  deleteMany?: Prisma.SourceRecordScalarWhereInput | Prisma.SourceRecordScalarWhereInput[]
+}
+
 export type SourceRecordCreateWithoutExternalIdentifiersInput = {
   id?: string
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
   entityMappings?: Prisma.EntityMappingCreateNestedManyWithoutSourceRecordInput
@@ -595,8 +666,9 @@ export type SourceRecordUncheckedCreateWithoutExternalIdentifiersInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
   entityMappings?: Prisma.EntityMappingUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -626,9 +698,10 @@ export type SourceRecordUpdateWithoutExternalIdentifiersInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
   entityMappings?: Prisma.EntityMappingUpdateManyWithoutSourceRecordNestedInput
@@ -643,8 +716,9 @@ export type SourceRecordUncheckedUpdateWithoutExternalIdentifiersInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityMappings?: Prisma.EntityMappingUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -658,9 +732,10 @@ export type SourceRecordCreateWithoutEntityRelationshipsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
   entityMappings?: Prisma.EntityMappingCreateNestedManyWithoutSourceRecordInput
@@ -675,8 +750,9 @@ export type SourceRecordUncheckedCreateWithoutEntityRelationshipsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
   entityMappings?: Prisma.EntityMappingUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -706,9 +782,10 @@ export type SourceRecordUpdateWithoutEntityRelationshipsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
   entityMappings?: Prisma.EntityMappingUpdateManyWithoutSourceRecordNestedInput
@@ -723,8 +800,9 @@ export type SourceRecordUncheckedUpdateWithoutEntityRelationshipsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityMappings?: Prisma.EntityMappingUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -738,8 +816,9 @@ export type SourceRecordCreateWithoutIngestionRunInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
@@ -754,8 +833,9 @@ export type SourceRecordUncheckedCreateWithoutIngestionRunInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -800,8 +880,9 @@ export type SourceRecordScalarWhereInput = {
   sourceNativeId?: Prisma.StringFilter<"SourceRecord"> | string
   sourceUrl?: Prisma.StringNullableFilter<"SourceRecord"> | string | null
   observedAt?: Prisma.DateTimeFilter<"SourceRecord"> | Date | string
-  payload?: Prisma.JsonFilter<"SourceRecord">
+  payload?: Prisma.JsonNullableFilter<"SourceRecord">
   payloadHash?: Prisma.BytesFilter<"SourceRecord"> | runtime.Bytes
+  payloadRef?: Prisma.BytesNullableFilter<"SourceRecord"> | runtime.Bytes | null
 }
 
 export type SourceRecordCreateWithoutFactAssertionsInput = {
@@ -809,9 +890,10 @@ export type SourceRecordCreateWithoutFactAssertionsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   entityMappings?: Prisma.EntityMappingCreateNestedManyWithoutSourceRecordInput
@@ -826,8 +908,9 @@ export type SourceRecordUncheckedCreateWithoutFactAssertionsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   entityMappings?: Prisma.EntityMappingUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -857,9 +940,10 @@ export type SourceRecordUpdateWithoutFactAssertionsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   entityMappings?: Prisma.EntityMappingUpdateManyWithoutSourceRecordNestedInput
@@ -874,8 +958,9 @@ export type SourceRecordUncheckedUpdateWithoutFactAssertionsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityMappings?: Prisma.EntityMappingUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -889,9 +974,10 @@ export type SourceRecordCreateWithoutEntityMappingsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
@@ -906,8 +992,9 @@ export type SourceRecordUncheckedCreateWithoutEntityMappingsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -937,9 +1024,10 @@ export type SourceRecordUpdateWithoutEntityMappingsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
@@ -954,8 +1042,9 @@ export type SourceRecordUncheckedUpdateWithoutEntityMappingsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -969,9 +1058,10 @@ export type SourceRecordCreateWithoutContainerSpecsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
@@ -986,8 +1076,9 @@ export type SourceRecordUncheckedCreateWithoutContainerSpecsInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -1017,9 +1108,10 @@ export type SourceRecordUpdateWithoutContainerSpecsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
@@ -1034,8 +1126,9 @@ export type SourceRecordUncheckedUpdateWithoutContainerSpecsInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -1049,9 +1142,10 @@ export type SourceRecordCreateWithoutCompoundingRulesInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
@@ -1066,8 +1160,9 @@ export type SourceRecordUncheckedCreateWithoutCompoundingRulesInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -1097,9 +1192,10 @@ export type SourceRecordUpdateWithoutCompoundingRulesInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
@@ -1114,8 +1210,9 @@ export type SourceRecordUncheckedUpdateWithoutCompoundingRulesInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -1129,9 +1226,10 @@ export type SourceRecordCreateWithoutStabilityStudiesInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
   ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  sharedPayload?: Prisma.SourcePayloadCreateNestedOneWithoutRecordsInput
   externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
@@ -1146,8 +1244,9 @@ export type SourceRecordUncheckedCreateWithoutStabilityStudiesInput = {
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
   factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
@@ -1177,9 +1276,10 @@ export type SourceRecordUpdateWithoutStabilityStudiesInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
   ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
@@ -1194,8 +1294,9 @@ export type SourceRecordUncheckedUpdateWithoutStabilityStudiesInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -1204,13 +1305,74 @@ export type SourceRecordUncheckedUpdateWithoutStabilityStudiesInput = {
   compoundingRules?: Prisma.CompoundingRuleUncheckedUpdateManyWithoutSourceRecordNestedInput
 }
 
+export type SourceRecordCreateWithoutSharedPayloadInput = {
+  id?: string
+  sourceNativeId: string
+  sourceUrl?: string | null
+  observedAt?: Date | string
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  payloadHash: runtime.Bytes
+  ingestionRun: Prisma.IngestionRunCreateNestedOneWithoutSourceRecordsInput
+  externalIdentifiers?: Prisma.ExternalIdentifierCreateNestedManyWithoutSourceRecordInput
+  entityRelationships?: Prisma.EntityRelationshipCreateNestedManyWithoutSourceRecordInput
+  factAssertions?: Prisma.FactAssertionCreateNestedManyWithoutSourceRecordInput
+  entityMappings?: Prisma.EntityMappingCreateNestedManyWithoutSourceRecordInput
+  containerSpecs?: Prisma.ContainerSpecCreateNestedManyWithoutSourceRecordInput
+  compoundingRules?: Prisma.CompoundingRuleCreateNestedManyWithoutSourceRecordInput
+  stabilityStudies?: Prisma.StabilityStudyCreateNestedManyWithoutSourceRecordInput
+}
+
+export type SourceRecordUncheckedCreateWithoutSharedPayloadInput = {
+  id?: string
+  ingestionRunId: string
+  sourceNativeId: string
+  sourceUrl?: string | null
+  observedAt?: Date | string
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  payloadHash: runtime.Bytes
+  externalIdentifiers?: Prisma.ExternalIdentifierUncheckedCreateNestedManyWithoutSourceRecordInput
+  entityRelationships?: Prisma.EntityRelationshipUncheckedCreateNestedManyWithoutSourceRecordInput
+  factAssertions?: Prisma.FactAssertionUncheckedCreateNestedManyWithoutSourceRecordInput
+  entityMappings?: Prisma.EntityMappingUncheckedCreateNestedManyWithoutSourceRecordInput
+  containerSpecs?: Prisma.ContainerSpecUncheckedCreateNestedManyWithoutSourceRecordInput
+  compoundingRules?: Prisma.CompoundingRuleUncheckedCreateNestedManyWithoutSourceRecordInput
+  stabilityStudies?: Prisma.StabilityStudyUncheckedCreateNestedManyWithoutSourceRecordInput
+}
+
+export type SourceRecordCreateOrConnectWithoutSharedPayloadInput = {
+  where: Prisma.SourceRecordWhereUniqueInput
+  create: Prisma.XOR<Prisma.SourceRecordCreateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput>
+}
+
+export type SourceRecordCreateManySharedPayloadInputEnvelope = {
+  data: Prisma.SourceRecordCreateManySharedPayloadInput | Prisma.SourceRecordCreateManySharedPayloadInput[]
+  skipDuplicates?: boolean
+}
+
+export type SourceRecordUpsertWithWhereUniqueWithoutSharedPayloadInput = {
+  where: Prisma.SourceRecordWhereUniqueInput
+  update: Prisma.XOR<Prisma.SourceRecordUpdateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedUpdateWithoutSharedPayloadInput>
+  create: Prisma.XOR<Prisma.SourceRecordCreateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedCreateWithoutSharedPayloadInput>
+}
+
+export type SourceRecordUpdateWithWhereUniqueWithoutSharedPayloadInput = {
+  where: Prisma.SourceRecordWhereUniqueInput
+  data: Prisma.XOR<Prisma.SourceRecordUpdateWithoutSharedPayloadInput, Prisma.SourceRecordUncheckedUpdateWithoutSharedPayloadInput>
+}
+
+export type SourceRecordUpdateManyWithWhereWithoutSharedPayloadInput = {
+  where: Prisma.SourceRecordScalarWhereInput
+  data: Prisma.XOR<Prisma.SourceRecordUpdateManyMutationInput, Prisma.SourceRecordUncheckedUpdateManyWithoutSharedPayloadInput>
+}
+
 export type SourceRecordCreateManyIngestionRunInput = {
   id?: string
   sourceNativeId: string
   sourceUrl?: string | null
   observedAt?: Date | string
-  payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash: runtime.Bytes
+  payloadRef?: runtime.Bytes | null
 }
 
 export type SourceRecordUpdateWithoutIngestionRunInput = {
@@ -1218,8 +1380,9 @@ export type SourceRecordUpdateWithoutIngestionRunInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  sharedPayload?: Prisma.SourcePayloadUpdateOneWithoutRecordsNestedInput
   externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
@@ -1234,8 +1397,9 @@ export type SourceRecordUncheckedUpdateWithoutIngestionRunInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
   entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
   factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
@@ -1250,7 +1414,62 @@ export type SourceRecordUncheckedUpdateManyWithoutIngestionRunInput = {
   sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  payloadRef?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
+}
+
+export type SourceRecordCreateManySharedPayloadInput = {
+  id?: string
+  ingestionRunId: string
+  sourceNativeId: string
+  sourceUrl?: string | null
+  observedAt?: Date | string
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  payloadHash: runtime.Bytes
+}
+
+export type SourceRecordUpdateWithoutSharedPayloadInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  ingestionRun?: Prisma.IngestionRunUpdateOneRequiredWithoutSourceRecordsNestedInput
+  externalIdentifiers?: Prisma.ExternalIdentifierUpdateManyWithoutSourceRecordNestedInput
+  entityRelationships?: Prisma.EntityRelationshipUpdateManyWithoutSourceRecordNestedInput
+  factAssertions?: Prisma.FactAssertionUpdateManyWithoutSourceRecordNestedInput
+  entityMappings?: Prisma.EntityMappingUpdateManyWithoutSourceRecordNestedInput
+  containerSpecs?: Prisma.ContainerSpecUpdateManyWithoutSourceRecordNestedInput
+  compoundingRules?: Prisma.CompoundingRuleUpdateManyWithoutSourceRecordNestedInput
+  stabilityStudies?: Prisma.StabilityStudyUpdateManyWithoutSourceRecordNestedInput
+}
+
+export type SourceRecordUncheckedUpdateWithoutSharedPayloadInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ingestionRunId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  externalIdentifiers?: Prisma.ExternalIdentifierUncheckedUpdateManyWithoutSourceRecordNestedInput
+  entityRelationships?: Prisma.EntityRelationshipUncheckedUpdateManyWithoutSourceRecordNestedInput
+  factAssertions?: Prisma.FactAssertionUncheckedUpdateManyWithoutSourceRecordNestedInput
+  entityMappings?: Prisma.EntityMappingUncheckedUpdateManyWithoutSourceRecordNestedInput
+  containerSpecs?: Prisma.ContainerSpecUncheckedUpdateManyWithoutSourceRecordNestedInput
+  compoundingRules?: Prisma.CompoundingRuleUncheckedUpdateManyWithoutSourceRecordNestedInput
+  stabilityStudies?: Prisma.StabilityStudyUncheckedUpdateManyWithoutSourceRecordNestedInput
+}
+
+export type SourceRecordUncheckedUpdateManyWithoutSharedPayloadInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ingestionRunId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceNativeId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  observedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   payloadHash?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
 }
 
@@ -1347,7 +1566,9 @@ export type SourceRecordSelect<ExtArgs extends runtime.Types.Extensions.Internal
   observedAt?: boolean
   payload?: boolean
   payloadHash?: boolean
+  payloadRef?: boolean
   ingestionRun?: boolean | Prisma.IngestionRunDefaultArgs<ExtArgs>
+  sharedPayload?: boolean | Prisma.SourceRecord$sharedPayloadArgs<ExtArgs>
   externalIdentifiers?: boolean | Prisma.SourceRecord$externalIdentifiersArgs<ExtArgs>
   entityRelationships?: boolean | Prisma.SourceRecord$entityRelationshipsArgs<ExtArgs>
   factAssertions?: boolean | Prisma.SourceRecord$factAssertionsArgs<ExtArgs>
@@ -1366,7 +1587,9 @@ export type SourceRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   observedAt?: boolean
   payload?: boolean
   payloadHash?: boolean
+  payloadRef?: boolean
   ingestionRun?: boolean | Prisma.IngestionRunDefaultArgs<ExtArgs>
+  sharedPayload?: boolean | Prisma.SourceRecord$sharedPayloadArgs<ExtArgs>
 }, ExtArgs["result"]["sourceRecord"]>
 
 export type SourceRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1377,7 +1600,9 @@ export type SourceRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   observedAt?: boolean
   payload?: boolean
   payloadHash?: boolean
+  payloadRef?: boolean
   ingestionRun?: boolean | Prisma.IngestionRunDefaultArgs<ExtArgs>
+  sharedPayload?: boolean | Prisma.SourceRecord$sharedPayloadArgs<ExtArgs>
 }, ExtArgs["result"]["sourceRecord"]>
 
 export type SourceRecordSelectScalar = {
@@ -1388,11 +1613,13 @@ export type SourceRecordSelectScalar = {
   observedAt?: boolean
   payload?: boolean
   payloadHash?: boolean
+  payloadRef?: boolean
 }
 
-export type SourceRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ingestionRunId" | "sourceNativeId" | "sourceUrl" | "observedAt" | "payload" | "payloadHash", ExtArgs["result"]["sourceRecord"]>
+export type SourceRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ingestionRunId" | "sourceNativeId" | "sourceUrl" | "observedAt" | "payload" | "payloadHash" | "payloadRef", ExtArgs["result"]["sourceRecord"]>
 export type SourceRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   ingestionRun?: boolean | Prisma.IngestionRunDefaultArgs<ExtArgs>
+  sharedPayload?: boolean | Prisma.SourceRecord$sharedPayloadArgs<ExtArgs>
   externalIdentifiers?: boolean | Prisma.SourceRecord$externalIdentifiersArgs<ExtArgs>
   entityRelationships?: boolean | Prisma.SourceRecord$entityRelationshipsArgs<ExtArgs>
   factAssertions?: boolean | Prisma.SourceRecord$factAssertionsArgs<ExtArgs>
@@ -1404,15 +1631,18 @@ export type SourceRecordInclude<ExtArgs extends runtime.Types.Extensions.Interna
 }
 export type SourceRecordIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   ingestionRun?: boolean | Prisma.IngestionRunDefaultArgs<ExtArgs>
+  sharedPayload?: boolean | Prisma.SourceRecord$sharedPayloadArgs<ExtArgs>
 }
 export type SourceRecordIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   ingestionRun?: boolean | Prisma.IngestionRunDefaultArgs<ExtArgs>
+  sharedPayload?: boolean | Prisma.SourceRecord$sharedPayloadArgs<ExtArgs>
 }
 
 export type $SourceRecordPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SourceRecord"
   objects: {
     ingestionRun: Prisma.$IngestionRunPayload<ExtArgs>
+    sharedPayload: Prisma.$SourcePayloadPayload<ExtArgs> | null
     externalIdentifiers: Prisma.$ExternalIdentifierPayload<ExtArgs>[]
     entityRelationships: Prisma.$EntityRelationshipPayload<ExtArgs>[]
     factAssertions: Prisma.$FactAssertionPayload<ExtArgs>[]
@@ -1427,8 +1657,12 @@ export type $SourceRecordPayload<ExtArgs extends runtime.Types.Extensions.Intern
     sourceNativeId: string
     sourceUrl: string | null
     observedAt: Date
-    payload: runtime.JsonValue
+    payload: runtime.JsonValue | null
     payloadHash: runtime.Bytes
+    /**
+     * Set instead of `payload` when the body lives in source_payload, shared by every record with the same content.
+     */
+    payloadRef: runtime.Bytes | null
   }, ExtArgs["result"]["sourceRecord"]>
   composites: {}
 }
@@ -1824,6 +2058,7 @@ readonly fields: SourceRecordFieldRefs;
 export interface Prisma__SourceRecordClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   ingestionRun<T extends Prisma.IngestionRunDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngestionRunDefaultArgs<ExtArgs>>): Prisma.Prisma__IngestionRunClient<runtime.Types.Result.GetResult<Prisma.$IngestionRunPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  sharedPayload<T extends Prisma.SourceRecord$sharedPayloadArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SourceRecord$sharedPayloadArgs<ExtArgs>>): Prisma.Prisma__SourcePayloadClient<runtime.Types.Result.GetResult<Prisma.$SourcePayloadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   externalIdentifiers<T extends Prisma.SourceRecord$externalIdentifiersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SourceRecord$externalIdentifiersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExternalIdentifierPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   entityRelationships<T extends Prisma.SourceRecord$entityRelationshipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SourceRecord$entityRelationshipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EntityRelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   factAssertions<T extends Prisma.SourceRecord$factAssertionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SourceRecord$factAssertionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FactAssertionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1867,6 +2102,7 @@ export interface SourceRecordFieldRefs {
   readonly observedAt: Prisma.FieldRef<"SourceRecord", 'DateTime'>
   readonly payload: Prisma.FieldRef<"SourceRecord", 'Json'>
   readonly payloadHash: Prisma.FieldRef<"SourceRecord", 'Bytes'>
+  readonly payloadRef: Prisma.FieldRef<"SourceRecord", 'Bytes'>
 }
     
 
@@ -2265,6 +2501,25 @@ export type SourceRecordDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many SourceRecords to delete.
    */
   limit?: number
+}
+
+/**
+ * SourceRecord.sharedPayload
+ */
+export type SourceRecord$sharedPayloadArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SourcePayload
+   */
+  select?: Prisma.SourcePayloadSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SourcePayload
+   */
+  omit?: Prisma.SourcePayloadOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SourcePayloadInclude<ExtArgs> | null
+  where?: Prisma.SourcePayloadWhereInput
 }
 
 /**

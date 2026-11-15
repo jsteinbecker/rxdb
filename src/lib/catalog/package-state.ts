@@ -21,6 +21,7 @@ export function providerBaseline(item: ExternalPackage): ExternalPackage {
 	delete baseline.editRevision;
 	delete baseline.baselineUnavailable;
 	delete baseline.manualExclusion;
+	delete baseline.quarantineRelease;
 	baseline.evidence = [];
 	baseline.splXml = null;
 	const product = baseline.details?.product;
@@ -132,7 +133,7 @@ export function recoverLegacyBaseline(latest: ExternalPackage, original: Externa
 	const baseline = providerBaseline(latest);
 	const unknownKeys: string[] = [];
 	for (const key of Object.keys(latest.propertyOverrides ?? {})) {
-		if (key === 'manualExclusion') continue;
+		if (key === 'manualExclusion' || key === 'quarantineRelease') continue;
 		if (!original) unknownKeys.push(key);
 		for (const path of pathsForOverride(key)) {
 			const previous = original ? pathValue(original, path) : undefined;

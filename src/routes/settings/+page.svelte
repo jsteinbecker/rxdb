@@ -6,6 +6,7 @@
 	import HierarchyBuilder from '#lib/components/HierarchyBuilder.svelte';
 	import EquivalenceGroups from '#lib/components/EquivalenceGroups.svelte';
 	import type { ExpandDepth } from "#lib/formulary/settings.ts";
+	import DatabaseSize from '#lib/components/DatabaseSize.svelte';
 	import StrengthStyleRules from '#lib/components/StrengthStyleRules.svelte';
 	import { buildCompoundName, NAME_CASES, type CompoundNaming } from '#lib/compounds/compound-naming.ts';
 
@@ -101,6 +102,8 @@
 	<PageHeader title="Settings">
 		<p>Preferences for {data.scope.name}.</p>
 	</PageHeader>
+
+	<DatabaseSize />
 
 	<form
 		method="POST"

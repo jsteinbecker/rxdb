@@ -420,3 +420,18 @@ export type ProductFormRoutePrep = Prisma.ProductFormRoutePrepModel
  * A hand edit to a form and route; rebuilds never touch these, they apply on read.
  */
 export type ProductFormRouteOverride = Prisma.ProductFormRouteOverrideModel
+/**
+ * Model SourcePayload
+ * Raw provider payloads stored once by content hash; many NDCs fetch the same label or SPL.
+ */
+export type SourcePayload = Prisma.SourcePayloadModel
+/**
+ * Model SplLabel
+ * One label's section text, stored once by content hash and referenced from package JSON as `details.label.sectionsHash`.
+ */
+export type SplLabel = Prisma.SplLabelModel
+/**
+ * Model SplLabelSection
+ * 
+ */
+export type SplLabelSection = Prisma.SplLabelSectionModel

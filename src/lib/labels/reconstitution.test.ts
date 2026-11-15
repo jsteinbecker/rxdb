@@ -398,15 +398,15 @@ test('bottle tables pair each bottle with its water at the strength above it', (
 	assert.equal(parseCombinedConcentration('250 mg/62.5 mg per 5 mL'), 62.5);
 	assert.equal(parseCombinedConcentration('Oral Suspension 200 mg/5 mL'), 40);
 	assert.deepEqual(parseBottleTable(amoxicillinTable), [
-		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 40, diluents: ["distilled water"] },
-		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 40, diluents: ["distilled water"] },
-		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 80, diluents: ["distilled water"] },
-		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 80, diluents: ["distilled water"] }
+		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 40, diluents: ['distilled water'] },
+		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 40, diluents: ['distilled water'] },
+		{ bottleMl: 50, waterMl: 35, concentrationMgPerMl: 80, diluents: ['distilled water'] },
+		{ bottleMl: 100, waterMl: 69, concentrationMgPerMl: 80, diluents: ['distilled water'] }
 	]);
 	assert.deepEqual(parseBottleTable(amoxClavTable), [
-		{ bottleMl: 75, waterMl: 68, concentrationMgPerMl: 62.5, diluents: ["distilled water"] },
-		{ bottleMl: 100, waterMl: 86, concentrationMgPerMl: 62.5, diluents: ["distilled water"] },
-		{ bottleMl: 150, waterMl: 128, concentrationMgPerMl: 62.5, diluents: ["distilled water"] }
+		{ bottleMl: 75, waterMl: 68, concentrationMgPerMl: 62.5, diluents: ['distilled water'] },
+		{ bottleMl: 100, waterMl: 86, concentrationMgPerMl: 62.5, diluents: ['distilled water'] },
+		{ bottleMl: 150, waterMl: 128, concentrationMgPerMl: 62.5, diluents: ['distilled water'] }
 	]);
 	// A reconstitution table is not a bottle table.
 	assert.deepEqual(parseBottleTable(cefepimeTable), []);
@@ -418,8 +418,8 @@ test('bottle instructions in prose need the water they add', () => {
 			'Directions for mixing: 80 mL – Slowly add 80 mL water and shake vigorously. 150 mL – Slowly add 150 mL water and shake vigorously. The dose may be diluted in 1 oz of water.'
 		),
 		[
-			{ bottleMl: 80, waterMl: 80, concentrationMgPerMl: null, diluents: ["distilled water"] },
-			{ bottleMl: 150, waterMl: 150, concentrationMgPerMl: null, diluents: ["distilled water"] }
+			{ bottleMl: 80, waterMl: 80, concentrationMgPerMl: null, diluents: ['distilled water'] },
+			{ bottleMl: 150, waterMl: 150, concentrationMgPerMl: null, diluents: ['distilled water'] }
 		]
 	);
 });
@@ -550,6 +550,90 @@ test('plain, distilled and purified water are one oral diluent; sterile water st
 });
 
 test('oral bottle rows are PO with their water', () => {
-	const [row] = fromBottleRows(parseBottleProse('100 mL bottle: add 69 mL of purified water and shake'));
-	assert.deepEqual([row.routes, row.diluents, row.finalVolumeMl], [['PO'], ['distilled water'], 100]);
+	const [row] = fromBottleRows(
+		parseBottleProse('100 mL bottle: add 69 mL of purified water and shake')
+	);
+	assert.deepEqual(
+		[row.routes, row.diluents, row.finalVolumeMl],
+		[['PO'], ['distilled water'], 100]
+	);
+});
+
+const bivalirudin = `Bivalirudin for injection is intended for intravenous bolus injection and continuous infusion after reconstitution and dilution.
+Preparation Instructions for Bolus Injection and Continuous Infusion
+To each 250 mg vial, add 5 mL of Sterile Water for Injection, USP.
+Gently swirl until all material is dissolved.
+Withdraw and discard 5 mL from a 50 mL infusion bag containing 5% Dextrose in Water or 0.9% Sodium Chloride for Injection.
+Add the contents of the reconstituted vial to the infusion bag containing 5% Dextrose in Water or 0.9% Sodium Chloride for Injection to yield a final concentration of 5 mg/mL (e.g., 1 vial in 50 mL; 2 vials in 100 mL; 5 vials in 250 mL).`;
+
+test('prose reads "to each vial, add N mL" (bivalirudin) and nothing from the bag steps', () => {
+	assert.deepEqual(parseReconstitutionProse(bivalirudin), [
+		{ vialMassMg: 250, diluentMl: 5, concentrations: [], diluents: ['SWFI'] }
+	]);
+});
+
+test('prose reads "add N mL of diluent to the X vial"', () => {
+	const rows = parseReconstitutionProse(
+		'Add 10 mL of Sterile Water for Injection to the 500 mg vial to yield 50 mg/mL.'
+	);
+	assert.equal(rows.length, 1);
+	assert.equal(rows[0].vialMassMg, 500);
+	assert.equal(rows[0].diluentMl, 10);
+	assert.equal(rows[0].concentrations[0]?.mgPerMl, 50);
+});
+
+test('prose ignores "add" into bags, syringes or of already-reconstituted solution', () => {
+	assert.deepEqual(
+		parseReconstitutionProse('Add 5 mL of the reconstituted solution to a 250 mL infusion bag.'),
+		[]
+	);
+	assert.deepEqual(
+		parseReconstitutionProse('Add 100 mL of 0.9% Sodium Chloride to the infusion bag.'),
+		[]
+	);
+	assert.deepEqual(
+		parseReconstitutionProse('Further dilute and add 50 mL of 5% Dextrose to the vial contents.'),
+		[]
+	);
+});
+
+test('prose expands one volume added to a list of vials into one row per vial', () => {
+	const rows = parseReconstitutionProse(
+		'For Direct Intravenous Use – Add 5 mL Sterile Water for Injection, USP, or Bacteriostatic Water for Injection, USP to the 125 mg, 250 mg, and 500 mg vials and administer slowly over a 3- to 5- minute period.'
+	);
+	assert.deepEqual(
+		rows.map((row) => [row.vialMassMg, row.diluentMl, row.routes]),
+		[
+			[125, 5, ['IV']],
+			[250, 5, ['IV']],
+			[500, 5, ['IV']]
+		]
+	);
+});
+
+test('prose reads inject/transfer N mL into the vial', () => {
+	assert.equal(
+		parseReconstitutionProse('Inject 10 mL of Sterile Water for Injection into the 1 g vial.')[0]
+			?.vialMassMg,
+		1000
+	);
+	assert.equal(
+		parseReconstitutionProse(
+			'Slowly transfer 10 mL of 0.9% sodium chloride injection through the center of the rubber stopper into the daptomycin for injection vial.'
+		)[0]?.diluentMl,
+		10
+	);
+	assert.deepEqual(
+		parseReconstitutionProse('Transfer 10 mL of the reconstituted solution into an infusion bag.'),
+		[]
+	);
+});
+
+test('prose ignores a transfer of reconstituted solution even after a reconstitute verb', () => {
+	assert.deepEqual(
+		parseReconstitutionProse(
+			'Following reconstitution, transfer 5 mL of the reconstituted solution into transfusion bags, each containing 100 mL, of one of the compatible solutions below.'
+		),
+		[]
+	);
 });

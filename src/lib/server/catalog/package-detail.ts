@@ -37,7 +37,7 @@ import {
 	unmeasured
 } from '#lib/server/media/pill-image-store.ts';
 import { resolvePillPhotos } from '#lib/server/media/pill-photo.ts';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import { pillImageKey, type PillMedia } from '#lib/imprints/pill-image-layout.ts';
 import { measuredToIln } from '#lib/imprints/measured-to-iln.ts';
 import { guessIln } from '#lib/imprints/spl-to-iln.ts';

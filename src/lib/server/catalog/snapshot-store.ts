@@ -17,6 +17,7 @@ import type { Prisma, PrismaClient } from '../../../generated/client';
 import type { ExternalPackage, RxConcept, SourcePayload } from '../../catalog/types';
 import { CACHE_SOURCE, CATALOG_VERSION, type PackageSnapshot, readSnapshot } from './cache';
 import { parseScdName } from '../../curation/local-concept';
+import { attachLabels, canonicalJson, detachLabel } from './label-store';
 
 type Db = Prisma.TransactionClient;
 
@@ -86,6 +87,12 @@ export async function latestCacheRecords(
       WHERE r.id = ANY(${missing}::uuid[]) AND r.payload ->> 'version' = ${CATALOG_VERSION}`;
 		for (const row of rows) fetched.set(row.id, row.payload);
 	}
+	// Snapshots store label sections by hash (label-store.ts); put the text back.
+	if (!withoutLabel)
+		await attachLabels(
+			db,
+			[...fetched.values()].map((payload) => (payload as Partial<PackageSnapshot> | null)?.item)
+		);
 	return [
 		...durable,
 		...latest.flatMap((row) => {
@@ -333,15 +340,6 @@ export async function loadPackageSnapshots(
 	);
 }
 
-/** JSON with object keys sorted, so equal payloads always serialize alike. */
-function canonicalJson(value: unknown): string {
-	return JSON.stringify(value, (_, nested) =>
-		nested && typeof nested === 'object' && !Array.isArray(nested)
-			? Object.fromEntries(Object.entries(nested).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
-			: nested
-	);
-}
-
 /**
  * The hash that decides whether a payload says anything new. A cache
  * snapshot's `refreshAt` changes on every refresh without changing the facts,
@@ -372,6 +370,29 @@ async function latestRecords(db: Db, evidence: SourcePayload[]) {
 	return new Map(rows.map((row) => [`${row.source}:${row.nativeId}`, row]));
 }
 
+/**
+ * Raw provider responses are stored once by content in `source_payload`: the
+ * NDCs of one product fetch the same label and SPL. Cache snapshots and user
+ * records stay inline, since the app queries into them.
+ */
+const shares = (source: string) => source !== CACHE_SOURCE && !source.startsWith('user-');
+
+async function sharedPayload(db: Db, hash: Buffer, payload: unknown) {
+	const key = new Uint8Array(hash);
+	await db.sourcePayload.createMany({
+		data: [{ hash: key, payload: payload as Prisma.InputJsonValue }],
+		skipDuplicates: true
+	});
+	return key;
+}
+
+/** A cache snapshot keeps its label sections in spl_label, by hash. */
+async function storedForm(db: Db, item: SourcePayload): Promise<SourcePayload> {
+	const payload = item.payload as Partial<PackageSnapshot> | null;
+	if (item.source !== CACHE_SOURCE || !payload?.item?.details?.label) return item;
+	return { ...item, payload: { ...payload, item: await detachLabel(db, payload.item) } };
+}
+
 /** Record provenance inside the transaction supplied by staging or catalog promotion. */
 export async function recordEvidence(
 	db: Db,
@@ -379,6 +400,7 @@ export async function recordEvidence(
 ): Promise<Map<string, string>> {
 	const runs = new Map<string, string>();
 	const records = new Map<string, string>();
+	evidence = await Promise.all(evidence.map((item) => storedForm(db, item)));
 	const latest = await latestRecords(db, evidence);
 	for (const item of evidence) {
 		const hash = payloadHash(item.source, item.payload);
@@ -389,7 +411,9 @@ export async function recordEvidence(
 		if (previous && hash.equals(previous.payloadHash)) {
 			await db.sourceRecord.update({
 				where: { id: previous.id },
-				data: { payload: item.payload as Prisma.InputJsonValue, observedAt: new Date() }
+				data: shares(item.source)
+					? { observedAt: new Date() }
+					: { payload: item.payload as Prisma.InputJsonValue, observedAt: new Date() }
 			});
 			records.set(key, previous.id);
 			continue;
@@ -414,7 +438,9 @@ export async function recordEvidence(
 				ingestionRunId: runId,
 				sourceNativeId: item.nativeId,
 				sourceUrl: url.href,
-				payload: item.payload as Prisma.InputJsonValue,
+				...(shares(item.source)
+					? { payloadRef: await sharedPayload(db, hash, item.payload) }
+					: { payload: item.payload as Prisma.InputJsonValue }),
 				payloadHash: hash
 			}
 		});

@@ -834,8 +834,8 @@ marks, and `editing` offers a pencil beside each overridable property.
       <section>
             <h4>Package</h4>
             <dl>
-                  <dt>NDC</dt>
-                  <dd>
+                  <dt class="key">NDC</dt>
+                  <dd class="key">
                         <span class="mono">{formatNdc(item.ndc)}</span>
                   </dd>
                   <dt>Product NDC</dt>
@@ -847,17 +847,17 @@ marks, and `editing` offers a pencil beside each overridable property.
                         {item.description ?? '—'}{@render edit(['description'], 'description', 'ndc')}
                         {@render correctionMark('uou')}
                   </dd>
-                  <dt>Brand</dt>
-                  <dd>{item.brandName ?? '—'}{@render edit(['brandName'], 'brand name', 'ndc')}</dd>
-                  <dt>Generic</dt>
-                  <dd>{item.genericName ?? '—'}{@render edit(['genericName'], 'generic name', 'ndc')}</dd>
+                  <dt class="key">Brand</dt>
+                  <dd class="key">{item.brandName ?? '—'}{@render edit(['brandName'], 'brand name', 'ndc')}</dd>
+                  <dt class="key">Generic</dt>
+                  <dd class="key">{item.genericName ?? '—'}{@render edit(['genericName'], 'generic name', 'ndc')}</dd>
                   <dt>Labeler</dt>
                   <dd>
                         <a href={resolve('/formulary/labeler/[code]', { code: item.ndc.slice(0, 5) })}>{item.labelerName ?? '—'}</a>
                         <span class="mono">({item.labelerCode ?? '?'})</span>{@render edit(['labelerName', 'labelerCode'], 'labeler', 'ndc')}
                   </dd>
-                  <dt>Dose form</dt>
-                  <dd>
+                  <dt class="group">Dose form</dt>
+                  <dd class="group">
                         {#if doseForm}<span title={doseForm.display !== doseForm.raw ? `Stored as ${doseForm.raw}` : undefined}>{doseForm.display}</span>{#if doseFormGrouped}<span
                               class="muted" aria-label="Equivalence group"> ≡</span>{/if}{:else}—{/if}{@render edit(['doseForm'], 'dose form', 'ndc')}
                         {#if item.doseFormCorrection}
@@ -968,7 +968,7 @@ marks, and `editing` offers a pencil beside each overridable property.
                         {/if}{@render src('catalog')}
                   </dd>
                   <dt>Formulary</dt>
-                  <dd>
+                  <dd class="key">
                         {#if formularyItems}
                               {@render ok(formularyItems.length > 0)}{#if formularyItems.length}On formulary as
                                     {#each formularyItems as formularyItem, index (formularyItem.id)}{index ? ', ' : ''}<a
@@ -986,8 +986,8 @@ marks, and `editing` offers a pencil beside each overridable property.
                   <dd>{@render ok(item.rxcuiStatus?.toUpperCase() === 'ACTIVE')}{item.rxcuiStatus ?? '—'}{@render edit(['rxcuiStatus'], 'RxNav NDC status', 'rxnav')}</dd>
                   <dt>RxNav marketing status</dt>
                   <dd>{@render ok(rxnavMarketingStatus?.toUpperCase() === 'ACTIVE')}{rxnavMarketingStatus ?? '—'}{@render src('rxnav')}</dd>
-                  <dt>Species</dt>
-                  <dd>
+                  <dt class="group">Species</dt>
+                  <dd class="group">
                         {flag(item.isVeterinary, 'Veterinary', 'Human')}{@render edit(['isVeterinary'], 'species', 'ndc')}
                   </dd>
                   <dt>Product type</dt>
@@ -1175,33 +1175,33 @@ marks, and `editing` offers a pencil beside each overridable property.
                         {@const drawn = !!chambers || (!!diagram && ((volume.finalVolumeMl ?? 0) > 0 || (volume.diluentMl ?? 0) > 0))}
                         {#if !drawn}
                         <p class="resolved-summary">
-                              <strong>Resolved volume:</strong>
+                              <span class="stat"><strong>Resolved volume:</strong>
                               {#if volume.finalVolumeMl === null}Unresolved{:else}{@render qty(volume.finalVolumeMl, 'mL')} final{/if}{@render edit(
                               ['resolvedVolume.finalVolumeMl'],
                               'resolved volume'
-                        )}
+                        )}</span>
                               {#if volume.concentrationMgPerMl !== null || editing}
-                                    · <strong>Resolved concentration:</strong>
+                                    <span class="stat"><strong>Resolved concentration:</strong>
                                     {#if volume.concentrationMgPerMl === null}— mg/mL{:else}{@render qty(volume.concentrationMgPerMl, 'mg/mL')}{/if}{@render edit(
                                     ['resolvedVolume.concentrationMgPerMl'],
                                     'resolved concentration'
-                              )}{/if}
+                              )}</span>{/if}
                               {#if volume.diluentMl !== null || editing}
-                                    · <strong>Diluent added:</strong>
+                                    <span class="stat"><strong>Diluent added:</strong>
                                     {#if volume.diluentMl === null}— mL{:else}{@render qty(volume.diluentMl, 'mL')}{/if}{@render edit(
                                     ['resolvedVolume.diluentMl'],
                                     'diluent added'
-                              )}{/if}
+                              )}</span>{/if}
                               {#if volume.powderDisplacementMl != null || (volume.finalVolumeMl != null && volume.diluentMl != null) || editing}
-                                    · <strong>Powder displacement:</strong>
                                     {@const displacement = volume.powderDisplacementMl ??
                                     (volume.finalVolumeMl != null && volume.diluentMl != null
                                           ? Math.max(0, volume.finalVolumeMl - volume.diluentMl)
                                           : null)}
+                                    <span class="stat"><strong>Powder displacement:</strong>
                                     {#if displacement === null}— mL{:else}{@render qty(displacement, 'mL')}{/if}{@render edit(
                                     ['resolvedVolume.powderDisplacementMl'],
                                     'powder displacement'
-                              )}{/if}
+                              )}</span>{/if}
                         </p>
                         {/if}
                         {#if diagram && !chambers}
@@ -1703,8 +1703,72 @@ marks, and `editing` offers a pencil beside each overridable property.
 
 <style>
       .resolved-summary {
-            font-size: 0.85rem;
+            margin: 0 0 0.3rem;
+            font-size: 0.78rem;
             line-height: 1.6;
+      }
+
+      /* Each label stays with its value, and fields wrap as whole units. */
+      .resolved-summary .stat {
+            white-space: nowrap;
+      }
+
+      .resolved-summary:has(.stat) {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0 1.5rem;
+      }
+
+      .resolved-summary strong {
+            color: #5c6777;
+            font-weight: 600;
+      }
+
+      .wide > p.muted {
+            margin: 0 0 0.4rem;
+            font-size: 0.72rem;
+      }
+
+      /* Identity facts a pharmacist checks first stand out from the rest of the list. */
+      dt.key {
+            color: #1d2733;
+            font-weight: 600;
+      }
+
+      dd.key {
+            color: #1d2733;
+            font-size: 0.82rem;
+            font-weight: 600;
+      }
+
+      dd.key .mono {
+            font-size: 1em;
+            letter-spacing: 0.02em;
+      }
+
+      /* A hairline splits each list into its blocks (identity / packaging, status / regulatory). */
+      dt.group,
+      dd.group {
+            margin-top: 0.35rem;
+            padding-top: 0.35rem;
+            border-top: 1px solid #eef1f5;
+      }
+
+      /* The pill and its lookup links share one row instead of stacking. */
+      .identification {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0 1.25rem;
+      }
+
+      .identification > h4 {
+            flex: 0 0 100%;
+      }
+
+      .identification .appearance-grid,
+      .identification .pill-links {
+            margin: 0;
       }
 
       .citations {
@@ -1880,7 +1944,9 @@ marks, and `editing` offers a pencil beside each overridable property.
 
       .pharm-classes {
             display: grid;
-            gap: 0.3rem;
+            gap: 0.15rem;
+            font-size: 0.72rem;
+            line-height: 1.3;
       }
 
       .pharm-class {
@@ -1891,8 +1957,9 @@ marks, and `editing` offers a pencil beside each overridable property.
       }
 
       .class-type {
-            flex: 0 0 auto;
+            flex: 0 0 2rem;
             color: #5c6777;
+            font-size: 0.66rem;
       }
 
       .pharm-empty {
@@ -1901,14 +1968,15 @@ marks, and `editing` offers a pencil beside each overridable property.
             font-size: 0.85rem;
       }
 
+      /* The menu floats so the heading lines up with its neighbours' headings. */
       .pharm-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
+            position: relative;
       }
 
       .pharm-menu {
-            position: relative;
+            position: absolute;
+            top: -0.25rem;
+            right: 0;
       }
 
       section:hover .pharm-menu .row-menu-trigger {
@@ -1951,6 +2019,18 @@ marks, and `editing` offers a pencil beside each overridable property.
       .mono {
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
             font-size: 0.82rem;
+      }
+
+      dd .mono {
+            font-size: 0.95em;
+      }
+
+      dd.mono {
+            font-size: 0.7rem;
+      }
+
+      .pharm-class .class-type {
+            font-size: 0.66rem;
       }
 
       .bad {
