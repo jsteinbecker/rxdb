@@ -136,7 +136,22 @@ export const sentences = (text: string): string[] =>
  * their own they would swallow the stability paragraph's bag sizes.
  */
 const DILUENT =
-	/\b(?:with|and|or|by adding)\s+(?:exactly\s+|approximately\s+|about\s+)?([\d.]+)\s*mL\b/gi;
+	/\b(?:with|and|or|by adding|add|inject|introduce|transfer)\s+(?:exactly\s+|approximately\s+|about\s+)?([\d.]+)\s*mL\b/gi;
+
+/**
+ * A bare "add N mL" (or "inject"/"transfer N mL ... into the vial") names its own action, so it governs itself — bivalirudin's
+ * "To each 250 mg vial, add 5 mL of Sterile Water for Injection" has no
+ * reconstitute verb at all. It is reconstitution only when a vial or bottle is
+ * the destination and nothing says the liquid is already a solution or bound
+ * for a bag: "Add 5 mL of the reconstituted solution to a 250 mL infusion bag"
+ * is dilution.
+ */
+const ADD_TO_VIAL = (sentence: string, head: string): boolean =>
+	/\b(?:vials?|bottles?|pharmacy bulk package)\b/i.test(sentence) &&
+	!/\b(?:bags?|infusion container|reconstituted|contents|solution of|dilut\w*|further)\b/i.test(
+		sentence
+	) &&
+	![...head.matchAll(GOVERNING_VERB)].some((verb) => !/^reconstitut/i.test(verb[1]));
 
 /**
  * Vial content the sentence states before a diluent clause — "the pharmacy
@@ -161,7 +176,16 @@ const TRAILING_VIAL_MASS = /^\s*\(\s*(?:for\s+)?(?:the\s+)?([\d.]+)\s*(mcg|ug|mg
  * it cannot reach into a later clause.
  */
 const DESTINATION_VIAL_MASS =
-	/^[^,;]*?\bto\s+(?:the|each|a)\s+([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s+(?:[\w-]+\s+){0,3}?(?:vial|bottle|package)\b/i;
+	/^[^,;]*?\b(?:to|into)\s+(?:the|each|a)\s+([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s+(?:[\w-]+\s+){0,3}?(?:vial|bottle|package)\b/i;
+
+/**
+ * Several destination vials sharing one volume — "Add 5 mL Sterile Water for
+ * Injection ... to the 125 mg, 250 mg, and 500 mg vials" is one instruction
+ * per vial. The list is captured whole and split by `LISTED_MASS`.
+ */
+const DESTINATION_VIAL_LIST =
+	/\b(?:to|into)\s+(?:the|each|a)\s+((?:[\d.]+\s*(?:mcg|ug|mg|gm|grams?|g)?\s*,?\s*(?:and|or)?\s*){2,})\s*(?:[\w-]+\s+){0,3}?(?:vials|bottles)\b/i;
+const LISTED_MASS = /([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)?/gi;
 
 /**
  * Verbs that can govern a diluent volume. The last one before the first
@@ -271,7 +295,13 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
 		const head = sentence.slice(0, diluents[0].index);
 		const verbs = [...head.matchAll(GOVERNING_VERB)];
 		const governing = verbs[verbs.length - 1];
-		if (!governing || !/^reconstitut/i.test(governing[1])) continue;
+		// An action verb on the volume itself is judged only by where it sends
+		// the liquid: "Following reconstitution, transfer 5 mL of the
+		// reconstituted solution into transfusion bags" has a reconstitute verb
+		// ahead of it and is still a bag step.
+		if (/^(?:add|inject|introduce|transfer)\b/i.test(diluents[0][0])) {
+			if (!ADD_TO_VIAL(sentence, head)) continue;
+		} else if (!governing || !/^reconstitut/i.test(governing[1])) continue;
 
 		// The shared tail: "to a concentration of 200 mg/mL of piperacillin and
 		// 25 mg/mL of tazobactam" is stated once and governs every pair, since
@@ -342,6 +372,19 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
 			if (!mass) {
 				const trailing = TRAILING_VIAL_MASS.exec(after);
 				if (trailing) mass = [trailing[1], trailing[2]];
+			}
+			const listed = DESTINATION_VIAL_LIST.exec(after);
+			if (listed && !next) {
+				const masses = [...listed[1].matchAll(LISTED_MASS)];
+				const unit = masses.findLast((found) => found[2])?.[2];
+				for (const found of masses)
+					pairs.push({
+						diluentMl,
+						mass: [found[1], found[2] ?? unit],
+						routes,
+						diluents: diluentsIn(diluentClause)
+					});
+				continue;
 			}
 			pairs.push({ diluentMl, mass, routes, diluents: diluentsIn(diluentClause) });
 		}
