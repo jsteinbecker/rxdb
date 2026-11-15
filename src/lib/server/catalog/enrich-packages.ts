@@ -794,7 +794,9 @@ export async function enrichPackages(
 			},
 			ownCodes: codesOf(ownProducts),
 			siblingCodes: codesOf(siblingProducts),
-			scope
+			scope,
+			rxNormDoseForm,
+			routes: [...structuredRoutes, ...labelRoutes]
 		});
 		const doseForm =
 			doseFormCorrection?.to ??
