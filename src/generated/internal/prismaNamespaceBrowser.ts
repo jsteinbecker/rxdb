@@ -123,7 +123,10 @@ export const ModelName = {
   ProductFormPackage: 'ProductFormPackage',
   ProductFormRoute: 'ProductFormRoute',
   ProductFormRoutePrep: 'ProductFormRoutePrep',
-  ProductFormRouteOverride: 'ProductFormRouteOverride'
+  ProductFormRouteOverride: 'ProductFormRouteOverride',
+  SourcePayload: 'SourcePayload',
+  SplLabel: 'SplLabel',
+  SplLabelSection: 'SplLabelSection'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -438,7 +441,8 @@ export const SourceRecordScalarFieldEnum = {
   sourceUrl: 'sourceUrl',
   observedAt: 'observedAt',
   payload: 'payload',
-  payloadHash: 'payloadHash'
+  payloadHash: 'payloadHash',
+  payloadRef: 'payloadRef'
 } as const
 
 export type SourceRecordScalarFieldEnum = (typeof SourceRecordScalarFieldEnum)[keyof typeof SourceRecordScalarFieldEnum]
@@ -1268,6 +1272,37 @@ export const ProductFormRouteOverrideScalarFieldEnum = {
 } as const
 
 export type ProductFormRouteOverrideScalarFieldEnum = (typeof ProductFormRouteOverrideScalarFieldEnum)[keyof typeof ProductFormRouteOverrideScalarFieldEnum]
+
+
+export const SourcePayloadScalarFieldEnum = {
+  hash: 'hash',
+  payload: 'payload'
+} as const
+
+export type SourcePayloadScalarFieldEnum = (typeof SourcePayloadScalarFieldEnum)[keyof typeof SourcePayloadScalarFieldEnum]
+
+
+export const SplLabelScalarFieldEnum = {
+  hash: 'hash',
+  setId: 'setId',
+  version: 'version',
+  effectiveTime: 'effectiveTime',
+  createdAt: 'createdAt'
+} as const
+
+export type SplLabelScalarFieldEnum = (typeof SplLabelScalarFieldEnum)[keyof typeof SplLabelScalarFieldEnum]
+
+
+export const SplLabelSectionScalarFieldEnum = {
+  labelHash: 'labelHash',
+  position: 'position',
+  key: 'key',
+  title: 'title',
+  text: 'text',
+  blocks: 'blocks'
+} as const
+
+export type SplLabelSectionScalarFieldEnum = (typeof SplLabelSectionScalarFieldEnum)[keyof typeof SplLabelSectionScalarFieldEnum]
 
 
 export const SortOrder = {

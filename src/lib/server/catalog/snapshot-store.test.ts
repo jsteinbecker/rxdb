@@ -14,6 +14,21 @@ import {
 test('staging stores evidence and snapshots without promoting catalog identities', async () => {
 	const item = packageFixture({
 		splXml: '<document/>',
+		details: {
+			product: null,
+			packaging: null,
+			spl: null,
+			rxnav: null,
+			label: {
+				effectiveTime: '20260101',
+				version: '3',
+				setId: 'set-1',
+				sections: [
+					{ key: 'description', title: 'Description', text: 'A tablet.' },
+					{ key: 'how_supplied', title: 'How supplied', text: 'Bottles of 30.' }
+				]
+			}
+		},
 		propertyOverrides: { doseForm: { value: 'TABLET', createdAt: '2026-10-19', source: 'none' } },
 		evidence: [
 			{
@@ -30,7 +45,10 @@ test('staging stores evidence and snapshots without promoting catalog identities
 			}
 		]
 	});
-	const records: { sourceUrl: string; payload: unknown }[] = [];
+	const records: { sourceUrl: string; payload?: unknown; payloadRef?: Uint8Array }[] = [];
+	const shared = new Map<string, unknown>();
+	const labels: { hash: Uint8Array }[] = [];
+	const sections: { labelHash: Uint8Array; position: number; text: string }[] = [];
 	const finished: string[] = [];
 	let transactions = 0;
 	const tx = {
@@ -49,6 +67,28 @@ test('staging stores evidence and snapshots without promoting catalog identities
 			})
 		},
 		source: { upsert: async () => ({}) },
+		sourcePayload: {
+			createMany: async ({ data }: { data: { hash: Uint8Array; payload: unknown }[] }) => {
+				for (const row of data) shared.set(Buffer.from(row.hash).toString('hex'), row.payload);
+				return { count: data.length };
+			}
+		},
+		splLabel: {
+			createMany: async ({ data }: { data: { hash: Uint8Array }[] }) => {
+				// skipDuplicates: the baseline and the snapshot carry the same label.
+				const fresh = data.filter(
+					(row) => !labels.some((label) => Buffer.from(label.hash).equals(row.hash))
+				);
+				labels.push(...fresh);
+				return { count: fresh.length };
+			}
+		},
+		splLabelSection: {
+			createMany: async ({ data }: { data: typeof sections }) => {
+				sections.push(...data);
+				return { count: data.length };
+			}
+		},
 		ingestionRun: {
 			create: async () => ({ id: randomUUID() }),
 			update: async ({ where }: { where: { id: string } }) => {
@@ -72,12 +112,28 @@ test('staging stores evidence and snapshots without promoting catalog identities
 	assert.equal(transactions, 1);
 	assert.equal(records.length, 2);
 	assert.equal(finished.length, 2);
-	assert.deepEqual(records[0].payload, { revision: 2 });
+	// Raw provider payloads are shared by content, not stored inline.
+	assert.equal(records[0].payload, undefined);
+	assert.deepEqual(shared.get(Buffer.from(records[0].payloadRef!).toString('hex')), {
+		revision: 2
+	});
 	assert.equal(new URL(records[0].sourceUrl).searchParams.has('api_key'), false);
 	const stored = records[1].payload as ReturnType<typeof snapshotPackage>;
 	assert.equal(stored.item.splXml, null);
 	assert.deepEqual(stored.item.evidence, []);
 	assert.deepEqual(stored.item.propertyOverrides, item.propertyOverrides);
+	// The snapshot keeps its label sections by hash, stored once in spl_label.
+	const storedLabel = stored.item.details?.label as unknown as {
+		sectionsHash: string;
+		sections?: unknown;
+	};
+	assert.equal(storedLabel.sections, undefined);
+	assert.equal(labels.length, 1);
+	assert.equal(Buffer.from(labels[0].hash).toString('hex'), storedLabel.sectionsHash);
+	assert.deepEqual(
+		sections.map((section) => section.text),
+		item.details!.label!.sections.map((section) => section.text)
+	);
 	// Staging must not strip raw evidence from the caller's package.
 	assert.equal(item.splXml, '<document/>');
 	assert.equal(item.evidence.length, 2);
