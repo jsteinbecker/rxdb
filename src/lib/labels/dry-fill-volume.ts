@@ -455,6 +455,23 @@ const EACH_CONTAINS =
 const LIMIT_BEFORE =
 	/(?:no more than|not (?:to )?exceed|up to|less than|maximum(?: of)?|at least|final concentrations? of)\s*$/i;
 
+/** Preparation verbs, in the order a label states its steps. */
+const PREP_VERB = /\b(reconstitut\w*|dissolv\w*|dilut\w*|mix\w*|combin\w*)/gi;
+
+/**
+ * Verbs that make the vial's solution. Ampicillin writes "dissolve in 3.5 or
+ * 6.8 mL Sterile Water for Injection" for the same step.
+ */
+const RECONSTITUTING = /^(?:reconstitut|dissolv)/i;
+
+/**
+ * A sentence that reports what the previous step produced rather than
+ * instructing one: "The resulting solution…", "The resultant solution will
+ * contain…", "Each vial contains…", "Each mL contains…".
+ */
+const RESULT_SENTENCE =
+	/^(?:the\s+)?(?:resulting|resultant|final|reconstituted)\b|^(?:after|following|upon)\s+reconstitution\b|^(?:each|the)\s+(?:vial|mL|bottle)\b[^.]{0,40}\bcontains?\b|^this\s+(?:yields|provides|results)/i;
+
 const VIAL_AFTER = /^\s*(?:for|in)\s+(?:the|each|a)\s+([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\b/i;
 
 /**
@@ -467,18 +484,34 @@ const VIAL_AFTER = /^\s*(?:for|in)\s+(?:the|each|a)\s+([\d.]+)\s*(mcg|ug|mg|gm|g
  */
 export function statedReconstitutedConcentrations(text: string): LabelConcentration[] {
 	const found: LabelConcentration[] = [];
+	// The verb the previous sentence ended on. A result is often its own
+	// sentence — ampicillin's "Reconstitute … with 3.5 mL." then "The resulting
+	// solution will provide a concentration of 250 mg per mL." — and it belongs
+	// to whichever step came last: after "Further dilute in 100 mL" the same
+	// words describe the bag.
+	let carried: string | null = null;
 	for (const sentence of sentences(text)) {
-		if (!/reconstitut/i.test(sentence)) continue;
+		const verbsIn = (span: string) => [...span.matchAll(PREP_VERB)].map((verb) => verb[1]);
+		const own = verbsIn(sentence);
+		const inherited = carried;
+		carried = own.length ? own[own.length - 1] : carried;
+		const followUp =
+			!!inherited && RECONSTITUTING.test(inherited) && RESULT_SENTENCE.test(sentence);
+		if (!/reconstitut/i.test(sentence) && !followUp) continue;
 		for (const match of sentence.matchAll(STATED_CONCENTRATION)) {
 			const before = sentence.slice(0, match.index);
-			const verbs = [...before.matchAll(/\b(reconstitut\w*|dilut\w*|mix\w*|combin\w*)/gi)];
-			if (!verbs.length || !/^reconstitut/i.test(verbs[verbs.length - 1][1])) continue;
+			const verbs = verbsIn(before);
+			const governing = verbs.length ? verbs[verbs.length - 1] : followUp ? inherited : null;
+			if (!governing || !RECONSTITUTING.test(governing)) continue;
 			if (LIMIT_BEFORE.test(before)) continue;
 			const mass = toMg(match[1].replace(/,/g, ''), match[2]);
 			const per = match[3] ? finite(Number(match[3])) : 1;
 			if (mass === null || per === null) continue;
 			const vial = VIAL_AFTER.exec(sentence.slice(match.index + match[0].length));
-			found.push({ mgPerMl: mass / per, vialMassMg: vial ? toMg(vial[1], vial[2]) : null });
+			// "500 mg per 10 mL" states the whole vial and what it makes; a
+			// bare "per mL" says nothing about which vial.
+			const vialMassMg = vial ? toMg(vial[1], vial[2]) : match[3] && per > 1 ? mass : null;
+			found.push({ mgPerMl: mass / per, vialMassMg });
 		}
 		if (/dilut/i.test(sentence)) continue;
 		for (const match of sentence.matchAll(EACH_CONTAINS)) {
@@ -497,6 +530,13 @@ export function statedReconstitutedConcentrations(text: string): LabelConcentrat
  * arginine; 1.5 leaves room for that and nothing like a wrong concentration.
  */
 const MAX_DISPLACEMENT_ML_PER_G = 1.5;
+
+/**
+ * Most a vial-tied concentration may exceed the diluent by, as a fraction of
+ * it. Excipients can displace more than the drug does, but not more than a
+ * third of what is added; beyond that the "vial" is a different instruction.
+ */
+const MAX_TIED_DISPLACEMENT = 0.35;
 
 /**
  * Give rows that state no result the one label concentration that fits them.
@@ -528,10 +568,18 @@ export function withLabelConcentrations(
 				)
 				.filter((c) => {
 					const yieldMl = mass / c.mgPerMl;
+					// A concentration the label ties to this vial ("each vial
+					// contains 100 mg/20 mL") is its own arithmetic, excipients
+					// and all: remdesivir's cyclodextrin turns 19 mL into 20, far
+					// past what 100 mg of drug displaces. Only an unattributed
+					// one has to be checked against the physics.
+					const tied = c.vialMassMg !== null;
+					const room = tied
+						? row.diluentMl * MAX_TIED_DISPLACEMENT
+						: (mass / 1000) * MAX_DISPLACEMENT_ML_PER_G;
 					return (
 						yieldMl >= row.diluentMl * (1 - TOLERANCE) &&
-						yieldMl - row.diluentMl <=
-							(mass / 1000) * MAX_DISPLACEMENT_ML_PER_G + TOLERANCE * yieldMl
+						yieldMl - row.diluentMl <= room + TOLERANCE * yieldMl
 					);
 				})
 				.map((c) => c.mgPerMl)

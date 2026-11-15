@@ -315,7 +315,11 @@ test('a reconstituted concentration is read wherever the label states it, and a 
 				' Reconstituted solutions of vancomycin (500 mg/10 mL) must be further diluted in at least 100 mL. ' +
 				'Further dilute the reconstituted solution to a concentration of no more than 5 mg/mL.'
 		),
-		[{ mgPerMl: 50, vialMassMg: null }]
+		// "500 mg/10 mL" names the whole vial, so it is tied to the 500 mg one.
+		[
+			{ mgPerMl: 50, vialMassMg: null },
+			{ mgPerMl: 50, vialMassMg: 500 }
+		]
 	);
 	assert.deepEqual(
 		statedReconstitutedConcentrations(
@@ -636,4 +640,70 @@ test('prose ignores a transfer of reconstituted solution even after a reconstitu
 		),
 		[]
 	);
+});
+
+test('a follow-up "resulting solution" sentence states the reconstituted concentration', () => {
+	const text =
+		'Reconstitute the 1 g vial with 3.5 mL of Sterile Water for Injection. The resulting solution will provide a concentration of 250 mg per mL.';
+	assert.deepEqual(
+		statedReconstitutedConcentrations(text).map((c) => c.mgPerMl),
+		[250]
+	);
+	const rows = withLabelConcentrations(
+		parseReconstitutionProse(text),
+		statedReconstitutedConcentrations(text),
+		1000
+	);
+	assert.equal(rows[0].concentrations[0]?.mgPerMl, 250);
+});
+
+test('"resultant solution will contain 500 mg per 10 mL" ties the concentration to the vial', () => {
+	const stated = statedReconstitutedConcentrations(
+		'Reconstitute the 500 mg vial with 10 mL of Sterile Water for Injection. The resultant solution will contain vancomycin equivalent to 500 mg per 10 mL.'
+	);
+	assert.deepEqual(stated, [{ mgPerMl: 50, vialMassMg: 500 }]);
+});
+
+test('a follow-up sentence after a dilution step is the bag, not the vial', () => {
+	assert.deepEqual(
+		statedReconstitutedConcentrations(
+			'Reconstitute the vial with 10 mL. Further dilute in 100 mL of 0.9% Sodium Chloride. The resulting solution will provide a concentration of 5 mg per mL.'
+		),
+		[]
+	);
+});
+
+test('an excipient-heavy powder resolves when the label ties the concentration to its vial (remdesivir)', () => {
+	const text =
+		'Reconstitute the 100 mg vial with 19 mL of Sterile Water for Injection. Following reconstitution, each vial contains 100 mg/20 mL (5 mg/mL) of remdesivir solution.';
+	const rows = withLabelConcentrations(
+		parseReconstitutionProse(text),
+		statedReconstitutedConcentrations(text),
+		100
+	);
+	assert.equal(rows[0].concentrations[0]?.mgPerMl, 5);
+});
+
+test('an unattributed concentration still cannot claim an implausible displacement', () => {
+	const rows = withLabelConcentrations(
+		[{ vialMassMg: 100, diluentMl: 10, concentrations: [] }],
+		[{ mgPerMl: 5, vialMassMg: null }],
+		100
+	);
+	assert.deepEqual(rows[0].concentrations, []);
+});
+
+test('"dissolve in N mL" sets up a follow-up concentration (ampicillin IM)', () => {
+	const text =
+		'In such instances, dissolve in 3.5 or 6.8 mL Sterile Water for Injection, USP, respectively. The resulting solution will provide a concentration of 250 mg per mL.';
+	assert.deepEqual(
+		statedReconstitutedConcentrations(text).map((c) => c.mgPerMl),
+		[250]
+	);
+	const rows = withLabelConcentrations(
+		[{ vialMassMg: null, diluentMl: 3.5, concentrations: [], routes: ['IM'] }],
+		statedReconstitutedConcentrations(text),
+		1000
+	);
+	assert.equal(rows[0].concentrations[0]?.mgPerMl, 250);
 });
