@@ -310,6 +310,7 @@ export function overrideTargets(
 			.filter(([key]) => !key.startsWith('details.product.') || item.details?.product)
 			.map(([key, label]) => ({ key, label })),
 		{ key: 'manualExclusion', label: 'Formulary exclusion reason' },
+		{ key: 'quarantineRelease', label: 'Accepted-without-reconstitution reason' },
 		{ key: 'doseForm', label: 'Dose form (choose any)' },
 		...(item.details?.product
 			? [{ key: 'details.product.routes', label: 'Routes (choose any)' }]
@@ -474,6 +475,12 @@ function resolveField(key: string): OverrideField | null {
 			valid: isText(500),
 			get: (item) => text(item.manualExclusion),
 			set: (item, value) => Object.assign(item, { manualExclusion: value })
+		});
+	if (key === 'quarantineRelease')
+		return field({
+			valid: isText(500),
+			get: (item) => text(item.quarantineRelease),
+			set: (item, value) => Object.assign(item, { quarantineRelease: value })
 		});
 	if (key === 'doseForm')
 		return field({

@@ -186,6 +186,8 @@ export type ExternalPackage = PackageFacts & {
 	propertyOverrides?: Record<string, PropertyOverride>;
 	/** Why a user kept this NDC off the formulary, set through the `manualExclusion` override. */
 	manualExclusion?: string | null;
+	/** Why a user accepted a quarantined NDC as it is ($lib/catalog/quarantine.ts), set through the `quarantineRelease` override. */
+	quarantineRelease?: string | null;
 	/** Read-side only: the local concept superseding this package's RxNorm concept, applied at read time and never stored. */
 	localConcept?: LocalConceptView;
 	listed: boolean | null;

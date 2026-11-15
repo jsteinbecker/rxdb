@@ -16,6 +16,8 @@
       import PropertyOverridePanel from '#lib/components/PropertyOverridePanel.svelte';
       import {labelProductName, packageTitle, rxNormPackageTitle} from "#lib/catalog/package-title.ts";
       import {styledName} from "#lib/client/strength-display.svelte.ts";
+      import {QUARANTINE_LABELS, quarantineReason} from '#lib/catalog/quarantine.ts';
+      import {nextAddedRowId} from '#lib/curation/property-override-fields.ts';
 
       let {data, form} = $props();
 
@@ -50,6 +52,8 @@
       }
       let editKeys = $state<string[]>([]);
       let excludeDialog: HTMLDialogElement;
+      let releaseDialog: HTMLDialogElement;
+      const quarantine = $derived(quarantineReason(data.item));
       let actionsMenu: HTMLElement;
 
       // The local concepts list links here with ?localConcept=edit to open the editor directly.
@@ -136,7 +140,47 @@
                         <button class="link" type="submit">Include again</button>
                   </form>
             {/if}
+            {#if quarantine}
+                  <div class="quarantine" role="status">
+                        <span class="quarantined">Quarantined:</span> {QUARANTINE_LABELS[quarantine]}.
+                        <span class="quarantine-actions">
+                              <button class="link" type="button" onclick={async () => { editKeys = [`reconstitution.${nextAddedRowId(item)}.diluentMl`]; await tick(); document.querySelector('.body.with-panel')?.scrollIntoView({behavior: 'smooth'}); }}>Add reconstitution row</button>
+                              <button class="link" type="button" onclick={() => releaseDialog.showModal()}>Accept as is…</button>
+                              <button class="link danger" type="button" onclick={() => excludeDialog.showModal()}>Exclude permanently…</button>
+                        </span>
+                  </div>
+            {:else if item.quarantineRelease}
+                  <form class="exclusion" method="POST" action="?/requarantine" use:enhance>
+                        <input type="hidden" name="revision" value={item.editRevision} />
+                        <span class="released">Accepted without reconstitution:</span> {item.quarantineRelease}
+                        <button class="link" type="submit">Undo</button>
+                  </form>
+            {/if}
       </PageHeader>
+      <dialog bind:this={releaseDialog}>
+            <form
+                  method="POST"
+                  action="?/releaseQuarantine"
+                  use:enhance={() =>
+                        async ({update}) => {
+                              await update();
+                              if (!form?.message) releaseDialog.close();
+                        }}
+            >
+                  <input type="hidden" name="revision" value={item.editRevision} />
+                  <h2>Accept {formatNdc(item.ndc)} as is</h2>
+                  <p>It leaves the quarantine list and stays on the formulary without reconstitution instructions.</p>
+                  <label>
+                        Reason
+                        <textarea name="reason" maxlength="500" required rows="3"></textarea>
+                  </label>
+                  {#if form?.message}<p class="error">{form.message}</p>{/if}
+                  <div class="dialog-actions">
+                        <button class="link" type="button" onclick={() => releaseDialog.close()}>Cancel</button>
+                        <button class="action-inline" type="submit">Accept</button>
+                  </div>
+            </form>
+      </dialog>
       <dialog bind:this={excludeDialog}>
             <form
                   method="POST"
@@ -360,6 +404,32 @@
 
       .exclusion .link {
             margin-left: 0.5rem;
+      }
+
+      .quarantine {
+            margin: 0.5rem 0 0;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e8c48a;
+            border-radius: 0.45rem;
+            background: #fff7e8;
+      }
+
+      .quarantined {
+            color: #8a5a00;
+            font-weight: 650;
+      }
+
+      .quarantine-actions .link {
+            margin-left: 0.75rem;
+      }
+
+      .link.danger {
+            color: #a4461a;
+      }
+
+      .released {
+            color: #3d6b3d;
+            font-weight: 650;
       }
 
       .excluded {

@@ -167,6 +167,44 @@ export const actions: Actions = {
 			});
 		}
 	},
+	/** Accepts a quarantined NDC as it is ($lib/catalog/quarantine.ts); it stays on the formulary. */
+	releaseQuarantine: async ({ params, request }) => {
+		const ndc = toNdc11(params.ndc);
+		if (!ndc) return fail(400, { message: 'Invalid NDC.' });
+		const data = await request.formData();
+		const reason = String(data.get('reason') ?? '').trim();
+		if (!reason) return fail(400, { message: 'Say why this NDC is fine as it is.' });
+		try {
+			await savePropertyOverride(
+				ndc,
+				'quarantineRelease',
+				reason,
+				{ source: 'none' },
+				expectedPackageRevision(data.get('revision'))
+			);
+			return { released: true };
+		} catch (cause) {
+			return fail(cause instanceof PackageConflict ? 409 : 400, {
+				message: cause instanceof Error ? cause.message : 'Could not release.'
+			});
+		}
+	},
+	requarantine: async ({ params, request }) => {
+		const ndc = toNdc11(params.ndc);
+		if (!ndc) return fail(400, { message: 'Invalid NDC.' });
+		try {
+			await removePropertyOverrides(
+				ndc,
+				['quarantineRelease'],
+				expectedPackageRevision((await request.formData()).get('revision'))
+			);
+			return { released: false };
+		} catch (cause) {
+			return fail(cause instanceof PackageConflict ? 409 : 400, {
+				message: cause instanceof Error ? cause.message : 'Could not undo the release.'
+			});
+		}
+	},
 	/** Re-scrape and reinterpret without saving; the user confirms the result. */
 	preview: async ({ params, request }) => {
 		const ndc = toNdc11(params.ndc);
