@@ -10,6 +10,7 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
       import MixedFraction from './MixedFraction.svelte';
       import {formatRational, type Rational} from "#lib/medication/rational.ts";
       import {type Field, type Line, VOLUME_UNIT} from "#lib/compounds/compound-builder.ts";
+      import {readable, type Combination} from "#lib/compounds/generic-components.ts";
 
       let {
             line,
@@ -17,7 +18,11 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
             menuOpen = false,
             oncommit,
             ontoggleMenu,
-            onremove
+            onremove,
+            proposals = [],
+            chosen = 0,
+            onchoose,
+            vialCount = 0
       }: {
             /** The line to show and edit. */
             line: Line;
@@ -31,6 +36,13 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
             ontoggleMenu: () => void;
             /** Remove the line from the compound. */
             onremove: () => void;
+            /** Ways to pull the dose from the line's vials, best first. */
+            proposals?: Combination[];
+            /** Index of the proposal in use. */
+            chosen?: number;
+            onchoose?: (index: number) => void;
+            /** How many dry-fill vial strengths the line can draw on. */
+            vialCount?: number;
       } = $props();
 
       const show = (value: Rational | null) => (value ? formatRational(value) : '');
@@ -71,10 +83,14 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
       const isDiluent = $derived(line.role === 'diluent');
 </script>
 
-<div class="line" class:diluent={isDiluent} role="row">
+<div class="line" class:diluent={isDiluent} class:has-vials={!isDiluent && vialCount > 0} role="row">
       <div class="cell identity" role="cell">
             <span class="label"><BrandedName text={line.label} /></span>
-            <span class="sub">{isDiluent ? 'Diluent' : `${line.doseUnit} per ${VOLUME_UNIT}`}</span>
+            <span class="sub">
+                  {#if isDiluent}Diluent
+                  {:else if vialCount > 1}Generic · {vialCount} vial strengths
+                  {:else}Active{/if}
+            </span>
       </div>
 
       {#snippet entry(field: Field, caption: string, value: Rational | null, unit: string, text: string, setText: (next: string) => void)}
@@ -85,6 +101,7 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
                         {:else}<span class="blank">—</span>
                         {/if}
                   {:else}
+                        <span class="affix">
                         <QuantityField
                               bind:value={() => text, setText}
                               {unit}
@@ -96,7 +113,8 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
                               placeholder="—"
                               oncommit={(quantity) => commit(field, quantity, text, () => setText(show(value)))}
                         />
-                        <span class="unit">{unit}</span>
+                        <span class="unit" aria-hidden="true">{unit}</span>
+                        </span>
                   {/if}
             </div>
       {/snippet}
@@ -130,6 +148,33 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
                   </div>
             {/if}
       </div>
+
+      {#if !isDiluent && vialCount > 0}
+            <div class="vials" role="cell">
+                  <span class="caption">Pull</span>
+                  {#if !line.dose}
+                        <span class="hint">Enter a dose to see which vials make it up.</span>
+                  {:else if !proposals.length}
+                        <span class="hint warn">No combination of up to 6 vials reaches this dose.</span>
+                  {:else}
+                        <div class="choices" role="radiogroup" aria-label="Vials for {line.label}">
+                              {#each proposals as proposal, index}
+                                    <button
+                                          type="button"
+                                          role="radio"
+                                          aria-checked={index === chosen}
+                                          class:chosen={index === chosen}
+                                          disabled={locked && index !== chosen}
+                                          onclick={() => onchoose?.(index)}
+                                    >
+                                          {#each proposal.picks as pick, at}{#if at}<span class="plus">+</span>{/if}<span class="pick">{pick.count} × <MixedFraction {...readable(pick.amount, line.doseUnit)} /></span>{/each}
+                                          {#if proposal.waste.n > 0}<span class="waste">· <MixedFraction {...readable(proposal.waste, line.doseUnit)} /> left over</span>{/if}
+                                    </button>
+                              {/each}
+                        </div>
+                  {/if}
+            </div>
+      {/if}
 </div>
 
 <style>
@@ -242,9 +287,92 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
             }
       }
 
-      .unit {
-            color: #5c6777;
-            font-size: 0.8rem;
+      /* The unit sits inside the input, at its right edge. */
+      .affix {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 100%;
+      }
+
+      .affix :global(.entry) {
+            width: 100%;
+      }
+
+      .affix :global(input) {
+            padding-right: 3.6rem !important;
+      }
+
+      .affix .unit {
+            position: absolute;
+            right: 0.55rem;
+            pointer-events: none;
+            color: #7a8494;
+            font-size: 0.78rem;
+            white-space: nowrap;
+      }
+
+      .vials {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            padding: 0.5rem 1rem 0.7rem;
+            background: #fbfbfe;
+      }
+
+      .vials .caption {
+            color: #4b45a8;
+            font-size: 0.68rem;
+            font-weight: 750;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+      }
+
+      .hint {
+            color: #7a8494;
+            font-size: 0.85rem;
+      }
+
+      .hint.warn {
+            color: #9a5b00;
+      }
+
+      .choices {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+      }
+
+      .choices button {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.3rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px solid #d5dbe4;
+            border-radius: 999px;
+            background: #fff;
+            font: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+      }
+
+      .choices button.chosen {
+            border-color: #4b45a8;
+            background: #ecebf8;
+            color: #2f2a80;
+            font-weight: 650;
+      }
+
+      .choices button:disabled {
+            display: none;
+      }
+
+      .plus,
+      .waste {
+            color: #7a8494;
+            font-weight: 400;
       }
 
       .row-menu {

@@ -63,7 +63,7 @@ test(
 					// a package outside the scope's formulary is refused
 					await rejects(
 						addComponent(nested, scope.id, id, {
-							packageId: '00000000-0000-4000-8000-000000000000',
+							packageIds: ['00000000-0000-4000-8000-000000000000'],
 							role: 'active',
 							conc: null,
 							doseUnit: 'mg'
@@ -72,13 +72,13 @@ test(
 					);
 
 					await addComponent(nested, scope.id, id, {
-						packageId: link.packageId,
+						packageIds: [link.packageId],
 						role: 'active',
 						conc: r(100),
 						doseUnit: 'mg'
 					});
 					await addComponent(nested, scope.id, id, {
-						packageId: link.packageId,
+						packageIds: [link.packageId],
 						role: 'diluent',
 						conc: null,
 						doseUnit: 'mg'

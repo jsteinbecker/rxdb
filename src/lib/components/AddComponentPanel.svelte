@@ -1,53 +1,67 @@
 <!--
 @component
-The compound builder's "add a component" panel. Search finds formulary items (by
-item name, package title or NDC); picking an item adds its preferred package, and
-an item's packages can be expanded to pick a different one. The role is guessed
-per item (base solutions are diluents) and can be flipped before adding.
+The compound builder's "add a component" panel. Search finds generics: a drug
+by its active ingredients ("Ampicillin"), restricted to the compound's route
+when one is chosen. Picking a generic adds one line that may be filled from
+any of its packages; the builder then proposes vial combinations for the
+dose. A generic can be expanded to add one specific package instead.
 
-After each add the search clears and keeps focus, so the next component can be
-typed straight away; items already in the compound are marked and sink to the end.
-Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages, Esc closes.
+The role is guessed per generic (base solutions are diluents) and can be
+flipped before adding. After each add the search clears and keeps focus.
+Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's packages, Esc closes.
 -->
 <script lang="ts">
       import {enhance} from '$app/forms';
       import BrandedName from '#lib/components/BrandedName.svelte';
+      import MixedFraction from './MixedFraction.svelte';
       import {formatNdc} from "#lib/catalog/ndc.ts";
+      import {compare, parseRational, type Rational} from "#lib/medication/rational.ts";
       import type {Role} from '#lib/compounds/compound-builder.ts';
+      import {readable} from '#lib/compounds/generic-components.ts';
 
       /** A formulary package that can be added to the compound. */
       type Candidate = {
             packageId: string;
-            /** The formulary item the package is linked under. */
             itemId: string;
-            /** The item's display name. */
+            /** The formulary item's display name. */
             item: string;
-            /** The package's rank within its item; lowest is preferred. */
+            /** Rank within its item; lowest is preferred. */
             rank: number;
             ndc: string;
             /** Display title, possibly ending in a `[Brand]` tag. */
             title: string;
-            /** Concentration, posted with the choice. */
             conc: string | null;
-            /** Unit a dose of the package is measured in, posted with the choice. */
             doseUnit: string | null;
+            /** Active ingredients as one name ("Ampicillin"); null when unknown. */
+            generic: string | null;
+            /** Injection routes the listing names. */
+            routes: string[];
+            /** Content of one vial, for a single-ingredient dry fill. */
+            vial: string | null;
+            vialUnit: string | null;
       };
 
-      type Group = { itemId: string; item: string; packages: Candidate[]; inUse: boolean; role: Role };
+      type Generic = {
+            key: string;
+            name: string;
+            packages: (Candidate & {amount: Rational | null})[];
+            strengths: {amount: Rational; unit: string}[];
+            inUse: boolean;
+            role: Role;
+      };
 
-      let {candidates, used = [], onclose}: {
-            /** Every package the search may offer. */
+      let {candidates, used = [], route = null, onclose}: {
             candidates: Candidate[];
             /** Package ids already in the compound. */
             used?: string[];
-            /** Called on Escape. */
+            /** The compound's route; when set, only packages given by it (or naming none) are offered. */
+            route?: string | null;
             onclose?: () => void;
       } = $props();
 
       let query = $state('');
       let cursor = $state(0);
       let expanded = $state<string | null>(null);
-      /** Per-item role the user flipped to; otherwise the guess holds. */
       let roleOverride = $state<Record<string, Role>>({});
       let input: HTMLInputElement | undefined = $state();
       let addForm: HTMLFormElement | undefined = $state();
@@ -55,26 +69,36 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages,
       let lastAdded = $state<string | null>(null);
 
       const DILUENT = /\b(sodium chloride|dextrose|sterile water|water for injection|lactated ringer|ringer'?s|bacteriostatic|plasma-lyte|normosol)\b/i;
-      // Only a single-ingredient base solution is a diluent; a mixture that contains one is not.
-      const guessRole = (item: string): Role => (!item.includes(' / ') && DILUENT.test(item) ? 'diluent' : 'active');
+      const guessRole = (name: string): Role => (!name.includes(' / ') && DILUENT.test(name) ? 'diluent' : 'active');
 
       const usedSet = $derived(new Set(used));
-      const groups = $derived.by<Group[]>(() => {
-            const byItem = new Map<string, Candidate[]>();
+      const generics = $derived.by<Generic[]>(() => {
+            const byKey = new Map<string, Generic['packages']>();
             for (const candidate of candidates) {
-                  const list = byItem.get(candidate.itemId);
-                  if (list) list.push(candidate);
-                  else byItem.set(candidate.itemId, [candidate]);
+                  if (route && candidate.routes.length && !candidate.routes.includes(route)) continue;
+                  // Diluents and unparsed products stay per item: their "generic" is the item itself.
+                  const key = candidate.generic && !DILUENT.test(candidate.generic) ? candidate.generic : `item:${candidate.itemId}`;
+                  const entry = {...candidate, amount: candidate.vial ? parseRational(candidate.vial) : null};
+                  const list = byKey.get(key);
+                  if (list) list.push(entry);
+                  else byKey.set(key, [entry]);
             }
-            return [...byItem.values()].map((packages) => {
-                  packages.sort((a, b) => a.rank - b.rank);
-                  const item = packages[0].item;
+            return [...byKey.entries()].map(([key, packages]) => {
+                  // Largest vial first, then the formulary's own preference.
+                  packages.sort((a, b) =>
+                        (a.amount && b.amount ? compare(b.amount, a.amount) : Number(!a.amount) - Number(!b.amount)) || a.rank - b.rank);
+                  const name = key.startsWith('item:') ? packages[0].item : key;
+                  const strengths: Generic['strengths'] = [];
+                  for (const p of packages)
+                        if (p.amount && p.vialUnit && !strengths.some((s) => compare(s.amount, p.amount!) === 0))
+                              strengths.push({amount: p.amount, unit: p.vialUnit});
                   return {
-                        itemId: packages[0].itemId,
-                        item,
+                        key,
+                        name,
                         packages,
+                        strengths,
                         inUse: packages.some((p) => usedSet.has(p.packageId)),
-                        role: roleOverride[packages[0].itemId] ?? guessRole(item)
+                        role: roleOverride[key] ?? guessRole(name)
                   };
             });
       });
@@ -84,28 +108,27 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages,
             const words = query.toLowerCase().split(/\s+/).filter(Boolean);
             if (!words.length) return [];
             const digits = query.replace(/\D/g, '');
-            const scored = groups
-                  .map((group) => {
-                        const name = group.item.toLowerCase();
+            const scored = generics
+                  .map((generic) => {
+                        const name = generic.name.toLowerCase();
                         const hits = (text: string) => words.every((word) => text.includes(word));
                         let score = -1;
                         if (hits(name)) score = name.startsWith(words[0]) ? 3 : 2;
-                        else if (group.packages.some((p) => hits(p.title.toLowerCase()))) score = 1;
-                        else if (digits.length >= 4 && group.packages.some((p) => p.ndc.includes(digits))) score = 1;
-                        return {group, score};
+                        else if (generic.packages.some((p) => hits(p.title.toLowerCase()) || hits(p.item.toLowerCase()))) score = 1;
+                        else if (digits.length >= 4 && generic.packages.some((p) => p.ndc.includes(digits))) score = 1;
+                        return {generic, score};
                   })
                   .filter(({score}) => score >= 0);
             scored.sort(
                   (a, b) =>
-                        Number(a.group.inUse) - Number(b.group.inUse) ||
+                        Number(a.generic.inUse) - Number(b.generic.inUse) ||
                         b.score - a.score ||
-                        a.group.item.length - b.group.item.length ||
-                        a.group.item.localeCompare(b.group.item)
+                        a.generic.name.length - b.generic.name.length ||
+                        a.generic.name.localeCompare(b.generic.name)
             );
-            return scored.slice(0, LIMIT).map(({group}) => group);
+            return scored.slice(0, LIMIT).map(({generic}) => generic);
       });
 
-      // A new query starts from the top with nothing expanded.
       $effect(() => {
             void query;
             cursor = 0;
@@ -116,35 +139,39 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages,
             input?.focus();
       });
 
-      function add(group: Group, candidate: Candidate = group.packages[0]) {
+      /** Add the whole generic, or one package of it. */
+      function add(generic: Generic, only?: Candidate) {
             if (!addForm || pending) return;
-            (addForm.elements.namedItem('role') as HTMLInputElement).value = group.role;
+            const packages = only ? [only] : generic.packages;
+            const preferred = packages[0];
+            const units = new Set(packages.map((p) => p.vialUnit));
+            (addForm.elements.namedItem('role') as HTMLInputElement).value = generic.role;
             (addForm.elements.namedItem('candidate') as HTMLInputElement).value = JSON.stringify({
-                  packageId: candidate.packageId,
-                  conc: candidate.conc,
-                  doseUnit: candidate.doseUnit
+                  packageIds: packages.map((p) => p.packageId),
+                  conc: packages.length === 1 ? preferred.conc : null,
+                  doseUnit: units.size === 1 && preferred.vialUnit ? preferred.vialUnit : preferred.doseUnit
             });
-            lastAdded = group.item;
+            lastAdded = only ? only.title : `${generic.name}${route ? ` ${route}` : ''}`;
             addForm.requestSubmit();
       }
 
-      function flipRole(group: Group) {
-            roleOverride = {...roleOverride, [group.itemId]: group.role === 'active' ? 'diluent' : 'active'};
+      function flipRole(generic: Generic) {
+            roleOverride = {...roleOverride, [generic.key]: generic.role === 'active' ? 'diluent' : 'active'};
       }
 
       function onkeydown(event: KeyboardEvent) {
-            const group = matches[cursor];
+            const generic = matches[cursor];
             if (event.key === 'ArrowDown') {
                   event.preventDefault();
                   cursor = Math.min(cursor + 1, matches.length - 1);
             } else if (event.key === 'ArrowUp') {
                   event.preventDefault();
                   cursor = Math.max(cursor - 1, 0);
-            } else if (event.key === 'Enter' && group) {
+            } else if (event.key === 'Enter' && generic) {
                   event.preventDefault();
-                  add(group);
-            } else if (event.key === 'ArrowRight' && group && group.packages.length > 1 && input?.selectionStart === query.length) {
-                  expanded = group.itemId;
+                  add(generic);
+            } else if (event.key === 'ArrowRight' && generic && generic.packages.length > 1 && input?.selectionStart === query.length) {
+                  expanded = generic.key;
             } else if (event.key === 'ArrowLeft' && expanded) {
                   expanded = null;
             } else if (event.key === 'Escape') {
@@ -182,7 +209,7 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages,
             aria-controls="component-results"
             autocomplete="off"
             bind:value={query}
-            placeholder="Add a component — formulary item, package or NDC…"
+            placeholder={route ? `Add a drug given ${route} — e.g. ampicillin, cefazolin…` : 'Add a drug — e.g. ampicillin, cefazolin…'}
             spellcheck="false"
             type="search"
             {onkeydown}
@@ -191,50 +218,58 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages,
       {#if !query.trim()}
             <p class="hint">
                   {#if lastAdded}<span class="added">✓ Added {lastAdded}.</span> {/if}
-                  Type to find a formulary item; <kbd>Enter</kbd> adds its preferred package.
+                  Pick the drug, then enter the dose — the builder works out which vials to pull.
+                  {#if !route}<span class="warn">Choose a route above to see only the products given by it.</span>{/if}
             </p>
       {:else if !matches.length}
-            <p class="hint">No formulary items match “{query.trim()}”.</p>
+            <p class="hint">Nothing on the formulary matches “{query.trim()}”{route ? ` for ${route}` : ''}.</p>
       {:else}
             <ul id="component-results" role="listbox" aria-busy={pending}>
-                  {#each matches as group, index (group.itemId)}
-                        {@const preferred = group.packages[0]}
+                  {#each matches as generic, index (generic.key)}
                         <li
                               role="option"
                               aria-selected={index === cursor}
                               class:current={index === cursor}
-                              class:used={group.inUse}
+                              class:used={generic.inUse}
                               onmouseenter={() => (cursor = index)}
                         >
                               <div class="item">
-                                    <button type="button" class="pick" disabled={pending} onclick={() => add(group)}>
-                                          <span class="name">{group.item}</span>
+                                    <button type="button" class="pick" disabled={pending} onclick={() => add(generic)}>
+                                          <span class="name">{generic.name}{#if route}<span class="route">{route}</span>{/if}</span>
                                           <span class="sub">
-                                                {#if group.inUse}<span class="tag">In compound</span>{/if}
-                                                <BrandedName text={preferred.title}/> · {formatNdc(preferred.ndc)}
+                                                {#if generic.inUse}<span class="tag">In compound</span>{/if}
+                                                {#if generic.strengths.length}
+                                                      Vials:
+                                                      {#each generic.strengths as strength, at}{#if at} · {/if}<MixedFraction {...readable(strength.amount, strength.unit)} />{/each}
+                                                {:else if generic.packages.length === 1}
+                                                      <BrandedName text={generic.packages[0].title}/> · {formatNdc(generic.packages[0].ndc)}
+                                                {:else}
+                                                      {generic.packages.length} products
+                                                {/if}
                                           </span>
                                     </button>
                                     <button
                                           type="button"
                                           class="role"
-                                          class:diluent={group.role === 'diluent'}
-                                          title="Add as {group.role === 'active' ? 'diluent' : 'active'} instead"
-                                          onclick={() => flipRole(group)}
-                                    >{group.role === 'active' ? 'Active' : 'Diluent'}</button>
-                                    {#if group.packages.length > 1}
+                                          class:diluent={generic.role === 'diluent'}
+                                          title="Add as {generic.role === 'active' ? 'diluent' : 'active'} instead"
+                                          onclick={() => flipRole(generic)}
+                                    >{generic.role === 'active' ? 'Active' : 'Diluent'}</button>
+                                    {#if generic.packages.length > 1}
                                           <button
                                                 type="button"
                                                 class="more"
-                                                aria-expanded={expanded === group.itemId}
-                                                onclick={() => (expanded = expanded === group.itemId ? null : group.itemId)}
-                                          >{group.packages.length} pkgs {expanded === group.itemId ? '▴' : '▾'}</button>
+                                                aria-expanded={expanded === generic.key}
+                                                title="Add one specific package instead"
+                                                onclick={() => (expanded = expanded === generic.key ? null : generic.key)}
+                                          >{generic.packages.length} pkgs {expanded === generic.key ? '▴' : '▾'}</button>
                                     {/if}
                               </div>
-                              {#if expanded === group.itemId}
+                              {#if expanded === generic.key}
                                     <ul class="packages">
-                                          {#each group.packages as candidate (candidate.packageId)}
+                                          {#each generic.packages as candidate (candidate.packageId)}
                                                 <li>
-                                                      <button type="button" disabled={pending} onclick={() => add(group, candidate)}>
+                                                      <button type="button" disabled={pending} onclick={() => add(generic, candidate)}>
                                                             <span class="title"><BrandedName text={candidate.title}/></span>
                                                             {#if usedSet.has(candidate.packageId)}<span class="tag">In compound</span>{/if}
                                                             <span class="ndc">{formatNdc(candidate.ndc)}</span>
@@ -265,6 +300,23 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close an item's packages,
             border: 1px solid #c9d1dc;
             border-radius: 8px;
             font: inherit;
+      }
+
+      .warn {
+            display: block;
+            margin-top: 0.25rem;
+            color: #9a5b00;
+      }
+
+      .route {
+            margin-left: 0.4rem;
+            padding: 0 0.4rem;
+            border-radius: 4px;
+            background: #ecebf8;
+            color: #4b45a8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            vertical-align: middle;
       }
 
       .hint {

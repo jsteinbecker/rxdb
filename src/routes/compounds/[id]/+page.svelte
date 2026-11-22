@@ -18,6 +18,11 @@
   } from "#lib/compounds/compound-builder.ts";
   import { formatRational, serializeRational, type Rational } from "#lib/medication/rational.ts";
   import { INJECTION_ROUTES } from '#lib/labels/reconstitution-terms.ts';
+  import MixedFraction from '#lib/components/MixedFraction.svelte';
+  import BrandedName from '#lib/components/BrandedName.svelte';
+  import { formatNdc } from '#lib/catalog/ndc.ts';
+  import { parseRational } from '#lib/medication/rational.ts';
+  import { readable, vialCombinations, type Combination } from '#lib/compounds/generic-components.ts';
 
   let { data, form } = $props();
 
@@ -38,6 +43,48 @@
   let removeSlot: HTMLInputElement | undefined = $state();
 
   const sum = $derived(effectiveTotalVolume(lines, null));
+
+  // Vials each line can draw on, and the ways its dose can be pulled from them.
+  const vialsBySlot = $derived(
+    new Map(
+      compound.lines.map((line) => [
+        line.slotId,
+        line.vials.flatMap((vial) => {
+          const amount = parseRational(vial.amount);
+          return amount ? [{ ...vial, amount }] : [];
+        })
+      ])
+    )
+  );
+  const proposals = $derived(
+    new Map<string, Combination[]>(
+      lines.map((line) => {
+        const vials = vialsBySlot.get(line.slotId) ?? [];
+        return [line.slotId, line.dose && vials.length ? vialCombinations(line.dose, line.doseUnit, vials) : []];
+      })
+    )
+  );
+  /** The proposal picked per line; the best one until someone picks another. */
+  let chosen = $state<Record<string, number>>({});
+  const pickedFor = (slotId: string) => {
+    const list = proposals.get(slotId) ?? [];
+    return list[chosen[slotId] ?? 0] ?? list[0] ?? null;
+  };
+  /** Everything to pull from stock, line by line. */
+  const pullList = $derived(
+    lines.flatMap((line) => {
+      const pick = pickedFor(line.slotId);
+      const vials = vialsBySlot.get(line.slotId) ?? [];
+      return pick
+        ? pick.picks.map((entry) => ({
+            line,
+            count: entry.count,
+            amount: entry.amount,
+            vial: vials.find((vial) => vial.packageId === entry.packageId)
+          }))
+        : [];
+    })
+  );
   const rows = $derived(finalConcentrations(lines, total));
   const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
@@ -192,7 +239,8 @@
   {#if pickerOpen && !locked}
     <AddComponentPanel
       candidates={data.candidates}
-      used={compound.lines.map((line) => line.packageId)}
+      used={compound.lines.flatMap((line) => line.packageIds)}
+      route={compound.route}
       onclose={() => (pickerOpen = false)}
     />
   {/if}
@@ -220,7 +268,7 @@
 
   {#if !compound.lines.length}
     <p class="empty">
-      No components yet — search above for a formulary item; its preferred package is added.
+      No components yet. Search above for a drug, then enter its dose; the builder proposes which vials to pull.
     </p>
   {:else}
     <section class="card" aria-labelledby="components-heading">
@@ -244,6 +292,10 @@
             oncommit={(field, value) => commit(line.slotId, field, value)}
             ontoggleMenu={() => (menuFor = menuFor === line.slotId ? null : line.slotId)}
             onremove={() => remove(line.slotId)}
+            vialCount={new Set((vialsBySlot.get(line.slotId) ?? []).map((vial) => `${vial.amount.n}/${vial.amount.d}`)).size}
+            proposals={proposals.get(line.slotId) ?? []}
+            chosen={Math.min(chosen[line.slotId] ?? 0, Math.max((proposals.get(line.slotId)?.length ?? 1) - 1, 0))}
+            onchoose={(index) => (chosen = { ...chosen, [line.slotId]: index })}
           />
         {/each}
         <div class="totals" role="row">
@@ -255,7 +307,7 @@
             {#if locked}
               <strong>{total ? formatRational(total) : sum ? formatRational(sum) : '—'} {VOLUME_UNIT}</strong>
             {:else}
-              <span class="total-entry">
+              <span class="total-entry affix">
                 <QuantityField
                   bind:value={totalText}
                   unit={VOLUME_UNIT}
@@ -271,13 +323,35 @@
                       : commitTotal(quantity?.rational ?? null) ||
                         (totalText = total ? formatRational(total) : '')}
                 />
-                <span class="unit">{VOLUME_UNIT}</span>
+                <span class="unit" aria-hidden="true">{VOLUME_UNIT}</span>
               </span>
             {/if}
           </span>
         </div>
       </div>
     </section>
+
+    {#if pullList.length}
+      <section class="card pull" aria-labelledby="pull-heading">
+        <header class="card-head">
+          <h2 id="pull-heading">Pull from stock</h2>
+          <span>{plural(pullList.reduce((count, entry) => count + entry.count, 0), 'vial')}</span>
+        </header>
+        <ul>
+          {#each pullList as entry}
+            <li>
+              <strong class="qty">{entry.count} ×</strong>
+              <span class="what">
+                <MixedFraction {...readable(entry.amount, entry.line.doseUnit)} />
+                {#if entry.vial}<span class="muted"><BrandedName text={entry.vial.title} /> · {formatNdc(entry.vial.ndc)}</span>{/if}
+              </span>
+              <span class="for">for {entry.line.label}</span>
+            </li>
+          {/each}
+        </ul>
+        <p class="footnote">Any equivalent vial of the same strength on the formulary may be used.</p>
+      </section>
+    {/if}
 
     <VialPreparation items={data.vialPrep} {locked} route={compound.route} />
 
@@ -350,6 +424,51 @@
     gap: 0.4rem;
     color: #6b7585;
     font-size: 0.85rem;
+  }
+  .pull ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pull li {
+    display: grid;
+    grid-template-columns: 3.5rem 1fr auto;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.55rem 1rem;
+    border-top: 1px solid #eef1f5;
+  }
+  .pull .qty {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .pull .what {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    font-weight: 600;
+  }
+  .pull .muted,
+  .pull .for,
+  .footnote {
+    color: #7a8494;
+    font-size: 0.82rem;
+    font-weight: 400;
+  }
+  .footnote {
+    margin: 0;
+    padding: 0.5rem 1rem 0.7rem;
+  }
+  .affix {
+    position: relative;
+  }
+  .affix :global(input) {
+    padding-right: 2.6rem !important;
+  }
+  .affix .unit {
+    position: absolute;
+    right: 0.6rem;
+    pointer-events: none;
   }
   .route select.unset {
     border-color: #c0392b;
