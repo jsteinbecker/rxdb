@@ -34,7 +34,10 @@ export class CompoundError extends Error {
 }
 
 export type StoredLine = Omit<Line, 'label'> & {
+	/** The line's preferred package; the first of `packageIds`. */
 	packageId: string;
+	/** Every package the line may be filled from, in preference order. A generic line has several. */
+	packageIds: string[];
 	vialPrep: AdoptedVialPrep | null;
 };
 export interface StoredCompound {
@@ -123,7 +126,10 @@ export async function loadCompound(
 					volumeNum: true,
 					volumeDen: true,
 					vialPrep: true,
-					slotCandidates: { take: 1, select: { packageId: true, sourceConcMag: true } }
+					slotCandidates: {
+						orderBy: { preferenceRank: 'asc' },
+						select: { packageId: true, sourceConcMag: true }
+					}
 				}
 			}
 		}
@@ -148,6 +154,7 @@ export async function loadCompound(
 		return {
 			slotId: slot.id,
 			packageId: candidate?.packageId ?? '',
+			packageIds: slot.slotCandidates.map((entry) => entry.packageId),
 			role: slot.role as Role,
 			doseUnit: slot.targetAmountUom ?? 'mg',
 			conc,
@@ -225,16 +232,24 @@ export async function addComponent(
 	db: PrismaClient,
 	scopeId: string,
 	id: string,
-	input: { packageId: string; role: Role; conc: Rational | null; doseUnit: string }
+	input: {
+		/** One package, or a generic's packages in preference order (the first is preferred). */
+		packageIds: string[];
+		role: Role;
+		conc: Rational | null;
+		doseUnit: string;
+	}
 ) {
 	await draftIn(db, scopeId, id);
-	const linked = UUID.test(input.packageId)
-		? await db.formularyItemPackage.findFirst({
-				where: { packageId: input.packageId, validTo: null, formularyItem: { scopeId } },
+	const packageIds = [...new Set(input.packageIds)].filter((packageId) => UUID.test(packageId));
+	const linked = packageIds.length
+		? await db.formularyItemPackage.findMany({
+				where: { packageId: { in: packageIds }, validTo: null, formularyItem: { scopeId } },
 				select: { packageId: true }
 			})
-		: null;
-	if (!linked) throw new CompoundError('That package is not on this formulary.', 404);
+		: [];
+	if (!packageIds.length || new Set(linked.map((link) => link.packageId)).size !== packageIds.length)
+		throw new CompoundError('That package is not on this formulary.', 404);
 
 	const last = await db.formulaSlot.aggregate({
 		where: { formulaId: id },
@@ -249,11 +264,13 @@ export async function addComponent(
 			targetAmountUom: input.doseUnit,
 			volumeUom: VOLUME_UNIT,
 			slotCandidates: {
-				create: {
-					packageId: input.packageId,
-					sourceConcMag: conc ? decimalOf(conc) : null,
-					sourceConcUom: conc ? `${input.doseUnit}/${VOLUME_UNIT}` : null
-				}
+				create: packageIds.map((packageId, index) => ({
+					packageId,
+					preferenceRank: index + 1,
+					// The stated concentration belongs to the preferred package.
+					sourceConcMag: conc && index === 0 ? decimalOf(conc) : null,
+					sourceConcUom: conc && index === 0 ? `${input.doseUnit}/${VOLUME_UNIT}` : null
+				}))
 			}
 		}
 	});
@@ -281,7 +298,7 @@ export async function saveLines(
 				id: true,
 				role: true,
 				targetAmountUom: true,
-				slotCandidates: { take: 1, select: { packageId: true } }
+				slotCandidates: { take: 1, orderBy: { preferenceRank: 'asc' }, select: { packageId: true } }
 			}
 		});
 		const byId = new Map(slots.map((slot) => [slot.id, slot]));

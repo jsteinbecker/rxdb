@@ -23,6 +23,7 @@ import {
 	type Role
 } from '#lib/compounds/compound-builder.ts';
 import { parseRational, serializeRational } from '#lib/medication/rational.ts';
+import { genericName, injectionRoutes, vialContent } from '#lib/compounds/generic-components.ts';
 import { loadPackageSnapshots } from '#lib/server/catalog/snapshot-store.ts';
 import { sameConsensusStep, vialPrepConsensus } from '#lib/compounds/vial-prep-consensus.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -56,10 +57,14 @@ async function analyze(scopeId: string, id: string, settings: unknown) {
 	// compound, so preparation is analyzed across all of them, not just the one picked.
 	const activeItems = [
 		...new Set(
-			compound.lines.flatMap((line) => {
-				const item = line.role === 'active' ? byPackage.get(line.packageId)?.formularyItemId : null;
-				return item ? [item] : [];
-			})
+			compound.lines.flatMap((line) =>
+				line.role === 'active'
+					? line.packageIds.flatMap((packageId) => {
+							const item = byPackage.get(packageId)?.formularyItemId;
+							return item ? [item] : [];
+						})
+					: []
+			)
 		)
 	];
 	const allowed = rows.filter((row) => activeItems.includes(row.formularyItemId));
@@ -70,8 +75,8 @@ async function analyze(scopeId: string, id: string, settings: unknown) {
 	);
 	const vialPrep = activeItems.map((itemId) => {
 		const members = allowed.filter((row) => row.formularyItemId === itemId);
-		const lines = compound.lines.filter(
-			(line) => byPackage.get(line.packageId)?.formularyItemId === itemId
+		const lines = compound.lines.filter((line) =>
+			line.packageIds.some((packageId) => byPackage.get(packageId)?.formularyItemId === itemId)
 		);
 		const consensus = vialPrepConsensus(
 			members.map((row) => {
@@ -113,16 +118,48 @@ export const load: PageServerLoad = async ({ params }) => {
 		const row = byPackage.get(packageId);
 		return row ? shownTitle(row) : 'Package no longer on the formulary';
 	};
+	/** A generic line is named for its drug and route ("Ampicillin IV"); a single package by its title. */
+	const lineLabel = (packageIds: string[]) => {
+		if (packageIds.length < 2) return title(packageIds[0] ?? '');
+		const row = byPackage.get(packageIds[0]);
+		const name = row ? genericName(row.ingredients) : null;
+		return name ? `${name}${compound.route ? ` ${compound.route}` : ''}` : title(packageIds[0]);
+	};
+	const vialsOf = (packageIds: string[]) =>
+		packageIds.flatMap((packageId) => {
+			const row = byPackage.get(packageId);
+			const content = row ? vialContent(row.ingredients) : null;
+			return row && content
+				? [
+						{
+							packageId,
+							ndc: row.ndc,
+							title: shownTitle(row),
+							amount: serializeRational(content.amount),
+							unit: content.unit
+						}
+					]
+				: [];
+		});
 	return {
 		vialPrep,
 		scope: { id: scope.id, name: scope.name },
 		compound: {
 			...compound,
-			lines: compound.lines.map((line) => ({ ...line, label: title(line.packageId) }))
+			lines: compound.lines.map((line) => ({
+				...line,
+				label: lineLabel(line.packageIds),
+				vials: vialsOf(line.packageIds)
+			}))
 		},
 		candidates: rows.map((row) => {
 			const found = packageConcentration(row.ingredients);
+			const content = vialContent(row.ingredients);
 			return {
+				generic: genericName(row.ingredients),
+				routes: injectionRoutes(row.routes),
+				vial: content ? serializeRational(content.amount) : null,
+				vialUnit: content?.unit ?? null,
 				packageId: row.packageId,
 				itemId: row.formularyItemId,
 				item: row.formularyItem,
@@ -139,7 +176,7 @@ export const load: PageServerLoad = async ({ params }) => {
 export const actions: Actions = {
 	add: async ({ params, request }) => {
 		const data = await request.formData();
-		let picked: { packageId?: unknown; conc?: unknown; doseUnit?: unknown } = {};
+		let picked: { packageId?: unknown; packageIds?: unknown; conc?: unknown; doseUnit?: unknown } = {};
 		try {
 			picked = JSON.parse(String(data.get('candidate')));
 		} catch {
@@ -150,7 +187,11 @@ export const actions: Actions = {
 		const scope = await defaultScope(prisma);
 		return run(() =>
 			addComponent(prisma, scope.id, params.id, {
-				packageId: typeof picked.packageId === 'string' ? picked.packageId : '',
+				packageIds: Array.isArray(picked.packageIds)
+					? picked.packageIds.filter((value): value is string => typeof value === 'string')
+					: typeof picked.packageId === 'string'
+						? [picked.packageId]
+						: [],
 				role,
 				conc: conc && conc.n > 0 ? conc : null,
 				doseUnit: typeof picked.doseUnit === 'string' && picked.doseUnit ? picked.doseUnit : 'mg'
