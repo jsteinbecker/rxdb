@@ -261,3 +261,88 @@ test('route-less openFDA table rows fold into the routed SPL rows for the packag
 		]
 	);
 });
+
+test('paired lists resolved "respectively" give one step per vial', () => {
+	const rows = (text: string) =>
+		parseReconstitutionProse(text).map(({ vialMassMg, diluentMl, routes }) => ({
+			vialMassMg,
+			diluentMl,
+			routes
+		}));
+	// Ampicillin: the vials in one sentence, the volumes in the next.
+	assert.deepEqual(
+		rows(
+			'Ampicillin for Injection, USP, 1 g or 2 g may also be given by direct intravenous administration. Dissolve in 7.4 or 14.8 mL Sterile Water for Injection, USP, or Bacteriostatic Water for Injection, USP, respectively, and administer slowly over at least 10 to 15 minutes.'
+		),
+		[
+			{ vialMassMg: 1000, diluentMl: 7.4, routes: ['IV'] },
+			{ vialMassMg: 2000, diluentMl: 14.8, routes: ['IV'] }
+		]
+	);
+	// A vial list that is a condition ("when … are unavailable") is not the one paired.
+	assert.deepEqual(
+		rows(
+			'While Ampicillin for Injection, USP, 1 g and 2 g, are primarily for intravenous use, they may be administered intramuscularly when the 250 mg or 500 mg vials are unavailable. In such instances, dissolve in 3.5 or 6.8 mL Sterile Water for Injection, USP, respectively.'
+		),
+		[
+			{ vialMassMg: 1000, diluentMl: 3.5, routes: ['IM'] },
+			{ vialMassMg: 2000, diluentMl: 6.8, routes: ['IM'] }
+		]
+	);
+	// Three vials in one sentence, units only on some.
+	assert.deepEqual(
+		rows(
+			'Reconstitute the 500 mg, 1 g and 2 g vials with 2, 3.5 and 6.8 mL of Sterile Water for Injection, respectively.'
+		).map((row) => [row.vialMassMg, row.diluentMl]),
+		[
+			[500, 2],
+			[1000, 3.5],
+			[2000, 6.8]
+		]
+	);
+	assert.deepEqual(
+		rows(
+			'The 1 and 2 gram vials should be reconstituted with 10 mL or 20 mL of 0.9% Sodium Chloride respectively.'
+		).map((row) => [row.vialMassMg, row.diluentMl]),
+		[
+			[1000, 10],
+			[2000, 20]
+		]
+	);
+});
+
+test('a carton panel binds its diluent to the vial it states', () => {
+	const [row] = parseReconstitutionProse(
+		'Ampicillin for Injection, USP ampicillin sodium equivalent to 2 grams per vial ampicillin For DIRECT IV USE: Add 14.8 mL Sterile Water for Injection USP.'
+	);
+	assert.equal(row.vialMassMg, 2000);
+	assert.equal(row.diluentMl, 14.8);
+});
+
+// Josh's ampicillin Dosage and Administration excerpt, as labeled.
+const AMPICILLIN_DIRECT_IV = `For Direct Intravenous Use – Add 5 mL Sterile Water for Injection, USP, or Bacteriostatic Water for Injection, USP to the 250 mg, and 500 mg vials and administer slowly over a 3- to 5-minute period. Ampicillin for injection, USP, 1 g or 2 g may also be given by direct intravenous administration. Dissolve in 7.4 or 14.8 mL Sterile Water for Injection, USP, or Bacteriostatic Water for Injection, USP, respectively, and administer slowly over at least 10 to 15 minutes.
+
+CAUTION: More rapid administration may result in convulsive seizures.
+
+For Administration by Intravenous Drip – Reconstitute as directed above (For Direct Intravenous Use) prior to diluting with Intravenous Solution. Stability studies on ampicillin sodium at several concentrations in various intravenous solutions indicate the drug will lose less than 10% activity at the temperatures noted for the time periods stated.
+
+Only those solutions listed above should be used for the intravenous infusion of ampicillin for injection, USP. The concentrations should fall within the range specified. The drug concentration and the rate and volume of the infusion should be adjusted so that the total dose of ampicillin is administered before the drug loses its stability in the solution in use.`;
+
+test('ampicillin direct IV: one volume shared by two vials, a respectively pair, two diluents, and a drip step that refers back', () => {
+	assert.deepEqual(
+		parseReconstitutionProse(AMPICILLIN_DIRECT_IV).map(
+			({ vialMassMg, diluentMl, routes, diluents }) => ({
+				vialMassMg,
+				diluentMl,
+				routes,
+				diluents
+			})
+		),
+		[250, 500, 1000, 2000].map((vialMassMg, i) => ({
+			vialMassMg,
+			diluentMl: [5, 5, 7.4, 14.8][i],
+			routes: ['IV'],
+			diluents: ['SWFI', 'BWFI']
+		}))
+	);
+});
