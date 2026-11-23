@@ -18,6 +18,7 @@ import type { ExternalPackage, RxConcept, SourcePayload } from '../../catalog/ty
 import { CACHE_SOURCE, CATALOG_VERSION, type PackageSnapshot, readSnapshot } from './cache';
 import { parseScdName } from '../../curation/local-concept';
 import { attachLabels, canonicalJson, detachLabel } from './label-store';
+import { storedRawPayload } from './raw-payload';
 
 type Db = Prisma.TransactionClient;
 
@@ -386,8 +387,13 @@ async function sharedPayload(db: Db, hash: Buffer, payload: unknown) {
 	return key;
 }
 
-/** A cache snapshot keeps its label sections in spl_label, by hash. */
+/**
+ * What is stored for each record: a cache snapshot keeps its label sections in
+ * spl_label by hash; a raw response is trimmed to what the parser reads
+ * (raw-payload.ts).
+ */
 async function storedForm(db: Db, item: SourcePayload): Promise<SourcePayload> {
+	if (shares(item.source)) return { ...item, payload: storedRawPayload(item.source, item.payload) };
 	const payload = item.payload as Partial<PackageSnapshot> | null;
 	if (item.source !== CACHE_SOURCE || !payload?.item?.details?.label) return item;
 	return { ...item, payload: { ...payload, item: await detachLabel(db, payload.item) } };

@@ -7,11 +7,10 @@ provider it came from; corrections and manual overrides are footnoted with their
 marks, and `editing` offers a pencil beside each overridable property.
 -->
 <script lang="ts">
-	import { racemicDisplayName } from "#lib/medication/ingredient-group.ts";
-	import {formatNdc} from "#lib/catalog/ndc.ts";
-	import RxCui from '#lib/components/RxCui.svelte';
-      import type { StagedPackage } from '../catalog/types';
-      import type { LabelIngredient } from '../catalog/types';
+      import {racemicDisplayName} from "#lib/medication/ingredient-group.ts";
+      import {formatNdc, toNdc11} from "#lib/catalog/ndc.ts";
+      import RxCui from '#lib/components/RxCui.svelte';
+      import type {LabelIngredient, StagedPackage} from '../catalog/types';
       import {appearanceText, isSolidDoseForm, SHAPE_CODES} from "#lib/labels/spl-characteristics.ts";
       import {refineAppearances} from "#lib/labels/spl-appearance-text.ts";
       import PillMockup from './PillMockup.svelte';
@@ -20,7 +19,11 @@ marks, and `editing` offers a pencil beside each overridable property.
       import {pillImageKey, type PillMedia, type PillPhotoRef, pillPhotoUrl} from "#lib/imprints/pill-image-layout.ts";
       import {resolve} from '$app/paths';
       import {constituentName, ionDisplayName} from "#lib/medication/ions.ts";
-      import {nestIngredients, type Constituent, type IngredientGroup} from "#lib/medication/ingredient-constituents.ts";
+      import {
+            type Constituent,
+            type IngredientGroup,
+            nestIngredients
+      } from "#lib/medication/ingredient-constituents.ts";
       import {deserialize} from '$app/forms';
       import {invalidateAll} from '$app/navigation';
       import SplLabelSections from './SplLabelSections.svelte';
@@ -30,11 +33,15 @@ marks, and `editing` offers a pencil beside each overridable property.
       import {pseudoScdFor} from "#lib/medication/pseudo-scd.ts";
       import {editActionLabel} from "#lib/curation/local-concept-view.ts";
       import {withBiosimilarSuffix} from "#lib/medication/biosimilar.ts";
-      import {liquidConcentration, rxNormPackageTitle, scdShownStrength, timeReleaseAfterRelease} from "#lib/catalog/package-title.ts";
+      import {
+            liquidConcentration,
+            rxNormPackageTitle,
+            scdShownStrength,
+            timeReleaseAfterRelease
+      } from "#lib/catalog/package-title.ts";
       import {formContext} from "#lib/medication/strength-style.ts";
       import {styledStrength} from "#lib/client/strength-display.svelte.ts";
       import {unitOfSaleLabel, unitOfUseLabel} from "#lib/catalog/package-unit-label.ts";
-      import {toNdc11} from "#lib/catalog/ndc.ts";
       import MixedFraction from './MixedFraction.svelte';
       import ReconstitutionDiagram from './ReconstitutionDiagram.svelte';
       import DualChamberDiagram from './DualChamberDiagram.svelte';
@@ -43,15 +50,21 @@ marks, and `editing` offers a pencil beside each overridable property.
       import {isOralDryFillForm} from "#lib/medication/ingredient-content.ts";
       import {fromNumber, toNumber} from "#lib/medication/rational.ts";
       import {
-            ingredientCorrectionKey,
-            INGREDIENT_CORRECTION_KEY,
-            parseIngredientCorrection,
             describeCorrection,
             formatStrength,
-            parseStrengthText
+            INGREDIENT_CORRECTION_KEY,
+            ingredientCorrectionKey,
+            parseIngredientCorrection
       } from "#lib/medication/ingredient-correction.ts";
       import {packageClassKey} from "#lib/formulary/pharm-class-key.ts";
-      import {DOSE_TYPE_NAMES, NOT_SPECIFIED, packagingFacts, projectDoseForm, resolveDoseTypes, type PackagingFacts} from "#lib/formulary/hierarchy.ts";
+      import {
+            DOSE_TYPE_NAMES,
+            NOT_SPECIFIED,
+            packagingFacts,
+            type PackagingFacts,
+            projectDoseForm,
+            resolveDoseTypes
+      } from "#lib/formulary/hierarchy.ts";
       import type {EquivalenceGroup} from "#lib/formulary/equivalence.ts";
       import {scopeOptions} from "#lib/formulary/pharm-class-scope-options.ts";
       import LocalConceptBlock from './LocalConceptBlock.svelte';
@@ -331,17 +344,27 @@ marks, and `editing` offers a pencil beside each overridable property.
       const liquid = $derived(!chambers && !volume && !item.reconstitution.length ? liquidConcentration(item) : null);
       /** A kit is sold as the kit; the unit of use is its drug bottle. */
       const kit = $derived(item.kit ?? null);
-      const kitPartText = (part: NonNullable<typeof kit>['parts'][number]) =>
+      type KitPartView = NonNullable<typeof kit>['parts'][number];
+      const KIT_ROLE_LABELS = { active: 'Drug', diluent: 'Diluent', device: 'Device' } as const;
+      const titleWords = (text: string) =>
+            /[a-z]/.test(text) ? text.charAt(0).toUpperCase() + text.slice(1) : text.toLowerCase().replace(/(^|[\s-])([a-z])/g, (_, lead, c) => lead + c.toUpperCase());
+      /** "100 mg", or a device's "× 1"; a powder part made up by volume is named by its drug. */
+      const kitPartAmount = (part: KitPartView) =>
+            part.role === 'device'
+                  ? part.amount !== null && part.amount > 1 ? `× ${part.amount}` : null
+                  : part.constitutedMl != null && part.content
+                    ? `${part.content.value} ${part.content.unit}`
+                    : part.amount !== null ? `${part.amount} ${part.unit ?? ''}`.trim() : null;
+      const kitPartDetail = (part: KitPartView) =>
             [
-                  part.amount !== null ? `${part.amount} ${part.unit ?? ''}`.trim() : null,
-                  (part.container ?? 'part').toLowerCase(),
-                  '—',
-                  part.name?.toLowerCase() ?? 'unnamed part',
-                  part.doseForm ? `(${part.doseForm.toLowerCase()})` : null,
-                  part.role === 'diluent' ? '· drug-free diluent' : null
+                  part.container ? part.container.toLowerCase() : null,
+                  part.doseForm ? part.doseForm.toLowerCase() : null,
+                  part.constitutedMl != null && part.content ? `makes ${part.constitutedMl} mL` : null,
+                  part.role === 'diluent' ? 'drug-free' : null,
+                  part.role === 'device' ? 'named in How Supplied' : null
             ]
                   .filter(Boolean)
-                  .join(' ');
+                  .join(' · ');
       /**
        * The fraction a stored decimal stands in for (131.578947… is 131 11/19), or
        * null when no small fraction reproduces it and the decimal should show.
@@ -888,9 +911,20 @@ marks, and `editing` offers a pencil beside each overridable property.
                   {#if kit}
                         <dt>{kit.partOf?.length ? 'Kit part' : 'Kit contents'}</dt>
                         <dd>
-                              {#each kit.parts as part, i (i)}
-                                    <div>{kitPartText(part)}</div>
-                              {/each}
+                              {#if !kit.partOf?.length && kit.parts.length > 1}
+                                    <div class="kit-summary">{kit.parts.length}-part kit</div>
+                              {/if}
+                              <ol class="kit-parts">
+                                    {#each kit.parts as part, i (i)}
+                                          <li class="kit-part">
+                                                <span class="kit-role kit-role-{part.role}">{KIT_ROLE_LABELS[part.role] ?? part.role}</span>
+                                                <span class="kit-part-main">
+                                                      <span><strong>{titleWords(part.name ?? 'Unnamed part')}</strong>{#if kitPartAmount(part)}{' '}<span class="kit-part-amount">{kitPartAmount(part)}</span>{/if}</span>
+                                                      {#if kitPartDetail(part)}<span class="muted kit-part-detail">{kitPartDetail(part)}</span>{/if}
+                                                </span>
+                                          </li>
+                                    {/each}
+                              </ol>
                               {#if kit.partOf?.length}
                                     <div class="muted">
                                           Sold only inside kit
@@ -1369,6 +1403,12 @@ marks, and `editing` offers a pencil beside each overridable property.
                                     </tbody>
                               </table>
                         </div>
+                        {#if item.reconstitution.some((step) => step.fromKit)}
+                              <p class="muted">
+                                    No instruction states a volume; the kit's own diluent vial is added whole to its drug
+                                    vial{#if kit?.parts.some((part) => part.constitutedMl != null)}, and the label quantifies the drug vial by the volume it makes{/if}.
+                              </p>
+                        {/if}
                   {/if}
                   {#if editing}
                         <button
@@ -2049,6 +2089,53 @@ marks, and `editing` offers a pencil beside each overridable property.
             font-weight: 650;
       }
 
+      .kit-summary {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+      }
+      .kit-parts {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 0.35rem;
+      }
+      .kit-part {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+      }
+      .kit-part-main {
+            display: flex;
+            flex-direction: column;
+      }
+      .kit-part-detail {
+            font-size: 0.85em;
+      }
+      .kit-role {
+            flex: none;
+            min-width: 4.5em;
+            text-align: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.1em 0.5em;
+            border-radius: 999px;
+            border: 1px solid currentColor;
+      }
+      .kit-role-active {
+            color: #3464a5;
+            background: #eef3fa;
+      }
+      .kit-role-diluent {
+            color: #0f766e;
+            background: #ecfdf5;
+      }
+      .kit-role-device {
+            color: #5c6777;
+            background: #f7f9fc;
+      }
       .muted {
             color: #7a8594;
       }

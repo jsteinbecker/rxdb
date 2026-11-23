@@ -265,8 +265,8 @@ test("an oral bottle's per-5 mL strength is its concentration, and only its own 
 				concentrations: [{ name: null, mgPerMl: 50 }],
 				finalVolumeMl: 80,
 				bottle: true,
-				routes: ["PO"],
-				diluents: ["distilled water"]
+				routes: ['PO'],
+				diluents: ['distilled water']
 			}
 		]
 	);
@@ -325,7 +325,7 @@ test('titles read an oral powder by its concentration and a kit by its drug bott
 	);
 });
 
-test("a repackaged bottle whose size and strength the label never tabulates takes none of its rows", () => {
+test('a repackaged bottle whose size and strength the label never tabulates takes none of its rows', () => {
 	// 50090-2251: 150 mL of amoxicillin 250 mg/5 mL, on a label listing only
 	// the 200 and 400 mg/5 mL bottles.
 	const cell = (text: string) => `<td><paragraph>${text}</paragraph></td>`;
@@ -344,4 +344,79 @@ test("a repackaged bottle whose size and strength the label never tabulates take
 		label
 	);
 	assert.deepEqual(facts.reconstitution, []);
+});
+
+// Activase 100 mg (50242-085-27): the powder vial is quantified by the volume
+// it makes ("100 mg/100 mL" in a part of "100 mL"), beside a 100 mL water vial
+// and a transfer device the SPL has no part for.
+const ALTEPLASE = `<ingredient classCode="ACTIB">
+  <quantity><numerator unit="mg" value="100"/><denominator unit="mL" value="100"/></quantity>
+  <ingredientSubstance><code code="1RXS4UE564" codeSystem="2.16.840.1.113883.4.9"/><name>ALTEPLASE</name></ingredientSubstance>
+</ingredient>`;
+const WATER = `<ingredient classCode="IACT"><ingredientSubstance><name>WATER</name></ingredientSubstance></ingredient>`;
+const ACTIVASE = `<document>${kit(
+	'50242-085',
+	['50242-085-27'],
+	part(null, '100 mL', 'Activase', 'INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION', ALTEPLASE) +
+		part(null, '100 mL', 'Sterile Water', 'INJECTION', WATER)
+)}</document>`;
+const ACTIVASE_SUPPLIED =
+	'Each 50 mg Activase vial (29 million IU) is packaged with diluent for reconstitution (50 mL Sterile Water for Injection, USP): NDC 50242-044-13. Each 100 mg Activase vial (58 million IU) is packaged with diluent for reconstitution (100 mL Sterile Water for Injection, USP), and one transfer device: NDC 50242-085-27.';
+
+test('a powder vial quantified by its made-up volume is a drug vial, with water and a transfer device beside it', () => {
+	const products = parseSplIngredients(ACTIVASE);
+	const composition = kitComposition(products, '50242008527', {
+		howSupplied: ACTIVASE_SUPPLIED
+	});
+	assert.deepEqual(
+		composition?.parts.map((p) => [p.role, p.name, p.content ?? null, p.constitutedMl ?? null]),
+		[
+			['active', 'Activase', { value: 100, unit: 'mg' }, 100],
+			['diluent', 'Sterile Water', null, null],
+			['device', 'transfer device', null, null]
+		]
+	);
+	// The 50 mg carton's sentence names no device.
+	assert.deepEqual(
+		kitComposition(products, '50242004413', { howSupplied: ACTIVASE_SUPPLIED })?.parts.map(
+			(p) => p.role
+		),
+		['active', 'diluent']
+	);
+
+	const facts = parsePackageFacts(
+		'50242008527',
+		'1 KIT in 1 CARTON (50242-085-27) * 100 mL in 1 VIAL, SINGLE-USE * 100 mL in 1 VIAL, SINGLE-USE',
+		'KIT',
+		[{ name: 'ALTEPLASE', strength: '100 mg' }],
+		{ how_supplied: [ACTIVASE_SUPPLIED] },
+		null,
+		'alteplase 100 MG Injection',
+		composition
+	);
+	// The vial is 100 mg, never the 100 mL it makes or the water beside it.
+	assert.deepEqual(facts.size, {
+		kind: 'mass',
+		value: 100,
+		unit: 'mg',
+		container: 'BOTTLE',
+		packQty: 1
+	});
+	assert.equal(facts.isDryFill, true);
+	// No sentence says "add 100 mL"; the kit's water vial is added whole.
+	assert.deepEqual(
+		facts.reconstitution.map(({ id: _id, ...row }) => row),
+		[
+			{
+				vialMassMg: 100,
+				diluentMl: 100,
+				concentrations: [{ name: null, mgPerMl: 1 }],
+				finalVolumeMl: 100,
+				diluents: ['Sterile Water (supplied)'],
+				fromKit: true
+			}
+		]
+	);
+	assert.equal(facts.resolvedVolume?.finalVolumeMl, 100);
+	assert.equal(facts.resolvedVolume?.concentrationMgPerMl, 1);
 });

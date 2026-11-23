@@ -25,12 +25,17 @@
 
 import type { SplProduct } from './spl-ingredients';
 import { toNdc11 } from '../catalog/ndc';
+import { isDryFillForm } from '../medication/ingredient-content';
 import { mlPer, toMg } from '../medication/units';
 
-export type KitPartRole = 'active' | 'diluent';
+export type KitPartRole = 'active' | 'diluent' | 'device';
 
 export interface KitPart {
-	/** `active` holds the drug; `diluent` carries only excipients (flavored vehicle). */
+	/**
+	 * `active` holds the drug; `diluent` carries only excipients (sterile
+	 * water, a flavored vehicle); `device` is a drug-free accessory the label
+	 * says comes in the carton (Activase's transfer device), with no SPL part.
+	 */
 	role: KitPartRole;
 	name: string | null;
 	doseForm: string | null;
@@ -40,6 +45,18 @@ export interface KitPart {
 	/** The part's own container, `BOTTLE`, when the SPL names one. */
 	container: string | null;
 	productCode: string | null;
+	/**
+	 * The drug an active part holds, from its strength and quantity: Activase's
+	 * `100 mg/100 mL` powder in a part of `100 mL` is 100 mg. Null when the part
+	 * has no single active ingredient or the measures don't compose.
+	 */
+	content?: { value: number; unit: string } | null;
+	/**
+	 * A powder part quantified by volume is quantified by what it makes:
+	 * Activase's lyophilized vial is "100 mL" because its strength is per
+	 * 100 mL of the reconstituted solution, not because it holds any liquid.
+	 */
+	constitutedMl?: number | null;
 }
 
 /** How the NDC's parts were told apart from a sibling kit's sharing its SPL product. */
@@ -55,15 +72,77 @@ export interface KitComposition {
 const roleOf = (product: SplProduct): KitPartRole =>
 	product.ingredients.some((ingredient) => ingredient.kind === 'active') ? 'active' : 'diluent';
 
-export const kitPartOf = (product: SplProduct): KitPart => ({
-	role: roleOf(product),
-	name: product.name,
-	doseForm: product.doseForm,
-	amount: product.part?.amount ?? product.presentation?.amount ?? null,
-	unit: product.part?.amountUnit ?? product.presentation?.amountUnit ?? null,
-	container: product.presentation?.form ?? null,
-	productCode: product.productCode
-});
+export const kitPartOf = (product: SplProduct): KitPart => {
+	const role = roleOf(product);
+	const amount = product.part?.amount ?? product.presentation?.amount ?? null;
+	const unit = product.part?.amountUnit ?? product.presentation?.amountUnit ?? null;
+	const actives = product.ingredients.filter((ingredient) => ingredient.kind === 'active');
+	const content =
+		role === 'active' && actives.length === 1
+			? partContent(actives[0], { amount, amountUnit: unit })
+			: null;
+	const ml = mlPer(unit);
+	const constitutedMl =
+		role === 'active' && amount !== null && ml !== null && isDryFillForm(product.doseForm ?? '')
+			? amount * ml
+			: null;
+	return {
+		role,
+		name: product.name,
+		doseForm: product.doseForm,
+		amount,
+		unit,
+		container: product.presentation?.form ?? null,
+		productCode: product.productCode,
+		...(content ? { content } : {}),
+		...(constitutedMl !== null ? { constitutedMl } : {})
+	};
+};
+
+/**
+ * Accessories a kit carton holds beside its drug and diluent, named where the
+ * How Supplied names this NDC: "Each 100 mg Activase vial … is packaged with
+ * diluent for reconstitution (100 mL Sterile Water for Injection, USP), and
+ * one transfer device: NDC 50242-085-27." The SPL lists no part for them, so
+ * the label's words are the only evidence. Only the text between the previous
+ * NDC and this one is read, so a sibling carton's accessories stay its own.
+ */
+const DEVICE =
+	/\b(one|two|three|four|a|an|\d+)\s+((?:sterile\s+)?(?:(?:vial|needle-free|luer)\s+)?(?:transfer\s+(?:device|set|needle)|vial\s+adapter|filter\s+needle|filter|mix2vial|reconstitution\s+device|administration\s+set|vented\s+spike|syringe|needle|alcohol\s+(?:swab|pad|prep\s+pad))s?)\b/gi;
+const WORD_COUNT: Record<string, number> = { one: 1, a: 1, an: 1, two: 2, three: 3, four: 4 };
+
+export function kitDevicesFor(text: string | null | undefined, ndc: string): KitPart[] {
+	if (!text) return [];
+	const plain = normalizeNdcs(text);
+	let previousEnd = 0;
+	for (const match of plain.matchAll(NDC_TOKEN)) {
+		const start = match.index ?? 0;
+		if (toNdc11(match[0]) === ndc) {
+			const segment = plain.slice(previousEnd, start);
+			// Only the sentence that ends at the NDC speaks for this carton.
+			const sentence = segment.split(/\.\s+(?=[A-Z])/).at(-1) ?? segment;
+			const seen = new Map<string, KitPart>();
+			for (const device of sentence.matchAll(DEVICE)) {
+				// "the syringe" in a dosing note is no kit part; a counted one is.
+				const name = device[2].toLowerCase().replace(/\s+/g, ' ').replace(/s$/, '');
+				const count = WORD_COUNT[device[1].toLowerCase()] ?? Number(device[1]);
+				if (!Number.isFinite(count) || count <= 0 || seen.has(name)) continue;
+				seen.set(name, {
+					role: 'device',
+					name,
+					doseForm: null,
+					amount: count,
+					unit: null,
+					container: null,
+					productCode: null
+				});
+			}
+			return [...seen.values()];
+		}
+		previousEnd = start + match[0].length;
+	}
+	return [];
+}
 
 /** A part's amount in mg (mass parts) or mL (liquid parts); null otherwise. */
 const partMg = (part: KitPart) => (part.amount === null ? null : toMg(part.amount, part.unit));
@@ -172,6 +251,16 @@ export function kitComposition(
 ): KitComposition | null {
 	const parts = products.filter((product) => product.part).map(kitPartOf);
 	if (!parts.length) return null;
+	const devices = kitDevicesFor(evidence.howSupplied, ndc);
+	const selected = selectKitParts(parts, ndc, evidence);
+	return { ...selected, parts: [...selected.parts, ...devices] };
+}
+
+function selectKitParts(
+	parts: KitPart[],
+	ndc: string,
+	evidence: { howSupplied?: string | null; description?: string | null }
+): KitComposition {
 	const count = (role: KitPartRole) => parts.filter((part) => part.role === role).length;
 	if (count('active') <= 1 && count('diluent') <= 1) return { parts, selectedBy: 'spl' };
 

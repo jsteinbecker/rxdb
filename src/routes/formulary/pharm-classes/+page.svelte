@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import { enhance } from '$app/forms';
-	import PageHeader from '#lib/components/PageHeader.svelte';
-	import PharmClassRuleDialog from '#lib/components/PharmClassRuleDialog.svelte';
-	import { ruleKeyText } from "#lib/formulary/pharm-class-rule-label.ts";
+      import {resolve} from '$app/paths';
+      import {enhance} from '$app/forms';
+      import PageHeader from '#lib/components/PageHeader.svelte';
+      import PharmClassRuleDialog from '#lib/components/PharmClassRuleDialog.svelte';
+      import {ruleKeyText} from "#lib/formulary/pharm-class-rule-label.ts";
 
-	let { data, form } = $props();
+      let { data, form } = $props();
 
 	let dialog: PharmClassRuleDialog;
 	let menuFor = $state<string | null>(null);
@@ -14,6 +14,17 @@
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
 	type Rule = (typeof data.rules)[number];
+
+	/** The NDC whose new-rule dialog was last opened, so reloads after a save don't reopen it. */
+	let openedFor: string | null = null;
+	let ndcInput = $state(data.newRule?.ndc ?? '');
+
+	$effect(() => {
+		const pending = data.newRule;
+		if (!pending?.rules || pending.ndc === openedFor) return;
+		openedFor = pending.ndc;
+		void dialog.open();
+	});
 
 	function edit(rule: Rule) {
 		menuFor = null;
@@ -40,6 +51,22 @@
 		</p>
 	</PageHeader>
 
+	<form class="new-rule" method="GET" data-sveltekit-keepfocus onsubmit={() => (openedFor = null)}>
+		<label for="new-rule-ndc">New rule for NDC</label>
+		<input
+			id="new-rule-ndc"
+			name="ndc"
+			bind:value={ndcInput}
+			placeholder="e.g. 0002-1433-80"
+			autocomplete="off"
+			required
+		/>
+		<button type="submit">Assign class…</button>
+	</form>
+	{#if data.newRule?.error}
+		<p class="notice error" role="alert">{data.newRule.error}</p>
+	{/if}
+
 	{#if form?.action === 'pharmClassRuleDelete' && form.message}
 		<p class="notice error" role="alert">{form.message}</p>
 	{:else if form?.notice}
@@ -48,8 +75,8 @@
 
 	{#if !data.rules.length}
 		<p class="empty">
-			No rules yet. Open an NDC page from the <a href={resolve('/formulary')}>formulary</a> and choose
-			Assign class from its ⋯ menu to create one.
+			No rules yet. Enter an NDC above, or open an NDC page from the
+			<a href={resolve('/formulary')}>formulary</a> and choose Assign class from its ⋯ menu.
 		</p>
 	{:else}
 		<table>
@@ -124,6 +151,8 @@
 
 <PharmClassRuleDialog
 	bind:this={dialog}
+	rules={data.newRule?.rules ?? null}
+	ndc={data.newRule?.rules ? data.newRule.ndc : null}
 	known={data.known}
 	confirmRemove={data.settings.confirmRemove}
 	message={form?.action === 'pharmClassRule' || form?.action === 'pharmClassRuleDelete'
@@ -132,6 +161,36 @@
 />
 
 <style>
+	.new-rule {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 1rem;
+		font-size: 0.9rem;
+	}
+
+	.new-rule label {
+		color: #5c6777;
+	}
+
+	.new-rule input {
+		padding: 0.35rem 0.55rem;
+		border: 1px solid #d9dee6;
+		border-radius: 0.4rem;
+		font: inherit;
+		width: 12rem;
+	}
+
+	.new-rule button {
+		padding: 0.35rem 0.75rem;
+		border: 1px solid #c9d6e8;
+		border-radius: 0.4rem;
+		background: #eef3fa;
+		color: #3464a5;
+		font: inherit;
+		cursor: pointer;
+	}
+
 	.notice {
 		border-radius: 0.55rem;
 		padding: 0.6rem 0.85rem;

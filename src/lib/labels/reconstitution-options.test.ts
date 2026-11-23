@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseReconstitutionTable, reconstitutionFromLabel } from './reconstitution';
-import { parseReconstitutionProse, dedupeProseReconstitutions } from './dry-fill-volume';
+import { dedupeProseReconstitutions, parseReconstitutionProse } from './dry-fill-volume';
 import { parsePackageFacts } from '../catalog/package-facts';
 import { resolveEffectivePackage } from '../catalog/effective-package';
 import { packageFixture } from '../server/testing/package-fixture';
@@ -260,4 +260,61 @@ test('route-less openFDA table rows fold into the routed SPL rows for the packag
 			{ diluentMl: 9.6, routes: ['IV'] }
 		]
 	);
+});
+
+test('paired lists resolved "respectively" give one step per vial', () => {
+	const rows = (text: string) =>
+		parseReconstitutionProse(text).map(({ vialMassMg, diluentMl, routes }) => ({
+			vialMassMg,
+			diluentMl,
+			routes
+		}));
+	// Ampicillin: the vials in one sentence, the volumes in the next.
+	assert.deepEqual(
+		rows(
+			'Ampicillin for Injection, USP, 1 g or 2 g may also be given by direct intravenous administration. Dissolve in 7.4 or 14.8 mL Sterile Water for Injection, USP, or Bacteriostatic Water for Injection, USP, respectively, and administer slowly over at least 10 to 15 minutes.'
+		),
+		[
+			{ vialMassMg: 1000, diluentMl: 7.4, routes: ['IV'] },
+			{ vialMassMg: 2000, diluentMl: 14.8, routes: ['IV'] }
+		]
+	);
+	// A vial list that is a condition ("when … are unavailable") is not the one paired.
+	assert.deepEqual(
+		rows(
+			'While Ampicillin for Injection, USP, 1 g and 2 g, are primarily for intravenous use, they may be administered intramuscularly when the 250 mg or 500 mg vials are unavailable. In such instances, dissolve in 3.5 or 6.8 mL Sterile Water for Injection, USP, respectively.'
+		),
+		[
+			{ vialMassMg: 1000, diluentMl: 3.5, routes: ['IM'] },
+			{ vialMassMg: 2000, diluentMl: 6.8, routes: ['IM'] }
+		]
+	);
+	// Three vials in one sentence, units only on some.
+	assert.deepEqual(
+		rows(
+			'Reconstitute the 500 mg, 1 g and 2 g vials with 2, 3.5 and 6.8 mL of Sterile Water for Injection, respectively.'
+		).map((row) => [row.vialMassMg, row.diluentMl]),
+		[
+			[500, 2],
+			[1000, 3.5],
+			[2000, 6.8]
+		]
+	);
+	assert.deepEqual(
+		rows(
+			'The 1 and 2 gram vials should be reconstituted with 10 mL or 20 mL of 0.9% Sodium Chloride respectively.'
+		).map((row) => [row.vialMassMg, row.diluentMl]),
+		[
+			[1000, 10],
+			[2000, 20]
+		]
+	);
+});
+
+test('a carton panel binds its diluent to the vial it states', () => {
+	const [row] = parseReconstitutionProse(
+		'Ampicillin for Injection, USP ampicillin sodium equivalent to 2 grams per vial ampicillin For DIRECT IV USE: Add 14.8 mL Sterile Water for Injection USP.'
+	);
+	assert.equal(row.vialMassMg, 2000);
+	assert.equal(row.diluentMl, 14.8);
 });

@@ -5,10 +5,10 @@ source's classes, add to them, or suppress one), and edit or delete existing rul
 Posts to the page's `pharmClassRule` and `pharmClassRuleDelete` actions.
 -->
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import type { ScopeOption } from "#lib/formulary/pharm-class-scope-options.ts";
+      import {enhance} from '$app/forms';
+      import type {ScopeOption} from "#lib/formulary/pharm-class-scope-options.ts";
 
-	type Scope = ScopeOption & {
+      type Scope = ScopeOption & {
 		count: number;
 		capped: boolean;
 		rule: { id: string; mode: 'replace' | 'add' | 'suppress'; classes: string[]; note: string } | null;
@@ -25,7 +25,8 @@ Posts to the page's `pharmClassRule` and `pharmClassRuleDelete` actions.
 		rules = null,
 		known = [],
 		message = null,
-		confirmRemove = true
+		confirmRemove = true,
+		ndc = null
 	}: {
 		/** The scope choices for assigning a class; omit when only editing existing rules. */
 		rules?: Promise<Rules> | Rules | null;
@@ -35,6 +36,8 @@ Posts to the page's `pharmClassRule` and `pharmClassRuleDelete` actions.
 		message?: string | null;
 		/** Ask before deleting a rule (the repo's `confirmRemove` setting). */
 		confirmRemove?: boolean;
+		/** Posted with new rules when the page has no NDC of its own (the class-rules list). */
+		ndc?: string | null;
 	} = $props();
 
 	let dialog: HTMLDialogElement;
@@ -180,6 +183,10 @@ Posts to the page's `pharmClassRule` and `pharmClassRuleDelete` actions.
 			<p class="error" role="alert">
 				Could not load the scope options, so a new rule cannot be saved now. Close and try again.
 			</p>
+		{:else if loaded && !editing && !loaded.scopes.length}
+			<p class="error" role="alert">
+				This package has no active moieties to key a rule on, so no rule can be assigned from it.
+			</p>
 		{:else if loaded?.degraded}
 			<p class="muted" role="status">Match counts or suggestions could not be loaded.</p>
 		{/if}
@@ -249,6 +256,7 @@ Posts to the page's `pharmClassRule` and `pharmClassRuleDelete` actions.
 		</div>
 		{#if message && submitted}<p class="error" role="alert">{message}</p>{/if}
 		<input type="hidden" name="id" value={ruleId} />
+		{#if ndc && !editing}<input type="hidden" name="ndc" value={ndc} />{/if}
 		<div class="dialog-actions">
 			{#if ruleId}
 				<button class="link danger" type="submit" formaction="?/pharmClassRuleDelete">

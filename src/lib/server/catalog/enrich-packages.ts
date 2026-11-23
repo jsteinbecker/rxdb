@@ -5,93 +5,49 @@
  *
  * @module
  */
-import { routesFromProductText, routesFromLabelText, normalizeRoutes } from '../../labels/routes';
+import {normalizeRoutes, routesFromLabelText, routesFromProductText} from '../../labels/routes';
+import {type FdaProduct, fdaUrl, labelerNameOf, OPENFDA_LABEL, OPENFDA_NDC} from '../providers/openfda';
+import {DAILYMED_DOCUMENT, DAILYMED_INFO, DAILYMED_SPL, inactivatedOnDailyMed} from '../providers/dailymed';
+import {RXNAV} from '../providers/rxnav';
+import {mapLimit} from '../providers/concurrency';
+import {getJson, getText, providerFailures} from '../providers/transport';
+import type {ExternalPackage, LabelIngredient, LabelIngredientName, PackageDetails} from '../../catalog/types';
+import {cationsNamedIn} from '../../medication/ions';
+import {type IonDeclaration, ionDeclarationsFromLabel, ionRows, type SaltFacts} from '../medication/ion-content';
+import {parsePackageFacts} from '../../catalog/package-facts';
+import {hyphenCandidates, toNdc11} from '../../catalog/ndc';
 import {
-	OPENFDA_NDC,
-	OPENFDA_LABEL,
-	fdaUrl,
-	labelerNameOf,
-	type FdaProduct
-} from '../providers/openfda';
-import {
-	DAILYMED_SPL,
-	DAILYMED_DOCUMENT,
-	DAILYMED_INFO,
-	inactivatedOnDailyMed
-} from '../providers/dailymed';
-import { RXNAV } from '../providers/rxnav';
-import { mapLimit } from '../providers/concurrency';
-import { getJson, getText, providerFailures } from '../providers/transport';
-import type {
-	ExternalPackage,
-	LabelIngredient,
-	LabelIngredientName,
-	PackageDetails
-} from '../../catalog/types';
-import { cationsNamedIn } from '../../medication/ions';
-import {
-	type IonDeclaration,
-	ionDeclarationsFromLabel,
-	ionRows,
-	type SaltFacts
-} from '../medication/ion-content';
-import { parsePackageFacts } from '../../catalog/package-facts';
-import { hyphenCandidates, toNdc11 } from '../../catalog/ndc';
-import {
-	ingredientKeyOf,
-	parseSplIngredients,
-	type SplIngredient,
-	type SplProduct,
-	strengthText,
-	withoutUnspecified
+    ingredientKeyOf,
+    parseSplIngredients,
+    type SplIngredient,
+    type SplProduct,
+    strengthText,
+    withoutUnspecified
 } from '../../labels/spl-ingredients';
+import {type CheckedStrength, checkProductStrengths, type MoietyFactor} from '../../labels/spl-strength-checks';
+import {appearancesByPackage} from '../../labels/spl-characteristics';
+import {correctDoseForm} from '../../labels/dose-form-correction';
+import {reconstitutionFromLabel} from '../../labels/reconstitution';
 import {
-	type CheckedStrength,
-	checkProductStrengths,
-	type MoietyFactor
-} from '../../labels/spl-strength-checks';
-import { appearancesByPackage } from '../../labels/spl-characteristics';
-import { correctDoseForm } from '../../labels/dose-form-correction';
-import { reconstitutionFromLabel } from '../../labels/reconstitution';
-import {
-	type LabelBlock,
-	labelSectionBlocks,
-	sectionPlainText,
-	type UnclassifiedSection,
-	unclassifiedSections
+    type LabelBlock,
+    labelSectionBlocks,
+    sectionPlainText,
+    type UnclassifiedSection,
+    unclassifiedSections
 } from '../../labels/spl-sections';
-import { labelScope } from '../../labels/label-relevance';
-import { deliveredAmount } from '../../labels/overfill';
+import {labelScope} from '../../labels/label-relevance';
+import {deliveredAmount} from '../../labels/overfill';
+import {dryFillStrength, isDryFillForm, pharmacyBulkFillMl} from '../../medication/ingredient-content';
 import {
-	dryFillStrength,
-	isDryFillForm,
-	pharmacyBulkFillMl
-} from '../../medication/ingredient-content';
-import {
-	type KitComposition,
-	kitComposition,
-	partContent,
-	productsOfComposition
+    type KitComposition,
+    kitComposition,
+    kitPartOf,
+    partContent,
+    productsOfComposition
 } from '../../labels/kit-parts';
-import { parseUnitOfUse } from '../../catalog/ndc-packaging';
+import {parseUnitOfUse} from '../../catalog/ndc-packaging';
+import {LABEL_SECTIONS} from '../../labels/label-sections';
 
-const LABEL_SECTIONS: [string, string][] = [
-	['boxed_warning', 'Boxed warning'],
-	['indications_and_usage', 'Indications and usage'],
-	['dosage_and_administration', 'Dosage and administration'],
-	['dosage_forms_and_strengths', 'Dosage forms and strengths'],
-	['contraindications', 'Contraindications'],
-	['warnings_and_cautions', 'Warnings and precautions'],
-	['adverse_reactions', 'Adverse reactions'],
-	['drug_interactions', 'Drug interactions'],
-	['use_in_specific_populations', 'Use in specific populations'],
-	['description', 'Description'],
-	['clinical_pharmacology', 'Clinical pharmacology'],
-	['how_supplied', 'How supplied'],
-	['storage_and_handling', 'Storage and handling'],
-	['instructions_for_use', 'Instructions for use'],
-	['package_label_principal_display_panel', 'Principal display panel']
-];
 
 /** Known label sections with the SPL's unclassified ones ("DIRECTIONS FOR USE")
  * slotted in where the document has them: after the known section they follow,
@@ -144,8 +100,16 @@ function labelIngredientOf(
 	bulkFillMl: number | null
 ): LabelIngredient {
 	const productCode = product.productCode;
+	// A powder part quantified by its made-up volume is named by its drug:
+	// Activase's "100 mL" part is the 100 mg vial.
+	const kitPart = product.part ? kitPartOf(product) : null;
+	const madeUp = kitPart?.constitutedMl != null && kitPart.content ? kitPart : null;
+	// "VIAL, SINGLE-USE" → "vial".
+	const madeUpContainer = (madeUp?.container ?? 'vial').split(',')[0].trim().toLowerCase();
 	const part = product.part
-		? `${product.name ?? 'Kit part'}${product.part.amount !== null ? ` (${product.part.amount}${product.part.amountUnit ? ` ${product.part.amountUnit}` : ''})` : ''}`
+		? madeUp
+			? `${product.name ?? 'Kit part'} (${madeUp.content!.value} ${madeUp.content!.unit} ${madeUpContainer})`
+			: `${product.name ?? 'Kit part'}${product.part.amount !== null ? ` (${product.part.amount}${product.part.amountUnit ? ` ${product.part.amountUnit}` : ''})` : ''}`
 		: null;
 	// The row as the label printed it, before any salt correction.
 	const salt = checked.corrections.find((correction) => correction.stated !== undefined);
@@ -169,7 +133,9 @@ function labelIngredientOf(
 			productCode,
 			strengthNotes: [
 				...checked.corrections.map((correction) => correction.note),
-				`Stated as ${strengthText(checked)} of the ${(product.doseForm ?? 'part').toLowerCase()}; the kit holds ${product.part!.amount} ${product.part!.amountUnit ?? ''}`.trim()
+				madeUp
+					? `Stated as ${strengthText(checked)} of the ${(product.doseForm ?? 'part').toLowerCase()}, per ${madeUp.constitutedMl} mL once reconstituted; the ${madeUpContainer} holds ${content.value} ${content.unit}`
+					: `Stated as ${strengthText(checked)} of the ${(product.doseForm ?? 'part').toLowerCase()}; the kit holds ${product.part!.amount} ${product.part!.amountUnit ?? ''}`.trim()
 			],
 			...labelStrengthOf(printedContent ? `${printedContent.value} ${printedContent.unit}` : null),
 			...(part ? { part } : {})

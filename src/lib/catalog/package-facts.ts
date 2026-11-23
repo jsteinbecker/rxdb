@@ -62,8 +62,25 @@ export function parsePackageFacts(
 	// 1 BOTTLE" is a 7.5 g bottle of powder, and the 145 mL is its diluent.
 	const actives = kitParts?.parts.filter((part) => part.role === 'active') ?? [];
 	const activePart = actives.length === 1 ? actives[0] : null;
-	const kitSize: UnitOfUseSize | null =
-		activePart?.amount != null && activePart.unit
+	// A powder part quantified by what it makes up to (Activase's "100 mL" vial
+	// of 100 mg/100 mL) is sold by its drug: the vial is 100 mg, as any other
+	// powder vial's description would say. An oral bottle keeps its constituted
+	// volume, which is how those are sold and what their rows are matched on.
+	const activeContentMg =
+		activePart?.content != null ? toMg(activePart.content.value, activePart.content.unit) : null;
+	const byContent =
+		activePart?.constitutedMl != null &&
+		activeContentMg !== null &&
+		!isOralDryFillForm(activePart.doseForm);
+	const kitSize: UnitOfUseSize | null = byContent
+		? {
+				kind: 'mass',
+				value: activePart!.content!.value,
+				unit: activePart!.content!.unit,
+				container: activePart!.container ?? 'VIAL',
+				packQty: 1
+			}
+		: activePart?.amount != null && activePart.unit
 			? {
 					kind:
 						mgPer(activePart.unit) !== null
@@ -176,13 +193,18 @@ export function parsePackageFacts(
 		? [...quantified.values()].reduce((sum, mg) => sum + mg, 0)
 		: (totalIngredientMg(ingredients, oral ? labeledMl : null) ??
 			(!kitParts && kit?.massesMg.length === 1 ? kit.massesMg[0] : null));
-	const reconstitution = withSuppliedDiluent(
+	const labelReconstitution = withSuppliedDiluent(
 		withRxNormConcentration(
 			withKitDiluent(vialMg === null ? allRows : rowsForVial(allRows, vialMg), kitDiluentsMl),
 			rxNormName
 		),
 		kitParts
 	);
+	const reconstitution = labelReconstitution.length
+		? labelReconstitution
+		: isDryFill
+			? kitReconstitution(kitParts)
+			: [];
 	// Without an SCD mass, a single-ingredient vial the label names on its own
 	// (matched within salt distance by `rowsForVial`) takes the label's figure.
 	const labeledMg = [
@@ -286,6 +308,49 @@ function withSuppliedDiluent(
 			.replace(/(^|[\s-])([a-z])/g, (_, lead, c) => lead + c.toUpperCase());
 		return { ...row, diluents: [`${name} (supplied)`] };
 	});
+}
+
+/**
+ * A kit of one powder part and one diluent part is made up with all of that
+ * diluent, which is what the diluent is in the carton for. Activase 100 mg
+ * never says "add 100 mL": its instructions are to "allow all water to
+ * transfer into Activase vial" through the kit's transfer device. When the
+ * powder part is quantified by its made-up volume ("100 mg/100 mL" in a part
+ * of "100 mL"), that volume and the concentration it implies are the SPL's
+ * own; otherwise the label's stated concentration is left to fill them in.
+ * Empty unless the kit has exactly that shape.
+ */
+export function kitReconstitution(kitParts: KitComposition | null): ProseReconstitution[] {
+	if (!kitParts || kitParts.selectedBy === 'ambiguous') return [];
+	const actives = kitParts.parts.filter((part) => part.role === 'active');
+	const diluents = kitParts.parts.filter((part) => part.role === 'diluent');
+	if (actives.length !== 1 || diluents.length !== 1) return [];
+	const [active] = actives;
+	const [diluent] = diluents;
+	const contentMg = active.content ? toMg(active.content.value, active.content.unit) : null;
+	const diluentMl =
+		diluent.amount !== null && mlPer(diluent.unit) !== null
+			? diluent.amount * mlPer(diluent.unit)!
+			: null;
+	if (!isDryFillForm(active.doseForm ?? '') || isOralDryFillForm(active.doseForm)) return [];
+	if (contentMg === null || diluentMl === null) return [];
+	const finalVolumeMl = active.constitutedMl ?? null;
+	const name = (diluent.name ?? 'diluent')
+		.toLowerCase()
+		.replace(/(^|[\s-])([a-z])/g, (_, lead, c) => lead + c.toUpperCase());
+	return [
+		{
+			vialMassMg: contentMg,
+			diluentMl,
+			concentrations:
+				finalVolumeMl !== null && finalVolumeMl > 0
+					? [{ name: null, mgPerMl: Number((contentMg / finalVolumeMl).toPrecision(12)) }]
+					: [],
+			finalVolumeMl,
+			diluents: [`${name} (supplied)`],
+			fromKit: true
+		}
+	];
 }
 
 /**
