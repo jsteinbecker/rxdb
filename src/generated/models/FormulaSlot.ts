@@ -68,6 +68,8 @@ export type FormulaSlotMinAggregateOutputType = {
   tolerancePct: runtime.Decimal | null
   allowMultiComponent: boolean | null
   ordinal: number | null
+  dosableComponentId: string | null
+  formularyItemId: string | null
 }
 
 export type FormulaSlotMaxAggregateOutputType = {
@@ -88,6 +90,8 @@ export type FormulaSlotMaxAggregateOutputType = {
   tolerancePct: runtime.Decimal | null
   allowMultiComponent: boolean | null
   ordinal: number | null
+  dosableComponentId: string | null
+  formularyItemId: string | null
 }
 
 export type FormulaSlotCountAggregateOutputType = {
@@ -109,6 +113,8 @@ export type FormulaSlotCountAggregateOutputType = {
   allowMultiComponent: number
   ordinal: number
   vialPrep: number
+  dosableComponentId: number
+  formularyItemId: number
   _all: number
 }
 
@@ -155,6 +161,8 @@ export type FormulaSlotMinAggregateInputType = {
   tolerancePct?: true
   allowMultiComponent?: true
   ordinal?: true
+  dosableComponentId?: true
+  formularyItemId?: true
 }
 
 export type FormulaSlotMaxAggregateInputType = {
@@ -175,6 +183,8 @@ export type FormulaSlotMaxAggregateInputType = {
   tolerancePct?: true
   allowMultiComponent?: true
   ordinal?: true
+  dosableComponentId?: true
+  formularyItemId?: true
 }
 
 export type FormulaSlotCountAggregateInputType = {
@@ -196,6 +206,8 @@ export type FormulaSlotCountAggregateInputType = {
   allowMultiComponent?: true
   ordinal?: true
   vialPrep?: true
+  dosableComponentId?: true
+  formularyItemId?: true
   _all?: true
 }
 
@@ -304,6 +316,8 @@ export type FormulaSlotGroupByOutputType = {
   allowMultiComponent: boolean
   ordinal: number
   vialPrep: runtime.JsonValue | null
+  dosableComponentId: string | null
+  formularyItemId: string | null
   _count: FormulaSlotCountAggregateOutputType | null
   _avg: FormulaSlotAvgAggregateOutputType | null
   _sum: FormulaSlotSumAggregateOutputType | null
@@ -348,10 +362,16 @@ export type FormulaSlotWhereInput = {
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
   vialPrep?: Prisma.JsonNullableFilter<"FormulaSlot">
+  dosableComponentId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
+  formularyItemId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
   formula?: Prisma.XOR<Prisma.CompoundFormulaScalarRelationFilter, Prisma.CompoundFormulaWhereInput>
   ingredientTerm?: Prisma.XOR<Prisma.CompoundingTermNullableScalarRelationFilter, Prisma.CompoundingTermWhereInput> | null
   slotCandidates?: Prisma.SlotCandidateListRelationFilter
   buildPlanLines?: Prisma.BuildPlanLineListRelationFilter
+  dosableComponent?: Prisma.XOR<Prisma.DosableComponentNullableScalarRelationFilter, Prisma.DosableComponentWhereInput> | null
+  formularyItem?: Prisma.XOR<Prisma.FormularyItemNullableScalarRelationFilter, Prisma.FormularyItemWhereInput> | null
+  dosableComponentItem?: Prisma.XOR<Prisma.DosableComponentItemNullableScalarRelationFilter, Prisma.DosableComponentItemWhereInput> | null
+  packageRestriction?: Prisma.XOR<Prisma.FormulaSlotPackageRestrictionNullableScalarRelationFilter, Prisma.FormulaSlotPackageRestrictionWhereInput> | null
 }
 
 export type FormulaSlotOrderByWithRelationInput = {
@@ -373,10 +393,16 @@ export type FormulaSlotOrderByWithRelationInput = {
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   vialPrep?: Prisma.SortOrderInput | Prisma.SortOrder
+  dosableComponentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  formularyItemId?: Prisma.SortOrderInput | Prisma.SortOrder
   formula?: Prisma.CompoundFormulaOrderByWithRelationInput
   ingredientTerm?: Prisma.CompoundingTermOrderByWithRelationInput
   slotCandidates?: Prisma.SlotCandidateOrderByRelationAggregateInput
   buildPlanLines?: Prisma.BuildPlanLineOrderByRelationAggregateInput
+  dosableComponent?: Prisma.DosableComponentOrderByWithRelationInput
+  formularyItem?: Prisma.FormularyItemOrderByWithRelationInput
+  dosableComponentItem?: Prisma.DosableComponentItemOrderByWithRelationInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionOrderByWithRelationInput
 }
 
 export type FormulaSlotWhereUniqueInput = Prisma.AtLeast<{
@@ -401,10 +427,16 @@ export type FormulaSlotWhereUniqueInput = Prisma.AtLeast<{
   allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
   vialPrep?: Prisma.JsonNullableFilter<"FormulaSlot">
+  dosableComponentId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
+  formularyItemId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
   formula?: Prisma.XOR<Prisma.CompoundFormulaScalarRelationFilter, Prisma.CompoundFormulaWhereInput>
   ingredientTerm?: Prisma.XOR<Prisma.CompoundingTermNullableScalarRelationFilter, Prisma.CompoundingTermWhereInput> | null
   slotCandidates?: Prisma.SlotCandidateListRelationFilter
   buildPlanLines?: Prisma.BuildPlanLineListRelationFilter
+  dosableComponent?: Prisma.XOR<Prisma.DosableComponentNullableScalarRelationFilter, Prisma.DosableComponentWhereInput> | null
+  formularyItem?: Prisma.XOR<Prisma.FormularyItemNullableScalarRelationFilter, Prisma.FormularyItemWhereInput> | null
+  dosableComponentItem?: Prisma.XOR<Prisma.DosableComponentItemNullableScalarRelationFilter, Prisma.DosableComponentItemWhereInput> | null
+  packageRestriction?: Prisma.XOR<Prisma.FormulaSlotPackageRestrictionNullableScalarRelationFilter, Prisma.FormulaSlotPackageRestrictionWhereInput> | null
 }, "id">
 
 export type FormulaSlotOrderByWithAggregationInput = {
@@ -426,6 +458,8 @@ export type FormulaSlotOrderByWithAggregationInput = {
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   vialPrep?: Prisma.SortOrderInput | Prisma.SortOrder
+  dosableComponentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  formularyItemId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.FormulaSlotCountOrderByAggregateInput
   _avg?: Prisma.FormulaSlotAvgOrderByAggregateInput
   _max?: Prisma.FormulaSlotMaxOrderByAggregateInput
@@ -455,6 +489,8 @@ export type FormulaSlotScalarWhereWithAggregatesInput = {
   allowMultiComponent?: Prisma.BoolWithAggregatesFilter<"FormulaSlot"> | boolean
   ordinal?: Prisma.IntWithAggregatesFilter<"FormulaSlot"> | number
   vialPrep?: Prisma.JsonNullableWithAggregatesFilter<"FormulaSlot">
+  dosableComponentId?: Prisma.UuidNullableWithAggregatesFilter<"FormulaSlot"> | string | null
+  formularyItemId?: Prisma.UuidNullableWithAggregatesFilter<"FormulaSlot"> | string | null
 }
 
 export type FormulaSlotCreateInput = {
@@ -478,6 +514,10 @@ export type FormulaSlotCreateInput = {
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotUncheckedCreateInput = {
@@ -499,8 +539,11 @@ export type FormulaSlotUncheckedCreateInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotUpdateInput = {
@@ -524,6 +567,10 @@ export type FormulaSlotUpdateInput = {
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotUncheckedUpdateInput = {
@@ -545,8 +592,11 @@ export type FormulaSlotUncheckedUpdateInput = {
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotCreateManyInput = {
@@ -568,6 +618,8 @@ export type FormulaSlotCreateManyInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
 }
 
 export type FormulaSlotUpdateManyMutationInput = {
@@ -608,6 +660,8 @@ export type FormulaSlotUncheckedUpdateManyInput = {
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type FormulaSlotListRelationFilter = {
@@ -639,6 +693,8 @@ export type FormulaSlotCountOrderByAggregateInput = {
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
   vialPrep?: Prisma.SortOrder
+  dosableComponentId?: Prisma.SortOrder
+  formularyItemId?: Prisma.SortOrder
 }
 
 export type FormulaSlotAvgOrderByAggregateInput = {
@@ -671,6 +727,8 @@ export type FormulaSlotMaxOrderByAggregateInput = {
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
+  dosableComponentId?: Prisma.SortOrder
+  formularyItemId?: Prisma.SortOrder
 }
 
 export type FormulaSlotMinOrderByAggregateInput = {
@@ -691,6 +749,8 @@ export type FormulaSlotMinOrderByAggregateInput = {
   tolerancePct?: Prisma.SortOrder
   allowMultiComponent?: Prisma.SortOrder
   ordinal?: Prisma.SortOrder
+  dosableComponentId?: Prisma.SortOrder
+  formularyItemId?: Prisma.SortOrder
 }
 
 export type FormulaSlotSumOrderByAggregateInput = {
@@ -708,6 +768,48 @@ export type FormulaSlotSumOrderByAggregateInput = {
 export type FormulaSlotScalarRelationFilter = {
   is?: Prisma.FormulaSlotWhereInput
   isNot?: Prisma.FormulaSlotWhereInput
+}
+
+export type FormulaSlotCreateNestedManyWithoutFormularyItemInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput> | Prisma.FormulaSlotCreateWithoutFormularyItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput | Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyFormularyItemInputEnvelope
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+}
+
+export type FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput> | Prisma.FormulaSlotCreateWithoutFormularyItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput | Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyFormularyItemInputEnvelope
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+}
+
+export type FormulaSlotUpdateManyWithoutFormularyItemNestedInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput> | Prisma.FormulaSlotCreateWithoutFormularyItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput | Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput[]
+  upsert?: Prisma.FormulaSlotUpsertWithWhereUniqueWithoutFormularyItemInput | Prisma.FormulaSlotUpsertWithWhereUniqueWithoutFormularyItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyFormularyItemInputEnvelope
+  set?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  disconnect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  delete?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  update?: Prisma.FormulaSlotUpdateWithWhereUniqueWithoutFormularyItemInput | Prisma.FormulaSlotUpdateWithWhereUniqueWithoutFormularyItemInput[]
+  updateMany?: Prisma.FormulaSlotUpdateManyWithWhereWithoutFormularyItemInput | Prisma.FormulaSlotUpdateManyWithWhereWithoutFormularyItemInput[]
+  deleteMany?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
+}
+
+export type FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput> | Prisma.FormulaSlotCreateWithoutFormularyItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput | Prisma.FormulaSlotCreateOrConnectWithoutFormularyItemInput[]
+  upsert?: Prisma.FormulaSlotUpsertWithWhereUniqueWithoutFormularyItemInput | Prisma.FormulaSlotUpsertWithWhereUniqueWithoutFormularyItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyFormularyItemInputEnvelope
+  set?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  disconnect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  delete?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  update?: Prisma.FormulaSlotUpdateWithWhereUniqueWithoutFormularyItemInput | Prisma.FormulaSlotUpdateWithWhereUniqueWithoutFormularyItemInput[]
+  updateMany?: Prisma.FormulaSlotUpdateManyWithWhereWithoutFormularyItemInput | Prisma.FormulaSlotUpdateManyWithWhereWithoutFormularyItemInput[]
+  deleteMany?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
 }
 
 export type FormulaSlotCreateNestedManyWithoutIngredientTermInput = {
@@ -822,6 +924,207 @@ export type FormulaSlotUpdateOneRequiredWithoutBuildPlanLinesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.FormulaSlotUpdateToOneWithWhereWithoutBuildPlanLinesInput, Prisma.FormulaSlotUpdateWithoutBuildPlanLinesInput>, Prisma.FormulaSlotUncheckedUpdateWithoutBuildPlanLinesInput>
 }
 
+export type FormulaSlotCreateNestedManyWithoutDosableComponentInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput> | Prisma.FormulaSlotCreateWithoutDosableComponentInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentInputEnvelope
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+}
+
+export type FormulaSlotUncheckedCreateNestedManyWithoutDosableComponentInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput> | Prisma.FormulaSlotCreateWithoutDosableComponentInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentInputEnvelope
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+}
+
+export type FormulaSlotUpdateManyWithoutDosableComponentNestedInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput> | Prisma.FormulaSlotCreateWithoutDosableComponentInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput[]
+  upsert?: Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentInput | Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentInputEnvelope
+  set?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  disconnect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  delete?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  update?: Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentInput | Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentInput[]
+  updateMany?: Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentInput | Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentInput[]
+  deleteMany?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
+}
+
+export type FormulaSlotUncheckedUpdateManyWithoutDosableComponentNestedInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput> | Prisma.FormulaSlotCreateWithoutDosableComponentInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentInput[]
+  upsert?: Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentInput | Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentInputEnvelope
+  set?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  disconnect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  delete?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  update?: Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentInput | Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentInput[]
+  updateMany?: Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentInput | Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentInput[]
+  deleteMany?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
+}
+
+export type FormulaSlotCreateNestedManyWithoutDosableComponentItemInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput> | Prisma.FormulaSlotCreateWithoutDosableComponentItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentItemInputEnvelope
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+}
+
+export type FormulaSlotUncheckedCreateNestedManyWithoutDosableComponentItemInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput> | Prisma.FormulaSlotCreateWithoutDosableComponentItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentItemInputEnvelope
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+}
+
+export type FormulaSlotUpdateManyWithoutDosableComponentItemNestedInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput> | Prisma.FormulaSlotCreateWithoutDosableComponentItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput[]
+  upsert?: Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentItemInput | Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentItemInputEnvelope
+  set?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  disconnect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  delete?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  update?: Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentItemInput | Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentItemInput[]
+  updateMany?: Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentItemInput | Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentItemInput[]
+  deleteMany?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
+}
+
+export type FormulaSlotUncheckedUpdateManyWithoutDosableComponentItemNestedInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput> | Prisma.FormulaSlotCreateWithoutDosableComponentItemInput[] | Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput[]
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput | Prisma.FormulaSlotCreateOrConnectWithoutDosableComponentItemInput[]
+  upsert?: Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentItemInput | Prisma.FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentItemInput[]
+  createMany?: Prisma.FormulaSlotCreateManyDosableComponentItemInputEnvelope
+  set?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  disconnect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  delete?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  connect?: Prisma.FormulaSlotWhereUniqueInput | Prisma.FormulaSlotWhereUniqueInput[]
+  update?: Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentItemInput | Prisma.FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentItemInput[]
+  updateMany?: Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentItemInput | Prisma.FormulaSlotUpdateManyWithWhereWithoutDosableComponentItemInput[]
+  deleteMany?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
+}
+
+export type FormulaSlotCreateNestedOneWithoutPackageRestrictionInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutPackageRestrictionInput, Prisma.FormulaSlotUncheckedCreateWithoutPackageRestrictionInput>
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutPackageRestrictionInput
+  connect?: Prisma.FormulaSlotWhereUniqueInput
+}
+
+export type FormulaSlotUpdateOneRequiredWithoutPackageRestrictionNestedInput = {
+  create?: Prisma.XOR<Prisma.FormulaSlotCreateWithoutPackageRestrictionInput, Prisma.FormulaSlotUncheckedCreateWithoutPackageRestrictionInput>
+  connectOrCreate?: Prisma.FormulaSlotCreateOrConnectWithoutPackageRestrictionInput
+  upsert?: Prisma.FormulaSlotUpsertWithoutPackageRestrictionInput
+  connect?: Prisma.FormulaSlotWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FormulaSlotUpdateToOneWithWhereWithoutPackageRestrictionInput, Prisma.FormulaSlotUpdateWithoutPackageRestrictionInput>, Prisma.FormulaSlotUncheckedUpdateWithoutPackageRestrictionInput>
+}
+
+export type FormulaSlotCreateWithoutFormularyItemInput = {
+  id?: string
+  role: string
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
+  ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
+  slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
+}
+
+export type FormulaSlotUncheckedCreateWithoutFormularyItemInput = {
+  id?: string
+  formulaId: string
+  role: string
+  ingredientTermId?: string | null
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
+}
+
+export type FormulaSlotCreateOrConnectWithoutFormularyItemInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput>
+}
+
+export type FormulaSlotCreateManyFormularyItemInputEnvelope = {
+  data: Prisma.FormulaSlotCreateManyFormularyItemInput | Prisma.FormulaSlotCreateManyFormularyItemInput[]
+  skipDuplicates?: boolean
+}
+
+export type FormulaSlotUpsertWithWhereUniqueWithoutFormularyItemInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  update: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedUpdateWithoutFormularyItemInput>
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedCreateWithoutFormularyItemInput>
+}
+
+export type FormulaSlotUpdateWithWhereUniqueWithoutFormularyItemInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  data: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutFormularyItemInput, Prisma.FormulaSlotUncheckedUpdateWithoutFormularyItemInput>
+}
+
+export type FormulaSlotUpdateManyWithWhereWithoutFormularyItemInput = {
+  where: Prisma.FormulaSlotScalarWhereInput
+  data: Prisma.XOR<Prisma.FormulaSlotUpdateManyMutationInput, Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemInput>
+}
+
+export type FormulaSlotScalarWhereInput = {
+  AND?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
+  OR?: Prisma.FormulaSlotScalarWhereInput[]
+  NOT?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
+  id?: Prisma.UuidFilter<"FormulaSlot"> | string
+  formulaId?: Prisma.UuidFilter<"FormulaSlot"> | string
+  role?: Prisma.StringFilter<"FormulaSlot"> | string
+  ingredientTermId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
+  targetAmountWhole?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  targetAmountNum?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  targetAmountDen?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  targetAmountUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
+  targetConcMag?: Prisma.DecimalNullableFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
+  volumeWhole?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeNum?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeDen?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
+  volumeUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
+  tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
+  ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
+  vialPrep?: Prisma.JsonNullableFilter<"FormulaSlot">
+  dosableComponentId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
+  formularyItemId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
+}
+
 export type FormulaSlotCreateWithoutIngredientTermInput = {
   id?: string
   role: string
@@ -842,6 +1145,10 @@ export type FormulaSlotCreateWithoutIngredientTermInput = {
   formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotUncheckedCreateWithoutIngredientTermInput = {
@@ -862,8 +1169,11 @@ export type FormulaSlotUncheckedCreateWithoutIngredientTermInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotCreateOrConnectWithoutIngredientTermInput = {
@@ -892,30 +1202,6 @@ export type FormulaSlotUpdateManyWithWhereWithoutIngredientTermInput = {
   data: Prisma.XOR<Prisma.FormulaSlotUpdateManyMutationInput, Prisma.FormulaSlotUncheckedUpdateManyWithoutIngredientTermInput>
 }
 
-export type FormulaSlotScalarWhereInput = {
-  AND?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
-  OR?: Prisma.FormulaSlotScalarWhereInput[]
-  NOT?: Prisma.FormulaSlotScalarWhereInput | Prisma.FormulaSlotScalarWhereInput[]
-  id?: Prisma.UuidFilter<"FormulaSlot"> | string
-  formulaId?: Prisma.UuidFilter<"FormulaSlot"> | string
-  role?: Prisma.StringFilter<"FormulaSlot"> | string
-  ingredientTermId?: Prisma.UuidNullableFilter<"FormulaSlot"> | string | null
-  targetAmountWhole?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
-  targetAmountNum?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
-  targetAmountDen?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
-  targetAmountUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
-  targetConcMag?: Prisma.DecimalNullableFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  targetConcUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
-  volumeWhole?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
-  volumeNum?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
-  volumeDen?: Prisma.BigIntNullableFilter<"FormulaSlot"> | bigint | number | null
-  volumeUom?: Prisma.StringNullableFilter<"FormulaSlot"> | string | null
-  tolerancePct?: Prisma.DecimalFilter<"FormulaSlot"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  allowMultiComponent?: Prisma.BoolFilter<"FormulaSlot"> | boolean
-  ordinal?: Prisma.IntFilter<"FormulaSlot"> | number
-  vialPrep?: Prisma.JsonNullableFilter<"FormulaSlot">
-}
-
 export type FormulaSlotCreateWithoutFormulaInput = {
   id?: string
   role: string
@@ -936,6 +1222,10 @@ export type FormulaSlotCreateWithoutFormulaInput = {
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotUncheckedCreateWithoutFormulaInput = {
@@ -956,8 +1246,11 @@ export type FormulaSlotUncheckedCreateWithoutFormulaInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotCreateOrConnectWithoutFormulaInput = {
@@ -1006,6 +1299,10 @@ export type FormulaSlotCreateWithoutSlotCandidatesInput = {
   formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotUncheckedCreateWithoutSlotCandidatesInput = {
@@ -1027,7 +1324,10 @@ export type FormulaSlotUncheckedCreateWithoutSlotCandidatesInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
   buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotCreateOrConnectWithoutSlotCandidatesInput = {
@@ -1066,6 +1366,10 @@ export type FormulaSlotUpdateWithoutSlotCandidatesInput = {
   formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotUncheckedUpdateWithoutSlotCandidatesInput = {
@@ -1087,7 +1391,10 @@ export type FormulaSlotUncheckedUpdateWithoutSlotCandidatesInput = {
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotCreateWithoutBuildPlanLinesInput = {
@@ -1110,6 +1417,10 @@ export type FormulaSlotCreateWithoutBuildPlanLinesInput = {
   formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
   ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
   slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotUncheckedCreateWithoutBuildPlanLinesInput = {
@@ -1131,7 +1442,10 @@ export type FormulaSlotUncheckedCreateWithoutBuildPlanLinesInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
 }
 
 export type FormulaSlotCreateOrConnectWithoutBuildPlanLinesInput = {
@@ -1170,6 +1484,10 @@ export type FormulaSlotUpdateWithoutBuildPlanLinesInput = {
   formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotUncheckedUpdateWithoutBuildPlanLinesInput = {
@@ -1191,7 +1509,376 @@ export type FormulaSlotUncheckedUpdateWithoutBuildPlanLinesInput = {
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
+}
+
+export type FormulaSlotCreateWithoutDosableComponentInput = {
+  id?: string
+  role: string
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
+  ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
+  slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
+}
+
+export type FormulaSlotUncheckedCreateWithoutDosableComponentInput = {
+  id?: string
+  formulaId: string
+  role: string
+  ingredientTermId?: string | null
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formularyItemId?: string | null
+  slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
+}
+
+export type FormulaSlotCreateOrConnectWithoutDosableComponentInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput>
+}
+
+export type FormulaSlotCreateManyDosableComponentInputEnvelope = {
+  data: Prisma.FormulaSlotCreateManyDosableComponentInput | Prisma.FormulaSlotCreateManyDosableComponentInput[]
+  skipDuplicates?: boolean
+}
+
+export type FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  update: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedUpdateWithoutDosableComponentInput>
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentInput>
+}
+
+export type FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  data: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutDosableComponentInput, Prisma.FormulaSlotUncheckedUpdateWithoutDosableComponentInput>
+}
+
+export type FormulaSlotUpdateManyWithWhereWithoutDosableComponentInput = {
+  where: Prisma.FormulaSlotScalarWhereInput
+  data: Prisma.XOR<Prisma.FormulaSlotUpdateManyMutationInput, Prisma.FormulaSlotUncheckedUpdateManyWithoutDosableComponentInput>
+}
+
+export type FormulaSlotCreateWithoutDosableComponentItemInput = {
+  id?: string
+  role: string
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
+  ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
+  slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionCreateNestedOneWithoutSlotInput
+}
+
+export type FormulaSlotUncheckedCreateWithoutDosableComponentItemInput = {
+  id?: string
+  formulaId: string
+  role: string
+  ingredientTermId?: string | null
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedCreateNestedOneWithoutSlotInput
+}
+
+export type FormulaSlotCreateOrConnectWithoutDosableComponentItemInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput>
+}
+
+export type FormulaSlotCreateManyDosableComponentItemInputEnvelope = {
+  data: Prisma.FormulaSlotCreateManyDosableComponentItemInput | Prisma.FormulaSlotCreateManyDosableComponentItemInput[]
+  skipDuplicates?: boolean
+}
+
+export type FormulaSlotUpsertWithWhereUniqueWithoutDosableComponentItemInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  update: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedUpdateWithoutDosableComponentItemInput>
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedCreateWithoutDosableComponentItemInput>
+}
+
+export type FormulaSlotUpdateWithWhereUniqueWithoutDosableComponentItemInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  data: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutDosableComponentItemInput, Prisma.FormulaSlotUncheckedUpdateWithoutDosableComponentItemInput>
+}
+
+export type FormulaSlotUpdateManyWithWhereWithoutDosableComponentItemInput = {
+  where: Prisma.FormulaSlotScalarWhereInput
+  data: Prisma.XOR<Prisma.FormulaSlotUpdateManyMutationInput, Prisma.FormulaSlotUncheckedUpdateManyWithoutDosableComponentItemInput>
+}
+
+export type FormulaSlotCreateWithoutPackageRestrictionInput = {
+  id?: string
+  role: string
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula: Prisma.CompoundFormulaCreateNestedOneWithoutFormulaSlotsInput
+  ingredientTerm?: Prisma.CompoundingTermCreateNestedOneWithoutFormulaSlotsInput
+  slotCandidates?: Prisma.SlotCandidateCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineCreateNestedManyWithoutSlotInput
+  dosableComponent?: Prisma.DosableComponentCreateNestedOneWithoutFormulaSlotsInput
+  formularyItem?: Prisma.FormularyItemCreateNestedOneWithoutRequiredBySlotsInput
+  dosableComponentItem?: Prisma.DosableComponentItemCreateNestedOneWithoutFormulaSlotsInput
+}
+
+export type FormulaSlotUncheckedCreateWithoutPackageRestrictionInput = {
+  id?: string
+  formulaId: string
+  role: string
+  ingredientTermId?: string | null
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
+  slotCandidates?: Prisma.SlotCandidateUncheckedCreateNestedManyWithoutSlotInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedCreateNestedManyWithoutSlotInput
+}
+
+export type FormulaSlotCreateOrConnectWithoutPackageRestrictionInput = {
+  where: Prisma.FormulaSlotWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutPackageRestrictionInput, Prisma.FormulaSlotUncheckedCreateWithoutPackageRestrictionInput>
+}
+
+export type FormulaSlotUpsertWithoutPackageRestrictionInput = {
+  update: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutPackageRestrictionInput, Prisma.FormulaSlotUncheckedUpdateWithoutPackageRestrictionInput>
+  create: Prisma.XOR<Prisma.FormulaSlotCreateWithoutPackageRestrictionInput, Prisma.FormulaSlotUncheckedCreateWithoutPackageRestrictionInput>
+  where?: Prisma.FormulaSlotWhereInput
+}
+
+export type FormulaSlotUpdateToOneWithWhereWithoutPackageRestrictionInput = {
+  where?: Prisma.FormulaSlotWhereInput
+  data: Prisma.XOR<Prisma.FormulaSlotUpdateWithoutPackageRestrictionInput, Prisma.FormulaSlotUncheckedUpdateWithoutPackageRestrictionInput>
+}
+
+export type FormulaSlotUpdateWithoutPackageRestrictionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
+  ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
+  slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+}
+
+export type FormulaSlotUncheckedUpdateWithoutPackageRestrictionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formulaId?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+}
+
+export type FormulaSlotCreateManyFormularyItemInput = {
+  id?: string
+  formulaId: string
+  role: string
+  ingredientTermId?: string | null
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+}
+
+export type FormulaSlotUpdateWithoutFormularyItemInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
+  ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
+  slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
+}
+
+export type FormulaSlotUncheckedUpdateWithoutFormularyItemInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formulaId?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
+}
+
+export type FormulaSlotUncheckedUpdateManyWithoutFormularyItemInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formulaId?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type FormulaSlotCreateManyIngredientTermInput = {
@@ -1212,6 +1899,8 @@ export type FormulaSlotCreateManyIngredientTermInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
 }
 
 export type FormulaSlotUpdateWithoutIngredientTermInput = {
@@ -1234,6 +1923,10 @@ export type FormulaSlotUpdateWithoutIngredientTermInput = {
   formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotUncheckedUpdateWithoutIngredientTermInput = {
@@ -1254,8 +1947,11 @@ export type FormulaSlotUncheckedUpdateWithoutIngredientTermInput = {
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotUncheckedUpdateManyWithoutIngredientTermInput = {
@@ -1276,6 +1972,8 @@ export type FormulaSlotUncheckedUpdateManyWithoutIngredientTermInput = {
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type FormulaSlotCreateManyFormulaInput = {
@@ -1296,6 +1994,8 @@ export type FormulaSlotCreateManyFormulaInput = {
   allowMultiComponent?: boolean
   ordinal?: number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: string | null
+  formularyItemId?: string | null
 }
 
 export type FormulaSlotUpdateWithoutFormulaInput = {
@@ -1318,6 +2018,10 @@ export type FormulaSlotUpdateWithoutFormulaInput = {
   ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
   slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotUncheckedUpdateWithoutFormulaInput = {
@@ -1338,12 +2042,204 @@ export type FormulaSlotUncheckedUpdateWithoutFormulaInput = {
   allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ordinal?: Prisma.IntFieldUpdateOperationsInput | number
   vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
   buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
 }
 
 export type FormulaSlotUncheckedUpdateManyWithoutFormulaInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  dosableComponentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+export type FormulaSlotCreateManyDosableComponentInput = {
+  id?: string
+  formulaId: string
+  role: string
+  ingredientTermId?: string | null
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formularyItemId?: string | null
+}
+
+export type FormulaSlotUpdateWithoutDosableComponentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
+  ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
+  slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  dosableComponentItem?: Prisma.DosableComponentItemUpdateOneWithoutFormulaSlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
+}
+
+export type FormulaSlotUncheckedUpdateWithoutDosableComponentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formulaId?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
+}
+
+export type FormulaSlotUncheckedUpdateManyWithoutDosableComponentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formulaId?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formularyItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+export type FormulaSlotCreateManyDosableComponentItemInput = {
+  id?: string
+  formulaId: string
+  role: string
+  ingredientTermId?: string | null
+  targetAmountWhole?: bigint | number | null
+  targetAmountNum?: bigint | number | null
+  targetAmountDen?: bigint | number | null
+  targetAmountUom?: string | null
+  targetConcMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: string | null
+  volumeWhole?: bigint | number | null
+  volumeNum?: bigint | number | null
+  volumeDen?: bigint | number | null
+  volumeUom?: string | null
+  tolerancePct?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: boolean
+  ordinal?: number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+}
+
+export type FormulaSlotUpdateWithoutDosableComponentItemInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  formula?: Prisma.CompoundFormulaUpdateOneRequiredWithoutFormulaSlotsNestedInput
+  ingredientTerm?: Prisma.CompoundingTermUpdateOneWithoutFormulaSlotsNestedInput
+  slotCandidates?: Prisma.SlotCandidateUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUpdateManyWithoutSlotNestedInput
+  dosableComponent?: Prisma.DosableComponentUpdateOneWithoutFormulaSlotsNestedInput
+  formularyItem?: Prisma.FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUpdateOneWithoutSlotNestedInput
+}
+
+export type FormulaSlotUncheckedUpdateWithoutDosableComponentItemInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formulaId?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  targetAmountUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetConcMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  targetConcUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volumeWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeNum?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeDen?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  volumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tolerancePct?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  allowMultiComponent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ordinal?: Prisma.IntFieldUpdateOperationsInput | number
+  vialPrep?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  slotCandidates?: Prisma.SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput
+  buildPlanLines?: Prisma.BuildPlanLineUncheckedUpdateManyWithoutSlotNestedInput
+  packageRestriction?: Prisma.FormulaSlotPackageRestrictionUncheckedUpdateOneWithoutSlotNestedInput
+}
+
+export type FormulaSlotUncheckedUpdateManyWithoutDosableComponentItemInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formulaId?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   ingredientTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetAmountWhole?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
@@ -1421,10 +2317,16 @@ export type FormulaSlotSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   allowMultiComponent?: boolean
   ordinal?: boolean
   vialPrep?: boolean
+  dosableComponentId?: boolean
+  formularyItemId?: boolean
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
   slotCandidates?: boolean | Prisma.FormulaSlot$slotCandidatesArgs<ExtArgs>
   buildPlanLines?: boolean | Prisma.FormulaSlot$buildPlanLinesArgs<ExtArgs>
+  dosableComponent?: boolean | Prisma.FormulaSlot$dosableComponentArgs<ExtArgs>
+  formularyItem?: boolean | Prisma.FormulaSlot$formularyItemArgs<ExtArgs>
+  dosableComponentItem?: boolean | Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs>
+  packageRestriction?: boolean | Prisma.FormulaSlot$packageRestrictionArgs<ExtArgs>
   _count?: boolean | Prisma.FormulaSlotCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["formulaSlot"]>
 
@@ -1447,8 +2349,13 @@ export type FormulaSlotSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   allowMultiComponent?: boolean
   ordinal?: boolean
   vialPrep?: boolean
+  dosableComponentId?: boolean
+  formularyItemId?: boolean
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
+  dosableComponent?: boolean | Prisma.FormulaSlot$dosableComponentArgs<ExtArgs>
+  formularyItem?: boolean | Prisma.FormulaSlot$formularyItemArgs<ExtArgs>
+  dosableComponentItem?: boolean | Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs>
 }, ExtArgs["result"]["formulaSlot"]>
 
 export type FormulaSlotSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1470,8 +2377,13 @@ export type FormulaSlotSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   allowMultiComponent?: boolean
   ordinal?: boolean
   vialPrep?: boolean
+  dosableComponentId?: boolean
+  formularyItemId?: boolean
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
+  dosableComponent?: boolean | Prisma.FormulaSlot$dosableComponentArgs<ExtArgs>
+  formularyItem?: boolean | Prisma.FormulaSlot$formularyItemArgs<ExtArgs>
+  dosableComponentItem?: boolean | Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs>
 }, ExtArgs["result"]["formulaSlot"]>
 
 export type FormulaSlotSelectScalar = {
@@ -1493,23 +2405,35 @@ export type FormulaSlotSelectScalar = {
   allowMultiComponent?: boolean
   ordinal?: boolean
   vialPrep?: boolean
+  dosableComponentId?: boolean
+  formularyItemId?: boolean
 }
 
-export type FormulaSlotOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formulaId" | "role" | "ingredientTermId" | "targetAmountWhole" | "targetAmountNum" | "targetAmountDen" | "targetAmountUom" | "targetConcMag" | "targetConcUom" | "volumeWhole" | "volumeNum" | "volumeDen" | "volumeUom" | "tolerancePct" | "allowMultiComponent" | "ordinal" | "vialPrep", ExtArgs["result"]["formulaSlot"]>
+export type FormulaSlotOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formulaId" | "role" | "ingredientTermId" | "targetAmountWhole" | "targetAmountNum" | "targetAmountDen" | "targetAmountUom" | "targetConcMag" | "targetConcUom" | "volumeWhole" | "volumeNum" | "volumeDen" | "volumeUom" | "tolerancePct" | "allowMultiComponent" | "ordinal" | "vialPrep" | "dosableComponentId" | "formularyItemId", ExtArgs["result"]["formulaSlot"]>
 export type FormulaSlotInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
   slotCandidates?: boolean | Prisma.FormulaSlot$slotCandidatesArgs<ExtArgs>
   buildPlanLines?: boolean | Prisma.FormulaSlot$buildPlanLinesArgs<ExtArgs>
+  dosableComponent?: boolean | Prisma.FormulaSlot$dosableComponentArgs<ExtArgs>
+  formularyItem?: boolean | Prisma.FormulaSlot$formularyItemArgs<ExtArgs>
+  dosableComponentItem?: boolean | Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs>
+  packageRestriction?: boolean | Prisma.FormulaSlot$packageRestrictionArgs<ExtArgs>
   _count?: boolean | Prisma.FormulaSlotCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type FormulaSlotIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
+  dosableComponent?: boolean | Prisma.FormulaSlot$dosableComponentArgs<ExtArgs>
+  formularyItem?: boolean | Prisma.FormulaSlot$formularyItemArgs<ExtArgs>
+  dosableComponentItem?: boolean | Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs>
 }
 export type FormulaSlotIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   formula?: boolean | Prisma.CompoundFormulaDefaultArgs<ExtArgs>
   ingredientTerm?: boolean | Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>
+  dosableComponent?: boolean | Prisma.FormulaSlot$dosableComponentArgs<ExtArgs>
+  formularyItem?: boolean | Prisma.FormulaSlot$formularyItemArgs<ExtArgs>
+  dosableComponentItem?: boolean | Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs>
 }
 
 export type $FormulaSlotPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1519,6 +2443,13 @@ export type $FormulaSlotPayload<ExtArgs extends runtime.Types.Extensions.Interna
     ingredientTerm: Prisma.$CompoundingTermPayload<ExtArgs> | null
     slotCandidates: Prisma.$SlotCandidatePayload<ExtArgs>[]
     buildPlanLines: Prisma.$BuildPlanLinePayload<ExtArgs>[]
+    dosableComponent: Prisma.$DosableComponentPayload<ExtArgs> | null
+    formularyItem: Prisma.$FormularyItemPayload<ExtArgs> | null
+    dosableComponentItem: Prisma.$DosableComponentItemPayload<ExtArgs> | null
+    /**
+     * set when the slot is held to an NDC subset of `formularyItem`
+     */
+    packageRestriction: Prisma.$FormulaSlotPackageRestrictionPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1548,6 +2479,15 @@ export type $FormulaSlotPayload<ExtArgs extends runtime.Types.Extensions.Interna
      * adopted consensus vial preparation (`AdoptedVialPrep`); null = none adopted
      */
     vialPrep: runtime.JsonValue | null
+    /**
+     * the drug + route this constituent draws from (any of its formulary items)
+     */
+    dosableComponentId: string | null
+    /**
+     * when set, only this formulary item may fill the slot (NS 500 mL as the diluent bag);
+     * must be one of the dosable component's items
+     */
+    formularyItemId: string | null
   }, ExtArgs["result"]["formulaSlot"]>
   composites: {}
 }
@@ -1946,6 +2886,10 @@ export interface Prisma__FormulaSlotClient<T, Null = never, ExtArgs extends runt
   ingredientTerm<T extends Prisma.FormulaSlot$ingredientTermArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormulaSlot$ingredientTermArgs<ExtArgs>>): Prisma.Prisma__CompoundingTermClient<runtime.Types.Result.GetResult<Prisma.$CompoundingTermPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   slotCandidates<T extends Prisma.FormulaSlot$slotCandidatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormulaSlot$slotCandidatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SlotCandidatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   buildPlanLines<T extends Prisma.FormulaSlot$buildPlanLinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormulaSlot$buildPlanLinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BuildPlanLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  dosableComponent<T extends Prisma.FormulaSlot$dosableComponentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormulaSlot$dosableComponentArgs<ExtArgs>>): Prisma.Prisma__DosableComponentClient<runtime.Types.Result.GetResult<Prisma.$DosableComponentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  formularyItem<T extends Prisma.FormulaSlot$formularyItemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormulaSlot$formularyItemArgs<ExtArgs>>): Prisma.Prisma__FormularyItemClient<runtime.Types.Result.GetResult<Prisma.$FormularyItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  dosableComponentItem<T extends Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormulaSlot$dosableComponentItemArgs<ExtArgs>>): Prisma.Prisma__DosableComponentItemClient<runtime.Types.Result.GetResult<Prisma.$DosableComponentItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  packageRestriction<T extends Prisma.FormulaSlot$packageRestrictionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormulaSlot$packageRestrictionArgs<ExtArgs>>): Prisma.Prisma__FormulaSlotPackageRestrictionClient<runtime.Types.Result.GetResult<Prisma.$FormulaSlotPackageRestrictionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1993,6 +2937,8 @@ export interface FormulaSlotFieldRefs {
   readonly allowMultiComponent: Prisma.FieldRef<"FormulaSlot", 'Boolean'>
   readonly ordinal: Prisma.FieldRef<"FormulaSlot", 'Int'>
   readonly vialPrep: Prisma.FieldRef<"FormulaSlot", 'Json'>
+  readonly dosableComponentId: Prisma.FieldRef<"FormulaSlot", 'String'>
+  readonly formularyItemId: Prisma.FieldRef<"FormulaSlot", 'String'>
 }
     
 
@@ -2458,6 +3404,82 @@ export type FormulaSlot$buildPlanLinesArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.BuildPlanLineScalarFieldEnum | Prisma.BuildPlanLineScalarFieldEnum[]
+}
+
+/**
+ * FormulaSlot.dosableComponent
+ */
+export type FormulaSlot$dosableComponentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DosableComponent
+   */
+  select?: Prisma.DosableComponentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DosableComponent
+   */
+  omit?: Prisma.DosableComponentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DosableComponentInclude<ExtArgs> | null
+  where?: Prisma.DosableComponentWhereInput
+}
+
+/**
+ * FormulaSlot.formularyItem
+ */
+export type FormulaSlot$formularyItemArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FormularyItem
+   */
+  select?: Prisma.FormularyItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FormularyItem
+   */
+  omit?: Prisma.FormularyItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FormularyItemInclude<ExtArgs> | null
+  where?: Prisma.FormularyItemWhereInput
+}
+
+/**
+ * FormulaSlot.dosableComponentItem
+ */
+export type FormulaSlot$dosableComponentItemArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DosableComponentItem
+   */
+  select?: Prisma.DosableComponentItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DosableComponentItem
+   */
+  omit?: Prisma.DosableComponentItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DosableComponentItemInclude<ExtArgs> | null
+  where?: Prisma.DosableComponentItemWhereInput
+}
+
+/**
+ * FormulaSlot.packageRestriction
+ */
+export type FormulaSlot$packageRestrictionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FormulaSlotPackageRestriction
+   */
+  select?: Prisma.FormulaSlotPackageRestrictionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FormulaSlotPackageRestriction
+   */
+  omit?: Prisma.FormulaSlotPackageRestrictionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FormulaSlotPackageRestrictionInclude<ExtArgs> | null
+  where?: Prisma.FormulaSlotPackageRestrictionWhereInput
 }
 
 /**

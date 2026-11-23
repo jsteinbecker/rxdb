@@ -126,7 +126,12 @@ export const ModelName = {
   ProductFormRouteOverride: 'ProductFormRouteOverride',
   SourcePayload: 'SourcePayload',
   SplLabel: 'SplLabel',
-  SplLabelSection: 'SplLabelSection'
+  SplLabelSection: 'SplLabelSection',
+  DosableComponent: 'DosableComponent',
+  DosableComponentIngredient: 'DosableComponentIngredient',
+  DosableComponentItem: 'DosableComponentItem',
+  FormulaSlotPackageRestriction: 'FormulaSlotPackageRestriction',
+  FormulaSlotPackage: 'FormulaSlotPackage'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -919,7 +924,9 @@ export const FormulaSlotScalarFieldEnum = {
   tolerancePct: 'tolerancePct',
   allowMultiComponent: 'allowMultiComponent',
   ordinal: 'ordinal',
-  vialPrep: 'vialPrep'
+  vialPrep: 'vialPrep',
+  dosableComponentId: 'dosableComponentId',
+  formularyItemId: 'formularyItemId'
 } as const
 
 export type FormulaSlotScalarFieldEnum = (typeof FormulaSlotScalarFieldEnum)[keyof typeof FormulaSlotScalarFieldEnum]
@@ -1304,6 +1311,63 @@ export const SplLabelSectionScalarFieldEnum = {
 } as const
 
 export type SplLabelSectionScalarFieldEnum = (typeof SplLabelSectionScalarFieldEnum)[keyof typeof SplLabelSectionScalarFieldEnum]
+
+
+export const DosableComponentScalarFieldEnum = {
+  id: 'id',
+  scopeId: 'scopeId',
+  ingredientKey: 'ingredientKey',
+  route: 'route',
+  displayName: 'displayName',
+  nameOverride: 'nameOverride',
+  source: 'source',
+  retiredAt: 'retiredAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DosableComponentScalarFieldEnum = (typeof DosableComponentScalarFieldEnum)[keyof typeof DosableComponentScalarFieldEnum]
+
+
+export const DosableComponentIngredientScalarFieldEnum = {
+  dosableComponentId: 'dosableComponentId',
+  ingredientId: 'ingredientId',
+  ordinal: 'ordinal'
+} as const
+
+export type DosableComponentIngredientScalarFieldEnum = (typeof DosableComponentIngredientScalarFieldEnum)[keyof typeof DosableComponentIngredientScalarFieldEnum]
+
+
+export const DosableComponentItemScalarFieldEnum = {
+  dosableComponentId: 'dosableComponentId',
+  formularyItemId: 'formularyItemId',
+  source: 'source',
+  retiredAt: 'retiredAt'
+} as const
+
+export type DosableComponentItemScalarFieldEnum = (typeof DosableComponentItemScalarFieldEnum)[keyof typeof DosableComponentItemScalarFieldEnum]
+
+
+export const FormulaSlotPackageRestrictionScalarFieldEnum = {
+  slotId: 'slotId',
+  mode: 'mode',
+  reason: 'reason',
+  rule: 'rule',
+  evaluatedAt: 'evaluatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormulaSlotPackageRestrictionScalarFieldEnum = (typeof FormulaSlotPackageRestrictionScalarFieldEnum)[keyof typeof FormulaSlotPackageRestrictionScalarFieldEnum]
+
+
+export const FormulaSlotPackageScalarFieldEnum = {
+  slotId: 'slotId',
+  packageId: 'packageId',
+  source: 'source'
+} as const
+
+export type FormulaSlotPackageScalarFieldEnum = (typeof FormulaSlotPackageScalarFieldEnum)[keyof typeof FormulaSlotPackageScalarFieldEnum]
 
 
 export const SortOrder = {
