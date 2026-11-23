@@ -1,10 +1,12 @@
 <!--
 @component
-The compound builder's "add a component" panel. Search finds generics: a drug
-by its active ingredients ("Ampicillin"), restricted to the compound's route
-when one is chosen. Picking a generic adds one line that may be filled from
-any of its packages; the builder then proposes vial combinations for the
-dose. A generic can be expanded to add one specific package instead.
+The compound builder's "add a component" panel. Search finds dosable
+components: a drug given by the compound's route ("Ampicillin IV"), stored in
+the database. Picking one adds a line that may be filled from any of its
+formulary items' packages; the builder then proposes vial combinations for the
+dose. Diluents are offered per formulary item ("NS 500 mL"), and adding one
+pins the line to that item. Expanding a row adds one specific package instead,
+which pins the line to its item and that NDC.
 
 The role is guessed per generic (base solutions are diluents) and can be
 flipped before adding. After each add the search clears and keeps focus.
@@ -32,10 +34,10 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
             title: string;
             conc: string | null;
             doseUnit: string | null;
-            /** Active ingredients as one name ("Ampicillin"); null when unknown. */
-            generic: string | null;
-            /** Injection routes the listing names. */
-            routes: string[];
+            /** The dosable component (drug + the compound's route) the package's item sits under. */
+            componentId: string;
+            /** Its name with the route ("Ampicillin IV"). */
+            component: string;
             /** Content of one vial, for a single-ingredient dry fill. */
             vial: string | null;
             vialUnit: string | null;
@@ -43,6 +45,9 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
 
       type Generic = {
             key: string;
+            componentId: string;
+            /** Set when the row is one formulary item (diluents): adding pins the line to it. */
+            itemId: string | null;
             name: string;
             packages: (Candidate & {amount: Rational | null})[];
             strengths: {amount: Rational; unit: string}[];
@@ -50,12 +55,14 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
             role: Role;
       };
 
-      let {candidates, used = [], route = null, onclose}: {
+      let {candidates, used = [], route = null, unplaced = 0, onclose}: {
             candidates: Candidate[];
             /** Package ids already in the compound. */
             used?: string[];
-            /** The compound's route; when set, only packages given by it (or naming none) are offered. */
+            /** The compound's route; candidates are already limited to it. */
             route?: string | null;
+            /** Formulary packages left out because no dosable component covers them for the route. */
+            unplaced?: number;
             onclose?: () => void;
       } = $props();
 
@@ -75,9 +82,8 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
       const generics = $derived.by<Generic[]>(() => {
             const byKey = new Map<string, Generic['packages']>();
             for (const candidate of candidates) {
-                  if (route && candidate.routes.length && !candidate.routes.includes(route)) continue;
-                  // Diluents and unparsed products stay per item: their "generic" is the item itself.
-                  const key = candidate.generic && !DILUENT.test(candidate.generic) ? candidate.generic : `item:${candidate.itemId}`;
+                  // Diluents stay per item: the bag size matters, so the item itself is the choice.
+                  const key = DILUENT.test(candidate.component) ? `item:${candidate.itemId}` : candidate.componentId;
                   const entry = {...candidate, amount: candidate.vial ? parseRational(candidate.vial) : null};
                   const list = byKey.get(key);
                   if (list) list.push(entry);
@@ -87,13 +93,16 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
                   // Largest vial first, then the formulary's own preference.
                   packages.sort((a, b) =>
                         (a.amount && b.amount ? compare(b.amount, a.amount) : Number(!a.amount) - Number(!b.amount)) || a.rank - b.rank);
-                  const name = key.startsWith('item:') ? packages[0].item : key;
+                  const byItem = key.startsWith('item:');
+                  const name = byItem ? packages[0].item : packages[0].component;
                   const strengths: Generic['strengths'] = [];
                   for (const p of packages)
                         if (p.amount && p.vialUnit && !strengths.some((s) => compare(s.amount, p.amount!) === 0))
                               strengths.push({amount: p.amount, unit: p.vialUnit});
                   return {
                         key,
+                        componentId: packages[0].componentId,
+                        itemId: byItem ? packages[0].itemId : null,
                         name,
                         packages,
                         strengths,
@@ -147,11 +156,13 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
             const units = new Set(packages.map((p) => p.vialUnit));
             (addForm.elements.namedItem('role') as HTMLInputElement).value = generic.role;
             (addForm.elements.namedItem('candidate') as HTMLInputElement).value = JSON.stringify({
-                  packageIds: packages.map((p) => p.packageId),
+                  dosableComponentId: generic.componentId,
+                  formularyItemId: only ? only.itemId : generic.itemId,
+                  packageIds: only ? [only.packageId] : [],
                   conc: packages.length === 1 ? preferred.conc : null,
                   doseUnit: units.size === 1 && preferred.vialUnit ? preferred.vialUnit : preferred.doseUnit
             });
-            lastAdded = only ? only.title : `${generic.name}${route ? ` ${route}` : ''}`;
+            lastAdded = only ? only.title : generic.name;
             addForm.requestSubmit();
       }
 
@@ -219,7 +230,8 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
             <p class="hint">
                   {#if lastAdded}<span class="added">✓ Added {lastAdded}.</span> {/if}
                   Pick the drug, then enter the dose — the builder works out which vials to pull.
-                  {#if !route}<span class="warn">Choose a route above to see only the products given by it.</span>{/if}
+                  {#if !route}<span class="warn">Choose a route above to add drugs given by it.</span>{/if}
+                  {#if unplaced}<span class="warn">{unplaced} formulary package{unplaced === 1 ? ' has' : 's have'} no drug + route for {route} yet and can’t be added.</span>{/if}
             </p>
       {:else if !matches.length}
             <p class="hint">Nothing on the formulary matches “{query.trim()}”{route ? ` for ${route}` : ''}.</p>
@@ -235,7 +247,7 @@ Keyboard: ↑/↓ move, Enter adds, → / ← open and close a generic's package
                         >
                               <div class="item">
                                     <button type="button" class="pick" disabled={pending} onclick={() => add(generic)}>
-                                          <span class="name">{generic.name}{#if route}<span class="route">{route}</span>{/if}</span>
+                                          <span class="name">{generic.name}{#if route && generic.itemId}<span class="route">{route}</span>{/if}</span>
                                           <span class="sub">
                                                 {#if generic.inUse}<span class="tag">In compound</span>{/if}
                                                 {#if generic.strengths.length}

@@ -4,6 +4,7 @@
   import { invalidateAll } from '$app/navigation';
   import AddComponentPanel from '#lib/components/AddComponentPanel.svelte';
   import CompoundLineRow from '#lib/components/CompoundLineRow.svelte';
+  import ConstituentPin from '#lib/components/ConstituentPin.svelte';
   import FinalConcentrations from '#lib/components/FinalConcentrations.svelte';
   import QuantityField from '#lib/components/QuantityField.svelte';
   import VialPreparation from '#lib/components/VialPreparation.svelte';
@@ -301,6 +302,7 @@
       candidates={data.candidates}
       used={compound.lines.flatMap((line) => line.packageIds)}
       route={compound.route}
+      unplaced={data.unplaced}
       onclose={() => (pickerOpen = false)}
     />
   {/if}
@@ -365,6 +367,17 @@
             calculated={calculatedFor(line)}
             onchoose={(index) => choose(line.slotId, index)}
           />
+          {@const stored = compound.lines.find((entry) => entry.slotId === line.slotId)}
+          {#if stored?.component && stored.pinOptions.length}
+            <ConstituentPin
+              slotId={line.slotId}
+              label={stored.label}
+              options={stored.pinOptions}
+              formularyItemId={stored.formularyItemId}
+              restriction={stored.restriction}
+              {locked}
+            />
+          {/if}
         {/each}
         <div class="totals" role="row">
           <span class="summary" role="cell">
