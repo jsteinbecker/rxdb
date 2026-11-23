@@ -6950,6 +6950,7 @@ export const SlotCandidateScalarFieldEnum = {
   reconstitutionDiluentTermId: 'reconstitutionDiluentTermId',
   reconstitutedVolumeMag: 'reconstitutedVolumeMag',
   reconstitutedVolumeUom: 'reconstitutedVolumeUom',
+  vialCount: 'vialCount',
   note: 'note',
   validFrom: 'validFrom',
   validTo: 'validTo'
