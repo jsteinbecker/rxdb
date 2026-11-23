@@ -565,8 +565,8 @@ marks, and `editing` offers a pencil beside each overridable property.
 {#snippet strengthValue(ingredient: {name: string; strength: string | null; kind?: string; moieties?: {name: string}[]}, actives: {name: string}[])}
       {@const shown = displayedStrength(ingredient, actives)}
       {@const scd = ingredient.kind === 'active' ? scdShownStrength(item, ingredient) : null}
-      {#if !ingredient.strength}—{:else if scd}{displayedStrength({...ingredient, strength: scd}, actives) ?? scd}<span class="stated" title="The label's figure, for the whole container"
-      >{strengthText(ingredient.strength)}{item.size?.kind === 'volume' ? ` in ${item.size.value} ${item.size.unit}` : ''}</span
+      {#if !ingredient.strength}—{:else if scd}{strengthText(ingredient.strength)}<span class="stated" title="The concentration, as RxNorm states the strength"
+      >{displayedStrength({...ingredient, strength: scd}, actives) ?? scd}{item.size?.kind === 'volume' ? ` in ${item.size.value} ${item.size.unit}` : ''}</span
       >{:else if shown}<span class="styled-strength" title={`Stored as ${strengthText(ingredient.strength)}`}>{shown}</span>{:else}{strengthText(ingredient.strength)}{/if}
 {/snippet}
 {#snippet strengthCell(ingredient: LabelIngredient)}
