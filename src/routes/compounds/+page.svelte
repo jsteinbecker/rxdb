@@ -39,7 +39,7 @@
 				<li>
 					<a href={resolve('/compounds/[id]', { id: compound.id })}>{compound.name}</a>
 					<span class="count">{plural(compound.components, 'component')}</span>
-					{#if compound.status !== 'draft'}<span class="badge">Saved</span>{/if}
+					{#if compound.status !== 'draft'}<span class="badge">Finalized</span>{/if}
 				</li>
 			{/each}
 		</ul>

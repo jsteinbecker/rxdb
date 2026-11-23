@@ -227,7 +227,7 @@
       <div class="titlebar">
         <h1 title="Named automatically from its components">{compound.name}</h1>
         <span class="count">{plural(compound.lines.length, 'component')}</span>
-        {#if locked}<span class="badge">Saved</span>{/if}
+        {#if locked}<span class="badge">Finalized</span>{/if}
         {#if locked}
           <span class="route">Route <strong>{compound.route ?? '—'}</strong></span>
         {:else}
@@ -252,7 +252,7 @@
           {#if locked}
             <form method="POST" action="?/setSaved" use:enhance>
               <input type="hidden" name="saved" value="false" />
-              <button>Edit</button>
+              <button title="Reopen this compound so it can be changed">Unlock to edit</button>
             </form>
           {:else}
             <button type="button" onclick={() => (pickerOpen = !pickerOpen)}>
@@ -263,7 +263,7 @@
               <button
                 class="primary"
                 disabled={!compound.lines.length || !compound.route}
-                title={compound.route ? undefined : 'Choose a route first'}>Save</button
+                title={compound.route ? 'Lock this compound as finished; edits already save automatically' : 'Choose a route first'}>Finalize</button
               >
             </form>
             <div class="row-menu" class:open={menuFor === 'header'}>
@@ -341,7 +341,7 @@
     <section class="card" aria-labelledby="components-heading">
       <header class="card-head">
         <h2 id="components-heading">Components</h2>
-        <span>{plural(lines.length, 'line')} · {locked ? 'saved' : 'editing'}</span>
+        <span>{plural(lines.length, 'line')} · {locked ? 'finalized, read-only' : 'changes save automatically'}</span>
       </header>
       <div class="table" role="table" aria-labelledby="components-heading">
         <div class="cols" role="row">
