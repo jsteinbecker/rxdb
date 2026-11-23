@@ -12,6 +12,7 @@ import {
 	loadCompound,
 	removeComponent,
 	saveLines,
+	setConstraint,
 	setRoute,
 	setSaved,
 	setVialCounts,
@@ -24,10 +25,14 @@ import {
 	type Role
 } from '#lib/compounds/compound-builder.ts';
 import { parseRational, serializeRational } from '#lib/medication/rational.ts';
-import { genericName, injectionRoutes, vialContent } from '#lib/compounds/generic-components.ts';
+import { vialContent } from '#lib/compounds/generic-components.ts';
+import { componentsByItem } from '#lib/server/compounds/constituents.ts';
 import { loadPackageSnapshots } from '#lib/server/catalog/snapshot-store.ts';
 import { sameConsensusStep, vialPrepConsensus } from '#lib/compounds/vial-prep-consensus.ts';
 import type { Actions, PageServerLoad } from './$types';
+
+const strings = (value: unknown) =>
+	Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
 
 /** Run a store call; a CompoundError becomes a notice, anything else is a real failure. */
 async function run(work: () => Promise<unknown>, id?: string) {
@@ -105,12 +110,13 @@ async function analyze(scopeId: string, id: string, settings: unknown) {
 			adoptedCurrent: adopted ? steps.some((step) => sameConsensusStep(step, adopted.step)) : null
 		};
 	});
-	return { compound, rows, byPackage, shownTitle, vialPrep };
+	const components = await componentsByItem(prisma, scopeId, compound.route);
+	return { compound, rows, byPackage, shownTitle, vialPrep, components };
 }
 
 export const load: PageServerLoad = async ({ params }) => {
 	const scope = await defaultScope(prisma);
-	const { compound, rows, byPackage, shownTitle, vialPrep } = await analyze(
+	const { compound, rows, byPackage, shownTitle, vialPrep, components } = await analyze(
 		scope.id,
 		params.id,
 		scope.settings
@@ -119,12 +125,24 @@ export const load: PageServerLoad = async ({ params }) => {
 		const row = byPackage.get(packageId);
 		return row ? shownTitle(row) : 'Package no longer on the formulary';
 	};
-	/** A generic line is named for its drug and route ("Ampicillin IV"); a single package by its title. */
-	const lineLabel = (packageIds: string[]) => {
-		if (packageIds.length < 2) return title(packageIds[0] ?? '');
-		const row = byPackage.get(packageIds[0]);
-		const name = row ? genericName(row.ingredients) : null;
-		return name ? `${name}${compound.route ? ` ${compound.route}` : ''}` : title(packageIds[0]);
+	const itemName = (itemId: string | null) => rows.find((row) => row.formularyItemId === itemId)?.formularyItem ?? null;
+	/** A line is named for its drug and route ("Ampicillin IV"), with its pinned item when it has one. */
+	const lineLabel = (line: (typeof compound.lines)[number]) => {
+		if (!line.component) return title(line.packageIds[0] ?? '');
+		const item = itemName(line.formularyItemId);
+		return item ? `${line.component.label} · ${item}` : line.component.label;
+	};
+	/** The formulary items of a line's component, each with its live packages, to pin the line to. */
+	const pinOptions = (componentId: string | undefined) => {
+		if (!componentId) return [];
+		const items = new Map<string, { id: string; name: string; packages: { id: string; ndc: string; title: string }[] }>();
+		for (const row of rows) {
+			if (components.get(row.formularyItemId)?.id !== componentId) continue;
+			const item = items.get(row.formularyItemId) ?? { id: row.formularyItemId, name: row.formularyItem, packages: [] };
+			item.packages.push({ id: row.packageId, ndc: row.ndc, title: shownTitle(row) });
+			items.set(row.formularyItemId, item);
+		}
+		return [...items.values()].sort((a, b) => a.name.localeCompare(b.name));
 	};
 	const vialsOf = (packageIds: string[]) =>
 		packageIds.flatMap((packageId) => {
@@ -149,16 +167,20 @@ export const load: PageServerLoad = async ({ params }) => {
 			...compound,
 			lines: compound.lines.map((line) => ({
 				...line,
-				label: lineLabel(line.packageIds),
-				vials: vialsOf(line.packageIds)
+				label: lineLabel(line),
+				vials: vialsOf(line.packageIds),
+				pinOptions: pinOptions(line.component?.id)
 			}))
 		},
-		candidates: rows.map((row) => {
+		// Only packages under a drug + route of the compound's route can be added.
+		candidates: rows.flatMap((row) => {
+			const component = components.get(row.formularyItemId);
+			if (!component) return [];
 			const found = packageConcentration(row.ingredients);
 			const content = vialContent(row.ingredients);
 			return {
-				generic: genericName(row.ingredients),
-				routes: injectionRoutes(row.routes),
+				componentId: component.id,
+				component: component.name,
 				vial: content ? serializeRational(content.amount) : null,
 				vialUnit: content?.unit ?? null,
 				packageId: row.packageId,
@@ -170,33 +192,55 @@ export const load: PageServerLoad = async ({ params }) => {
 				conc: found ? serializeRational(found.conc) : null,
 				doseUnit: found?.doseUnit ?? null
 			};
-		})
+		}),
+		/** Formulary packages with no drug + route for the compound's route; they cannot be added. */
+		unplaced: compound.route ? rows.filter((row) => !components.has(row.formularyItemId)).length : 0
 	};
 };
 
 export const actions: Actions = {
 	add: async ({ params, request }) => {
 		const data = await request.formData();
-		let picked: { packageId?: unknown; packageIds?: unknown; conc?: unknown; doseUnit?: unknown } = {};
+		let picked: {
+			dosableComponentId?: unknown;
+			formularyItemId?: unknown;
+			packageIds?: unknown;
+			conc?: unknown;
+			doseUnit?: unknown;
+		} = {};
 		try {
 			picked = JSON.parse(String(data.get('candidate')));
 		} catch {
-			return fail(400, { message: 'Choose a package to add.' });
+			return fail(400, { message: 'Choose a drug to add.' });
 		}
 		const role: Role = data.get('role') === 'diluent' ? 'diluent' : 'active';
 		const conc = parseRational(picked.conc);
 		const scope = await defaultScope(prisma);
-		return run(() =>
-			addComponent(prisma, scope.id, params.id, {
-				packageIds: Array.isArray(picked.packageIds)
-					? picked.packageIds.filter((value): value is string => typeof value === 'string')
-					: typeof picked.packageId === 'string'
-						? [picked.packageId]
-						: [],
-				role,
-				conc: conc && conc.n > 0 ? conc : null,
-				doseUnit: typeof picked.doseUnit === 'string' && picked.doseUnit ? picked.doseUnit : 'mg'
-			}),
+		return run(
+			() =>
+				addComponent(prisma, scope.id, params.id, {
+					dosableComponentId: typeof picked.dosableComponentId === 'string' ? picked.dosableComponentId : '',
+					formularyItemId: typeof picked.formularyItemId === 'string' && picked.formularyItemId ? picked.formularyItemId : null,
+					packageIds: strings(picked.packageIds),
+					role,
+					conc: conc && conc.n > 0 ? conc : null,
+					doseUnit: typeof picked.doseUnit === 'string' && picked.doseUnit ? picked.doseUnit : 'mg'
+				}),
+			params.id
+		);
+	},
+	pin: async ({ params, request }) => {
+		const data = await request.formData();
+		const itemId = String(data.get('formularyItemId') ?? '');
+		const reason = String(data.get('reason') ?? '');
+		const scope = await defaultScope(prisma);
+		return run(
+			() =>
+				setConstraint(prisma, scope.id, params.id, String(data.get('slotId') ?? ''), {
+					formularyItemId: itemId || null,
+					packageIds: itemId ? data.getAll('packageId').map(String) : [],
+					reason: reason || null
+				}),
 			params.id
 		);
 	},

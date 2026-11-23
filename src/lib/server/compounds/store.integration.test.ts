@@ -14,6 +14,7 @@ import {
 	removeComponent,
 	renameCompound,
 	saveLines,
+	setConstraint,
 	setRoute,
 	setSaved
 } from './store';
@@ -46,11 +47,31 @@ test(
 					}) as unknown as PrismaClient;
 
 					const scope = await defaultScope(nested);
-					const link = await nested.formularyItemPackage.findFirst({
-						where: { validTo: null, formularyItem: { scopeId: scope.id } },
-						select: { packageId: true }
+					const link = await nested.dosableComponentItem.findFirst({
+						where: {
+							retiredAt: null,
+							dosableComponent: { scopeId: scope.id, retiredAt: null },
+							formularyItem: { formularyItemPackages: { some: { validTo: null } } }
+						},
+						select: {
+							dosableComponentId: true,
+							formularyItemId: true,
+							formularyItem: {
+								select: {
+									formularyItemPackages: { where: { validTo: null }, select: { packageId: true } }
+								}
+							}
+						}
 					});
-					if (!link) return t.skip('no formulary packages in this database');
+					if (!link) return t.skip('no dosable components in this database');
+					const component = {
+						dosableComponentId: link.dosableComponentId,
+						formularyItemId: null,
+						packageIds: []
+					};
+					const itemPackages = link.formularyItem.formularyItemPackages.map(
+						(entry) => entry.packageId
+					);
 
 					const id = await createCompound(nested, scope.id, 'Test compound');
 					// A unique violation aborts the surrounding rollback transaction, so
@@ -60,10 +81,12 @@ test(
 					await nested.$executeRawUnsafe('ROLLBACK TO SAVEPOINT duplicate_name');
 					await renameCompound(nested, scope.id, id, 'Test compound 2');
 
-					// a package outside the scope's formulary is refused
+					// a drug + route outside the scope's formulary is refused
 					await rejects(
 						addComponent(nested, scope.id, id, {
-							packageIds: ['00000000-0000-4000-8000-000000000000'],
+							dosableComponentId: '00000000-0000-4000-8000-000000000000',
+							formularyItemId: null,
+							packageIds: [],
 							role: 'active',
 							conc: null,
 							doseUnit: 'mg'
@@ -71,14 +94,27 @@ test(
 						404
 					);
 
+					// NDCs can only narrow a pinned formulary item
+					await rejects(
+						addComponent(nested, scope.id, id, {
+							...component,
+							packageIds: itemPackages,
+							role: 'active',
+							conc: null,
+							doseUnit: 'mg'
+						}),
+						400
+					);
+
 					await addComponent(nested, scope.id, id, {
-						packageIds: [link.packageId],
+						...component,
 						role: 'active',
 						conc: r(100),
 						doseUnit: 'mg'
 					});
 					await addComponent(nested, scope.id, id, {
-						packageIds: [link.packageId],
+						...component,
+						formularyItemId: link.formularyItemId,
 						role: 'diluent',
 						conc: null,
 						doseUnit: 'mg'
@@ -88,6 +124,39 @@ test(
 					assert.equal(compound.lines.length, 2);
 					assert.deepEqual(compound.lines[0].conc, r(100));
 					assert.equal(compound.lines[1].role, 'diluent');
+					assert.equal(compound.lines[0].component?.id, link.dosableComponentId);
+					assert.equal(compound.lines[0].formularyItemId, null);
+					assert.equal(compound.lines[1].formularyItemId, link.formularyItemId);
+					assert.deepEqual(new Set(compound.lines[1].packageIds), new Set(itemPackages));
+
+					// pin the active line to one item and one of its NDCs, then loosen it again
+					await setConstraint(nested, scope.id, id, compound.lines[0].slotId, {
+						formularyItemId: link.formularyItemId,
+						packageIds: [itemPackages[0]],
+						reason: 'test subset'
+					});
+					let pinned = (await loadCompound(nested, scope.id, id)).lines[0];
+					assert.deepEqual(pinned.packageIds, [itemPackages[0]]);
+					assert.deepEqual(pinned.restriction, {
+						reason: 'test subset',
+						packageIds: [itemPackages[0]]
+					});
+					await rejects(
+						setConstraint(nested, scope.id, id, pinned.slotId, {
+							formularyItemId: '00000000-0000-4000-8000-000000000000',
+							packageIds: [],
+							reason: null
+						}),
+						409
+					);
+					await setConstraint(nested, scope.id, id, pinned.slotId, {
+						formularyItemId: null,
+						packageIds: [],
+						reason: null
+					});
+					pinned = (await loadCompound(nested, scope.id, id)).lines[0];
+					assert.equal(pinned.restriction, null);
+					assert.ok(pinned.packageIds.length >= itemPackages.length);
 
 					const [active, diluent] = compound.lines;
 					await saveLines(nested, scope.id, id, {

@@ -18,20 +18,17 @@ import {
 } from '../../compounds/compound-builder';
 import { uniqueName } from '../../compounds/compound-naming';
 import { divide, fromNumber, type Rational } from '../../medication/rational';
-import {
-	INJECTION_ROUTES,
-	type ReconstitutionRoute
-} from '../../labels/reconstitution-terms';
+import { INJECTION_ROUTES, type ReconstitutionRoute } from '../../labels/reconstitution-terms';
 
-/** A failure with a message fit to show the technician, and the status to send with it. */
-export class CompoundError extends Error {
-	constructor(
-		message: string,
-		readonly status = 400
-	) {
-		super(message);
-	}
-}
+import { CompoundError } from './errors';
+import {
+	componentLabel,
+	resolveConstraint,
+	writeConstraint,
+	type Constraint
+} from './constituents';
+
+export { CompoundError };
 
 export type StoredLine = Omit<Line, 'label'> & {
 	/** The line's preferred package; the first of `packageIds`. */
@@ -41,6 +38,12 @@ export type StoredLine = Omit<Line, 'label'> & {
 	/** The picked vial combination: vials pulled per package; empty when none is picked. */
 	vialCounts: { packageId: string; count: number }[];
 	vialPrep: AdoptedVialPrep | null;
+	/** The drug + route the line draws from ("Ampicillin IV"); null for lines made before components. */
+	component: { id: string; label: string } | null;
+	/** The formulary item the line is pinned to; null admits every item of the component. */
+	formularyItemId: string | null;
+	/** The hand-picked NDC subset of `formularyItemId`, and why; null when not narrowed. */
+	restriction: { reason: string | null; packageIds: string[] } | null;
 };
 export interface StoredCompound {
 	id: string;
@@ -128,6 +131,13 @@ export async function loadCompound(
 					volumeNum: true,
 					volumeDen: true,
 					vialPrep: true,
+					formularyItemId: true,
+					dosableComponent: {
+						select: { id: true, displayName: true, nameOverride: true, route: true }
+					},
+					packageRestriction: {
+						select: { reason: true, packages: { select: { packageId: true } } }
+					},
 					slotCandidates: {
 						orderBy: { preferenceRank: 'asc' },
 						select: { packageId: true, sourceConcMag: true, vialCount: true }
@@ -165,7 +175,17 @@ export async function loadCompound(
 			conc,
 			dose,
 			volume,
-			vialPrep: parseAdoptedVialPrep(slot.vialPrep)
+			vialPrep: parseAdoptedVialPrep(slot.vialPrep),
+			component: slot.dosableComponent
+				? { id: slot.dosableComponent.id, label: componentLabel(slot.dosableComponent) }
+				: null,
+			formularyItemId: slot.formularyItemId,
+			restriction: slot.packageRestriction
+				? {
+						reason: slot.packageRestriction.reason,
+						packageIds: slot.packageRestriction.packages.map((entry) => entry.packageId)
+					}
+				: null
 		};
 	});
 
@@ -200,7 +220,12 @@ export async function createCompound(db: PrismaClient, scopeId: string, name: st
 }
 
 /** Give a compound `base` as its name, suffixed " (2)", " (3)"… when another compound has it. */
-export async function applyCompoundName(db: PrismaClient, scopeId: string, id: string, base: string) {
+export async function applyCompoundName(
+	db: PrismaClient,
+	scopeId: string,
+	id: string,
+	base: string
+) {
 	const others = await db.compoundFormula.findMany({
 		where: { scopeId, id: { not: id }, name: { startsWith: base } },
 		select: { name: true }
@@ -233,52 +258,79 @@ export async function deleteCompound(db: PrismaClient, scopeId: string, id: stri
 	}
 }
 
+/**
+ * Add a constituent: a drug + route, optionally pinned to one of its formulary
+ * items and a subset of that item's NDCs. Its candidate packages are resolved
+ * from that choice.
+ */
 export async function addComponent(
 	db: PrismaClient,
 	scopeId: string,
 	id: string,
-	input: {
-		/** One package, or a generic's packages in preference order (the first is preferred). */
-		packageIds: string[];
+	input: Constraint & {
 		role: Role;
 		conc: Rational | null;
 		doseUnit: string;
+		reason?: string | null;
 	}
 ) {
 	await draftIn(db, scopeId, id);
-	const packageIds = [...new Set(input.packageIds)].filter((packageId) => UUID.test(packageId));
-	const linked = packageIds.length
-		? await db.formularyItemPackage.findMany({
-				where: { packageId: { in: packageIds }, validTo: null, formularyItem: { scopeId } },
-				select: { packageId: true }
-			})
-		: [];
-	if (!packageIds.length || new Set(linked.map((link) => link.packageId)).size !== packageIds.length)
-		throw new CompoundError('That package is not on this formulary.', 404);
-
-	const last = await db.formulaSlot.aggregate({
-		where: { formulaId: id },
-		_max: { ordinal: true }
-	});
 	const conc = input.role === 'active' ? input.conc : null;
-	await db.formulaSlot.create({
-		data: {
-			formulaId: id,
-			role: input.role,
-			ordinal: (last._max.ordinal ?? 0) + 1,
-			targetAmountUom: input.doseUnit,
-			volumeUom: VOLUME_UNIT,
-			slotCandidates: {
-				create: packageIds.map((packageId, index) => ({
-					packageId,
-					preferenceRank: index + 1,
-					// The stated concentration belongs to the preferred package.
-					sourceConcMag: conc && index === 0 ? decimalOf(conc) : null,
-					sourceConcUom: conc && index === 0 ? `${input.doseUnit}/${VOLUME_UNIT}` : null
-				}))
-			}
-		}
+	// Checked before anything is written, so a choice that does not fit adds no line.
+	await resolveConstraint(db, scopeId, input);
+	await db.$transaction(async (tx) => {
+		const last = await tx.formulaSlot.aggregate({
+			where: { formulaId: id },
+			_max: { ordinal: true }
+		});
+		const slot = await tx.formulaSlot.create({
+			data: {
+				formulaId: id,
+				role: input.role,
+				ordinal: (last._max.ordinal ?? 0) + 1,
+				targetAmountUom: input.doseUnit,
+				volumeUom: VOLUME_UNIT
+			},
+			select: { id: true }
+		});
+		const [preferred] = await writeConstraint(tx, scopeId, slot.id, input);
+		// The stated concentration belongs to the preferred package.
+		if (conc)
+			await tx.slotCandidate.update({
+				where: { slotId_packageId: { slotId: slot.id, packageId: preferred } },
+				data: { sourceConcMag: decimalOf(conc), sourceConcUom: `${input.doseUnit}/${VOLUME_UNIT}` }
+			});
 	});
+}
+
+/**
+ * Pin a constituent to one formulary item and optionally a subset of its NDCs, or
+ * loosen it back to any item of its drug + route.
+ */
+export async function setConstraint(
+	db: PrismaClient,
+	scopeId: string,
+	id: string,
+	slotId: string,
+	input: { formularyItemId: string | null; packageIds: string[]; reason: string | null }
+) {
+	await draftIn(db, scopeId, id);
+	const slot = UUID.test(slotId)
+		? await db.formulaSlot.findFirst({
+				where: { id: slotId, formulaId: id },
+				select: { dosableComponentId: true }
+			})
+		: null;
+	if (!slot) throw new CompoundError('That component no longer exists.', 404);
+	if (!slot.dosableComponentId)
+		throw new CompoundError(
+			'Remove and re-add this component to choose its drug and route first.',
+			409
+		);
+	const dosableComponentId = slot.dosableComponentId;
+	await db.$transaction((tx) =>
+		writeConstraint(tx, scopeId, slotId, { dosableComponentId, ...input })
+	);
 }
 
 /** Replace every line's dose, volume and concentration, and the total, in one transaction. */
@@ -438,8 +490,16 @@ export async function setVialCounts(
 	const known = new Set(slot.slotCandidates.map((candidate) => candidate.packageId));
 	const counts = new Map<string, number>();
 	for (const pick of picks) {
-		if (!known.has(pick.packageId) || !Number.isInteger(pick.count) || pick.count < 1 || pick.count > 99)
-			throw new CompoundError('That vial combination no longer fits this component. Reload and try again.', 409);
+		if (
+			!known.has(pick.packageId) ||
+			!Number.isInteger(pick.count) ||
+			pick.count < 1 ||
+			pick.count > 99
+		)
+			throw new CompoundError(
+				'That vial combination no longer fits this component. Reload and try again.',
+				409
+			);
 		counts.set(pick.packageId, pick.count);
 	}
 	await db.$transaction(
