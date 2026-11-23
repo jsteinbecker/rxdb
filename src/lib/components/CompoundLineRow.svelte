@@ -22,7 +22,8 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
             proposals = [],
             chosen = 0,
             onchoose,
-            vialCount = 0
+            vialCount = 0,
+            calculated = null
       }: {
             /** The line to show and edit. */
             line: Line;
@@ -43,6 +44,8 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
             onchoose?: (index: number) => void;
             /** How many dry-fill vial strengths the line can draw on. */
             vialCount?: number;
+            /** The field the builder worked out from the other two, shown apart from typed ones. */
+            calculated?: Field | null;
       } = $props();
 
       const show = (value: Rational | null) => (value ? formatRational(value) : '');
@@ -94,7 +97,13 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
       </div>
 
       {#snippet entry(field: Field, caption: string, value: Rational | null, unit: string, text: string, setText: (next: string) => void)}
-            <div class="cell field" role="cell" data-caption={caption}>
+            <div
+                  class="cell field"
+                  class:calc={calculated === field}
+                  role="cell"
+                  data-caption={caption}
+                  title={calculated === field ? 'Calculated from the other two values' : undefined}
+            >
                   {#if locked}
                         {#if value}
                               <strong><MixedFraction {value} {unit}/></strong>
@@ -109,12 +118,13 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
                               showUnit={false}
                               exclusiveMin
                               min={0}
-                              ariaLabel="{caption}, {line.label}"
+                              ariaLabel="{caption}, {line.label}{calculated === field ? ' (calculated)' : ''}"
                               placeholder="—"
                               oncommit={(quantity) => commit(field, quantity, text, () => setText(show(value)))}
                         />
                         <span class="unit" aria-hidden="true">{unit}</span>
                         </span>
+                        {#if calculated === field && value}<span class="calc-tag">calculated</span>{/if}
                   {/if}
             </div>
       {/snippet}
@@ -178,6 +188,19 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
 </div>
 
 <style>
+      .calc :global(input) {
+            color: #6b7585;
+            font-style: italic;
+            background: #f7f8fb;
+      }
+      .calc-tag {
+            display: block;
+            margin-top: 0.15rem;
+            color: #7a8494;
+            font-size: 0.68rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+      }
       /* Columns come from the enclosing table (--compound-cols). */
       .line {
             display: grid;

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { resolve } from '$app/paths';
+	import { INJECTION_ROUTES } from '#lib/labels/reconstitution-terms.ts';
 
 	let { data, form } = $props();
 	const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -17,9 +18,17 @@
 	</PageHeader>
 
 	<form method="POST" action="?/create" class="new" use:enhance>
+		<label class="route">
+			Route
+			<select name="route" required value={data.defaultRoute ?? ''}>
+				<option value="" disabled>Choose…</option>
+				{#each INJECTION_ROUTES as route (route)}<option value={route}>{route}</option>{/each}
+			</select>
+		</label>
 		<button>+ Compound</button>
 		<span class="hint">
-			Named automatically from its components — rules in <a href={resolve('/settings')}>Settings</a>.
+			Named automatically from its components — rules in <a href={resolve('/settings')}>Settings</a
+			>.
 		</span>
 	</form>
 	{#if form?.message}<p class="notice" role="alert">{form.message}</p>{/if}
@@ -30,7 +39,7 @@
 				<li>
 					<a href={resolve('/compounds/[id]', { id: compound.id })}>{compound.name}</a>
 					<span class="count">{plural(compound.components, 'component')}</span>
-					{#if compound.status !== 'draft'}<span class="badge">Saved</span>{/if}
+					{#if compound.status !== 'draft'}<span class="badge">Finalized</span>{/if}
 				</li>
 			{/each}
 		</ul>
@@ -53,6 +62,19 @@
 	}
 	.new {
 		align-items: center;
+	}
+	.route {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: #5c6777;
+		font-size: 0.9rem;
+	}
+	.route select {
+		padding: 0.45rem 0.5rem;
+		border: 1px solid #c9d1dc;
+		border-radius: 8px;
+		font: inherit;
 	}
 	.hint {
 		color: #5c6777;
