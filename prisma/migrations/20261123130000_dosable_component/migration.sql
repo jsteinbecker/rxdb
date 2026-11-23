@@ -47,19 +47,38 @@ CREATE TABLE "dosable_component_item" (
     CONSTRAINT "dosable_component_item_source_check" CHECK ("source" IN ('derived', 'manual'))
 );
 
--- CreateTable: the NDC subset a constituent is held to ("only non-DEHP D5W bags").
+-- CreateTable: a constituent held to an NDC subset of its required formulary item
+-- ("only non-DEHP-confirmed D5W bags"). mode 'manual' = the packages are hand-picked;
+-- mode 'rule' (later) = `rule` is evaluated and the matching packages are written as
+-- formula_slot_package rows with source 'rule', so readers never care which mode made them.
+CREATE TABLE "formula_slot_package_restriction" (
+    "slot_id" UUID NOT NULL,
+    "mode" TEXT NOT NULL DEFAULT 'manual',
+    "reason" TEXT,
+    "rule" JSONB,
+    "evaluated_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "formula_slot_package_restriction_pkey" PRIMARY KEY ("slot_id"),
+    CONSTRAINT "formula_slot_package_restriction_mode_check" CHECK ("mode" IN ('manual', 'rule')),
+    CONSTRAINT "formula_slot_package_restriction_rule_check" CHECK ("mode" = 'manual' OR "rule" IS NOT NULL)
+);
+
+-- CreateTable: the allowed packages (NDCs) under a restriction.
 CREATE TABLE "formula_slot_package" (
     "slot_id" UUID NOT NULL,
     "package_id" UUID NOT NULL,
+    "source" TEXT NOT NULL DEFAULT 'manual',
 
-    CONSTRAINT "formula_slot_package_pkey" PRIMARY KEY ("slot_id","package_id")
+    CONSTRAINT "formula_slot_package_pkey" PRIMARY KEY ("slot_id","package_id"),
+    CONSTRAINT "formula_slot_package_source_check" CHECK ("source" IN ('manual', 'rule'))
 );
 
 -- AlterTable: the constituent's level of rigidity.
 ALTER TABLE "formula_slot"
     ADD COLUMN "dosable_component_id" UUID,
     ADD COLUMN "formulary_item_id" UUID,
-    ADD COLUMN "package_restriction_reason" TEXT,
     ADD CONSTRAINT "formula_slot_item_needs_component"
         CHECK ("formulary_item_id" IS NULL OR "dosable_component_id" IS NOT NULL);
 
@@ -78,7 +97,8 @@ ALTER TABLE "formula_slot" ADD CONSTRAINT "formula_slot_dosable_component_id_fke
 -- A required formulary item must sit under the slot's dosable component.
 ALTER TABLE "formula_slot" ADD CONSTRAINT "formula_slot_dosable_component_item_fkey" FOREIGN KEY ("dosable_component_id", "formulary_item_id") REFERENCES "dosable_component_item"("dosable_component_id", "formulary_item_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "formula_slot" ADD CONSTRAINT "formula_slot_formulary_item_id_fkey" FOREIGN KEY ("formulary_item_id") REFERENCES "formulary_item"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "formula_slot_package" ADD CONSTRAINT "formula_slot_package_slot_id_fkey" FOREIGN KEY ("slot_id") REFERENCES "formula_slot"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "formula_slot_package_restriction" ADD CONSTRAINT "formula_slot_package_restriction_slot_id_fkey" FOREIGN KEY ("slot_id") REFERENCES "formula_slot"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "formula_slot_package" ADD CONSTRAINT "formula_slot_package_slot_id_fkey" FOREIGN KEY ("slot_id") REFERENCES "formula_slot_package_restriction"("slot_id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "formula_slot_package" ADD CONSTRAINT "formula_slot_package_package_id_fkey" FOREIGN KEY ("package_id") REFERENCES "package"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- An NDC subset only narrows a required formulary item: the slot must name one, and each
@@ -100,43 +120,83 @@ CREATE TRIGGER "formula_slot_package_check" BEFORE INSERT OR UPDATE ON "formula_
     FOR EACH ROW EXECUTE FUNCTION "formula_slot_package_check"();
 
 -- ---------------------------------------------------------------------------
--- Backfill: every drug + route the saved formulary's current packages carry.
+-- refresh_dosable_components(): rebuilds the derived components and item links from
+-- the formulary's current packages (formulary item -> package -> product_form -> active
+-- route). Run by the migration as the backfill, and after every product form refresh.
+-- Rows that drop out are retired, never deleted, so compound lines keep their link;
+-- manual rows are left alone. Returns counts as JSON; created and linked include rows
+-- brought back from retirement.
 -- ---------------------------------------------------------------------------
-WITH item_forms AS (
-    SELECT DISTINCT fi."scope_id", fi."id" AS formulary_item_id, pf."id" AS product_form_id,
-           pf."ingredient_key", pfr."route"
+CREATE FUNCTION "refresh_dosable_components"() RETURNS JSONB LANGUAGE plpgsql AS $$
+DECLARE
+    created INT; retired INT; linked INT; unlinked INT;
+BEGIN
+    CREATE TEMP TABLE "_dc_current" ON COMMIT DROP AS
+    SELECT DISTINCT fi."scope_id", fi."id" AS formulary_item_id, pf."ingredient_key", pfr."route"
     FROM "formulary_item" fi
+    JOIN "entity" e ON e."id" = fi."id" AND e."retired_at" IS NULL
     JOIN "formulary_item_package" fip ON fip."formulary_item_id" = fi."id" AND fip."valid_to" IS NULL
     JOIN "product_form_package" pfp ON pfp."package_id" = fip."package_id"
     JOIN "product_form" pf ON pf."id" = pfp."product_form_id"
     JOIN "product_form_route" pfr ON pfr."product_form_id" = pf."id"
-         AND pfr."retired_at" IS NULL AND pfr."status" = 'active'
-)
-INSERT INTO "dosable_component" ("scope_id", "ingredient_key", "route", "display_name")
-SELECT DISTINCT f."scope_id", f."ingredient_key", f."route",
-       (SELECT string_agg(initcap(i."name"), ' / ' ORDER BY initcap(i."name"))
-        FROM "product_form_ingredient" pfi JOIN "ingredient" i ON i."id" = pfi."ingredient_id"
-        WHERE pfi."product_form_id" = (SELECT min(f2."product_form_id"::text)::uuid FROM item_forms f2
-                                        WHERE f2."ingredient_key" = f."ingredient_key"))
-FROM item_forms f;
+         AND pfr."retired_at" IS NULL AND pfr."status" = 'active';
 
-INSERT INTO "dosable_component_ingredient" ("dosable_component_id", "ingredient_id", "ordinal")
-SELECT DISTINCT ON (dc."id", pfi."ingredient_id") dc."id", pfi."ingredient_id", pfi."ordinal"
-FROM "dosable_component" dc
-JOIN "product_form" pf ON pf."ingredient_key" = dc."ingredient_key"
-JOIN "product_form_ingredient" pfi ON pfi."product_form_id" = pf."id"
-ORDER BY dc."id", pfi."ingredient_id", pfi."ordinal";
+    WITH ins AS (
+        INSERT INTO "dosable_component" ("scope_id", "ingredient_key", "route", "display_name")
+        SELECT DISTINCT c."scope_id", c."ingredient_key", c."route",
+               (SELECT string_agg(n, ' / ' ORDER BY n) FROM (
+                    SELECT DISTINCT initcap(i."name") AS n
+                    FROM "product_form" pf
+                    JOIN "product_form_ingredient" pfi ON pfi."product_form_id" = pf."id"
+                    JOIN "ingredient" i ON i."id" = pfi."ingredient_id"
+                    WHERE pf."ingredient_key" = c."ingredient_key") names)
+        FROM "_dc_current" c
+        ON CONFLICT ("scope_id", "ingredient_key", "route") DO UPDATE
+            SET "retired_at" = NULL, "updated_at" = now()
+            WHERE "dosable_component"."source" = 'derived' AND "dosable_component"."retired_at" IS NOT NULL
+        RETURNING 1
+    ) SELECT count(*) INTO created FROM ins;
 
-INSERT INTO "dosable_component_item" ("dosable_component_id", "formulary_item_id")
-SELECT DISTINCT dc."id", fi."id"
-FROM "formulary_item" fi
-JOIN "formulary_item_package" fip ON fip."formulary_item_id" = fi."id" AND fip."valid_to" IS NULL
-JOIN "product_form_package" pfp ON pfp."package_id" = fip."package_id"
-JOIN "product_form" pf ON pf."id" = pfp."product_form_id"
-JOIN "product_form_route" pfr ON pfr."product_form_id" = pf."id"
-     AND pfr."retired_at" IS NULL AND pfr."status" = 'active'
-JOIN "dosable_component" dc ON dc."scope_id" = fi."scope_id"
-     AND dc."ingredient_key" = pf."ingredient_key" AND dc."route" = pfr."route";
+    UPDATE "dosable_component" dc SET "retired_at" = now(), "updated_at" = now()
+    WHERE dc."source" = 'derived' AND dc."retired_at" IS NULL
+      AND NOT EXISTS (SELECT 1 FROM "_dc_current" c WHERE c."scope_id" = dc."scope_id"
+                      AND c."ingredient_key" = dc."ingredient_key" AND c."route" = dc."route");
+    GET DIAGNOSTICS retired = ROW_COUNT;
+
+    INSERT INTO "dosable_component_ingredient" ("dosable_component_id", "ingredient_id", "ordinal")
+    SELECT DISTINCT ON (dc."id", pfi."ingredient_id") dc."id", pfi."ingredient_id", pfi."ordinal"
+    FROM "dosable_component" dc
+    JOIN "product_form" pf ON pf."ingredient_key" = dc."ingredient_key"
+    JOIN "product_form_ingredient" pfi ON pfi."product_form_id" = pf."id"
+    ORDER BY dc."id", pfi."ingredient_id", pfi."ordinal"
+    ON CONFLICT DO NOTHING;
+
+    WITH ins AS (
+        INSERT INTO "dosable_component_item" ("dosable_component_id", "formulary_item_id")
+        SELECT DISTINCT dc."id", c."formulary_item_id"
+        FROM "_dc_current" c
+        JOIN "dosable_component" dc ON dc."scope_id" = c."scope_id"
+             AND dc."ingredient_key" = c."ingredient_key" AND dc."route" = c."route"
+        ON CONFLICT ("dosable_component_id", "formulary_item_id") DO UPDATE
+            SET "retired_at" = NULL
+            WHERE "dosable_component_item"."source" = 'derived' AND "dosable_component_item"."retired_at" IS NOT NULL
+        RETURNING 1
+    ) SELECT count(*) INTO linked FROM ins;
+
+    UPDATE "dosable_component_item" dci SET "retired_at" = now()
+    FROM "dosable_component" dc
+    WHERE dc."id" = dci."dosable_component_id" AND dci."source" = 'derived' AND dci."retired_at" IS NULL
+      AND NOT EXISTS (SELECT 1 FROM "_dc_current" c WHERE c."formulary_item_id" = dci."formulary_item_id"
+                      AND c."scope_id" = dc."scope_id" AND c."ingredient_key" = dc."ingredient_key"
+                      AND c."route" = dc."route");
+    GET DIAGNOSTICS unlinked = ROW_COUNT;
+
+    DROP TABLE "_dc_current";
+    RETURN jsonb_build_object('created', created, 'retired', retired, 'linked', linked, 'unlinked', unlinked);
+END $$;
+
+-- Backfill.
+SELECT "refresh_dosable_components"();
 
 -- Existing compound lines: point each at the one dosable component (in the compound's
 -- route) that all its candidate packages fall under; a single-package line also keeps

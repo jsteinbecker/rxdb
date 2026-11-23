@@ -318,6 +318,8 @@ export async function rebuildProductForms() {
 	try {
 		const result = await refreshProductForms(prisma);
 		jobNote(`${result.forms} product forms (${result.created} new, ${result.retired} retired)`);
+		const dc = result.dosableComponents;
+		jobNote(`Dosable components: ${dc.created} new, ${dc.retired} retired; ${dc.linked} items linked, ${dc.unlinked} unlinked`);
 		if (result.skipped.length)
 			jobNote(`${result.skipped.length} packages left out of product forms: ${[...new Set(result.skipped.map((s) => s.reason))].join(', ')}`);
 	} catch (error) {

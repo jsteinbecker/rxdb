@@ -24,6 +24,21 @@ export interface ProductFormRefresh {
 	routes: number;
 	preps: number;
 	skipped: { ndc: string; reason: string }[];
+	/** Drug + route rows rebuilt from the refreshed forms (`refresh_dosable_components()`). */
+	dosableComponents: DosableComponentRefresh;
+}
+
+export interface DosableComponentRefresh {
+	created: number;
+	retired: number;
+	linked: number;
+	unlinked: number;
+}
+
+/** Rebuilds the derived dosable components and their formulary item links; manual rows stay. */
+export async function refreshDosableComponents(db: Db | PrismaClient): Promise<DosableComponentRefresh> {
+	const [row] = await db.$queryRaw<{ result: DosableComponentRefresh }[]>`SELECT refresh_dosable_components() AS result`;
+	return row.result;
 }
 
 /** The live formulary's packages, each with its NDC and linked SCD. */
@@ -64,7 +79,15 @@ export async function refreshProductForms(db: PrismaClient): Promise<ProductForm
 	const { forms, skipped } = buildProductForms(await loadProductFormInputs(db));
 	return db.$transaction(
 		async (tx) => {
-			const result: ProductFormRefresh = { forms: forms.length, created: 0, retired: 0, routes: 0, preps: 0, skipped };
+			const result: ProductFormRefresh = {
+				forms: forms.length,
+				created: 0,
+				retired: 0,
+				routes: 0,
+				preps: 0,
+				skipped,
+				dosableComponents: { created: 0, retired: 0, linked: 0, unlinked: 0 }
+			};
 			const ids = new Map<string, string>();
 			const ingredientId = async (name: string) =>
 				ids.get(name) ?? ids.set(name, await namedEntity(tx, 'ingredient', name)).get(name)!;
@@ -101,6 +124,8 @@ export async function refreshProductForms(db: PrismaClient): Promise<ProductForm
 				});
 				result.retired++;
 			}
+			// Drug + route rows follow the forms and routes just written.
+			result.dosableComponents = await refreshDosableComponents(tx);
 			return result;
 		},
 		{ timeout: 120_000 }
