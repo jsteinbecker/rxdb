@@ -14,6 +14,7 @@ import {
 	saveLines,
 	setRoute,
 	setSaved,
+	setVialCounts,
 	setVialPrep
 } from '#lib/server/compounds/store.ts';
 import { refreshCompoundName } from '#lib/server/compounds/naming.ts';
@@ -241,6 +242,26 @@ export const actions: Actions = {
 				ndcs: result.voters.map((pkg) => pkg.ndc),
 				adoptedAt: new Date().toISOString()
 			})
+		);
+	},
+	setVials: async ({ params, request }) => {
+		const data = await request.formData();
+		let picks: unknown = [];
+		try {
+			picks = JSON.parse(String(data.get('picks') ?? '[]'));
+		} catch {
+			return fail(400, { message: 'Could not read the vial combination.' });
+		}
+		if (!Array.isArray(picks)) return fail(400, { message: 'Could not read the vial combination.' });
+		const scope = await defaultScope(prisma);
+		return run(() =>
+			setVialCounts(
+				prisma,
+				scope.id,
+				params.id,
+				String(data.get('slotId') ?? ''),
+				picks.map((pick) => ({ packageId: String(pick?.packageId ?? ''), count: Number(pick?.count) }))
+			)
 		);
 	},
 	clearVialPrep: async ({ params, request }) => {

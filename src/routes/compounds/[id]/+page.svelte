@@ -66,10 +66,30 @@
   );
   /** The proposal picked per line; the best one until someone picks another. */
   let chosen = $state<Record<string, number>>({});
-  const pickedFor = (slotId: string) => {
+  const sameCombination = (proposal: Combination, saved: { packageId: string; count: number }[]) =>
+    proposal.picks.length === saved.length &&
+    proposal.picks.every((pick) => saved.some((entry) => entry.packageId === pick.packageId && entry.count === pick.count));
+  /** The index in use: the one just picked, else the saved pick while it still fits the dose, else the best. */
+  const chosenIndex = (slotId: string) => {
     const list = proposals.get(slotId) ?? [];
-    return list[chosen[slotId] ?? 0] ?? list[0] ?? null;
+    if (chosen[slotId] != null && chosen[slotId] < list.length) return chosen[slotId];
+    const saved = compound.lines.find((line) => line.slotId === slotId)?.vialCounts ?? [];
+    const at = saved.length ? list.findIndex((proposal) => sameCombination(proposal, saved)) : -1;
+    return at >= 0 ? at : 0;
   };
+  const pickedFor = (slotId: string) => (proposals.get(slotId) ?? [])[chosenIndex(slotId)] ?? null;
+
+  let vialsForm: HTMLFormElement | undefined = $state();
+  let vialsSlot: HTMLInputElement | undefined = $state();
+  let vialsPicks: HTMLInputElement | undefined = $state();
+  function choose(slotId: string, index: number) {
+    const proposal = proposals.get(slotId)?.[index];
+    if (locked || !proposal || !vialsForm || !vialsSlot || !vialsPicks) return;
+    chosen = { ...chosen, [slotId]: index };
+    vialsSlot.value = slotId;
+    vialsPicks.value = JSON.stringify(proposal.picks.map(({ packageId, count }) => ({ packageId, count })));
+    vialsForm.requestSubmit();
+  }
   /** Everything to pull from stock, line by line. */
   const pullList = $derived(
     lines.flatMap((line) => {
@@ -262,6 +282,10 @@
   >
     <input bind:this={payloadInput} type="hidden" name="payload" />
   </form>
+  <form bind:this={vialsForm} method="POST" action="?/setVials" use:enhance={() => async ({ update }) => update({ reset: false })} hidden>
+    <input bind:this={vialsSlot} type="hidden" name="slotId" />
+    <input bind:this={vialsPicks} type="hidden" name="picks" />
+  </form>
   <form bind:this={removeForm} method="POST" action="?/remove" use:enhance hidden>
     <input bind:this={removeSlot} type="hidden" name="slotId" />
   </form>
@@ -294,8 +318,8 @@
             onremove={() => remove(line.slotId)}
             vialCount={new Set((vialsBySlot.get(line.slotId) ?? []).map((vial) => `${vial.amount.n}/${vial.amount.d}`)).size}
             proposals={proposals.get(line.slotId) ?? []}
-            chosen={Math.min(chosen[line.slotId] ?? 0, Math.max((proposals.get(line.slotId)?.length ?? 1) - 1, 0))}
-            onchoose={(index) => (chosen = { ...chosen, [line.slotId]: index })}
+            chosen={chosenIndex(line.slotId)}
+            onchoose={(index) => choose(line.slotId, index)}
           />
         {/each}
         <div class="totals" role="row">

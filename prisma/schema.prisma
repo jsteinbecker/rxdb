@@ -1353,6 +1353,8 @@ model SlotCandidate {
       reconstitutedVolumeUom      String?                   @default("mL") @map("reconstituted_volume_uom")
       /// @generated
       reconstitutedVolume         Unsupported("measure")?   @default(dbgenerated()) @map("reconstituted_volume")
+      /// vials of this package pulled for the slot (the picked vial combination); null = not picked
+      vialCount                   Int?                      @map("vial_count")
       note                        String?
       validFrom                   DateTime                  @default(now()) @map("valid_from") @db.Timestamptz(6)
       validTo                     DateTime?                 @map("valid_to") @db.Timestamptz(6)

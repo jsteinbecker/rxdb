@@ -30,12 +30,14 @@ export type SlotCandidateAvgAggregateOutputType = {
   preferenceRank: number | null
   sourceConcMag: runtime.Decimal | null
   reconstitutedVolumeMag: runtime.Decimal | null
+  vialCount: number | null
 }
 
 export type SlotCandidateSumAggregateOutputType = {
   preferenceRank: number | null
   sourceConcMag: runtime.Decimal | null
   reconstitutedVolumeMag: runtime.Decimal | null
+  vialCount: number | null
 }
 
 export type SlotCandidateMinAggregateOutputType = {
@@ -49,6 +51,7 @@ export type SlotCandidateMinAggregateOutputType = {
   reconstitutionDiluentTermId: string | null
   reconstitutedVolumeMag: runtime.Decimal | null
   reconstitutedVolumeUom: string | null
+  vialCount: number | null
   note: string | null
   validFrom: Date | null
   validTo: Date | null
@@ -65,6 +68,7 @@ export type SlotCandidateMaxAggregateOutputType = {
   reconstitutionDiluentTermId: string | null
   reconstitutedVolumeMag: runtime.Decimal | null
   reconstitutedVolumeUom: string | null
+  vialCount: number | null
   note: string | null
   validFrom: Date | null
   validTo: Date | null
@@ -81,6 +85,7 @@ export type SlotCandidateCountAggregateOutputType = {
   reconstitutionDiluentTermId: number
   reconstitutedVolumeMag: number
   reconstitutedVolumeUom: number
+  vialCount: number
   note: number
   validFrom: number
   validTo: number
@@ -92,12 +97,14 @@ export type SlotCandidateAvgAggregateInputType = {
   preferenceRank?: true
   sourceConcMag?: true
   reconstitutedVolumeMag?: true
+  vialCount?: true
 }
 
 export type SlotCandidateSumAggregateInputType = {
   preferenceRank?: true
   sourceConcMag?: true
   reconstitutedVolumeMag?: true
+  vialCount?: true
 }
 
 export type SlotCandidateMinAggregateInputType = {
@@ -111,6 +118,7 @@ export type SlotCandidateMinAggregateInputType = {
   reconstitutionDiluentTermId?: true
   reconstitutedVolumeMag?: true
   reconstitutedVolumeUom?: true
+  vialCount?: true
   note?: true
   validFrom?: true
   validTo?: true
@@ -127,6 +135,7 @@ export type SlotCandidateMaxAggregateInputType = {
   reconstitutionDiluentTermId?: true
   reconstitutedVolumeMag?: true
   reconstitutedVolumeUom?: true
+  vialCount?: true
   note?: true
   validFrom?: true
   validTo?: true
@@ -143,6 +152,7 @@ export type SlotCandidateCountAggregateInputType = {
   reconstitutionDiluentTermId?: true
   reconstitutedVolumeMag?: true
   reconstitutedVolumeUom?: true
+  vialCount?: true
   note?: true
   validFrom?: true
   validTo?: true
@@ -246,6 +256,7 @@ export type SlotCandidateGroupByOutputType = {
   reconstitutionDiluentTermId: string | null
   reconstitutedVolumeMag: runtime.Decimal | null
   reconstitutedVolumeUom: string | null
+  vialCount: number | null
   note: string | null
   validFrom: Date
   validTo: Date | null
@@ -285,6 +296,7 @@ export type SlotCandidateWhereInput = {
   reconstitutionDiluentTermId?: Prisma.UuidNullableFilter<"SlotCandidate"> | string | null
   reconstitutedVolumeMag?: Prisma.DecimalNullableFilter<"SlotCandidate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.StringNullableFilter<"SlotCandidate"> | string | null
+  vialCount?: Prisma.IntNullableFilter<"SlotCandidate"> | number | null
   note?: Prisma.StringNullableFilter<"SlotCandidate"> | string | null
   validFrom?: Prisma.DateTimeFilter<"SlotCandidate"> | Date | string
   validTo?: Prisma.DateTimeNullableFilter<"SlotCandidate"> | Date | string | null
@@ -304,6 +316,7 @@ export type SlotCandidateOrderByWithRelationInput = {
   reconstitutionDiluentTermId?: Prisma.SortOrderInput | Prisma.SortOrder
   reconstitutedVolumeMag?: Prisma.SortOrderInput | Prisma.SortOrder
   reconstitutedVolumeUom?: Prisma.SortOrderInput | Prisma.SortOrder
+  vialCount?: Prisma.SortOrderInput | Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -327,6 +340,7 @@ export type SlotCandidateWhereUniqueInput = Prisma.AtLeast<{
   reconstitutionDiluentTermId?: Prisma.UuidNullableFilter<"SlotCandidate"> | string | null
   reconstitutedVolumeMag?: Prisma.DecimalNullableFilter<"SlotCandidate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.StringNullableFilter<"SlotCandidate"> | string | null
+  vialCount?: Prisma.IntNullableFilter<"SlotCandidate"> | number | null
   note?: Prisma.StringNullableFilter<"SlotCandidate"> | string | null
   validFrom?: Prisma.DateTimeFilter<"SlotCandidate"> | Date | string
   validTo?: Prisma.DateTimeNullableFilter<"SlotCandidate"> | Date | string | null
@@ -346,6 +360,7 @@ export type SlotCandidateOrderByWithAggregationInput = {
   reconstitutionDiluentTermId?: Prisma.SortOrderInput | Prisma.SortOrder
   reconstitutedVolumeMag?: Prisma.SortOrderInput | Prisma.SortOrder
   reconstitutedVolumeUom?: Prisma.SortOrderInput | Prisma.SortOrder
+  vialCount?: Prisma.SortOrderInput | Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -370,6 +385,7 @@ export type SlotCandidateScalarWhereWithAggregatesInput = {
   reconstitutionDiluentTermId?: Prisma.UuidNullableWithAggregatesFilter<"SlotCandidate"> | string | null
   reconstitutedVolumeMag?: Prisma.DecimalNullableWithAggregatesFilter<"SlotCandidate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.StringNullableWithAggregatesFilter<"SlotCandidate"> | string | null
+  vialCount?: Prisma.IntNullableWithAggregatesFilter<"SlotCandidate"> | number | null
   note?: Prisma.StringNullableWithAggregatesFilter<"SlotCandidate"> | string | null
   validFrom?: Prisma.DateTimeWithAggregatesFilter<"SlotCandidate"> | Date | string
   validTo?: Prisma.DateTimeNullableWithAggregatesFilter<"SlotCandidate"> | Date | string | null
@@ -383,6 +399,7 @@ export type SlotCandidateCreateInput = {
   requiresReconstitution?: boolean
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -402,6 +419,7 @@ export type SlotCandidateUncheckedCreateInput = {
   reconstitutionDiluentTermId?: string | null
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -415,6 +433,7 @@ export type SlotCandidateUpdateInput = {
   requiresReconstitution?: Prisma.BoolFieldUpdateOperationsInput | boolean
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -434,6 +453,7 @@ export type SlotCandidateUncheckedUpdateInput = {
   reconstitutionDiluentTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -450,6 +470,7 @@ export type SlotCandidateCreateManyInput = {
   reconstitutionDiluentTermId?: string | null
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -463,6 +484,7 @@ export type SlotCandidateUpdateManyMutationInput = {
   requiresReconstitution?: Prisma.BoolFieldUpdateOperationsInput | boolean
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -479,6 +501,7 @@ export type SlotCandidateUncheckedUpdateManyInput = {
   reconstitutionDiluentTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -510,6 +533,7 @@ export type SlotCandidateCountOrderByAggregateInput = {
   reconstitutionDiluentTermId?: Prisma.SortOrder
   reconstitutedVolumeMag?: Prisma.SortOrder
   reconstitutedVolumeUom?: Prisma.SortOrder
+  vialCount?: Prisma.SortOrder
   note?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
@@ -519,6 +543,7 @@ export type SlotCandidateAvgOrderByAggregateInput = {
   preferenceRank?: Prisma.SortOrder
   sourceConcMag?: Prisma.SortOrder
   reconstitutedVolumeMag?: Prisma.SortOrder
+  vialCount?: Prisma.SortOrder
 }
 
 export type SlotCandidateMaxOrderByAggregateInput = {
@@ -532,6 +557,7 @@ export type SlotCandidateMaxOrderByAggregateInput = {
   reconstitutionDiluentTermId?: Prisma.SortOrder
   reconstitutedVolumeMag?: Prisma.SortOrder
   reconstitutedVolumeUom?: Prisma.SortOrder
+  vialCount?: Prisma.SortOrder
   note?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
@@ -548,6 +574,7 @@ export type SlotCandidateMinOrderByAggregateInput = {
   reconstitutionDiluentTermId?: Prisma.SortOrder
   reconstitutedVolumeMag?: Prisma.SortOrder
   reconstitutedVolumeUom?: Prisma.SortOrder
+  vialCount?: Prisma.SortOrder
   note?: Prisma.SortOrder
   validFrom?: Prisma.SortOrder
   validTo?: Prisma.SortOrder
@@ -557,6 +584,7 @@ export type SlotCandidateSumOrderByAggregateInput = {
   preferenceRank?: Prisma.SortOrder
   sourceConcMag?: Prisma.SortOrder
   reconstitutedVolumeMag?: Prisma.SortOrder
+  vialCount?: Prisma.SortOrder
 }
 
 export type SlotCandidateCreateNestedManyWithoutPackageInput = {
@@ -685,6 +713,14 @@ export type SlotCandidateUncheckedUpdateManyWithoutSlotNestedInput = {
   deleteMany?: Prisma.SlotCandidateScalarWhereInput | Prisma.SlotCandidateScalarWhereInput[]
 }
 
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type SlotCandidateCreateWithoutPackageInput = {
   preferenceRank?: number
   isRestricted?: boolean
@@ -693,6 +729,7 @@ export type SlotCandidateCreateWithoutPackageInput = {
   requiresReconstitution?: boolean
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -710,6 +747,7 @@ export type SlotCandidateUncheckedCreateWithoutPackageInput = {
   reconstitutionDiluentTermId?: string | null
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -755,6 +793,7 @@ export type SlotCandidateScalarWhereInput = {
   reconstitutionDiluentTermId?: Prisma.UuidNullableFilter<"SlotCandidate"> | string | null
   reconstitutedVolumeMag?: Prisma.DecimalNullableFilter<"SlotCandidate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.StringNullableFilter<"SlotCandidate"> | string | null
+  vialCount?: Prisma.IntNullableFilter<"SlotCandidate"> | number | null
   note?: Prisma.StringNullableFilter<"SlotCandidate"> | string | null
   validFrom?: Prisma.DateTimeFilter<"SlotCandidate"> | Date | string
   validTo?: Prisma.DateTimeNullableFilter<"SlotCandidate"> | Date | string | null
@@ -768,6 +807,7 @@ export type SlotCandidateCreateWithoutReconstitutionDiluentTermInput = {
   requiresReconstitution?: boolean
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -785,6 +825,7 @@ export type SlotCandidateUncheckedCreateWithoutReconstitutionDiluentTermInput = 
   requiresReconstitution?: boolean
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -824,6 +865,7 @@ export type SlotCandidateCreateWithoutSlotInput = {
   requiresReconstitution?: boolean
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -841,6 +883,7 @@ export type SlotCandidateUncheckedCreateWithoutSlotInput = {
   reconstitutionDiluentTermId?: string | null
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -882,6 +925,7 @@ export type SlotCandidateCreateManyPackageInput = {
   reconstitutionDiluentTermId?: string | null
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -895,6 +939,7 @@ export type SlotCandidateUpdateWithoutPackageInput = {
   requiresReconstitution?: Prisma.BoolFieldUpdateOperationsInput | boolean
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -912,6 +957,7 @@ export type SlotCandidateUncheckedUpdateWithoutPackageInput = {
   reconstitutionDiluentTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -927,6 +973,7 @@ export type SlotCandidateUncheckedUpdateManyWithoutPackageInput = {
   reconstitutionDiluentTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -942,6 +989,7 @@ export type SlotCandidateCreateManyReconstitutionDiluentTermInput = {
   requiresReconstitution?: boolean
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -955,6 +1003,7 @@ export type SlotCandidateUpdateWithoutReconstitutionDiluentTermInput = {
   requiresReconstitution?: Prisma.BoolFieldUpdateOperationsInput | boolean
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -972,6 +1021,7 @@ export type SlotCandidateUncheckedUpdateWithoutReconstitutionDiluentTermInput = 
   requiresReconstitution?: Prisma.BoolFieldUpdateOperationsInput | boolean
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -987,6 +1037,7 @@ export type SlotCandidateUncheckedUpdateManyWithoutReconstitutionDiluentTermInpu
   requiresReconstitution?: Prisma.BoolFieldUpdateOperationsInput | boolean
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1002,6 +1053,7 @@ export type SlotCandidateCreateManySlotInput = {
   reconstitutionDiluentTermId?: string | null
   reconstitutedVolumeMag?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: string | null
+  vialCount?: number | null
   note?: string | null
   validFrom?: Date | string
   validTo?: Date | string | null
@@ -1015,6 +1067,7 @@ export type SlotCandidateUpdateWithoutSlotInput = {
   requiresReconstitution?: Prisma.BoolFieldUpdateOperationsInput | boolean
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1032,6 +1085,7 @@ export type SlotCandidateUncheckedUpdateWithoutSlotInput = {
   reconstitutionDiluentTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1047,6 +1101,7 @@ export type SlotCandidateUncheckedUpdateManyWithoutSlotInput = {
   reconstitutionDiluentTermId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reconstitutedVolumeMag?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reconstitutedVolumeUom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vialCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   validFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   validTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1065,6 +1120,7 @@ export type SlotCandidateSelect<ExtArgs extends runtime.Types.Extensions.Interna
   reconstitutionDiluentTermId?: boolean
   reconstitutedVolumeMag?: boolean
   reconstitutedVolumeUom?: boolean
+  vialCount?: boolean
   note?: boolean
   validFrom?: boolean
   validTo?: boolean
@@ -1084,6 +1140,7 @@ export type SlotCandidateSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   reconstitutionDiluentTermId?: boolean
   reconstitutedVolumeMag?: boolean
   reconstitutedVolumeUom?: boolean
+  vialCount?: boolean
   note?: boolean
   validFrom?: boolean
   validTo?: boolean
@@ -1103,6 +1160,7 @@ export type SlotCandidateSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   reconstitutionDiluentTermId?: boolean
   reconstitutedVolumeMag?: boolean
   reconstitutedVolumeUom?: boolean
+  vialCount?: boolean
   note?: boolean
   validFrom?: boolean
   validTo?: boolean
@@ -1122,12 +1180,13 @@ export type SlotCandidateSelectScalar = {
   reconstitutionDiluentTermId?: boolean
   reconstitutedVolumeMag?: boolean
   reconstitutedVolumeUom?: boolean
+  vialCount?: boolean
   note?: boolean
   validFrom?: boolean
   validTo?: boolean
 }
 
-export type SlotCandidateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"slotId" | "packageId" | "preferenceRank" | "isRestricted" | "sourceConcMag" | "sourceConcUom" | "requiresReconstitution" | "reconstitutionDiluentTermId" | "reconstitutedVolumeMag" | "reconstitutedVolumeUom" | "note" | "validFrom" | "validTo", ExtArgs["result"]["slotCandidate"]>
+export type SlotCandidateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"slotId" | "packageId" | "preferenceRank" | "isRestricted" | "sourceConcMag" | "sourceConcUom" | "requiresReconstitution" | "reconstitutionDiluentTermId" | "reconstitutedVolumeMag" | "reconstitutedVolumeUom" | "vialCount" | "note" | "validFrom" | "validTo", ExtArgs["result"]["slotCandidate"]>
 export type SlotCandidateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   slot?: boolean | Prisma.FormulaSlotDefaultArgs<ExtArgs>
   package?: boolean | Prisma.PackageDefaultArgs<ExtArgs>
@@ -1162,6 +1221,10 @@ export type $SlotCandidatePayload<ExtArgs extends runtime.Types.Extensions.Inter
     reconstitutionDiluentTermId: string | null
     reconstitutedVolumeMag: runtime.Decimal | null
     reconstitutedVolumeUom: string | null
+    /**
+     * vials of this package pulled for the slot (the picked vial combination); null = not picked
+     */
+    vialCount: number | null
     note: string | null
     validFrom: Date
     validTo: Date | null
@@ -1601,6 +1664,7 @@ export interface SlotCandidateFieldRefs {
   readonly reconstitutionDiluentTermId: Prisma.FieldRef<"SlotCandidate", 'String'>
   readonly reconstitutedVolumeMag: Prisma.FieldRef<"SlotCandidate", 'Decimal'>
   readonly reconstitutedVolumeUom: Prisma.FieldRef<"SlotCandidate", 'String'>
+  readonly vialCount: Prisma.FieldRef<"SlotCandidate", 'Int'>
   readonly note: Prisma.FieldRef<"SlotCandidate", 'String'>
   readonly validFrom: Prisma.FieldRef<"SlotCandidate", 'DateTime'>
   readonly validTo: Prisma.FieldRef<"SlotCandidate", 'DateTime'>

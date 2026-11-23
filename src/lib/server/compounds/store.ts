@@ -38,6 +38,8 @@ export type StoredLine = Omit<Line, 'label'> & {
 	packageId: string;
 	/** Every package the line may be filled from, in preference order. A generic line has several. */
 	packageIds: string[];
+	/** The picked vial combination: vials pulled per package; empty when none is picked. */
+	vialCounts: { packageId: string; count: number }[];
 	vialPrep: AdoptedVialPrep | null;
 };
 export interface StoredCompound {
@@ -128,7 +130,7 @@ export async function loadCompound(
 					vialPrep: true,
 					slotCandidates: {
 						orderBy: { preferenceRank: 'asc' },
-						select: { packageId: true, sourceConcMag: true }
+						select: { packageId: true, sourceConcMag: true, vialCount: true }
 					}
 				}
 			}
@@ -155,6 +157,9 @@ export async function loadCompound(
 			slotId: slot.id,
 			packageId: candidate?.packageId ?? '',
 			packageIds: slot.slotCandidates.map((entry) => entry.packageId),
+			vialCounts: slot.slotCandidates.flatMap((entry) =>
+				entry.vialCount ? [{ packageId: entry.packageId, count: entry.vialCount }] : []
+			),
 			role: slot.role as Role,
 			doseUnit: slot.targetAmountUom ?? 'mg',
 			conc,
@@ -409,4 +414,40 @@ export async function setVialPrep(
 			})
 		: { count: 0 };
 	if (count === 0) throw new CompoundError('That component no longer exists.', 404);
+}
+
+/**
+ * Record the vial combination picked for a component: how many vials of each of
+ * its packages are pulled. Packages left out pull none; an empty list clears the pick.
+ */
+export async function setVialCounts(
+	db: PrismaClient,
+	scopeId: string,
+	id: string,
+	slotId: string,
+	picks: { packageId: string; count: number }[]
+) {
+	await draftIn(db, scopeId, id);
+	const slot = UUID.test(slotId)
+		? await db.formulaSlot.findFirst({
+				where: { id: slotId, formulaId: id },
+				select: { slotCandidates: { select: { packageId: true } } }
+			})
+		: null;
+	if (!slot) throw new CompoundError('That component no longer exists.', 404);
+	const known = new Set(slot.slotCandidates.map((candidate) => candidate.packageId));
+	const counts = new Map<string, number>();
+	for (const pick of picks) {
+		if (!known.has(pick.packageId) || !Number.isInteger(pick.count) || pick.count < 1 || pick.count > 99)
+			throw new CompoundError('That vial combination no longer fits this component. Reload and try again.', 409);
+		counts.set(pick.packageId, pick.count);
+	}
+	await db.$transaction(
+		[...known].map((packageId) =>
+			db.slotCandidate.update({
+				where: { slotId_packageId: { slotId, packageId } },
+				data: { vialCount: counts.get(packageId) ?? null }
+			})
+		)
+	);
 }
