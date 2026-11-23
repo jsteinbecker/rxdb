@@ -184,6 +184,7 @@ model Scope {
       buildPlans                BuildPlan[]
       openComponents            OpenComponent[]
       pharmClassRules           PharmClassRule[]
+      dosableComponents         DosableComponent[]
 
       @@map("scope")
 }
@@ -253,6 +254,7 @@ model Ingredient {
       productForms           ProductFormIngredient[]
       productFormStrengths   ProductFormStrength[] @relation("ProductFormStrengthBase")
       productFormBases       ProductFormStrength[] @relation("ProductFormStrengthBasis")
+      dosableComponents      DosableComponentIngredient[]
 
       @@unique([id, type])
       @@map("ingredient")
@@ -353,6 +355,7 @@ model Package {
       openComponents            OpenComponent[]
       productForm               ProductFormPackage?
       productFormRoutePreps     ProductFormRoutePrep[]
+      formulaSlotPackages       FormulaSlotPackage[]
 
       @@unique([id, type])
       @@map("package")
@@ -378,6 +381,8 @@ model FormularyItem {
       formularyItemPackages FormularyItemPackage[]
       compoundFormulas      CompoundFormula[]
       brands                FormularyItemBrand[]
+      dosableComponents     DosableComponentItem[]
+      requiredBySlots       FormulaSlot[]
 
       @@unique([id, type])
       @@map("formulary_item")
@@ -1329,12 +1334,24 @@ model FormulaSlot {
       ordinal             Int                              @default(1)
       /// adopted consensus vial preparation (`AdoptedVialPrep`); null = none adopted
       vialPrep            Json?                            @map("vial_prep")
+      /// the drug + route this constituent draws from (any of its formulary items)
+      dosableComponentId  String?                          @map("dosable_component_id") @db.Uuid
+      /// when set, only this formulary item may fill the slot (NS 500 mL as the diluent bag);
+      /// must be one of the dosable component's items
+      formularyItemId     String?                          @map("formulary_item_id") @db.Uuid
+      /// why the slot is held to an NDC subset ("non-DEHP confirmed"); the subset is `allowedPackages`
+      packageRestrictionReason String?                     @map("package_restriction_reason")
 
       formula        CompoundFormula  @relation(fields: [formulaId], references: [id], onDelete: Cascade)
       ingredientTerm CompoundingTerm? @relation(fields: [ingredientTermId], references: [id])
       slotCandidates SlotCandidate[]
       buildPlanLines BuildPlanLine[]
+      dosableComponent     DosableComponent?     @relation(fields: [dosableComponentId], references: [id])
+      formularyItem        FormularyItem?        @relation(fields: [formularyItemId], references: [id])
+      dosableComponentItem DosableComponentItem? @relation(fields: [dosableComponentId, formularyItemId], references: [dosableComponentId, formularyItemId], map: "formula_slot_dosable_component_item_fkey")
+      allowedPackages      FormulaSlotPackage[]
 
+      @@index([dosableComponentId])
       @@map("formula_slot")
 }
 
@@ -1844,4 +1861,72 @@ model SplLabelSection {
 
       @@id([labelHash, position])
       @@map("spl_label_section")
+}
+
+/// A drug (ingredient set, salts collapsed) given by one route, in a formulary scope:
+/// <Ampicillin, IV>. Parents every formulary item whose packages carry that
+/// ingredient set and route. Compound constituents are chosen at this level.
+model DosableComponent {
+      id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+      scopeId       String    @map("scope_id") @db.Uuid
+      /// Sorted base-ingredient ids joined with ","; same key as `product_form.ingredient_key`.
+      ingredientKey String    @map("ingredient_key")
+      /// IV | IM | SC | PO, as `product_form_route` and `compound_formula.route` spell it.
+      route         String
+      displayName   String    @map("display_name")
+      nameOverride  String?   @map("name_override")
+      /// derived (rebuilt from the formulary) | manual (added by hand; rebuilds leave it alone)
+      source        String    @default("derived")
+      retiredAt     DateTime? @map("retired_at") @db.Timestamptz(6)
+      createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+      updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+      scope        Scope                        @relation(fields: [scopeId], references: [id])
+      ingredients  DosableComponentIngredient[]
+      items        DosableComponentItem[]
+      formulaSlots FormulaSlot[]
+
+      @@unique([scopeId, ingredientKey, route])
+      @@map("dosable_component")
+}
+
+model DosableComponentIngredient {
+      dosableComponentId String @map("dosable_component_id") @db.Uuid
+      ingredientId       String @map("ingredient_id") @db.Uuid
+      ordinal            Int    @default(1)
+
+      dosableComponent DosableComponent @relation(fields: [dosableComponentId], references: [id], onDelete: Cascade)
+      ingredient       Ingredient       @relation(fields: [ingredientId], references: [id])
+
+      @@id([dosableComponentId, ingredientId])
+      @@map("dosable_component_ingredient")
+}
+
+/// A formulary item under a dosable component. An item given by two routes sits under two.
+model DosableComponentItem {
+      dosableComponentId String    @map("dosable_component_id") @db.Uuid
+      formularyItemId    String    @map("formulary_item_id") @db.Uuid
+      source             String    @default("derived")
+      retiredAt          DateTime? @map("retired_at") @db.Timestamptz(6)
+
+      dosableComponent DosableComponent @relation(fields: [dosableComponentId], references: [id], onDelete: Cascade)
+      formularyItem    FormularyItem    @relation(fields: [formularyItemId], references: [id], onDelete: Cascade)
+      formulaSlots     FormulaSlot[]
+
+      @@id([dosableComponentId, formularyItemId])
+      @@index([formularyItemId])
+      @@map("dosable_component_item")
+}
+
+/// The NDC subset a constituent is held to, within its required formulary item
+/// (only non-DEHP D5W bags for amiodarone). Checked by a trigger.
+model FormulaSlotPackage {
+      slotId    String @map("slot_id") @db.Uuid
+      packageId String @map("package_id") @db.Uuid
+
+      slot    FormulaSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+      package Package     @relation(fields: [packageId], references: [id])
+
+      @@id([slotId, packageId])
+      @@map("formula_slot_package")
 }
