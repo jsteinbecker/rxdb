@@ -255,6 +255,77 @@ const normalizeName = (name: string): string => name.trim().toUpperCase().replac
  * compatibility paragraphs — same document, plenty of volumes — out of the
  * result.
  */
+/** "7.4 or 14.8 mL", "2, 3.5 and 6.8 mL", "3.5 mL or 6.8 mL". */
+const VOLUME_LIST =
+	/((?:[\d.]+\s*(?:mL)?\s*,\s*)*[\d.]+\s*(?:mL)?\s*,?\s*(?:or|and)\s*[\d.]+)\s*mL\b/i;
+/** "1 g or 2 g", "500 mg, 1 g and 2 g", "1 or 2 grams" — not "125 or 250 mg/mL". */
+const MASS_LIST =
+	/((?:[\d.]+\s*(?:mcg|mg|gm|grams?|g)?\s*,\s*)*[\d.]+\s*(?:mcg|mg|gm|grams?|g)?\s*,?\s*(?:or|and)\s*[\d.]+)\s*(mcg|mg|gm|grams?|g)\b(?!\s*(?:\/|\s+per\s+)\s*mL)/gi;
+const LIST_ITEM = /([\d.]+)\s*(mcg|mg|gm|grams?|g)?/gi;
+const ROUTE_WORD = /\b(intravenous\w*|IV|intramuscular\w*|IM|subcutaneous\w*|SC|SQ)\b/gi;
+
+/**
+ * Paired lists resolved "respectively" become one instruction per vial.
+ * Ampicillin: "Ampicillin for Injection, USP, 1 g or 2 g may also be given by
+ * direct intravenous administration. Dissolve in 7.4 or 14.8 mL Sterile Water
+ * for Injection, USP, …, respectively" is two steps, 1 g with 7.4 mL and 2 g
+ * with 14.8 mL. The vials may be listed in the same sentence or the one before;
+ * the route is the last one named ahead of the volumes. Lists of unequal
+ * length are left alone.
+ */
+export function expandRespectively(list: string[]): string[] {
+	const out: string[] = [];
+	for (const [index, sentence] of list.entries()) {
+		const volumes = /\brespectively\b/i.test(sentence) ? VOLUME_LIST.exec(sentence) : null;
+		if (!volumes) {
+			out.push(sentence);
+			continue;
+		}
+		const volumeMl = [...volumes[1].matchAll(/[\d.]+/g)].map((m) => m[0]);
+		const head = sentence.slice(0, volumes.index);
+		const findMasses = (context: string) =>
+			[...context.matchAll(MASS_LIST)]
+				// "when the 250 mg or 500 mg vials are unavailable" is a condition,
+				// not the vials the volumes are for.
+				.filter(
+					(found) =>
+						!/^\s*(?:vials?|bottles?)?\s*(?:are|is)\s+(?:un|not\s+)available/i.test(
+							context.slice(found.index + found[0].length)
+						)
+				)
+				.map((found) => {
+					const items = [...found[1].matchAll(LIST_ITEM)];
+					return items.map((item) => [item[1], item[2] ?? found[2]] as const);
+				})
+				.findLast((items) => items.length === volumeMl.length) ?? null;
+		const previous = index > 0 ? list[index - 1] : '';
+		const masses = findMasses(head) ?? findMasses(previous);
+		if (!masses) {
+			out.push(sentence);
+			continue;
+		}
+		const context = findMasses(head) ? head : `${previous} ${head}`;
+		const route = [...context.matchAll(ROUTE_WORD)].pop()?.[1];
+		const routeName = !route
+			? null
+			: /^(?:intravenous|IV)/i.test(route)
+				? 'intravenous'
+				: /^(?:intramuscular|IM)/i.test(route)
+					? 'intramuscular'
+					: 'subcutaneous';
+		const rest = sentence
+			.slice(volumes.index + volumes[0].length)
+			.replace(/,?\s*\brespectively\b,?/i, ' ')
+			.replace(/\s+/g, ' ')
+			.trim();
+		for (const [i, [value, unit]] of masses.entries())
+			out.push(
+				`${routeName ? `For ${routeName} use, reconstitute` : 'Reconstitute'} the ${value} ${unit} vial with ${volumeMl[i]} mL ${rest}`
+			);
+	}
+	return out;
+}
+
 export function parseReconstitutionProse(text: string): ProseReconstitution[] {
 	const rows: ProseReconstitution[] = [];
 	const seen = new Set<string>();
@@ -262,7 +333,7 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
 	// until the next heading replaces or clears it.
 	let headingRoutes: ReconstitutionRoute[] = [];
 
-	for (const sentence of sentences(text)) {
+	for (const sentence of expandRespectively(sentences(text))) {
 		if (isHeading(sentence)) {
 			headingRoutes = routesIn(sentence);
 			continue;
@@ -359,10 +430,14 @@ export function parseReconstitutionProse(text: string): ProseReconstitution[] {
 			let mass: [string, string | undefined] | null = null;
 			for (const found of before.matchAll(VIAL_MASS)) mass = [found[1], found[2]];
 			if (!mass) {
-				const leading =
-					/([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s*(?:single[- ]dose\s+)?(?:vial|bottle)/i.exec(
-						before
-					);
+				// The last one before the volume: a carton panel states its own
+				// vial ("equivalent to 2 grams per vial … Add 14.8 mL"), and a
+				// shared label runs several panels together.
+				const leading = [
+					...before.matchAll(
+						/([\d.]+)\s*(mcg|ug|mg|gm|grams?|g)\s*(?:single[- ]dose\s+|per\s+)?(?:vial|bottle)/gi
+					)
+				].pop();
 				if (leading) mass = [leading[1], leading[2]];
 			}
 			if (!mass) {
