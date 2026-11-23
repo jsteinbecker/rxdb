@@ -182,6 +182,7 @@ export type IngredientWhereInput = {
   productForms?: Prisma.ProductFormIngredientListRelationFilter
   productFormStrengths?: Prisma.ProductFormStrengthListRelationFilter
   productFormBases?: Prisma.ProductFormStrengthListRelationFilter
+  dosableComponents?: Prisma.DosableComponentIngredientListRelationFilter
 }
 
 export type IngredientOrderByWithRelationInput = {
@@ -197,6 +198,7 @@ export type IngredientOrderByWithRelationInput = {
   productForms?: Prisma.ProductFormIngredientOrderByRelationAggregateInput
   productFormStrengths?: Prisma.ProductFormStrengthOrderByRelationAggregateInput
   productFormBases?: Prisma.ProductFormStrengthOrderByRelationAggregateInput
+  dosableComponents?: Prisma.DosableComponentIngredientOrderByRelationAggregateInput
 }
 
 export type IngredientWhereUniqueInput = Prisma.AtLeast<{
@@ -216,6 +218,7 @@ export type IngredientWhereUniqueInput = Prisma.AtLeast<{
   productForms?: Prisma.ProductFormIngredientListRelationFilter
   productFormStrengths?: Prisma.ProductFormStrengthListRelationFilter
   productFormBases?: Prisma.ProductFormStrengthListRelationFilter
+  dosableComponents?: Prisma.DosableComponentIngredientListRelationFilter
 }, "id" | "id_type">
 
 export type IngredientOrderByWithAggregationInput = {
@@ -248,6 +251,7 @@ export type IngredientCreateInput = {
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateInput = {
@@ -261,6 +265,7 @@ export type IngredientUncheckedCreateInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUpdateInput = {
@@ -273,6 +278,7 @@ export type IngredientUpdateInput = {
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateInput = {
@@ -286,6 +292,7 @@ export type IngredientUncheckedUpdateInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientCreateManyInput = {
@@ -516,6 +523,20 @@ export type IngredientUpdateOneWithoutProductFormBasesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientUpdateToOneWithWhereWithoutProductFormBasesInput, Prisma.IngredientUpdateWithoutProductFormBasesInput>, Prisma.IngredientUncheckedUpdateWithoutProductFormBasesInput>
 }
 
+export type IngredientCreateNestedOneWithoutDosableComponentsInput = {
+  create?: Prisma.XOR<Prisma.IngredientCreateWithoutDosableComponentsInput, Prisma.IngredientUncheckedCreateWithoutDosableComponentsInput>
+  connectOrCreate?: Prisma.IngredientCreateOrConnectWithoutDosableComponentsInput
+  connect?: Prisma.IngredientWhereUniqueInput
+}
+
+export type IngredientUpdateOneRequiredWithoutDosableComponentsNestedInput = {
+  create?: Prisma.XOR<Prisma.IngredientCreateWithoutDosableComponentsInput, Prisma.IngredientUncheckedCreateWithoutDosableComponentsInput>
+  connectOrCreate?: Prisma.IngredientCreateOrConnectWithoutDosableComponentsInput
+  upsert?: Prisma.IngredientUpsertWithoutDosableComponentsInput
+  connect?: Prisma.IngredientWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientUpdateToOneWithWhereWithoutDosableComponentsInput, Prisma.IngredientUpdateWithoutDosableComponentsInput>, Prisma.IngredientUncheckedUpdateWithoutDosableComponentsInput>
+}
+
 export type IngredientCreateWithoutEntityInput = {
   name: string
   activeMoiety?: Prisma.IngredientCreateNestedOneWithoutSaltsInput
@@ -525,6 +546,7 @@ export type IngredientCreateWithoutEntityInput = {
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutEntityInput = {
@@ -536,6 +558,7 @@ export type IngredientUncheckedCreateWithoutEntityInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutEntityInput = {
@@ -563,6 +586,7 @@ export type IngredientUpdateWithoutEntityInput = {
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutEntityInput = {
@@ -574,6 +598,7 @@ export type IngredientUncheckedUpdateWithoutEntityInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientCreateWithoutSaltsInput = {
@@ -585,6 +610,7 @@ export type IngredientCreateWithoutSaltsInput = {
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutSaltsInput = {
@@ -597,6 +623,7 @@ export type IngredientUncheckedCreateWithoutSaltsInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutSaltsInput = {
@@ -613,6 +640,7 @@ export type IngredientCreateWithoutActiveMoietyInput = {
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutActiveMoietyInput = {
@@ -625,6 +653,7 @@ export type IngredientUncheckedCreateWithoutActiveMoietyInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutActiveMoietyInput = {
@@ -657,6 +686,7 @@ export type IngredientUpdateWithoutSaltsInput = {
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutSaltsInput = {
@@ -669,6 +699,7 @@ export type IngredientUncheckedUpdateWithoutSaltsInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUpsertWithWhereUniqueWithoutActiveMoietyInput = {
@@ -706,6 +737,7 @@ export type IngredientCreateWithoutProductIngredientsInput = {
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutProductIngredientsInput = {
@@ -718,6 +750,7 @@ export type IngredientUncheckedCreateWithoutProductIngredientsInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutProductIngredientsInput = {
@@ -734,6 +767,7 @@ export type IngredientCreateWithoutProductIngredientBasesInput = {
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutProductIngredientBasesInput = {
@@ -746,6 +780,7 @@ export type IngredientUncheckedCreateWithoutProductIngredientBasesInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutProductIngredientBasesInput = {
@@ -773,6 +808,7 @@ export type IngredientUpdateWithoutProductIngredientsInput = {
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutProductIngredientsInput = {
@@ -785,6 +821,7 @@ export type IngredientUncheckedUpdateWithoutProductIngredientsInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUpsertWithoutProductIngredientBasesInput = {
@@ -807,6 +844,7 @@ export type IngredientUpdateWithoutProductIngredientBasesInput = {
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutProductIngredientBasesInput = {
@@ -819,6 +857,7 @@ export type IngredientUncheckedUpdateWithoutProductIngredientBasesInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientCreateWithoutProductFormsInput = {
@@ -830,6 +869,7 @@ export type IngredientCreateWithoutProductFormsInput = {
   productIngredientBases?: Prisma.ProductIngredientCreateNestedManyWithoutBasisIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutProductFormsInput = {
@@ -842,6 +882,7 @@ export type IngredientUncheckedCreateWithoutProductFormsInput = {
   productIngredientBases?: Prisma.ProductIngredientUncheckedCreateNestedManyWithoutBasisIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutProductFormsInput = {
@@ -869,6 +910,7 @@ export type IngredientUpdateWithoutProductFormsInput = {
   productIngredientBases?: Prisma.ProductIngredientUpdateManyWithoutBasisIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutProductFormsInput = {
@@ -881,6 +923,7 @@ export type IngredientUncheckedUpdateWithoutProductFormsInput = {
   productIngredientBases?: Prisma.ProductIngredientUncheckedUpdateManyWithoutBasisIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientCreateWithoutProductFormStrengthsInput = {
@@ -892,6 +935,7 @@ export type IngredientCreateWithoutProductFormStrengthsInput = {
   productIngredientBases?: Prisma.ProductIngredientCreateNestedManyWithoutBasisIngredientInput
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutProductFormStrengthsInput = {
@@ -904,6 +948,7 @@ export type IngredientUncheckedCreateWithoutProductFormStrengthsInput = {
   productIngredientBases?: Prisma.ProductIngredientUncheckedCreateNestedManyWithoutBasisIngredientInput
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutProductFormStrengthsInput = {
@@ -920,6 +965,7 @@ export type IngredientCreateWithoutProductFormBasesInput = {
   productIngredientBases?: Prisma.ProductIngredientCreateNestedManyWithoutBasisIngredientInput
   productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientUncheckedCreateWithoutProductFormBasesInput = {
@@ -932,6 +978,7 @@ export type IngredientUncheckedCreateWithoutProductFormBasesInput = {
   productIngredientBases?: Prisma.ProductIngredientUncheckedCreateNestedManyWithoutBasisIngredientInput
   productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedCreateNestedManyWithoutIngredientInput
 }
 
 export type IngredientCreateOrConnectWithoutProductFormBasesInput = {
@@ -959,6 +1006,7 @@ export type IngredientUpdateWithoutProductFormStrengthsInput = {
   productIngredientBases?: Prisma.ProductIngredientUpdateManyWithoutBasisIngredientNestedInput
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutProductFormStrengthsInput = {
@@ -971,6 +1019,7 @@ export type IngredientUncheckedUpdateWithoutProductFormStrengthsInput = {
   productIngredientBases?: Prisma.ProductIngredientUncheckedUpdateManyWithoutBasisIngredientNestedInput
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUpsertWithoutProductFormBasesInput = {
@@ -993,6 +1042,7 @@ export type IngredientUpdateWithoutProductFormBasesInput = {
   productIngredientBases?: Prisma.ProductIngredientUpdateManyWithoutBasisIngredientNestedInput
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutProductFormBasesInput = {
@@ -1005,6 +1055,73 @@ export type IngredientUncheckedUpdateWithoutProductFormBasesInput = {
   productIngredientBases?: Prisma.ProductIngredientUncheckedUpdateManyWithoutBasisIngredientNestedInput
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
+}
+
+export type IngredientCreateWithoutDosableComponentsInput = {
+  name: string
+  entity: Prisma.EntityCreateNestedOneWithoutIngredientInput
+  activeMoiety?: Prisma.IngredientCreateNestedOneWithoutSaltsInput
+  salts?: Prisma.IngredientCreateNestedManyWithoutActiveMoietyInput
+  productIngredients?: Prisma.ProductIngredientCreateNestedManyWithoutIngredientInput
+  productIngredientBases?: Prisma.ProductIngredientCreateNestedManyWithoutBasisIngredientInput
+  productForms?: Prisma.ProductFormIngredientCreateNestedManyWithoutIngredientInput
+  productFormStrengths?: Prisma.ProductFormStrengthCreateNestedManyWithoutIngredientInput
+  productFormBases?: Prisma.ProductFormStrengthCreateNestedManyWithoutBasisIngredientInput
+}
+
+export type IngredientUncheckedCreateWithoutDosableComponentsInput = {
+  id: string
+  type?: $Enums.EntityType
+  name: string
+  activeMoietyId?: string | null
+  salts?: Prisma.IngredientUncheckedCreateNestedManyWithoutActiveMoietyInput
+  productIngredients?: Prisma.ProductIngredientUncheckedCreateNestedManyWithoutIngredientInput
+  productIngredientBases?: Prisma.ProductIngredientUncheckedCreateNestedManyWithoutBasisIngredientInput
+  productForms?: Prisma.ProductFormIngredientUncheckedCreateNestedManyWithoutIngredientInput
+  productFormStrengths?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutIngredientInput
+  productFormBases?: Prisma.ProductFormStrengthUncheckedCreateNestedManyWithoutBasisIngredientInput
+}
+
+export type IngredientCreateOrConnectWithoutDosableComponentsInput = {
+  where: Prisma.IngredientWhereUniqueInput
+  create: Prisma.XOR<Prisma.IngredientCreateWithoutDosableComponentsInput, Prisma.IngredientUncheckedCreateWithoutDosableComponentsInput>
+}
+
+export type IngredientUpsertWithoutDosableComponentsInput = {
+  update: Prisma.XOR<Prisma.IngredientUpdateWithoutDosableComponentsInput, Prisma.IngredientUncheckedUpdateWithoutDosableComponentsInput>
+  create: Prisma.XOR<Prisma.IngredientCreateWithoutDosableComponentsInput, Prisma.IngredientUncheckedCreateWithoutDosableComponentsInput>
+  where?: Prisma.IngredientWhereInput
+}
+
+export type IngredientUpdateToOneWithWhereWithoutDosableComponentsInput = {
+  where?: Prisma.IngredientWhereInput
+  data: Prisma.XOR<Prisma.IngredientUpdateWithoutDosableComponentsInput, Prisma.IngredientUncheckedUpdateWithoutDosableComponentsInput>
+}
+
+export type IngredientUpdateWithoutDosableComponentsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  entity?: Prisma.EntityUpdateOneRequiredWithoutIngredientNestedInput
+  activeMoiety?: Prisma.IngredientUpdateOneWithoutSaltsNestedInput
+  salts?: Prisma.IngredientUpdateManyWithoutActiveMoietyNestedInput
+  productIngredients?: Prisma.ProductIngredientUpdateManyWithoutIngredientNestedInput
+  productIngredientBases?: Prisma.ProductIngredientUpdateManyWithoutBasisIngredientNestedInput
+  productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
+  productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
+  productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+}
+
+export type IngredientUncheckedUpdateWithoutDosableComponentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  activeMoietyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  salts?: Prisma.IngredientUncheckedUpdateManyWithoutActiveMoietyNestedInput
+  productIngredients?: Prisma.ProductIngredientUncheckedUpdateManyWithoutIngredientNestedInput
+  productIngredientBases?: Prisma.ProductIngredientUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
+  productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
+  productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
 }
 
 export type IngredientCreateManyActiveMoietyInput = {
@@ -1022,6 +1139,7 @@ export type IngredientUpdateWithoutActiveMoietyInput = {
   productForms?: Prisma.ProductFormIngredientUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateWithoutActiveMoietyInput = {
@@ -1034,6 +1152,7 @@ export type IngredientUncheckedUpdateWithoutActiveMoietyInput = {
   productForms?: Prisma.ProductFormIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   productFormStrengths?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutIngredientNestedInput
   productFormBases?: Prisma.ProductFormStrengthUncheckedUpdateManyWithoutBasisIngredientNestedInput
+  dosableComponents?: Prisma.DosableComponentIngredientUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 export type IngredientUncheckedUpdateManyWithoutActiveMoietyInput = {
@@ -1054,6 +1173,7 @@ export type IngredientCountOutputType = {
   productForms: number
   productFormStrengths: number
   productFormBases: number
+  dosableComponents: number
 }
 
 export type IngredientCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1063,6 +1183,7 @@ export type IngredientCountOutputTypeSelect<ExtArgs extends runtime.Types.Extens
   productForms?: boolean | IngredientCountOutputTypeCountProductFormsArgs
   productFormStrengths?: boolean | IngredientCountOutputTypeCountProductFormStrengthsArgs
   productFormBases?: boolean | IngredientCountOutputTypeCountProductFormBasesArgs
+  dosableComponents?: boolean | IngredientCountOutputTypeCountDosableComponentsArgs
 }
 
 /**
@@ -1117,6 +1238,13 @@ export type IngredientCountOutputTypeCountProductFormBasesArgs<ExtArgs extends r
   where?: Prisma.ProductFormStrengthWhereInput
 }
 
+/**
+ * IngredientCountOutputType without action
+ */
+export type IngredientCountOutputTypeCountDosableComponentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DosableComponentIngredientWhereInput
+}
+
 
 export type IngredientSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1131,6 +1259,7 @@ export type IngredientSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   productForms?: boolean | Prisma.Ingredient$productFormsArgs<ExtArgs>
   productFormStrengths?: boolean | Prisma.Ingredient$productFormStrengthsArgs<ExtArgs>
   productFormBases?: boolean | Prisma.Ingredient$productFormBasesArgs<ExtArgs>
+  dosableComponents?: boolean | Prisma.Ingredient$dosableComponentsArgs<ExtArgs>
   _count?: boolean | Prisma.IngredientCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["ingredient"]>
 
@@ -1169,6 +1298,7 @@ export type IngredientInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   productForms?: boolean | Prisma.Ingredient$productFormsArgs<ExtArgs>
   productFormStrengths?: boolean | Prisma.Ingredient$productFormStrengthsArgs<ExtArgs>
   productFormBases?: boolean | Prisma.Ingredient$productFormBasesArgs<ExtArgs>
+  dosableComponents?: boolean | Prisma.Ingredient$dosableComponentsArgs<ExtArgs>
   _count?: boolean | Prisma.IngredientCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type IngredientIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1191,6 +1321,7 @@ export type $IngredientPayload<ExtArgs extends runtime.Types.Extensions.Internal
     productForms: Prisma.$ProductFormIngredientPayload<ExtArgs>[]
     productFormStrengths: Prisma.$ProductFormStrengthPayload<ExtArgs>[]
     productFormBases: Prisma.$ProductFormStrengthPayload<ExtArgs>[]
+    dosableComponents: Prisma.$DosableComponentIngredientPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1599,6 +1730,7 @@ export interface Prisma__IngredientClient<T, Null = never, ExtArgs extends runti
   productForms<T extends Prisma.Ingredient$productFormsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$productFormsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductFormIngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   productFormStrengths<T extends Prisma.Ingredient$productFormStrengthsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$productFormStrengthsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductFormStrengthPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   productFormBases<T extends Prisma.Ingredient$productFormBasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$productFormBasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductFormStrengthPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  dosableComponents<T extends Prisma.Ingredient$dosableComponentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$dosableComponentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DosableComponentIngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2193,6 +2325,30 @@ export type Ingredient$productFormBasesArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.ProductFormStrengthScalarFieldEnum | Prisma.ProductFormStrengthScalarFieldEnum[]
+}
+
+/**
+ * Ingredient.dosableComponents
+ */
+export type Ingredient$dosableComponentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DosableComponentIngredient
+   */
+  select?: Prisma.DosableComponentIngredientSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DosableComponentIngredient
+   */
+  omit?: Prisma.DosableComponentIngredientOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DosableComponentIngredientInclude<ExtArgs> | null
+  where?: Prisma.DosableComponentIngredientWhereInput
+  orderBy?: Prisma.DosableComponentIngredientOrderByWithRelationInput | Prisma.DosableComponentIngredientOrderByWithRelationInput[]
+  cursor?: Prisma.DosableComponentIngredientWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DosableComponentIngredientScalarFieldEnum | Prisma.DosableComponentIngredientScalarFieldEnum[]
 }
 
 /**

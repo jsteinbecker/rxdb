@@ -215,6 +215,8 @@ export type FormularyItemWhereInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageListRelationFilter
   compoundFormulas?: Prisma.CompoundFormulaListRelationFilter
   brands?: Prisma.FormularyItemBrandListRelationFilter
+  dosableComponents?: Prisma.DosableComponentItemListRelationFilter
+  requiredBySlots?: Prisma.FormulaSlotListRelationFilter
 }
 
 export type FormularyItemOrderByWithRelationInput = {
@@ -232,6 +234,8 @@ export type FormularyItemOrderByWithRelationInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageOrderByRelationAggregateInput
   compoundFormulas?: Prisma.CompoundFormulaOrderByRelationAggregateInput
   brands?: Prisma.FormularyItemBrandOrderByRelationAggregateInput
+  dosableComponents?: Prisma.DosableComponentItemOrderByRelationAggregateInput
+  requiredBySlots?: Prisma.FormulaSlotOrderByRelationAggregateInput
 }
 
 export type FormularyItemWhereUniqueInput = Prisma.AtLeast<{
@@ -253,6 +257,8 @@ export type FormularyItemWhereUniqueInput = Prisma.AtLeast<{
   formularyItemPackages?: Prisma.FormularyItemPackageListRelationFilter
   compoundFormulas?: Prisma.CompoundFormulaListRelationFilter
   brands?: Prisma.FormularyItemBrandListRelationFilter
+  dosableComponents?: Prisma.DosableComponentItemListRelationFilter
+  requiredBySlots?: Prisma.FormulaSlotListRelationFilter
 }, "id" | "id_type">
 
 export type FormularyItemOrderByWithAggregationInput = {
@@ -297,6 +303,8 @@ export type FormularyItemCreateInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemUncheckedCreateInput = {
@@ -312,6 +320,8 @@ export type FormularyItemUncheckedCreateInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemUpdateInput = {
@@ -326,6 +336,8 @@ export type FormularyItemUpdateInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemUncheckedUpdateInput = {
@@ -341,6 +353,8 @@ export type FormularyItemUncheckedUpdateInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemCreateManyInput = {
@@ -570,6 +584,36 @@ export type FormularyItemUpdateOneWithoutCompoundFormulasNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.FormularyItemUpdateToOneWithWhereWithoutCompoundFormulasInput, Prisma.FormularyItemUpdateWithoutCompoundFormulasInput>, Prisma.FormularyItemUncheckedUpdateWithoutCompoundFormulasInput>
 }
 
+export type FormularyItemCreateNestedOneWithoutRequiredBySlotsInput = {
+  create?: Prisma.XOR<Prisma.FormularyItemCreateWithoutRequiredBySlotsInput, Prisma.FormularyItemUncheckedCreateWithoutRequiredBySlotsInput>
+  connectOrCreate?: Prisma.FormularyItemCreateOrConnectWithoutRequiredBySlotsInput
+  connect?: Prisma.FormularyItemWhereUniqueInput
+}
+
+export type FormularyItemUpdateOneWithoutRequiredBySlotsNestedInput = {
+  create?: Prisma.XOR<Prisma.FormularyItemCreateWithoutRequiredBySlotsInput, Prisma.FormularyItemUncheckedCreateWithoutRequiredBySlotsInput>
+  connectOrCreate?: Prisma.FormularyItemCreateOrConnectWithoutRequiredBySlotsInput
+  upsert?: Prisma.FormularyItemUpsertWithoutRequiredBySlotsInput
+  disconnect?: Prisma.FormularyItemWhereInput | boolean
+  delete?: Prisma.FormularyItemWhereInput | boolean
+  connect?: Prisma.FormularyItemWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FormularyItemUpdateToOneWithWhereWithoutRequiredBySlotsInput, Prisma.FormularyItemUpdateWithoutRequiredBySlotsInput>, Prisma.FormularyItemUncheckedUpdateWithoutRequiredBySlotsInput>
+}
+
+export type FormularyItemCreateNestedOneWithoutDosableComponentsInput = {
+  create?: Prisma.XOR<Prisma.FormularyItemCreateWithoutDosableComponentsInput, Prisma.FormularyItemUncheckedCreateWithoutDosableComponentsInput>
+  connectOrCreate?: Prisma.FormularyItemCreateOrConnectWithoutDosableComponentsInput
+  connect?: Prisma.FormularyItemWhereUniqueInput
+}
+
+export type FormularyItemUpdateOneRequiredWithoutDosableComponentsNestedInput = {
+  create?: Prisma.XOR<Prisma.FormularyItemCreateWithoutDosableComponentsInput, Prisma.FormularyItemUncheckedCreateWithoutDosableComponentsInput>
+  connectOrCreate?: Prisma.FormularyItemCreateOrConnectWithoutDosableComponentsInput
+  upsert?: Prisma.FormularyItemUpsertWithoutDosableComponentsInput
+  connect?: Prisma.FormularyItemWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FormularyItemUpdateToOneWithWhereWithoutDosableComponentsInput, Prisma.FormularyItemUpdateWithoutDosableComponentsInput>, Prisma.FormularyItemUncheckedUpdateWithoutDosableComponentsInput>
+}
+
 export type FormularyItemCreateWithoutScopeInput = {
   kind: string
   displayName: string
@@ -581,6 +625,8 @@ export type FormularyItemCreateWithoutScopeInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemUncheckedCreateWithoutScopeInput = {
@@ -595,6 +641,8 @@ export type FormularyItemUncheckedCreateWithoutScopeInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemCreateOrConnectWithoutScopeInput = {
@@ -649,6 +697,8 @@ export type FormularyItemCreateWithoutEntityInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemUncheckedCreateWithoutEntityInput = {
@@ -662,6 +712,8 @@ export type FormularyItemUncheckedCreateWithoutEntityInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemCreateOrConnectWithoutEntityInput = {
@@ -691,6 +743,8 @@ export type FormularyItemUpdateWithoutEntityInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemUncheckedUpdateWithoutEntityInput = {
@@ -704,6 +758,8 @@ export type FormularyItemUncheckedUpdateWithoutEntityInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemCreateWithoutBrandsInput = {
@@ -717,6 +773,8 @@ export type FormularyItemCreateWithoutBrandsInput = {
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemUncheckedCreateWithoutBrandsInput = {
@@ -731,6 +789,8 @@ export type FormularyItemUncheckedCreateWithoutBrandsInput = {
   ingredientOrder?: Prisma.FormularyItemCreateingredientOrderInput | string[]
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemCreateOrConnectWithoutBrandsInput = {
@@ -760,6 +820,8 @@ export type FormularyItemUpdateWithoutBrandsInput = {
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemUncheckedUpdateWithoutBrandsInput = {
@@ -774,6 +836,8 @@ export type FormularyItemUncheckedUpdateWithoutBrandsInput = {
   ingredientOrder?: Prisma.FormularyItemUpdateingredientOrderInput | string[]
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemCreateWithoutFormularyItemPackagesInput = {
@@ -787,6 +851,8 @@ export type FormularyItemCreateWithoutFormularyItemPackagesInput = {
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemUncheckedCreateWithoutFormularyItemPackagesInput = {
@@ -801,6 +867,8 @@ export type FormularyItemUncheckedCreateWithoutFormularyItemPackagesInput = {
   ingredientOrder?: Prisma.FormularyItemCreateingredientOrderInput | string[]
   compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemCreateOrConnectWithoutFormularyItemPackagesInput = {
@@ -830,6 +898,8 @@ export type FormularyItemUpdateWithoutFormularyItemPackagesInput = {
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemUncheckedUpdateWithoutFormularyItemPackagesInput = {
@@ -844,6 +914,8 @@ export type FormularyItemUncheckedUpdateWithoutFormularyItemPackagesInput = {
   ingredientOrder?: Prisma.FormularyItemUpdateingredientOrderInput | string[]
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemCreateWithoutCompoundFormulasInput = {
@@ -857,6 +929,8 @@ export type FormularyItemCreateWithoutCompoundFormulasInput = {
   scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
   formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemUncheckedCreateWithoutCompoundFormulasInput = {
@@ -871,6 +945,8 @@ export type FormularyItemUncheckedCreateWithoutCompoundFormulasInput = {
   ingredientOrder?: Prisma.FormularyItemCreateingredientOrderInput | string[]
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
   brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput
 }
 
 export type FormularyItemCreateOrConnectWithoutCompoundFormulasInput = {
@@ -900,6 +976,8 @@ export type FormularyItemUpdateWithoutCompoundFormulasInput = {
   scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemUncheckedUpdateWithoutCompoundFormulasInput = {
@@ -914,6 +992,164 @@ export type FormularyItemUncheckedUpdateWithoutCompoundFormulasInput = {
   ingredientOrder?: Prisma.FormularyItemUpdateingredientOrderInput | string[]
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput
+}
+
+export type FormularyItemCreateWithoutRequiredBySlotsInput = {
+  kind: string
+  displayName: string
+  releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthStyle?: string | null
+  ingredientOrder?: Prisma.FormularyItemCreateingredientOrderInput | string[]
+  entity: Prisma.EntityCreateNestedOneWithoutFormularyItemInput
+  scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
+  formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
+  compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
+  brands?: Prisma.FormularyItemBrandCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemCreateNestedManyWithoutFormularyItemInput
+}
+
+export type FormularyItemUncheckedCreateWithoutRequiredBySlotsInput = {
+  id: string
+  type?: $Enums.EntityType
+  scopeId: string
+  kind: string
+  displayName: string
+  releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthStyle?: string | null
+  ingredientOrder?: Prisma.FormularyItemCreateingredientOrderInput | string[]
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
+  compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
+  brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedCreateNestedManyWithoutFormularyItemInput
+}
+
+export type FormularyItemCreateOrConnectWithoutRequiredBySlotsInput = {
+  where: Prisma.FormularyItemWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormularyItemCreateWithoutRequiredBySlotsInput, Prisma.FormularyItemUncheckedCreateWithoutRequiredBySlotsInput>
+}
+
+export type FormularyItemUpsertWithoutRequiredBySlotsInput = {
+  update: Prisma.XOR<Prisma.FormularyItemUpdateWithoutRequiredBySlotsInput, Prisma.FormularyItemUncheckedUpdateWithoutRequiredBySlotsInput>
+  create: Prisma.XOR<Prisma.FormularyItemCreateWithoutRequiredBySlotsInput, Prisma.FormularyItemUncheckedCreateWithoutRequiredBySlotsInput>
+  where?: Prisma.FormularyItemWhereInput
+}
+
+export type FormularyItemUpdateToOneWithWhereWithoutRequiredBySlotsInput = {
+  where?: Prisma.FormularyItemWhereInput
+  data: Prisma.XOR<Prisma.FormularyItemUpdateWithoutRequiredBySlotsInput, Prisma.FormularyItemUncheckedUpdateWithoutRequiredBySlotsInput>
+}
+
+export type FormularyItemUpdateWithoutRequiredBySlotsInput = {
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthStyle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredientOrder?: Prisma.FormularyItemUpdateingredientOrderInput | string[]
+  entity?: Prisma.EntityUpdateOneRequiredWithoutFormularyItemNestedInput
+  scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
+  compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
+  brands?: Prisma.FormularyItemBrandUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUpdateManyWithoutFormularyItemNestedInput
+}
+
+export type FormularyItemUncheckedUpdateWithoutRequiredBySlotsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  scopeId?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthStyle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredientOrder?: Prisma.FormularyItemUpdateingredientOrderInput | string[]
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
+  compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
+  brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedUpdateManyWithoutFormularyItemNestedInput
+}
+
+export type FormularyItemCreateWithoutDosableComponentsInput = {
+  kind: string
+  displayName: string
+  releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthStyle?: string | null
+  ingredientOrder?: Prisma.FormularyItemCreateingredientOrderInput | string[]
+  entity: Prisma.EntityCreateNestedOneWithoutFormularyItemInput
+  scope: Prisma.ScopeCreateNestedOneWithoutFormularyItemsInput
+  formularyItemPackages?: Prisma.FormularyItemPackageCreateNestedManyWithoutFormularyItemInput
+  compoundFormulas?: Prisma.CompoundFormulaCreateNestedManyWithoutFormularyItemInput
+  brands?: Prisma.FormularyItemBrandCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotCreateNestedManyWithoutFormularyItemInput
+}
+
+export type FormularyItemUncheckedCreateWithoutDosableComponentsInput = {
+  id: string
+  type?: $Enums.EntityType
+  scopeId: string
+  kind: string
+  displayName: string
+  releaseAbbreviation?: string | null
+  nameOverride?: string | null
+  strengthStyle?: string | null
+  ingredientOrder?: Prisma.FormularyItemCreateingredientOrderInput | string[]
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedCreateNestedManyWithoutFormularyItemInput
+  compoundFormulas?: Prisma.CompoundFormulaUncheckedCreateNestedManyWithoutFormularyItemInput
+  brands?: Prisma.FormularyItemBrandUncheckedCreateNestedManyWithoutFormularyItemInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedCreateNestedManyWithoutFormularyItemInput
+}
+
+export type FormularyItemCreateOrConnectWithoutDosableComponentsInput = {
+  where: Prisma.FormularyItemWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormularyItemCreateWithoutDosableComponentsInput, Prisma.FormularyItemUncheckedCreateWithoutDosableComponentsInput>
+}
+
+export type FormularyItemUpsertWithoutDosableComponentsInput = {
+  update: Prisma.XOR<Prisma.FormularyItemUpdateWithoutDosableComponentsInput, Prisma.FormularyItemUncheckedUpdateWithoutDosableComponentsInput>
+  create: Prisma.XOR<Prisma.FormularyItemCreateWithoutDosableComponentsInput, Prisma.FormularyItemUncheckedCreateWithoutDosableComponentsInput>
+  where?: Prisma.FormularyItemWhereInput
+}
+
+export type FormularyItemUpdateToOneWithWhereWithoutDosableComponentsInput = {
+  where?: Prisma.FormularyItemWhereInput
+  data: Prisma.XOR<Prisma.FormularyItemUpdateWithoutDosableComponentsInput, Prisma.FormularyItemUncheckedUpdateWithoutDosableComponentsInput>
+}
+
+export type FormularyItemUpdateWithoutDosableComponentsInput = {
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthStyle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredientOrder?: Prisma.FormularyItemUpdateingredientOrderInput | string[]
+  entity?: Prisma.EntityUpdateOneRequiredWithoutFormularyItemNestedInput
+  scope?: Prisma.ScopeUpdateOneRequiredWithoutFormularyItemsNestedInput
+  formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
+  compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
+  brands?: Prisma.FormularyItemBrandUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUpdateManyWithoutFormularyItemNestedInput
+}
+
+export type FormularyItemUncheckedUpdateWithoutDosableComponentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  scopeId?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  releaseAbbreviation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nameOverride?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  strengthStyle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ingredientOrder?: Prisma.FormularyItemUpdateingredientOrderInput | string[]
+  formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
+  compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
+  brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemCreateManyScopeInput = {
@@ -938,6 +1174,8 @@ export type FormularyItemUpdateWithoutScopeInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemUncheckedUpdateWithoutScopeInput = {
@@ -952,6 +1190,8 @@ export type FormularyItemUncheckedUpdateWithoutScopeInput = {
   formularyItemPackages?: Prisma.FormularyItemPackageUncheckedUpdateManyWithoutFormularyItemNestedInput
   compoundFormulas?: Prisma.CompoundFormulaUncheckedUpdateManyWithoutFormularyItemNestedInput
   brands?: Prisma.FormularyItemBrandUncheckedUpdateManyWithoutFormularyItemNestedInput
+  dosableComponents?: Prisma.DosableComponentItemUncheckedUpdateManyWithoutFormularyItemNestedInput
+  requiredBySlots?: Prisma.FormulaSlotUncheckedUpdateManyWithoutFormularyItemNestedInput
 }
 
 export type FormularyItemUncheckedUpdateManyWithoutScopeInput = {
@@ -974,12 +1214,16 @@ export type FormularyItemCountOutputType = {
   formularyItemPackages: number
   compoundFormulas: number
   brands: number
+  dosableComponents: number
+  requiredBySlots: number
 }
 
 export type FormularyItemCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   formularyItemPackages?: boolean | FormularyItemCountOutputTypeCountFormularyItemPackagesArgs
   compoundFormulas?: boolean | FormularyItemCountOutputTypeCountCompoundFormulasArgs
   brands?: boolean | FormularyItemCountOutputTypeCountBrandsArgs
+  dosableComponents?: boolean | FormularyItemCountOutputTypeCountDosableComponentsArgs
+  requiredBySlots?: boolean | FormularyItemCountOutputTypeCountRequiredBySlotsArgs
 }
 
 /**
@@ -1013,6 +1257,20 @@ export type FormularyItemCountOutputTypeCountBrandsArgs<ExtArgs extends runtime.
   where?: Prisma.FormularyItemBrandWhereInput
 }
 
+/**
+ * FormularyItemCountOutputType without action
+ */
+export type FormularyItemCountOutputTypeCountDosableComponentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DosableComponentItemWhereInput
+}
+
+/**
+ * FormularyItemCountOutputType without action
+ */
+export type FormularyItemCountOutputTypeCountRequiredBySlotsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FormulaSlotWhereInput
+}
+
 
 export type FormularyItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1029,6 +1287,8 @@ export type FormularyItemSelect<ExtArgs extends runtime.Types.Extensions.Interna
   formularyItemPackages?: boolean | Prisma.FormularyItem$formularyItemPackagesArgs<ExtArgs>
   compoundFormulas?: boolean | Prisma.FormularyItem$compoundFormulasArgs<ExtArgs>
   brands?: boolean | Prisma.FormularyItem$brandsArgs<ExtArgs>
+  dosableComponents?: boolean | Prisma.FormularyItem$dosableComponentsArgs<ExtArgs>
+  requiredBySlots?: boolean | Prisma.FormularyItem$requiredBySlotsArgs<ExtArgs>
   _count?: boolean | Prisma.FormularyItemCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["formularyItem"]>
 
@@ -1079,6 +1339,8 @@ export type FormularyItemInclude<ExtArgs extends runtime.Types.Extensions.Intern
   formularyItemPackages?: boolean | Prisma.FormularyItem$formularyItemPackagesArgs<ExtArgs>
   compoundFormulas?: boolean | Prisma.FormularyItem$compoundFormulasArgs<ExtArgs>
   brands?: boolean | Prisma.FormularyItem$brandsArgs<ExtArgs>
+  dosableComponents?: boolean | Prisma.FormularyItem$dosableComponentsArgs<ExtArgs>
+  requiredBySlots?: boolean | Prisma.FormularyItem$requiredBySlotsArgs<ExtArgs>
   _count?: boolean | Prisma.FormularyItemCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type FormularyItemIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1098,6 +1360,8 @@ export type $FormularyItemPayload<ExtArgs extends runtime.Types.Extensions.Inter
     formularyItemPackages: Prisma.$FormularyItemPackagePayload<ExtArgs>[]
     compoundFormulas: Prisma.$CompoundFormulaPayload<ExtArgs>[]
     brands: Prisma.$FormularyItemBrandPayload<ExtArgs>[]
+    dosableComponents: Prisma.$DosableComponentItemPayload<ExtArgs>[]
+    requiredBySlots: Prisma.$FormulaSlotPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1520,6 +1784,8 @@ export interface Prisma__FormularyItemClient<T, Null = never, ExtArgs extends ru
   formularyItemPackages<T extends Prisma.FormularyItem$formularyItemPackagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormularyItem$formularyItemPackagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormularyItemPackagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   compoundFormulas<T extends Prisma.FormularyItem$compoundFormulasArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormularyItem$compoundFormulasArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompoundFormulaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   brands<T extends Prisma.FormularyItem$brandsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormularyItem$brandsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormularyItemBrandPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  dosableComponents<T extends Prisma.FormularyItem$dosableComponentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormularyItem$dosableComponentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DosableComponentItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  requiredBySlots<T extends Prisma.FormularyItem$requiredBySlotsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormularyItem$requiredBySlotsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormulaSlotPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2028,6 +2294,54 @@ export type FormularyItem$brandsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.FormularyItemBrandScalarFieldEnum | Prisma.FormularyItemBrandScalarFieldEnum[]
+}
+
+/**
+ * FormularyItem.dosableComponents
+ */
+export type FormularyItem$dosableComponentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DosableComponentItem
+   */
+  select?: Prisma.DosableComponentItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DosableComponentItem
+   */
+  omit?: Prisma.DosableComponentItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DosableComponentItemInclude<ExtArgs> | null
+  where?: Prisma.DosableComponentItemWhereInput
+  orderBy?: Prisma.DosableComponentItemOrderByWithRelationInput | Prisma.DosableComponentItemOrderByWithRelationInput[]
+  cursor?: Prisma.DosableComponentItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DosableComponentItemScalarFieldEnum | Prisma.DosableComponentItemScalarFieldEnum[]
+}
+
+/**
+ * FormularyItem.requiredBySlots
+ */
+export type FormularyItem$requiredBySlotsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FormulaSlot
+   */
+  select?: Prisma.FormulaSlotSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FormulaSlot
+   */
+  omit?: Prisma.FormulaSlotOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FormulaSlotInclude<ExtArgs> | null
+  where?: Prisma.FormulaSlotWhereInput
+  orderBy?: Prisma.FormulaSlotOrderByWithRelationInput | Prisma.FormulaSlotOrderByWithRelationInput[]
+  cursor?: Prisma.FormulaSlotWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FormulaSlotScalarFieldEnum | Prisma.FormulaSlotScalarFieldEnum[]
 }
 
 /**

@@ -472,7 +472,12 @@ export const ModelName = {
   ProductFormRouteOverride: 'ProductFormRouteOverride',
   SourcePayload: 'SourcePayload',
   SplLabel: 'SplLabel',
-  SplLabelSection: 'SplLabelSection'
+  SplLabelSection: 'SplLabelSection',
+  DosableComponent: 'DosableComponent',
+  DosableComponentIngredient: 'DosableComponentIngredient',
+  DosableComponentItem: 'DosableComponentItem',
+  FormulaSlotPackageRestriction: 'FormulaSlotPackageRestriction',
+  FormulaSlotPackage: 'FormulaSlotPackage'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -488,7 +493,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow" | "packageCuration" | "packageReviewPreview" | "productForm" | "productFormIngredient" | "productFormStrength" | "productFormPackage" | "productFormRoute" | "productFormRoutePrep" | "productFormRouteOverride" | "sourcePayload" | "splLabel" | "splLabelSection"
+    modelProps: "scope" | "entity" | "labeler" | "ingredient" | "product" | "clinicalDrug" | "localConcept" | "localConceptIngredient" | "package" | "formularyItem" | "formularyItemBrand" | "formularyItemPackage" | "identifierNamespace" | "externalIdentifier" | "ndcSegments" | "ucumUnit" | "ucumUnitAlias" | "packageComponent" | "productIngredient" | "relationshipType" | "entityRelationship" | "source" | "ingestionRun" | "sourceRecord" | "propertyDefinition" | "factAssertion" | "resolutionPolicy" | "resolutionRun" | "propertyValue" | "entityMapping" | "reviewItem" | "derivation" | "derivationInput" | "derivationDirty" | "propertyGroupIndex" | "packageCatalogProjection" | "catalogView" | "catalogViewLevel" | "compoundingTerm" | "termMembership" | "containerSpec" | "compoundingRule" | "budRegulatoryLimit" | "stabilityStudy" | "stabilityCell" | "componentInUseLimit" | "preparationSpec" | "preparationIngredient" | "compoundFormula" | "formulaSlot" | "slotCandidate" | "componentCost" | "componentAvailability" | "optimizerProfile" | "buildPlan" | "buildPlanLine" | "buildPlanFinding" | "openComponent" | "scdDosingMeasure" | "pillImageLayout" | "pillPhoto" | "uniiSubstance" | "pharmClassRule" | "cmsCrosswalkRow" | "packageCuration" | "packageReviewPreview" | "productForm" | "productFormIngredient" | "productFormStrength" | "productFormPackage" | "productFormRoute" | "productFormRoutePrep" | "productFormRouteOverride" | "sourcePayload" | "splLabel" | "splLabelSection" | "dosableComponent" | "dosableComponentIngredient" | "dosableComponentItem" | "formulaSlotPackageRestriction" | "formulaSlotPackage"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -6116,6 +6121,376 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DosableComponent: {
+      payload: Prisma.$DosableComponentPayload<ExtArgs>
+      fields: Prisma.DosableComponentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DosableComponentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DosableComponentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>
+        }
+        findFirst: {
+          args: Prisma.DosableComponentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DosableComponentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>
+        }
+        findMany: {
+          args: Prisma.DosableComponentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>[]
+        }
+        create: {
+          args: Prisma.DosableComponentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>
+        }
+        createMany: {
+          args: Prisma.DosableComponentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DosableComponentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>[]
+        }
+        delete: {
+          args: Prisma.DosableComponentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>
+        }
+        update: {
+          args: Prisma.DosableComponentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>
+        }
+        deleteMany: {
+          args: Prisma.DosableComponentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DosableComponentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DosableComponentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>[]
+        }
+        upsert: {
+          args: Prisma.DosableComponentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentPayload>
+        }
+        aggregate: {
+          args: Prisma.DosableComponentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDosableComponent>
+        }
+        groupBy: {
+          args: Prisma.DosableComponentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DosableComponentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DosableComponentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DosableComponentCountAggregateOutputType> | number
+        }
+      }
+    }
+    DosableComponentIngredient: {
+      payload: Prisma.$DosableComponentIngredientPayload<ExtArgs>
+      fields: Prisma.DosableComponentIngredientFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DosableComponentIngredientFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DosableComponentIngredientFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>
+        }
+        findFirst: {
+          args: Prisma.DosableComponentIngredientFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DosableComponentIngredientFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>
+        }
+        findMany: {
+          args: Prisma.DosableComponentIngredientFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>[]
+        }
+        create: {
+          args: Prisma.DosableComponentIngredientCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>
+        }
+        createMany: {
+          args: Prisma.DosableComponentIngredientCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DosableComponentIngredientCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>[]
+        }
+        delete: {
+          args: Prisma.DosableComponentIngredientDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>
+        }
+        update: {
+          args: Prisma.DosableComponentIngredientUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>
+        }
+        deleteMany: {
+          args: Prisma.DosableComponentIngredientDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DosableComponentIngredientUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DosableComponentIngredientUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>[]
+        }
+        upsert: {
+          args: Prisma.DosableComponentIngredientUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentIngredientPayload>
+        }
+        aggregate: {
+          args: Prisma.DosableComponentIngredientAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDosableComponentIngredient>
+        }
+        groupBy: {
+          args: Prisma.DosableComponentIngredientGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DosableComponentIngredientGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DosableComponentIngredientCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DosableComponentIngredientCountAggregateOutputType> | number
+        }
+      }
+    }
+    DosableComponentItem: {
+      payload: Prisma.$DosableComponentItemPayload<ExtArgs>
+      fields: Prisma.DosableComponentItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DosableComponentItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DosableComponentItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>
+        }
+        findFirst: {
+          args: Prisma.DosableComponentItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DosableComponentItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>
+        }
+        findMany: {
+          args: Prisma.DosableComponentItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>[]
+        }
+        create: {
+          args: Prisma.DosableComponentItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>
+        }
+        createMany: {
+          args: Prisma.DosableComponentItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DosableComponentItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>[]
+        }
+        delete: {
+          args: Prisma.DosableComponentItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>
+        }
+        update: {
+          args: Prisma.DosableComponentItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.DosableComponentItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DosableComponentItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DosableComponentItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.DosableComponentItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DosableComponentItemPayload>
+        }
+        aggregate: {
+          args: Prisma.DosableComponentItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDosableComponentItem>
+        }
+        groupBy: {
+          args: Prisma.DosableComponentItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DosableComponentItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DosableComponentItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DosableComponentItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    FormulaSlotPackageRestriction: {
+      payload: Prisma.$FormulaSlotPackageRestrictionPayload<ExtArgs>
+      fields: Prisma.FormulaSlotPackageRestrictionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormulaSlotPackageRestrictionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormulaSlotPackageRestrictionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>
+        }
+        findFirst: {
+          args: Prisma.FormulaSlotPackageRestrictionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormulaSlotPackageRestrictionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>
+        }
+        findMany: {
+          args: Prisma.FormulaSlotPackageRestrictionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>[]
+        }
+        create: {
+          args: Prisma.FormulaSlotPackageRestrictionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>
+        }
+        createMany: {
+          args: Prisma.FormulaSlotPackageRestrictionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormulaSlotPackageRestrictionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>[]
+        }
+        delete: {
+          args: Prisma.FormulaSlotPackageRestrictionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>
+        }
+        update: {
+          args: Prisma.FormulaSlotPackageRestrictionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormulaSlotPackageRestrictionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormulaSlotPackageRestrictionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormulaSlotPackageRestrictionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormulaSlotPackageRestrictionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackageRestrictionPayload>
+        }
+        aggregate: {
+          args: Prisma.FormulaSlotPackageRestrictionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormulaSlotPackageRestriction>
+        }
+        groupBy: {
+          args: Prisma.FormulaSlotPackageRestrictionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormulaSlotPackageRestrictionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormulaSlotPackageRestrictionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormulaSlotPackageRestrictionCountAggregateOutputType> | number
+        }
+      }
+    }
+    FormulaSlotPackage: {
+      payload: Prisma.$FormulaSlotPackagePayload<ExtArgs>
+      fields: Prisma.FormulaSlotPackageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormulaSlotPackageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormulaSlotPackageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>
+        }
+        findFirst: {
+          args: Prisma.FormulaSlotPackageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormulaSlotPackageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>
+        }
+        findMany: {
+          args: Prisma.FormulaSlotPackageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>[]
+        }
+        create: {
+          args: Prisma.FormulaSlotPackageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>
+        }
+        createMany: {
+          args: Prisma.FormulaSlotPackageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormulaSlotPackageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>[]
+        }
+        delete: {
+          args: Prisma.FormulaSlotPackageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>
+        }
+        update: {
+          args: Prisma.FormulaSlotPackageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>
+        }
+        deleteMany: {
+          args: Prisma.FormulaSlotPackageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormulaSlotPackageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormulaSlotPackageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>[]
+        }
+        upsert: {
+          args: Prisma.FormulaSlotPackageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormulaSlotPackagePayload>
+        }
+        aggregate: {
+          args: Prisma.FormulaSlotPackageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormulaSlotPackage>
+        }
+        groupBy: {
+          args: Prisma.FormulaSlotPackageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormulaSlotPackageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormulaSlotPackageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormulaSlotPackageCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -6933,7 +7308,9 @@ export const FormulaSlotScalarFieldEnum = {
   tolerancePct: 'tolerancePct',
   allowMultiComponent: 'allowMultiComponent',
   ordinal: 'ordinal',
-  vialPrep: 'vialPrep'
+  vialPrep: 'vialPrep',
+  dosableComponentId: 'dosableComponentId',
+  formularyItemId: 'formularyItemId'
 } as const
 
 export type FormulaSlotScalarFieldEnum = (typeof FormulaSlotScalarFieldEnum)[keyof typeof FormulaSlotScalarFieldEnum]
@@ -7318,6 +7695,63 @@ export const SplLabelSectionScalarFieldEnum = {
 } as const
 
 export type SplLabelSectionScalarFieldEnum = (typeof SplLabelSectionScalarFieldEnum)[keyof typeof SplLabelSectionScalarFieldEnum]
+
+
+export const DosableComponentScalarFieldEnum = {
+  id: 'id',
+  scopeId: 'scopeId',
+  ingredientKey: 'ingredientKey',
+  route: 'route',
+  displayName: 'displayName',
+  nameOverride: 'nameOverride',
+  source: 'source',
+  retiredAt: 'retiredAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DosableComponentScalarFieldEnum = (typeof DosableComponentScalarFieldEnum)[keyof typeof DosableComponentScalarFieldEnum]
+
+
+export const DosableComponentIngredientScalarFieldEnum = {
+  dosableComponentId: 'dosableComponentId',
+  ingredientId: 'ingredientId',
+  ordinal: 'ordinal'
+} as const
+
+export type DosableComponentIngredientScalarFieldEnum = (typeof DosableComponentIngredientScalarFieldEnum)[keyof typeof DosableComponentIngredientScalarFieldEnum]
+
+
+export const DosableComponentItemScalarFieldEnum = {
+  dosableComponentId: 'dosableComponentId',
+  formularyItemId: 'formularyItemId',
+  source: 'source',
+  retiredAt: 'retiredAt'
+} as const
+
+export type DosableComponentItemScalarFieldEnum = (typeof DosableComponentItemScalarFieldEnum)[keyof typeof DosableComponentItemScalarFieldEnum]
+
+
+export const FormulaSlotPackageRestrictionScalarFieldEnum = {
+  slotId: 'slotId',
+  mode: 'mode',
+  reason: 'reason',
+  rule: 'rule',
+  evaluatedAt: 'evaluatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormulaSlotPackageRestrictionScalarFieldEnum = (typeof FormulaSlotPackageRestrictionScalarFieldEnum)[keyof typeof FormulaSlotPackageRestrictionScalarFieldEnum]
+
+
+export const FormulaSlotPackageScalarFieldEnum = {
+  slotId: 'slotId',
+  packageId: 'packageId',
+  source: 'source'
+} as const
+
+export type FormulaSlotPackageScalarFieldEnum = (typeof FormulaSlotPackageScalarFieldEnum)[keyof typeof FormulaSlotPackageScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -7901,6 +8335,11 @@ export type GlobalOmitConfig = {
   sourcePayload?: Prisma.SourcePayloadOmit
   splLabel?: Prisma.SplLabelOmit
   splLabelSection?: Prisma.SplLabelSectionOmit
+  dosableComponent?: Prisma.DosableComponentOmit
+  dosableComponentIngredient?: Prisma.DosableComponentIngredientOmit
+  dosableComponentItem?: Prisma.DosableComponentItemOmit
+  formulaSlotPackageRestriction?: Prisma.FormulaSlotPackageRestrictionOmit
+  formulaSlotPackage?: Prisma.FormulaSlotPackageOmit
 }
 
 /* Types for Logging */

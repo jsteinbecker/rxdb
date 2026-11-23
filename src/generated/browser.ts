@@ -411,3 +411,34 @@ export type SplLabel = Prisma.SplLabelModel
  * 
  */
 export type SplLabelSection = Prisma.SplLabelSectionModel
+/**
+ * Model DosableComponent
+ * A drug (ingredient set, salts collapsed) given by one route, in a formulary scope:
+ * <Ampicillin, IV>. Parents every formulary item whose packages carry that
+ * ingredient set and route. Compound constituents are chosen at this level.
+ */
+export type DosableComponent = Prisma.DosableComponentModel
+/**
+ * Model DosableComponentIngredient
+ * 
+ */
+export type DosableComponentIngredient = Prisma.DosableComponentIngredientModel
+/**
+ * Model DosableComponentItem
+ * A formulary item under a dosable component. An item given by two routes sits under two.
+ */
+export type DosableComponentItem = Prisma.DosableComponentItemModel
+/**
+ * Model FormulaSlotPackageRestriction
+ * A constituent held to an NDC subset of its required formulary item (only non-DEHP
+ * D5W bags for amiodarone). `manual`: packages are hand-picked. `rule` (later): `rule`
+ * is evaluated and its matches are written to `packages` with source `rule`, so
+ * readers only ever read `packages`.
+ */
+export type FormulaSlotPackageRestriction = Prisma.FormulaSlotPackageRestrictionModel
+/**
+ * Model FormulaSlotPackage
+ * An allowed package (NDC) under a slot's restriction. Checked by a trigger to be one
+ * of the slot's required formulary item's packages.
+ */
+export type FormulaSlotPackage = Prisma.FormulaSlotPackageModel
