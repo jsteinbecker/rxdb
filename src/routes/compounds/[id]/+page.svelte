@@ -82,14 +82,37 @@
   let vialsForm: HTMLFormElement | undefined = $state();
   let vialsSlot: HTMLInputElement | undefined = $state();
   let vialsPicks: HTMLInputElement | undefined = $state();
-  function choose(slotId: string, index: number) {
-    const proposal = proposals.get(slotId)?.[index];
-    if (locked || !proposal || !vialsForm || !vialsSlot || !vialsPicks) return;
-    chosen = { ...chosen, [slotId]: index };
+  let vialsSaving = $state(false);
+  /** Defaults already sent, so a refused one is not resent in a loop. */
+  const sentDefaults = new Set<string>();
+  function sendVials(slotId: string, proposal: Combination) {
+    if (!vialsForm || !vialsSlot || !vialsPicks) return;
     vialsSlot.value = slotId;
     vialsPicks.value = JSON.stringify(proposal.picks.map(({ packageId, count }) => ({ packageId, count })));
+    vialsSaving = true;
     vialsForm.requestSubmit();
   }
+  function choose(slotId: string, index: number) {
+    const proposal = proposals.get(slotId)?.[index];
+    if (locked || !proposal || vialsSaving) return;
+    chosen = { ...chosen, [slotId]: index };
+    sendVials(slotId, proposal);
+  }
+  // The combination shown is the one stored: when a line's saved pick is
+  // missing or no longer fits its dose, store the one in use, one line at a
+  // time and never while the lines themselves are still saving.
+  $effect(() => {
+    if (locked || vialsSaving || saving) return;
+    for (const line of compound.lines) {
+      const pick = pickedFor(line.slotId);
+      if (!pick || sameCombination(pick, line.vialCounts ?? [])) continue;
+      const key = `${line.slotId}:${JSON.stringify(pick.picks.map(({ packageId, count }) => [packageId, count]))}`;
+      if (sentDefaults.has(key)) continue;
+      sentDefaults.add(key);
+      sendVials(line.slotId, pick);
+      return;
+    }
+  });
   /** Everything to pull from stock, line by line. */
   const pullList = $derived(
     lines.flatMap((line) => {
@@ -111,7 +134,7 @@
   // Saves go one at a time: a commit made while one is in flight is sent, as
   // the latest snapshot, when that one lands — so the server always ends on the
   // newest state, whatever order the requests would have arrived in.
-  let saving = false;
+  let saving = $state(false);
   let dirty = false;
 
   function save() {
@@ -135,12 +158,29 @@
     saveForm.requestSubmit();
   }
 
+  const serial = (value: Rational | null) => (value ? serializeRational(value) : '');
+  /** Per line, the field the builder last solved; null when every value was typed. */
+  let calculated = $state<Record<string, Field | null>>({});
+  /** Before any edit this visit, a line with all three values reads as conc and dose typed, volume worked out. */
+  const calculatedFor = (line: Line): Field | null =>
+    line.slotId in calculated
+      ? calculated[line.slotId]
+      : line.role === 'active' && line.conc && line.dose && line.volume
+        ? 'volume'
+        : null;
   /** Whether the edit was taken; false when it cannot be held exactly, so the box restores. */
   function commit(slotId: string, field: Field, value: Rational | null): boolean {
     const at = lines.findIndex((line) => line.slotId === slotId);
     if (at < 0 || locked) return false;
-    const next = applyEdit(lines[at], field, value);
+    const prev = lines[at];
+    const next = applyEdit(prev, field, value);
     if (!next) return false;
+    // The field just typed is the user's; the one that moved with it is calculated.
+    const solved = (['conc', 'dose', 'volume'] as const).find(
+      (key) => key !== field && serial(prev[key]) !== serial(next[key])
+    );
+    if (solved) calculated = { ...calculated, [slotId]: solved };
+    else if (calculatedFor(prev) === field) calculated = { ...calculated, [slotId]: null };
     lines = lines.map((line, index) => (index === at ? next : line));
     save();
     return true;
@@ -282,7 +322,10 @@
   >
     <input bind:this={payloadInput} type="hidden" name="payload" />
   </form>
-  <form bind:this={vialsForm} method="POST" action="?/setVials" use:enhance={() => async ({ update }) => update({ reset: false })} hidden>
+  <form bind:this={vialsForm} method="POST" action="?/setVials" use:enhance={() => async ({ update }) => {
+      await update({ reset: false });
+      vialsSaving = false;
+    }} hidden>
     <input bind:this={vialsSlot} type="hidden" name="slotId" />
     <input bind:this={vialsPicks} type="hidden" name="picks" />
   </form>
@@ -319,6 +362,7 @@
             vialCount={new Set((vialsBySlot.get(line.slotId) ?? []).map((vial) => `${vial.amount.n}/${vial.amount.d}`)).size}
             proposals={proposals.get(line.slotId) ?? []}
             chosen={chosenIndex(line.slotId)}
+            calculated={calculatedFor(line)}
             onchoose={(index) => choose(line.slotId, index)}
           />
         {/each}
