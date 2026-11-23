@@ -23,6 +23,7 @@ drawer the toolbar opens (`open`). The current page is marked with `aria-current
 		classes: 'M4 7l8-4 8 4-8 4zM4 12l8 4 8-4M4 17l8 4 8-4',
 		concepts: 'M12 3v18M3 12h18M6 6l12 12M18 6 6 18',
 		quarantine: 'M12 3 2 20h20L12 3zM12 10v4M12 17h.01',
+		dosables: 'M10.5 20.5a5 5 0 0 1-7-7l6-6a5 5 0 0 1 7 7zM7 10l7 7',
 		compounds: 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3',
 		settings:
 			'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM19 12l2-1-2-4-2 1-2-1-1-3h-4l-1 3-2 1-2-1-2 4 2 1v0l-2 1 2 4 2-1 2 1 1 3h4l1-3 2-1 2 1 2-4z',
@@ -39,6 +40,7 @@ drawer the toolbar opens (`open`). The current page is marked with `aria-current
 				{ href: resolve('/formulary/pharm-classes'), label: 'Class rules', icon: ICONS.classes },
 				{ href: resolve('/formulary/local-concepts'), label: 'Local concepts', icon: ICONS.concepts },
 				{ href: resolve('/formulary/quarantine'), label: 'Quarantine', icon: ICONS.quarantine },
+				{ href: resolve('/formulary/dosables'), label: 'Dosable components', icon: ICONS.dosables },
 				{ href: resolve('/compounds'), label: 'Compounds', icon: ICONS.compounds }
 			]
 		},

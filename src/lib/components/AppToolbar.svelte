@@ -16,6 +16,7 @@ usable while a navigation dims the page.
 		items: 'Loaded items',
 		'pharm-classes': 'Class rules',
 		'local-concepts': 'Local concepts',
+		dosables: 'Dosable components',
 		compounds: 'Compounds',
 		settings: 'Settings',
 		ndc: 'NDC',
