@@ -310,25 +310,45 @@ quantity fields, and a row menu to remove it. Diluent lines show only a volume.
             }
       }
 
-      /* The unit sits inside the input, at its right edge. */
+      /* The box holds the value and its unit side by side: the unit takes its
+         own width, so the typeset value (drawn over the input) never runs
+         under it. */
       .affix {
-            position: relative;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             width: 100%;
+            height: 2.2rem;
+            border: 1px solid #d5dbe4;
+            border-radius: 8px;
+            background: #fff;
+      }
+
+      .affix:focus-within {
+            border-color: #4b45a8;
+            outline: 2px solid rgb(75 69 168 / 0.15);
       }
 
       .affix :global(.entry) {
-            width: 100%;
+            flex: 1;
+            height: 100%;
       }
 
-      .affix :global(input) {
-            padding-right: 3.6rem !important;
+      .field .affix :global(input),
+      .field .affix :global(input:focus) {
+            border: none;
+            border-radius: 8px 0 0 8px;
+            background: transparent;
+            outline: none;
+            padding: 0 0.35rem 0 0.5rem;
+      }
+
+      .affix :global(.overlay) {
+            padding: 0 0.35rem 0 0.5rem;
       }
 
       .affix .unit {
-            position: absolute;
-            right: 0.55rem;
+            flex: none;
+            padding-right: 0.55rem;
             pointer-events: none;
             color: #7a8494;
             font-size: 0.78rem;

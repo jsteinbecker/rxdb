@@ -277,7 +277,8 @@ export async function addComponent(
 	await draftIn(db, scopeId, id);
 	const conc = input.role === 'active' ? input.conc : null;
 	// Checked before anything is written, so a choice that does not fit adds no line.
-	await resolveConstraint(db, scopeId, input);
+	const packageIds = await resolveConstraint(db, scopeId, input);
+	const volume = input.role === 'diluent' ? await definedVolume(db, packageIds) : null;
 	await db.$transaction(async (tx) => {
 		const last = await tx.formulaSlot.aggregate({
 			where: { formulaId: id },
@@ -289,7 +290,12 @@ export async function addComponent(
 				role: input.role,
 				ordinal: (last._max.ordinal ?? 0) + 1,
 				targetAmountUom: input.doseUnit,
-				volumeUom: VOLUME_UNIT
+				volumeUom: VOLUME_UNIT,
+				...(volume && {
+					volumeWhole: volume.whole,
+					volumeNum: volume.num,
+					volumeDen: volume.den
+				})
 			},
 			select: { id: true }
 		});
@@ -301,6 +307,37 @@ export async function addComponent(
 				data: { sourceConcMag: decimalOf(conc), sourceConcUom: `${input.doseUnit}/${VOLUME_UNIT}` }
 			});
 	});
+}
+
+/**
+ * The one volume every allowed package holds (a 100 mL bag of NS), in mL, from its
+ * container's labeled fill or else its nominal volume. Null when any package has no
+ * volume or they disagree, so the line is left for the user to fill.
+ */
+async function definedVolume(db: PrismaClient, packageIds: string[]) {
+	const specs = await db.containerSpec.findMany({
+		where: { packageId: { in: packageIds } },
+		select: {
+			labeledFillMag: true,
+			labeledFillUom: true,
+			nominalVolumeMag: true,
+			nominalVolumeUom: true
+		}
+	});
+	if (specs.length !== packageIds.length) return null;
+	const volumes = new Set(
+		specs.map((spec) =>
+			spec.labeledFillMag != null && spec.labeledFillUom === VOLUME_UNIT
+				? spec.labeledFillMag.toString()
+				: spec.nominalVolumeMag != null && spec.nominalVolumeUom === VOLUME_UNIT
+					? spec.nominalVolumeMag.toString()
+					: null
+		)
+	);
+	if (volumes.size !== 1) return null;
+	const [only] = volumes;
+	const value = only == null ? NaN : Number(only);
+	return Number.isFinite(value) && value > 0 ? toMixed(fromNumber(value)) : null;
 }
 
 /**
