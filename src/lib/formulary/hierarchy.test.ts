@@ -683,3 +683,10 @@ test('siblings sort by the label they show, with their items\' ingredient order 
 		['Acetaminophen / Codeine', 'Famotidine / Ibuprofen', 'Acetaminophen / Hydrocodone']
 	);
 });
+
+test('normalizeStrength groups SPL bulk-package strengths with their clean spelling', () => {
+	assert.equal(normalizeStrength('5g/1VIAL,PHARMACYBULKPACKAGE'), '5g');
+	assert.equal(normalizeStrength('10 g/1 VIAL, PHARMACY BULK PACKAGE'), '10g');
+	assert.equal(normalizeStrength('100 mg/ML'), '100mg/mL');
+	assert.equal(normalizeStrength('500 MG/10 ML'), '500mg/10mL');
+});

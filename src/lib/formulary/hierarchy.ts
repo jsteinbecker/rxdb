@@ -9,7 +9,7 @@
  *
  * @module
  */
-import { parseStrengthParts } from '../medication/strength';
+import { parseStrengthParts, unitLabel } from '../medication/strength';
 import {
 	formContext,
 	styledIngredientStrength,
@@ -511,7 +511,7 @@ function parseStrength(strength: string) {
 				: '',
 		perLabel:
 			parsed.perUnit || Number(parsed.per) !== 1
-				? `/${Number(parsed.per) === 1 ? '' : Number(parsed.per)}${parsed.perUnit}`
+				? `/${Number(parsed.per) === 1 ? '' : Number(parsed.per)}${unitLabel(parsed.perUnit)}`
 				: ''
 	};
 }
