@@ -37,16 +37,3 @@ test('amounts per unit are left alone', () => {
 	assert.equal(grossStrength(null, { size: null }), null);
 	assert.equal(grossIngredients([{ name: 'x', strength: '500 mg' }], { size: null }).concentrationOnly, false);
 });
-
-test('an unresolved dry-fill powder takes the RxNorm concept’s per-vial mass', () => {
-	const bulk = {
-		size: vial(100),
-		isDryFill: true,
-		resolvedVolume: null,
-		conceptStrengths: [{ name: 'vancomycin', value: 10000, unit: 'MG', perUnit: null }]
-	};
-	assert.equal(normalizeStrength(grossStrength('100 mg/mL', bulk, 'VANCOMYCIN')!.strength), '10g');
-	// A concept stated as a concentration settles nothing.
-	const conc = { ...bulk, conceptStrengths: [{ name: 'vancomycin', value: 100, unit: 'MG', perUnit: 'ML' }] };
-	assert.equal(grossStrength('100 mg/mL', conc, 'VANCOMYCIN')!.basis, 'unresolved');
-});

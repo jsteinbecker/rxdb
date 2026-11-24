@@ -13,7 +13,6 @@ import { PACKAGE_PSEUDO_SCD } from '../catalog/pseudo-scd-store';
 import { fillFromConcept } from '../../medication/concept-fill';
 import { scopeStrengthStyles } from './strength-styles';
 import { grossIngredients } from '../../medication/gross-strength';
-import { scdStrengths } from '../../labels/spl-strength-checks';
 
 /**
  * Every package currently linked into a formulary scope, flattened with the
@@ -158,8 +157,7 @@ export async function formularyRows(
 		const gross = grossIngredients(ingredients, {
 			size: row.size,
 			isDryFill: item?.isDryFill,
-			resolvedVolume: item?.resolvedVolume,
-			conceptStrengths: scdStrengths(item?.details?.rxnav?.conceptName)
+			resolvedVolume: item?.resolvedVolume
 		});
 		// `ingredients` keeps the source concentration for dosing math (compounds).
 		return { ...row, ingredients, contents: gross.ingredients, concentrationOnly: gross.concentrationOnly };
