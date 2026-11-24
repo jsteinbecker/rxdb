@@ -12,6 +12,7 @@ import { packageView } from '../../catalog/package-view';
 import { PACKAGE_PSEUDO_SCD } from '../catalog/pseudo-scd-store';
 import { fillFromConcept } from '../../medication/concept-fill';
 import { scopeStrengthStyles } from './strength-styles';
+import { grossIngredients } from '../../medication/gross-strength';
 
 /**
  * Every package currently linked into a formulary scope, flattened with the
@@ -148,7 +149,19 @@ export async function formularyRows(
 				}
 			];
 		})
-	).map((row) => ({ ...row, ingredients: resolveRacemates(row.ingredients) }));
+	).map((row) => {
+		// A package row states what the container holds: a concentration is
+		// multiplied out by the package's volume, or flagged when none is known.
+		const item = snapshots.get(row.ndc)?.item;
+		const ingredients = resolveRacemates(row.ingredients);
+		const gross = grossIngredients(ingredients, {
+			size: row.size,
+			isDryFill: item?.isDryFill,
+			resolvedVolume: item?.resolvedVolume
+		});
+		// `ingredients` keeps the source concentration for dosing math (compounds).
+		return { ...row, ingredients, contents: gross.ingredients, concentrationOnly: gross.concentrationOnly };
+	});
 }
 
 /** The NDCs `formularyRows` would list, without loading anything else about them. */
