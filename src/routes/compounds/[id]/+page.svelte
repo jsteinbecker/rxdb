@@ -546,6 +546,10 @@
   .affix :global(input) {
     padding-right: 2.6rem !important;
   }
+  /* The typeset value is drawn over the input; keep it clear of the unit too. */
+  .affix :global(.overlay) {
+    padding-right: 2.6rem;
+  }
   .affix .unit {
     position: absolute;
     right: 0.6rem;
