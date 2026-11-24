@@ -24,8 +24,62 @@ const STRENGTH = new RegExp(
 	'i'
 );
 
+/**
+ * Dosage units and containers SPL listings use as a strength's denominator:
+ * `5 g/1 VIAL` is 5 g in each vial, the same as `5 g/1` or `5 g`.
+ */
+const COUNT_UNITS = new Set([
+	'1',
+	'ampule',
+	'ampul',
+	'bag',
+	'bottle',
+	'capsule',
+	'cartridge',
+	'container',
+	'each',
+	'ea',
+	'kit',
+	'lozenge',
+	'package',
+	'packet',
+	'patch',
+	'pouch',
+	'suppository',
+	'syringe',
+	'tablet',
+	'troche',
+	'tube',
+	'unit',
+	'vial',
+	'wafer'
+]);
+
+/**
+ * SPL appends a container's qualifier to the denominator (`5 g/1 VIAL, PHARMACY
+ * BULK PACKAGE`, `1 g/1 VIAL, SINGLE-DOSE`), sometimes with its spaces lost
+ * (`5g/1VIAL,PHARMACYBULKPACKAGE`). The packaging is already its own fact, so the
+ * strength keeps only what precedes the comma.
+ */
+const withoutQualifier = (text: string) => text.replace(/\s*,\s*[a-z][a-z\s-]*$/i, '');
+
 /** Reject ambiguous syntax and non-positive values, rather than parsing a valid prefix. */
 export function parseStrengthParts(text: string | null | undefined): StrengthParts | null {
+	const parts = parseStrict(text == null ? text : withoutQualifier(text));
+	if (!parts || !COUNT_UNITS.has(parts.perUnit.toLowerCase()) || Number(parts.per) !== 1)
+		return parts;
+	return { ...parts, perUnit: '' };
+}
+
+/** The canonical spelling of a unit: `ML` → `mL`, `MG` → `mg`; others lowercase. */
+export function unitLabel(unit: string): string {
+	const lower = unit.toLowerCase();
+	if (mlPer(lower) !== null) return lower === 'l' ? 'L' : lower.replace(/l$/, 'L');
+	if (/^\[.*\]$|^\{.*\}$/.test(unit)) return unit;
+	return lower;
+}
+
+function parseStrict(text: string | null | undefined): StrengthParts | null {
 	const match = text?.match(STRENGTH);
 	if (!match) return null;
 	const value = match[1].replaceAll(',', '');
