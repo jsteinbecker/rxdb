@@ -35,6 +35,28 @@ into their moiety unless listed separately.
   const names = $derived(new Map(scenarios.columns.map((entry) => [entry.key, entry.name])));
   const keeps = (has: string[]) => !has.some((key) => avoid.includes(key));
 
+
+  /**
+   * Group labels sit above the table, stacked one per line with the first
+   * column's on top, each joined to its column by a leader line. Columns stay
+   * narrow, and the header is only as tall as the number of groups. Units are rem.
+   */
+  const COL = 2.25;
+  const LINE = 1.15;
+  const BEND = 0.45;
+  const header = $derived.by(() => {
+    const n = scenarios.profiles.length;
+    const height = n * LINE + 0.7;
+    const labelX = n * COL + 0.6;
+    const leaders = scenarios.profiles.map((_, i) => {
+      const x = (i + 0.5) * COL;
+      const y = (i + 0.5) * LINE + 0.1;
+      return { x, y, path: `M${x} ${height} V${y + BEND} L${x + BEND} ${y} H${labelX - 0.25}` };
+    });
+    return { height, labelX, leaders };
+  });
+  /** The group whose NDCs are listed under the table. */
+  let openGroup = $state<number | null>(null);
 </script>
 
 <!-- A single combination leaves nothing to choose between, so there is no table to show. -->
@@ -75,17 +97,32 @@ into their moiety unless listed separately.
         <thead>
           <tr>
             <th class="corner">Ingredient</th>
-            {#each scenarios.profiles as profile, p (profile.has.join('|'))}
-              <th class="profile" class:dropped={!keeps(profile.has)}>
-                <details>
-                  <summary title={groupNames[p]}><span class="group">{groupNames[p]}</span><span class="count">{profile.ndcs.length}</span></summary>
-                  <span class="mono small">
-                    {#each profile.ndcs as ndc, i (ndc)}{#if i}{', '}{/if}<a href="/formulary/ndc/{ndc}">{formatNdc(ndc)}</a
-                      >{/each}
-                  </span>
-                </details>
-              </th>
-            {/each}
+            <th class="groups" colspan={scenarios.profiles.length} style:height="{header.height}rem">
+              <svg
+                class="leaders"
+                aria-hidden="true"
+                width="{header.labelX}rem"
+                height="{header.height}rem"
+                viewBox="0 0 {header.labelX} {header.height}"
+              >
+                {#each header.leaders as leader, p (p)}
+                  <path d={leader.path} class:dropped={!keeps(scenarios.profiles[p].has)} />
+                {/each}
+              </svg>
+              {#each scenarios.profiles as profile, p (profile.has.join('|'))}
+                <button
+                  type="button"
+                  class="group-label"
+                  class:dropped={!keeps(profile.has)}
+                  aria-expanded={openGroup === p}
+                  style:left="{header.labelX}rem"
+                  style:top="{header.leaders[p].y - LINE / 2}rem"
+                  style:height="{LINE}rem"
+                  title="{groupNames[p]} · {plural(profile.ndcs.length, 'NDC')} (click to list)"
+                  onclick={() => (openGroup = openGroup === p ? null : p)}
+                ><span class="group">{groupNames[p]}</span><span class="count">{profile.ndcs.length}</span></button>
+              {/each}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -118,21 +155,18 @@ into their moiety unless listed separately.
             </tr>
           {/each}
         </tbody>
-        <tfoot>
-          <tr>
-            <th class="corner avoids-label" scope="row">Avoids</th>
-            {#each scenarios.profiles as profile (profile.has.join('|'))}
-              <td class="avoids" class:dropped={!keeps(profile.has)} title={profile.avoids.map((key) => names.get(key)).join(', ')}>
-                {#if profile.avoids.length}
-                  <strong>{profile.avoids.length}</strong>
-                  <span class="small">{profile.avoids.map((key) => names.get(key)).join(', ')}</span>
-                {:else}<span class="muted">nothing</span>{/if}
-              </td>
-            {/each}
-          </tr>
-        </tfoot>
       </table>
     </div>
+
+    {#if openGroup !== null && scenarios.profiles[openGroup]}
+      <p class="ndc-list">
+        <strong>{groupNames[openGroup]}:</strong>
+        <span class="mono small">
+          {#each scenarios.profiles[openGroup].ndcs as ndc, i (ndc)}{#if i}{', '}{/if}<a href="/formulary/ndc/{ndc}">{formatNdc(ndc)}</a
+            >{/each}
+        </span>
+      </p>
+    {/if}
 
     {#if avoid.length}
       <p class="result" class:empty={!remaining.length}>
@@ -199,28 +233,65 @@ into their moiety unless listed separately.
     font-weight: 500;
   }
 
-  /* One column per profile; long group names ellipsize (full name in the tooltip). */
-  .profile {
-    width: 9rem;
-    min-width: 9rem;
-    max-width: 9rem;
-    overflow: hidden;
-    vertical-align: bottom;
-    text-align: left;
-    font-size: 0.78rem;
-    font-weight: 400;
+  .groups {
+    position: relative;
+    padding: 0;
+    border-bottom: none;
   }
 
-  .profile,
-  .cell,
-  td.avoids {
+  .leaders {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: visible;
+  }
+
+  .leaders path {
+    fill: none;
+    stroke: #9aa4b2;
+    stroke-width: 0.06;
+  }
+
+  .group-label {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    max-width: 18rem;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-size: 0.78rem;
+    color: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .group-label:hover .group,
+  .group-label[aria-expanded='true'] .group {
+    text-decoration: underline;
+  }
+
+  /* Less the 1px divider, so columns land exactly COL apart under their leaders. */
+  .cell {
+    width: calc(2.25rem - 1px);
+    min-width: calc(2.25rem - 1px);
+    max-width: calc(2.25rem - 1px);
+    box-sizing: content-box;
+    padding: 0.3rem 0;
     border-left: 1px solid var(--rule);
   }
 
-  .profile:nth-child(even),
-  .cell:nth-child(even),
-  td.avoids:nth-child(even) {
+  .cell:last-child {
+    border-right: 1px solid var(--rule);
+  }
+
+  .cell:nth-child(even) {
     background: var(--stripe);
+  }
+
+  .ndc-list {
+    margin-top: 0.5rem;
   }
 
   /* The ingredient column stays put while the profiles scroll under it; the
@@ -298,34 +369,6 @@ into their moiety unless listed separately.
     color: #a12622;
   }
 
-  .profile summary {
-    display: flex;
-    align-items: baseline;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  /* display: flex drops the disclosure marker; put it back. */
-  .profile summary::before {
-    content: '▸';
-    flex: none;
-    margin-right: 0.3rem;
-    color: #8792a2;
-    font-size: 0.7em;
-  }
-
-  .profile details[open] summary::before {
-    content: '▾';
-  }
-
-  .profile summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .profile details[open] summary {
-    margin-bottom: 0.2rem;
-  }
-
   .group {
     min-width: 0;
     overflow: hidden;
@@ -359,20 +402,7 @@ into their moiety unless listed separately.
     color: #a12622;
   }
 
-  .profile a {
-    white-space: nowrap;
-  }
-
-  td.avoids {
-    max-width: 9rem;
-    vertical-align: top;
-    color: #2c6b3f;
-  }
-
-  td.avoids .small {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .ndc-list a {
     white-space: nowrap;
   }
 
