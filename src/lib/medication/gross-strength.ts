@@ -10,7 +10,8 @@
  * - Dry-fill powders: the volume the reconstituted vial yields, as the label
  *   settled it (`resolvedVolume.finalVolumeMl`); the packaging volume of a powder
  *   is often diluent added or bottle capacity (see `labels/dry-fill-volume.ts`),
- *   so it is never used. A powder reads as its mass alone: `10 g`.
+ *   so it is never used. A powder reads as its mass alone: `10 g`. Without a
+ *   resolved volume, the RxNorm concept's per-vial mass is used when it names one.
  *
  * When no trustworthy volume exists the concentration is kept and the result
  * is marked `unresolved`, so callers can flag it rather than show it as if it
@@ -25,6 +26,12 @@ export type GrossStrengthSource = {
 	size: { kind: 'volume' | 'mass' | 'count'; value: number; unit: string | null } | null;
 	isDryFill?: boolean | null;
 	resolvedVolume?: { finalVolumeMl: number | null } | null;
+	/**
+	 * The RxNorm concept's own strengths (`vancomycin 10000 MG Injection (Bulk)`).
+	 * A dry-fill concept names the vial's mass, which settles a powder whose
+	 * label never resolved its reconstituted volume.
+	 */
+	conceptStrengths?: { name: string; value: number; unit: string; perUnit: string | null }[];
 };
 
 export type GrossStrength = {
@@ -45,13 +52,32 @@ export function packageVolumeMl(source: GrossStrengthSource): number | null {
 }
 
 /** `100 mg/mL` in a 100 mL vial → `10000 mg/100 mL`; a dry-fill powder → `10000 mg`. */
-export function grossStrength(strength: string | null, source: GrossStrengthSource): GrossStrength | null {
+/** The concept's per-container mass for this ingredient, when a dry-fill concept states one. */
+function conceptMass(name: string | undefined, source: GrossStrengthSource): string | null {
+	const masses = (source.conceptStrengths ?? []).filter((entry) => !entry.perUnit);
+	if (!source.isDryFill || !masses.length || masses.length !== (source.conceptStrengths ?? []).length)
+		return null;
+	const key = name?.toLowerCase() ?? '';
+	const match =
+		masses.find((entry) => key && entry.name.toLowerCase().includes(key)) ??
+		(masses.length === 1 ? masses[0] : null);
+	return match ? `${amount(match.value)} ${match.unit.toLowerCase()}` : null;
+}
+
+export function grossStrength(
+	strength: string | null,
+	source: GrossStrengthSource,
+	name?: string
+): GrossStrength | null {
 	if (!strength) return null;
 	const parsed = parseStrengthParts(strength);
 	const perMl = parsed ? mlPer(parsed.perUnit) : null;
 	if (!parsed || perMl === null) return { strength, basis: 'as-is' };
 	const volume = packageVolumeMl(source);
-	if (!volume) return { strength, basis: 'unresolved' };
+	if (!volume) {
+		const mass = conceptMass(name, source);
+		return mass ? { strength: mass, basis: 'gross' } : { strength, basis: 'unresolved' };
+	}
 	const total = (Number(parsed.value) * volume) / (Number(parsed.per) * perMl);
 	const unit = parsed.unit;
 	return {
@@ -61,13 +87,13 @@ export function grossStrength(strength: string | null, source: GrossStrengthSour
 }
 
 /** Each ingredient restated as gross contents, and whether any stayed a bare concentration. */
-export function grossIngredients<T extends { strength: string | null }>(
+export function grossIngredients<T extends { name: string; strength: string | null }>(
 	ingredients: T[],
 	source: GrossStrengthSource
 ): { ingredients: T[]; concentrationOnly: boolean } {
 	let concentrationOnly = false;
 	const out = ingredients.map((ingredient) => {
-		const gross = grossStrength(ingredient.strength, source);
+		const gross = grossStrength(ingredient.strength, source, ingredient.name);
 		if (!gross) return ingredient;
 		if (gross.basis === 'unresolved') concentrationOnly = true;
 		return { ...ingredient, strength: gross.strength };
