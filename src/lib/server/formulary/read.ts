@@ -157,7 +157,9 @@ export async function formularyRows(
 		const gross = grossIngredients(ingredients, {
 			size: row.size,
 			isDryFill: item?.isDryFill,
-			resolvedVolume: item?.resolvedVolume
+			resolvedVolume: item?.resolvedVolume,
+			itemName: row.formularyItem,
+			doseForm: row.doseForm
 		});
 		// `ingredients` keeps the source concentration for dosing math (compounds).
 		return { ...row, ingredients, contents: gross.ingredients, concentrationOnly: gross.concentrationOnly };
