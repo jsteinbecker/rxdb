@@ -37,3 +37,28 @@ test('amounts per unit are left alone', () => {
 	assert.equal(grossStrength(null, { size: null }), null);
 	assert.equal(grossIngredients([{ name: 'x', strength: '500 mg' }], { size: null }).concentrationOnly, false);
 });
+
+test('the formulary item settles a volume the package does not give', () => {
+	const count = { kind: 'count' as const, value: 36, unit: null };
+	// A carton of bags: the SCD names the bag volume.
+	const bag = grossStrength('9 mg/mL', { size: count, itemName: 'sodium chloride 0.9% 250ML Injection' });
+	assert.equal(normalizeStrength(bag!.strength), '2.25g/250mL');
+	// A bulk powder with no label volume: the SCD's total over the concentration.
+	const bulk = { size: vial(100), isDryFill: true, resolvedVolume: null, itemName: 'vancomycin 10000 MG Injection (Bulk)' };
+	assert.equal(normalizeStrength(grossStrength('100 mg/mL', bulk)!.strength), '10g');
+	// A concentration-only SCD settles nothing.
+	assert.equal(
+		grossStrength('100 mg/mL', { size: null, itemName: 'amoxicillin 80 MG/ML Oral Suspension' })!.basis,
+		'unresolved'
+	);
+});
+
+test("an oral powder for suspension's bottle volume is its constituted volume", () => {
+	const bottle = { size: vial(75), isDryFill: true, resolvedVolume: null, doseForm: 'POWDER, FOR SUSPENSION' };
+	assert.equal(normalizeStrength(grossStrength('50 mg/mL', bottle)!.strength), '3.75g');
+	// An injectable powder's packaging volume stays untrusted.
+	assert.equal(
+		grossStrength('50 mg/mL', { ...bottle, doseForm: 'INJECTION, POWDER, FOR SOLUTION' })!.basis,
+		'unresolved'
+	);
+});
