@@ -118,19 +118,6 @@ into their moiety unless listed separately.
             </tr>
           {/each}
         </tbody>
-        <tfoot>
-          <tr>
-            <th class="corner avoids-label" scope="row">Avoids</th>
-            {#each scenarios.profiles as profile (profile.has.join('|'))}
-              <td class="avoids" class:dropped={!keeps(profile.has)} title={profile.avoids.map((key) => names.get(key)).join(', ')}>
-                {#if profile.avoids.length}
-                  <strong>{profile.avoids.length}</strong>
-                  <span class="small">{profile.avoids.map((key) => names.get(key)).join(', ')}</span>
-                {:else}<span class="muted">nothing</span>{/if}
-              </td>
-            {/each}
-          </tr>
-        </tfoot>
       </table>
     </div>
 
@@ -212,14 +199,12 @@ into their moiety unless listed separately.
   }
 
   .profile,
-  .cell,
-  td.avoids {
+  .cell {
     border-left: 1px solid var(--rule);
   }
 
   .profile:nth-child(even),
-  .cell:nth-child(even),
-  td.avoids:nth-child(even) {
+  .cell:nth-child(even) {
     background: var(--stripe);
   }
 
@@ -360,19 +345,6 @@ into their moiety unless listed separately.
   }
 
   .profile a {
-    white-space: nowrap;
-  }
-
-  td.avoids {
-    max-width: 9rem;
-    vertical-align: top;
-    color: #2c6b3f;
-  }
-
-  td.avoids .small {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
