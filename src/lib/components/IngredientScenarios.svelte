@@ -1,8 +1,8 @@
 <!--
 @component
 "Ingredient scenarios" for a formulary item: which ingredient profiles (active
-ingredients and excipients) its packages fall into, as a matrix of profiles against
-ingredients. Ticking ingredients to avoid shows which NDCs remain. Columns merge salts
+ingredients and excipients) its packages fall into, as a matrix of ingredients (rows)
+against profiles (columns). Ticking ingredients to avoid shows which NDCs remain. Rows merge salts
 into their moiety unless listed separately.
 -->
 <script lang="ts">
@@ -17,7 +17,7 @@ into their moiety unless listed separately.
     summary: ItemSummary;
   } = $props();
 
-  /** Moiety columns by default; listing them splits VANCOMYCIN from VANCOMYCIN HCL. */
+  /** Moiety rows by default; listing them splits VANCOMYCIN from VANCOMYCIN HCL. */
   let listed = $state(false);
   const scenarios = $derived(ingredientScenarios(summary, { byMoiety: !listed }));
   const mergesSalts = $derived(
@@ -35,42 +35,6 @@ into their moiety unless listed separately.
   const names = $derived(new Map(scenarios.columns.map((entry) => [entry.key, entry.name])));
   const keeps = (has: string[]) => !has.some((key) => avoid.includes(key));
 
-  /**
-   * Slanted labels get two lines. The header rises (from --rise's 6rem up to
-   * 9rem) until every label fits in two; past that, labels clamp with an
-   * ellipsis and carry their full name in the tooltip. Widths are estimated
-   * from glyph classes so the header lays out the same on the server.
-   */
-  const RISES = [6, 6.5, 7, 7.5, 8, 8.5, 9];
-  const glyph = (c: string) => (c === ' ' ? 0.28 : /[A-Z0-9]/.test(c) ? 0.68 : 0.55);
-  const textEm = (text: string) => [...text].reduce((sum, c) => sum + glyph(c), 0);
-  const labelText = (entry: { name: string; listed: string[] }) =>
-    entry.listed.length > 1 ? `${entry.name} +${entry.listed.length - 1}` : entry.name;
-  /** Lines a greedy wrap takes at `width` em, breaking words that overflow alone. */
-  function lineCount(text: string, width: number): number {
-    let lines = 1;
-    let used = 0;
-    for (const word of text.split(/\s+/).filter(Boolean)) {
-      const w = textEm(word);
-      const gap = used ? glyph(' ') : 0;
-      if (used + gap + w <= width) {
-        used += gap + w;
-        continue;
-      }
-      if (used) lines++;
-      lines += Math.ceil(w / width) - 1;
-      used = w % width || width;
-    }
-    return lines;
-  }
-  /**
-   * .slant is rise·√2 − 0.6rem long, less its padding and the button's; in em of the 0.68rem label.
-   */
-  const labelEm = (rise: number) => (rise * Math.SQRT2 - 0.6 - 0.45 - 0.5) / 0.68;
-  const fitsAt = (text: string, rise: number) => lineCount(text, labelEm(rise)) <= 2;
-  const rise = $derived(
-    RISES.find((r) => scenarios.columns.every((entry) => fitsAt(labelText(entry), r))) ?? RISES[RISES.length - 1]
-  );
 </script>
 
 <!-- A single combination leaves nothing to choose between, so there is no table to show. -->
@@ -107,38 +71,12 @@ into their moiety unless listed separately.
     {/if}
 
     <div class="scroll">
-      <table style:--rise="{rise}rem">
+      <table>
         <thead>
           <tr>
-            <th class="corner">NDCs</th>
-            {#each scenarios.columns as entry (entry.key)}
-              {@const left = remainingNdcs(scenarios, [entry.key]).length}
-              <th class="ingredient" class:active={entry.kind === 'active'}>
-                <div class="band" aria-hidden="true"></div>
-                <div class="slant">
-                  <button
-                    type="button"
-                    aria-pressed={avoid.includes(entry.key)}
-                    title="{fitsAt(labelText(entry), rise) ? '' : `${labelText(entry)} · `}{entry.kind === 'active' ? 'Active' : 'Inactive'}{entry.listed.length > 1
-                      ? ` (listed as ${entry.listed.join(', ')})`
-                      : ''} · avoiding it alone leaves {plural(left, 'NDC')}"
-                    onclick={() => toggle(entry.key)}
-                  >
-                    <span class="label">{entry.name}</span>{#if entry.listed.length > 1}<span class="forms"
-                        >+{entry.listed.length - 1}</span
-                      >{/if}
-                  </button>
-                </div>
-                <span class="left" class:none={left === 0}>{left} left</span>
-              </th>
-            {/each}
-            <th class="avoids">Avoids</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each scenarios.profiles as profile, p (profile.has.join('|'))}
-            <tr class:dropped={!keeps(profile.has)}>
-              <td class="ndcs">
+            <th class="corner">Ingredient</th>
+            {#each scenarios.profiles as profile, p (profile.has.join('|'))}
+              <th class="profile" class:dropped={!keeps(profile.has)}>
                 <details>
                   <summary title={groupNames[p]}><span class="group">{groupNames[p]}</span><span class="count">{profile.ndcs.length}</span></summary>
                   <span class="mono small">
@@ -146,22 +84,53 @@ into their moiety unless listed separately.
                       >{/each}
                   </span>
                 </details>
-              </td>
-              {#each scenarios.columns as entry (entry.key)}
+              </th>
+            {/each}
+          </tr>
+        </thead>
+        <tbody>
+          {#each scenarios.columns as entry (entry.key)}
+            {@const left = remainingNdcs(scenarios, [entry.key]).length}
+            <tr>
+              <th class="ingredient" class:active={entry.kind === 'active'} scope="row">
+                <div class="row-label">
+                <button
+                  type="button"
+                  aria-pressed={avoid.includes(entry.key)}
+                  title="{entry.kind === 'active' ? 'Active' : 'Inactive'}{entry.listed.length > 1
+                    ? ` (listed as ${entry.listed.join(', ')})`
+                    : ''} · avoiding it alone leaves {plural(left, 'NDC')}"
+                  onclick={() => toggle(entry.key)}
+                >
+                  <span class="label">{entry.name}</span>{#if entry.listed.length > 1}<span class="forms"
+                      >+{entry.listed.length - 1}</span
+                    >{/if}
+                </button>
+                <span class="left" class:none={left === 0}>{left} left</span>
+                </div>
+              </th>
+              {#each scenarios.profiles as profile (profile.has.join('|'))}
                 {@const has = entry.ndcs.includes(profile.ndcs[0])}
-                <td class="cell" class:has class:hit={has && avoid.includes(entry.key)}>
+                <td class="cell" class:has class:hit={has && avoid.includes(entry.key)} class:dropped={!keeps(profile.has)}>
                   {has ? '●' : ''}
                 </td>
               {/each}
-              <td class="avoids" title={profile.avoids.map((key) => names.get(key)).join(', ')}>
+            </tr>
+          {/each}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th class="corner avoids-label" scope="row">Avoids</th>
+            {#each scenarios.profiles as profile (profile.has.join('|'))}
+              <td class="avoids" class:dropped={!keeps(profile.has)} title={profile.avoids.map((key) => names.get(key)).join(', ')}>
                 {#if profile.avoids.length}
                   <strong>{profile.avoids.length}</strong>
                   <span class="small">{profile.avoids.map((key) => names.get(key)).join(', ')}</span>
                 {:else}<span class="muted">nothing</span>{/if}
               </td>
-            </tr>
-          {/each}
-        </tbody>
+            {/each}
+          </tr>
+        </tfoot>
       </table>
     </div>
 
@@ -212,6 +181,8 @@ into their moiety unless listed separately.
   }
 
   table {
+    --rule: #dfe4eb;
+    --stripe: #f4f6f9;
     border-collapse: collapse;
   }
 
@@ -219,87 +190,74 @@ into their moiety unless listed separately.
   td {
     border-bottom: 1px solid #e3e7ee;
     padding: 0.3rem 0.45rem;
-    vertical-align: bottom;
   }
 
-  .corner,
-  th.avoids {
+  .corner {
     text-align: left;
+    vertical-align: bottom;
     color: #5c6777;
     font-weight: 500;
   }
 
-  /* Header geometry: a column is --col wide; its label sits above a --foot
-     strip holding the "N left" count. */
-  table {
-    --col: 2.5rem;
-    --foot: 1.2rem;
-    --rise: 6rem;
-    --rule: #dfe4eb;
-    --stripe: #f4f6f9;
+  /* One column per profile; long group names ellipsize (full name in the tooltip). */
+  .profile {
+    width: 9rem;
+    min-width: 9rem;
+    max-width: 9rem;
+    overflow: hidden;
+    vertical-align: bottom;
+    text-align: left;
+    font-size: 0.78rem;
+    font-weight: 400;
+  }
+
+  .profile,
+  .cell,
+  td.avoids {
+    border-left: 1px solid var(--rule);
+  }
+
+  .profile:nth-child(even),
+  .cell:nth-child(even),
+  td.avoids:nth-child(even) {
+    background: var(--stripe);
+  }
+
+  /* The ingredient column stays put while the profiles scroll under it; the
+     inset shadow stands in for the divider, which scrolls away beneath it. */
+  .corner,
+  .ingredient {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    box-shadow: inset -1px 0 var(--rule);
   }
 
   .ingredient {
-    position: relative;
-    width: var(--col);
-    min-width: var(--col);
-    height: calc(var(--foot) + var(--rise) + 0.5rem);
-    padding: 0;
-  }
-
-  /* The column's band, sheared to 45°: its left edge carries the column
-     divider up out of the body and along the label, and its fill carries the
-     column's stripe. Shearing keeps the bottom edge flat, so it meets the
-     vertical divider below without a seam. */
-  .band {
-    position: absolute;
-    left: 0;
-    bottom: var(--foot);
-    width: var(--col);
-    height: var(--rise);
-    border-left: 1px solid var(--rule);
-    box-sizing: border-box;
-    transform: skewX(-45deg);
-    transform-origin: bottom left;
-  }
-
-  .ingredient:has(+ th.avoids) .band {
-    border-right: 1px solid var(--rule);
-  }
-
-  /* The label runs up the middle of its band. */
-  .slant {
-    position: absolute;
-    left: calc(var(--col) / 2);
-    bottom: calc(var(--foot) - 0.7rem);
-    display: flex;
-    align-items: center;
-    width: calc(var(--rise) * 1.41 - 0.6rem);
-    height: 1.4rem;
-    padding-left: 0.45rem;
-    box-sizing: border-box;
-    transform: rotate(-45deg);
-    transform-origin: 0 50%;
+    min-width: 14rem;
     text-align: left;
+    font-weight: 400;
+  }
+
+  .row-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .ingredient.active {
+    font-weight: 650;
   }
 
   .ingredient button {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
     border: 1px solid transparent;
     border-radius: 4px;
     background: none;
     padding: 0 0.2rem;
     font: inherit;
-    font-size: 0.68rem;
-    /* Tighter than the ~1.75rem between neighbouring slanted labels, so a
-       wrapped label reads as one label, not two. */
-    line-height: 1;
-    overflow-wrap: anywhere;
-    font-weight: inherit;
+    font-size: 0.78rem;
     color: inherit;
     text-align: left;
     cursor: pointer;
@@ -309,42 +267,11 @@ into their moiety unless listed separately.
     border-color: #c9d1dc;
   }
 
-  .ingredient .slant button[aria-pressed='true'] {
+  .ingredient button[aria-pressed='true'] {
     border-color: #e2a29c;
     background: #fdecea;
     color: #a12622;
     text-decoration: line-through;
-  }
-
-  /* Dividers and stripes run unbroken from the body, through the count
-     strip, and up each band. */
-  .cell,
-  td.avoids,
-  th.avoids,
-  .left {
-    border-left: 1px solid var(--rule);
-  }
-
-  .cell:nth-child(even),
-  .ingredient:nth-child(even) .left,
-  .ingredient:nth-child(even) .band {
-    background: var(--stripe);
-  }
-
-  /* The group column stays put while the ingredients scroll under it; the
-     inset shadow stands in for the divider, which scrolls away beneath it. */
-  .corner,
-  .ndcs {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: #fff;
-    box-shadow: inset -1px 0 var(--rule);
-  }
-
-  tbody tr:nth-child(even) .ndcs,
-  tbody tr:nth-child(even) td.avoids {
-    background: #fafbfc;
   }
 
   .forms {
@@ -360,11 +287,7 @@ into their moiety unless listed separately.
   }
 
   .left {
-    position: absolute;
-    inset: auto 0 0 0;
-    height: var(--foot);
-    line-height: var(--foot);
-    text-align: center;
+    flex: none;
     color: #5c6777;
     font-size: 0.62rem;
     font-weight: 400;
@@ -375,18 +298,7 @@ into their moiety unless listed separately.
     color: #a12622;
   }
 
-  /* A hard width: long group names ellipsize (full name in the tooltip)
-     instead of pushing under the sticky edge into the ingredient cells. */
-  .ndcs {
-    width: 14rem;
-    min-width: 14rem;
-    max-width: 14rem;
-    overflow: hidden;
-    vertical-align: top;
-    font-size: 0.78rem;
-  }
-
-  .ndcs summary {
+  .profile summary {
     display: flex;
     align-items: baseline;
     cursor: pointer;
@@ -394,7 +306,7 @@ into their moiety unless listed separately.
   }
 
   /* display: flex drops the disclosure marker; put it back. */
-  .ndcs summary::before {
+  .profile summary::before {
     content: '▸';
     flex: none;
     margin-right: 0.3rem;
@@ -402,33 +314,27 @@ into their moiety unless listed separately.
     font-size: 0.7em;
   }
 
-  .ndcs details[open] summary::before {
+  .profile details[open] summary::before {
     content: '▾';
   }
 
-  .ndcs summary::-webkit-details-marker {
+  .profile summary::-webkit-details-marker {
     display: none;
+  }
+
+  .profile details[open] summary {
+    margin-bottom: 0.2rem;
   }
 
   .group {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .count {
-    flex: none;
-  }
-
-  .ndcs details[open] summary {
-    margin-bottom: 0.2rem;
-  }
-
-  .group {
     font-weight: 600;
   }
 
   .count {
+    flex: none;
     margin-left: 0.35rem;
     border-radius: 999px;
     background: #eef1f5;
@@ -453,26 +359,24 @@ into their moiety unless listed separately.
     color: #a12622;
   }
 
-  .ndcs a {
+  .profile a {
     white-space: nowrap;
-  }
-
-  td.avoids .small {
-    display: inline-block;
-    max-width: 14rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: bottom;
   }
 
   td.avoids {
-    white-space: nowrap;
+    max-width: 9rem;
     vertical-align: top;
     color: #2c6b3f;
   }
 
-  tr.dropped {
+  td.avoids .small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dropped {
     opacity: 0.38;
   }
 
