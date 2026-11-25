@@ -65,6 +65,14 @@ export type FormularyRow = {
 	doseFormLabel?: string;
 	/** The injectable dose type, with sibling evidence; set by `projectRows`. */
 	doseType?: DoseType | null;
+	/**
+	 * The ingredients with strengths as the package's gross contents
+	 * (`medication/gross-strength.ts`); what strengths display and group by.
+	 * `ingredients` keeps the source concentration for dosing math.
+	 */
+	contents?: { name: string; strength: string | null }[];
+	/** A strength is still a bare concentration: no package volume could be trusted. */
+	concentrationOnly?: boolean;
 };
 
 /**
@@ -566,7 +574,7 @@ export function strengthOf(
 ): string {
 	// In `comboKey`'s order, so the n-th strength is the n-th name's whatever
 	// order the directory listed them in (Wyeth's pip/tazo leads with tazobactam).
-	const each = row.ingredients
+	const each = (row.contents ?? row.ingredients)
 		.filter((item) => item.strength)
 		.sort((a, b) => compare(ingredientLabel(a.name), ingredientLabel(b.name)));
 	const form = rules.length ? formContext(row.displayTitle, row.doseForm, row.routes) : '';
@@ -587,6 +595,9 @@ export function strengthOf(
 	}
 	return orderIngredients(each, order, (item) => item.name).map(shown).join(' / ');
 }
+
+/** Marks a strength that stayed a concentration because the package's volume is unknown. */
+export const VOLUME_UNKNOWN = 'package volume unknown';
 
 export const DIMENSIONS: Dimension[] = [
 	{
@@ -658,7 +669,9 @@ export const DIMENSIONS: Dimension[] = [
 		hint: '500 mg, 50 mg/mL…',
 		values: (row) => {
 			const strength = strengthOf(row);
-			return clean(strength) ? [strength] : [];
+			if (!clean(strength)) return [];
+			// Never pass a concentration off as a package's contents.
+			return [row.concentrationOnly ? `${strength} (${VOLUME_UNKNOWN})` : strength];
 		}
 	},
 	{

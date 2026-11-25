@@ -5,6 +5,7 @@ import {
 	comboKey,
 	orderedComboLabel,
 	normalizeStrength,
+	DIMENSIONS,
 	strengthOf,
 	summedStrength,
 	parseLevels,
@@ -689,4 +690,16 @@ test('normalizeStrength groups SPL bulk-package strengths with their clean spell
 	assert.equal(normalizeStrength('10 g/1 VIAL, PHARMACY BULK PACKAGE'), '10g');
 	assert.equal(normalizeStrength('100 mg/ML'), '100mg/mL');
 	assert.equal(normalizeStrength('500 MG/10 ML'), '500mg/10mL');
+});
+
+test('strength reads a package row by its gross contents and flags a bare concentration', () => {
+	const strength = DIMENSIONS.find((dimension) => dimension.key === 'strength')!;
+	const ingredients = [{ name: 'VANCOMYCIN', strength: '100 mg/mL' }];
+	assert.deepEqual(
+		strength.values(row({ ingredients, contents: [{ name: 'VANCOMYCIN', strength: '10000 mg' }] })),
+		['10g']
+	);
+	assert.deepEqual(strength.values(row({ ingredients, concentrationOnly: true })), [
+		'100mg/mL (package volume unknown)'
+	]);
 });
