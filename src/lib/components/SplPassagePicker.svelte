@@ -248,7 +248,7 @@ being collapsed and expanded, and are bound back as `passages`.
             list-style: none;
       }
 
-      li {
+      .passages li {
             display: flex;
             align-items: flex-start;
             gap: 0.25rem;

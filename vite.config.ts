@@ -1,9 +1,12 @@
 import adapter from '@sveltejs/adapter-auto';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { svelteColdStyle } from './src/lib/server/infrastructure/svelte-cold-style.ts';
 
 export default defineConfig({
 	plugins: [
+		// Before SvelteKit, so its styles are compiled by the time they load.
+		svelteColdStyle(),
 		sveltekit({
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
