@@ -11,6 +11,8 @@ import { formularyRows } from './read';
 import { localNamesOf, loadedItems } from './membership';
 import { packageTitle } from '../../catalog/package-title';
 import { ingredientLabel } from '../../formulary/hierarchy';
+import { loadPackageSnapshots } from '../catalog/snapshot-store';
+import { standardConcentration, FLAG_TEXT } from '../../compounds/standard-concentration';
 
 export interface DosableSummary {
 	id: string;
@@ -130,9 +132,35 @@ export async function loadDosable(db: PrismaClient, scopeId: string, id: string)
 		compounds.set(slot.formula.id, compound);
 	}
 
+	// The standard reconstituted concentration, from every linked item's labels.
+	const live = row.items.filter((item) => item.retiredAt === null);
+	const snapshots = await loadPackageSnapshots(
+		db,
+		live.flatMap((item) => (packagesOf.get(item.formularyItemId) ?? []).map((pkg) => pkg.ndc))
+	);
+	const concentration = standardConcentration(
+		row.route,
+		live.map((item) => ({
+			itemId: item.formularyItemId,
+			packages: (packagesOf.get(item.formularyItemId) ?? []).map((pkg) => {
+				const snapshot = snapshots.get(pkg.ndc)?.item;
+				return {
+					packageId: pkg.packageId,
+					ndc: pkg.ndc,
+					title: pkg.title,
+					isDryFill: snapshot ? snapshot.isDryFill : null,
+					reconstitution: snapshot?.reconstitution ?? []
+				};
+			})
+		})),
+		row.ingredients.length > 1
+	);
+	const concentrationOf = new Map(concentration.items.map((item) => [item.itemId, item]));
+
 	return {
 		id: row.id,
 		label: componentLabel(row),
+		concentration: { status: concentration.status, mgPerMl: concentration.mgPerMl },
 		route: row.route,
 		ingredients: row.ingredients.map((entry) => ingredientLabel(entry.ingredient.name)),
 		source: row.source,
@@ -143,6 +171,12 @@ export async function loadDosable(db: PrismaClient, scopeId: string, id: string)
 				name: shownName.get(item.formularyItemId) ?? item.formularyItem.displayName,
 				source: item.source,
 				retired: item.retiredAt !== null,
+				concentration: concentrationOf.has(item.formularyItemId)
+					? {
+							...concentrationOf.get(item.formularyItemId)!,
+							notes: concentrationOf.get(item.formularyItemId)!.flags.map((flag) => FLAG_TEXT[flag])
+						}
+					: null,
 				packages: packagesOf.get(item.formularyItemId) ?? []
 			}))
 			.sort((a, b) => Number(a.retired) - Number(b.retired) || a.name.localeCompare(b.name)),
