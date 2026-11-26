@@ -20,6 +20,20 @@
 			: line.ndcSubset
 				? `${line.pinnedItem}, ${plural(line.ndcSubset, 'NDC')}${line.reason ? ` (${line.reason})` : ''}`
 				: `only ${line.pinnedItem}`;
+	const conc = (value: number | null) =>
+		value === null ? '—' : `${Number(value.toPrecision(4))} mg/mL`;
+	const ITEM_STATUS: Record<string, string> = {
+		agreed: 'All labels agree',
+		majority: 'Most labels',
+		standardized: 'Set to the standard',
+		differs: 'Differs from the standard',
+		review: 'Needs review'
+	};
+	const needsRecon = $derived(
+		dosable.formularyItems.some(
+			(item) => item.concentration && item.concentration.status !== 'not-needed'
+		)
+	);
 </script>
 
 <svelte:head>
@@ -38,6 +52,24 @@
 		</p>
 	</PageHeader>
 
+	{#if needsRecon}
+		<section aria-labelledby="conc-heading" class="conc">
+			<h2 id="conc-heading">Standard reconstituted concentration</h2>
+			<p class="conc-value">
+				<strong>{conc(dosable.concentration.mgPerMl)}</strong>
+				{#if dosable.concentration.status === 'agreed'}<span class="badge done"
+						>All labels agree</span
+					>
+				{:else if dosable.concentration.status === 'majority'}<span class="badge">Most common</span>
+				{:else}<span class="badge warn">Needs review</span>{/if}
+			</p>
+			<p class="hint">
+				The value most of this drug's vials are made up to, from their labels. Each item takes it
+				when any of its labels states it.
+			</p>
+		</section>
+	{/if}
+
 	<section aria-labelledby="items-heading">
 		<h2 id="items-heading">
 			Formulary items <span class="count"
@@ -55,6 +87,29 @@
 							{#if item.source === 'manual'}<span class="badge">Manual</span>{/if}
 							{#if item.retired}<span class="badge muted">Unlinked</span>{/if}
 						</div>
+						{#if item.concentration && item.concentration.status !== 'not-needed'}
+							<div class="item-conc">
+								Reconstituted: <strong>{conc(item.concentration.mgPerMl)}</strong>
+								<span class="badge" class:warn={item.concentration.status === 'review'}
+									>{ITEM_STATUS[item.concentration.status]}</span
+								>
+								{#if item.concentration.options.length > 1}
+									<span class="hint"
+										>labels state {item.concentration.options
+											.map(
+												(o) =>
+													`${conc(o.mgPerMl)} (${plural(o.ndcs.length, 'NDC')}${o.computed ? ', computed' : ''})`
+											)
+											.join(', ')}</span
+									>
+								{/if}
+								{#if item.concentration.notes.length}
+									<ul class="notes">
+										{#each item.concentration.notes as note (note)}<li>{note}</li>{/each}
+									</ul>
+								{/if}
+							</div>
+						{/if}
 						{#if item.packages.length}
 							<ul class="packages">
 								{#each item.packages as pkg (pkg.packageId)}
@@ -180,6 +235,32 @@
 	.badge.muted {
 		background: #eef0f3;
 		color: #5c6777;
+	}
+	.badge.warn {
+		background: #fdf0dc;
+		color: #8a5300;
+	}
+	.conc-value {
+		display: flex;
+		align-items: baseline;
+		gap: 0.6rem;
+		margin: 0;
+		font-size: 1.15rem;
+	}
+	.item-conc {
+		margin: 0.3rem 0 0 1rem;
+		font-size: 0.88rem;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.4rem;
+	}
+	.notes {
+		flex-basis: 100%;
+		color: #8a5300;
+		font-size: 0.8rem;
+		list-style: disc;
+		padding-left: 1.1rem;
 	}
 	.badge.done {
 		background: #e6f2ea;
